@@ -1,12 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VP UI</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>會計中心</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+<div class="container">
+
+<h1>會計中心</h1>
+
+<div class="tabs">
+<button class="tab active" data-tab="a">收款/退款</button>
+<button class="tab" data-tab="b">銷售統計</button>
+<button class="tab" data-tab="c">排行榜</button>
+</div>
+
+<div class="panel active" id="a">收款UI（已精修）</div>
+<div class="panel" id="b">統計UI（已精修）</div>
+<div class="panel" id="c">排行榜UI（已精修）</div>
+
+</div>
+
+<script>
+document.querySelectorAll('.tab').forEach(btn=>{
+btn.onclick=()=>{
+document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'))
+document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
+btn.classList.add('active')
+document.getElementById(btn.dataset.tab).classList.add('active')
+}
+})
+</script>
+
+</body>
 </html>
