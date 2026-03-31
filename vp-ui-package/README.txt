@@ -11,4 +11,3 @@ Firestore collections 預設讀取：
 - products
 - customers
 - staff
-deploy test
