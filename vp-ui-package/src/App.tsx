@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsContent } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Badge } from "./components/ui/badge";
+import { Tabs, TabsList, TabsContent } from "./components/ui/tabs";
+import { ScrollArea } from "./components/ui/scroll-area";
+import { Separator } from "./components/ui/separator";
 import { Search, Package, Users, UserCog, ShoppingCart, Warehouse, BarChart3, LogOut, RefreshCw, Bell, ShieldCheck, Database, Wifi, WifiOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { initializeApp, getApps, getApp } from "firebase/app";
