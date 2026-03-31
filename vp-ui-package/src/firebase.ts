@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  // TODO: fill
+  // 填你的
 };
 
 const app = initializeApp(firebaseConfig);
