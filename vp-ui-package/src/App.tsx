@@ -1,8 +1,6 @@
 import { getDB } from "./firebase";
 import { collection, getDocs } from "firebase/firestore";
 
-2. 找 useEffect，改成：
-
 useEffect(() => {
   async function init() {
     try {
@@ -25,6 +23,7 @@ useEffect(() => {
       setBooting(false);
     }
   }
+
   init();
 }, []);
 
