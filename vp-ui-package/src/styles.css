@@ -958,6 +958,7 @@ button:hover { transform: translateY(-1px); }
 }
 
 .warehouse-detail-card .accounting-action-row {
+  margin-top: 18px;
   margin-top: auto;
   padding-top: 16px;
 }
@@ -1327,6 +1328,36 @@ button:hover { transform: translateY(-1px); }
 .warehouse-form-grid .wide,
 .warehouse-tool-grid .wide {
   grid-column: 1 / -1;
+}
+
+
+.fake-field {
+  display: grid;
+  gap: 8px;
+  min-height: 96px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,244,248,0.92) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.fake-field span {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.fake-field strong {
+  align-self: end;
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.fake-field.wide {
+  min-height: 88px;
 }
 
 .warehouse-checklist,
