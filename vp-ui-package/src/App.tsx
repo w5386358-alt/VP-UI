@@ -107,6 +107,32 @@ const queryExamples = [
   { label: '訂單查詢', value: '顯示待出貨 / 已出貨 / 已退款 / 已換貨，供出貨與回補判讀' },
 ];
 
+const warehouseSummary = [
+  { title: '待出貨', value: '12', sub: '已收款待出貨 8 / 換貨待出庫 4' },
+  { title: '低庫存', value: '3', sub: '安全值以下需先補貨' },
+  { title: '今日入出庫', value: '26', sub: '含入庫 / 出貨 / 退貨 / 換貨' },
+  { title: '待查異常', value: '2', sub: 'QR 重覆掃描 / 數量需覆核' },
+];
+
+const shippingChecklist = [
+  { title: '掃描驗證', desc: '商品條碼 + QR 身分識別雙條件驗證，先擋掉錯貨與重覆出貨。' },
+  { title: '數量判讀', desc: '改看剩餘可出貨數量，不只看 QR 狀態字樣，避免同 QR 剩餘量被卡死。' },
+  { title: '完成連動', desc: 'shipping、orders、inventory、inventory_logs、sales_report 同步留痕跡。' },
+];
+
+const stockSnapshot = [
+  { code: 'E401', name: '女神酵素液', stock: 36, safe: 12, qr: 'QR(A)*18 / QR(B)*18', status: '正常' },
+  { code: 'P301', name: '瞬白激光精華4G', stock: 9, safe: 10, qr: 'QR(P1)*6 / QR(P2)*3', status: '低庫存' },
+  { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常' },
+];
+
+const warehouseRecentLogs = [
+  { time: '09:12', type: '出貨', note: 'VP20260331-001 完成出貨，扣減 E401*2 / P301*1' },
+  { time: '10:45', type: '入庫', note: 'E402 補貨 12 件，寫入 inventory_logs' },
+  { time: '11:18', type: '換貨', note: 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立' },
+  { time: '13:05', type: '退貨', note: 'QR(A-018) 驗退回庫，待 QC 判定是否可再販售' },
+];
+
 
 const paymentQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳' },
@@ -955,10 +981,16 @@ export default function App() {
             {active === 'inventory' && (
               <>
                 <SectionIntro
-                  title="倉儲中心骨架"
-                  desc="這版先把倉儲拆成出貨區、庫存區、查詢區，版面依你原本 GAS 倉儲邏輯去排，不亂動資料規則。"
-                  stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單骨架']}
+                  title="倉儲中心細化版"
+                  desc="這版開始把出貨、庫存、查詢三區做得更接近實際操作畫面，仍然只動 UI，不去破壞你原本 GAS 倉儲邏輯。"
+                  stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
                 />
+
+                <section className="summary-grid">
+                  {warehouseSummary.map((item) => (
+                    <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />
+                  ))}
+                </section>
 
                 <div className="warehouse-tab-row">
                   <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}>
@@ -974,14 +1006,14 @@ export default function App() {
 
                 {warehouseTab === 'shipping' && (
                   <section className="warehouse-layout">
-                    <div className="warehouse-main">
+                    <div className="warehouse-main warehouse-stack">
                       <div className="card order-panel">
                         <div className="panel-head">
                           <div>
                             <div className="panel-title">待出貨訂單</div>
-                            <div className="panel-desc">先把出貨作業、出貨單、已收款判斷集中在同一區，方便你下一步接 shipping 與 orders。</div>
+                            <div className="panel-desc">先把待出貨、已收款、換貨待出庫集中在同一個作業面板。</div>
                           </div>
-                          <span className="badge badge-danger">需優先處理 {shippingQueue.length} 筆</span>
+                          <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
                         </div>
 
                         <div className="shipping-queue">
@@ -993,27 +1025,89 @@ export default function App() {
                               </div>
                               <div className="shipping-actions">
                                 <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                                <button type="button" className="ghost-button compact-btn">出貨作業</button>
+                                <button type="button" className="ghost-button compact-btn">掃碼出貨</button>
+                                <button type="button" className="ghost-button compact-btn">查看出貨單</button>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
+
+                      <div className="warehouse-detail-grid">
+                        <div className="card warehouse-detail-card">
+                          <div className="warehouse-card-head">
+                            <div>
+                              <div className="flow-title">出貨作業流程</div>
+                              <div className="flow-desc">用 UI 先把你原本掃碼與出貨節奏排出來。</div>
+                            </div>
+                            <QrCode className="small-icon" />
+                          </div>
+                          <div className="warehouse-checklist">
+                            {shippingChecklist.map((item) => (
+                              <div key={item.title} className="warehouse-check-item">
+                                <div className="warehouse-check-title">{item.title}</div>
+                                <div className="warehouse-check-desc">{item.desc}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="card warehouse-detail-card">
+                          <div className="warehouse-card-head">
+                            <div>
+                              <div className="flow-title">出貨資訊面板</div>
+                              <div className="flow-desc">保留你後面要接的欄位位置，不改作業邏輯。</div>
+                            </div>
+                            <FileText className="small-icon" />
+                          </div>
+                          <div className="warehouse-form-grid">
+                            <div className="fake-field"><span>訂單編號</span><strong>VP20260331-001</strong></div>
+                            <div className="fake-field"><span>出貨狀態</span><strong>待出貨</strong></div>
+                            <div className="fake-field"><span>收款狀態</span><strong>已收款</strong></div>
+                            <div className="fake-field"><span>追蹤編號</span><strong>待填入</strong></div>
+                            <div className="fake-field wide"><span>掃碼結果</span><strong>商品條碼 + QR 身分識別比對成功後才放行</strong></div>
+                          </div>
+                          <div className="accounting-action-row">
+                            <button type="button" className="primary-button"><Truck className="small-icon" />完成出貨</button>
+                            <button type="button" className="ghost-button"><Receipt className="small-icon" />列印出貨單</button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="warehouse-side">
+                    <div className="warehouse-side warehouse-stack">
                       <div className="card order-panel sticky-panel">
                         <div className="panel-head compact-head">
                           <div>
-                            <div className="panel-title">出貨區重點</div>
-                            <div className="panel-desc">直接對齊你原本出貨邏輯。</div>
+                            <div className="panel-title">出貨區提醒</div>
+                            <div className="panel-desc">這裡先放你最在意的防呆規則。</div>
                           </div>
                         </div>
                         <div className="stack-list compact">
-                          <div>已收款才可出貨</div>
-                          <div>同 QR 多數量要依剩餘可出貨數量判讀</div>
-                          <div>換貨 B 需自動產生金額 0 的出貨單</div>
-                          <div>shipping / orders / inventory / inventory_logs 要一起留痕跡</div>
+                          <div>未收款不可出貨</div>
+                          <div>同 QR 多數量要看剩餘可出貨數量</div>
+                          <div>換貨 B 要自動產生金額 0 出貨單</div>
+                          <div>舊資料也要留下 shipping 痕跡</div>
+                        </div>
+                      </div>
+
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">最近異動紀錄</div>
+                            <div className="panel-desc">把 inventory_logs 的閱讀感先做出來。</div>
+                          </div>
+                        </div>
+                        <div className="warehouse-log-list">
+                          {warehouseRecentLogs.map((item) => (
+                            <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
+                              <div className="warehouse-log-time">{item.time}</div>
+                              <div>
+                                <div className="warehouse-log-type">{item.type}</div>
+                                <div className="warehouse-log-note">{item.note}</div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -1021,27 +1115,93 @@ export default function App() {
                 )}
 
                 {warehouseTab === 'stock' && (
-                  <section className="warehouse-flow-grid">
-                    {inventoryFlow.map((item) => (
-                      <div key={item.title} className="card flow-card">
-                        <div className="flow-title">{item.title}</div>
-                        <div className="flow-desc">{item.desc}</div>
-                        <div className="data-chip-row">
-                          {item.tags.map((tag) => <span key={tag} className="badge badge-neutral">{tag}</span>)}
+                  <section className="warehouse-stack-section">
+                    <div className="warehouse-flow-grid">
+                      {inventoryFlow.map((item) => (
+                        <div key={item.title} className="card flow-card">
+                          <div className="flow-title">{item.title}</div>
+                          <div className="flow-desc">{item.desc}</div>
+                          <div className="data-chip-row">
+                            {item.tags.map((tag) => <span key={tag} className="badge badge-neutral">{tag}</span>)}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+
+                    <div className="warehouse-stock-grid">
+                      {stockSnapshot.map((item) => (
+                        <div key={item.code} className="card stock-snapshot-card">
+                          <div className="stock-card-top">
+                            <div>
+                              <div className="shipping-order">{item.name}</div>
+                              <div className="shipping-meta">{item.code} / 安全庫存 {item.safe}</div>
+                            </div>
+                            <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
+                          </div>
+                          <div className="stock-big-number">{item.stock}</div>
+                          <div className="stock-sub">目前庫存</div>
+                          <div className="fake-field wide"><span>QR 身分識別</span><strong>{item.qr}</strong></div>
+                        </div>
+                      ))}
+                    </div>
                   </section>
                 )}
 
                 {warehouseTab === 'query' && (
-                  <section className="warehouse-query-grid">
-                    {queryExamples.map((item) => (
-                      <div key={item.label} className="card query-card">
-                        <div className="query-label">{item.label}</div>
-                        <div className="query-value">{item.value}</div>
+                  <section className="warehouse-stack-section">
+                    <div className="warehouse-query-grid">
+                      {queryExamples.map((item) => (
+                        <div key={item.label} className="card query-card">
+                          <div className="query-label">{item.label}</div>
+                          <div className="query-value">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="warehouse-tool-grid">
+                      <div className="card warehouse-tool-card">
+                        <div className="warehouse-card-head">
+                          <div>
+                            <div className="flow-title">條碼 / QR 快速查詢</div>
+                            <div className="flow-desc">後面接掃碼器時，就直接沿用這個位置。</div>
+                          </div>
+                          <Search className="small-icon" />
+                        </div>
+                        <div className="warehouse-form-grid">
+                          <div className="fake-field wide"><span>查詢條件</span><strong>輸入商品條碼 / QR 身分識別 / 訂單編號</strong></div>
+                          <div className="fake-field"><span>查詢模式</span><strong>精準查詢</strong></div>
+                          <div className="fake-field"><span>最近紀錄</span><strong>保留 20 筆</strong></div>
+                        </div>
+                        <div className="accounting-action-row">
+                          <button type="button" className="primary-button"><Search className="small-icon" />立即查詢</button>
+                          <button type="button" className="ghost-button"><QrCode className="small-icon" />掃碼帶入</button>
+                        </div>
                       </div>
-                    ))}
+
+                      <div className="card warehouse-tool-card">
+                        <div className="warehouse-card-head">
+                          <div>
+                            <div className="flow-title">查詢結果展示位</div>
+                            <div className="flow-desc">依你之前定義的顯示規則先排版。</div>
+                          </div>
+                          <History className="small-icon" />
+                        </div>
+                        <div className="warehouse-result-list">
+                          <div className="warehouse-result-item">
+                            <div className="warehouse-result-title">商品條碼模式</div>
+                            <div className="warehouse-result-desc">商品名稱、商品條碼、總庫存、最近入庫時間、QR(A)*2 / QR(B)*1</div>
+                          </div>
+                          <div className="warehouse-result-item">
+                            <div className="warehouse-result-title">QR 模式</div>
+                            <div className="warehouse-result-desc">只顯示該 QR 的數量、入庫時間、入庫人員、商品名稱、商品條碼</div>
+                          </div>
+                          <div className="warehouse-result-item">
+                            <div className="warehouse-result-title">訂單模式</div>
+                            <div className="warehouse-result-desc">顯示未出貨 / 待出貨 / 已退款 / 已換貨，提供出貨與回補判讀</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </section>
                 )}
               </>
