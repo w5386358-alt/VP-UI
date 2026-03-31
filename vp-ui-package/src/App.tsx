@@ -31,10 +31,14 @@ import {
   BadgePercent,
   FileText,
   Receipt,
+  History,
+  Trophy,
+  QrCode,
+  CalendarRange,
 } from 'lucide-react';
 
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
-type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff';
+type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
 type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number };
 type Customer = { id: string; name: string; phone: string; level: string };
@@ -81,6 +85,7 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
   { key: 'products', label: '商品', icon: Package },
   { key: 'customers', label: '客戶', icon: Users },
   { key: 'staff', label: '人員', icon: UserCog },
+  { key: 'profile', label: '個人資料', icon: ClipboardList },
 ];
 
 
@@ -133,6 +138,21 @@ const accountingBoards = [
     bullets: ['人員排行', '商品熱銷排行', '退款扣回績效'],
   },
 ];
+const personalSummary = [
+  { title: '累積業績', value: '$128,600', sub: '退款與退貨需反向扣回' },
+  { title: '完成訂單數', value: '86', sub: '含正常完成與已出貨單' },
+  { title: '目前排名', value: '#3', sub: '本月銷售排行' },
+  { title: '待追蹤', value: '4', sub: '待收款 / 待出貨 / 退款影響' },
+];
+
+const personalOrders = [
+  { orderNo: 'VP20260329-021', date: '2026/03/29 14:20', amount: 3680, paymentStatus: '已收款', shippingStatus: '已出貨', mainStatus: '已完成' },
+  { orderNo: 'VP20260330-008', date: '2026/03/30 11:05', amount: 4259, paymentStatus: '待收款', shippingStatus: '待出貨', mainStatus: '處理中' },
+  { orderNo: 'EX20260330-001', date: '2026/03/30 18:42', amount: 65, paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', mainStatus: '換貨處理' },
+  { orderNo: 'VP20260331-002', date: '2026/03/31 09:08', amount: 2825, paymentStatus: '已收款', shippingStatus: '理貨中', mainStatus: '出貨中' },
+];
+
+
 
 const workflowCards: WorkflowCard[] = [
   {
@@ -238,6 +258,8 @@ function getSearchPlaceholder(active: NavKey) {
       return '之後會接條碼 / QR / 商品 / 出貨狀態';
     case 'accounting':
       return '搜尋訂單編號 / 客戶 / 收款狀態 / 退款狀態 / 收款證明';
+    case 'profile':
+      return '搜尋我的歷史訂單 / 訂單編號 / 狀態 / 日期';
     default:
       return '搜尋系統資料與模組';
   }
@@ -1076,6 +1098,107 @@ export default function App() {
                   ))}
                 </section>
               </>
+
+
+            {active === 'profile' && (
+              <>
+                <SectionIntro
+                  title="個人資料 / 我的歷史訂單"
+                  desc="這版先把個人資料、累積業績、歷史訂單、掃碼與刷新整理按鈕的位置排好，後面直接沿用你原本 GAS 的個人流程去接。"
+                  stats={[`歷史訂單 ${personalOrders.length} 筆`, '個人資料 / 業績雙區塊', '掃碼 / 刷新整理 預留']}
+                />
+
+                <section className="summary-grid">
+                  {personalSummary.map((item) => (
+                    <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />
+                  ))}
+                </section>
+
+                <section className="two-column-grid profile-top-grid">
+                  <div className="card order-panel">
+                    <div className="panel-head">
+                      <div>
+                        <div className="panel-title">個人資料</div>
+                        <div className="panel-desc">上半部先固定你的個人資訊卡位：姓名、員工編號、登入 ID、身分、階級、員編 QR。</div>
+                      </div>
+                      <span className="badge badge-role">個人中心</span>
+                    </div>
+
+                    <div className="profile-identity-card">
+                      <div className="profile-avatar">秉</div>
+                      <div className="profile-main">
+                        <div className="profile-name">{user.name}</div>
+                        <div className="profile-id-row">員工編號：VP001 / 登入 ID：{user.loginId}</div>
+                        <div className="data-chip-row">
+                          <span className="badge badge-role">身分 / 管理員</span>
+                          <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
+                          <span className="badge badge-neutral">價格層級 / 總代理價格</span>
+                        </div>
+                      </div>
+                      <div className="profile-qr-box">
+                        <QrCode className="profile-qr-icon" />
+                        <span>員編 QR 預留</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="card order-panel">
+                    <div className="panel-head compact-head">
+                      <div>
+                        <div className="panel-title">我的累積業績</div>
+                        <div className="panel-desc">下半部對齊你的個人業績與排名邏輯。</div>
+                      </div>
+                    </div>
+                    <div className="profile-performance-grid">
+                      <div className="metric-box large"><span>累積業績</span><strong>$128,600</strong></div>
+                      <div className="metric-box large"><span>完成訂單數</span><strong>86</strong></div>
+                      <div className="metric-box large"><span>目前排名</span><strong>#3</strong></div>
+                      <div className="metric-box large"><span>退款扣回影響</span><strong>-$1,240</strong></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="card order-panel profile-history-panel">
+                  <div className="panel-head">
+                    <div>
+                      <div className="panel-title">我的歷史訂單</div>
+                      <div className="panel-desc">保留你指定的搜尋、掃碼、刷新整理三個操作節奏，後續可直接接歷史訂單完整查詢。</div>
+                    </div>
+                    <div className="history-toolbar">
+                      <button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button>
+                      <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />刷新整理</button>
+                    </div>
+                  </div>
+
+                  <div className="history-filter-row">
+                    <div className="search-wrap inline-search">
+                      <Search className="search-icon" />
+                      <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" />
+                    </div>
+                    <button type="button" className="primary-button compact-primary">輸入</button>
+                  </div>
+
+                  <div className="history-list">
+                    {personalOrders
+                      .filter((item) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase()))
+                      .map((item) => (
+                      <div key={item.orderNo} className="history-row">
+                        <div>
+                          <div className="history-order">{item.orderNo}</div>
+                          <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
+                        </div>
+                        <div className="history-statuses">
+                          <span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                          <span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span>
+                          <span className="badge badge-soft">{item.mainStatus}</span>
+                        </div>
+                        <div className="history-amount">${item.amount}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
             )}
           </>
         )}

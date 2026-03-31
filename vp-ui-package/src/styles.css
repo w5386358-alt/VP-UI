@@ -1001,3 +1001,94 @@ button:hover { transform: translateY(-1px); }
     grid-template-columns: 1fr;
   }
 }
+
+
+.profile-top-grid { margin-top: 18px; }
+.profile-identity-card {
+  display: grid;
+  grid-template-columns: 88px minmax(0,1fr) 140px;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(135deg, #fff9fb 0%, #ffffff 100%);
+}
+.profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, var(--primary) 0%, #ff6d98 100%);
+}
+.profile-name { font-size: 24px; font-weight: 800; }
+.profile-id-row { margin-top: 6px; color: var(--muted); }
+.profile-qr-box {
+  min-height: 108px;
+  border-radius: 24px;
+  border: 1px dashed var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  background: #fff;
+}
+.profile-qr-icon { width: 34px; height: 34px; }
+.profile-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+}
+.metric-box.large { min-height: 96px; justify-content: center; }
+.profile-history-panel { margin-top: 18px; }
+.history-toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+.history-filter-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 112px;
+  gap: 12px;
+  margin-top: 14px;
+}
+.inline-search { width: 100%; }
+.compact-primary { min-width: 0; width: 100%; }
+.history-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+.history-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.1fr) minmax(220px, 1fr) 100px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255,255,255,0.9);
+}
+.history-order { font-weight: 800; font-size: 16px; }
+.history-meta {
+  margin-top: 6px;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.history-statuses { display: flex; flex-wrap: wrap; gap: 8px; }
+.history-amount { text-align: right; font-size: 20px; font-weight: 800; }
+@media (max-width: 980px) {
+  .profile-identity-card, .history-row {
+    grid-template-columns: 1fr;
+  }
+  .profile-qr-box { min-height: 84px; }
+  .profile-performance-grid { grid-template-columns: 1fr; }
+  .history-amount { text-align: left; }
+}
+@media (max-width: 720px) {
+  .history-filter-row { grid-template-columns: 1fr; }
+}
