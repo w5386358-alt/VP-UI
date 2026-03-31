@@ -145,6 +145,12 @@ const personalSummary = [
   { title: '待追蹤', value: '4', sub: '待收款 / 待出貨 / 退款影響' },
 ];
 
+const profileQuickActions = [
+  { title: '員編掃碼', desc: '保留手機掃碼入口，後續直接接你的個人條碼 / QR 查詢。', icon: QrCode },
+  { title: '歷史刷新', desc: '維持你原本的刷新整理節奏，不改操作習慣。', icon: RefreshCw },
+  { title: '業績查詢', desc: '之後直接承接個人排名、退款扣回與完成單數。', icon: Trophy },
+];
+
 const personalOrders = [
   { orderNo: 'VP20260329-021', date: '2026/03/29 14:20', amount: 3680, paymentStatus: '已收款', shippingStatus: '已出貨', mainStatus: '已完成' },
   { orderNo: 'VP20260330-008', date: '2026/03/30 11:05', amount: 4259, paymentStatus: '待收款', shippingStatus: '待出貨', mainStatus: '處理中' },
@@ -1114,6 +1120,19 @@ export default function App() {
                   ))}
                 </section>
 
+                <section className="profile-action-grid">
+                  {profileQuickActions.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.title} className="card profile-action-card">
+                        <div className="profile-action-icon"><Icon className="small-icon" /></div>
+                        <div className="profile-action-title">{item.title}</div>
+                        <div className="profile-action-desc">{item.desc}</div>
+                      </div>
+                    );
+                  })}
+                </section>
+
                 <section className="two-column-grid profile-top-grid">
                   <div className="card order-panel">
                     <div className="panel-head">
@@ -1155,6 +1174,10 @@ export default function App() {
                       <div className="metric-box large"><span>目前排名</span><strong>#3</strong></div>
                       <div className="metric-box large"><span>退款扣回影響</span><strong>-$1,240</strong></div>
                     </div>
+                    <div className="profile-note-list">
+                      <div className="profile-note-item">本月主力商品：女神酵素液 / 美妍X關鍵賦活飲</div>
+                      <div className="profile-note-item">待追蹤：1 筆待收款、2 筆待出貨、1 筆換貨處理</div>
+                    </div>
                   </div>
                 </section>
 
@@ -1183,16 +1206,19 @@ export default function App() {
                       .filter((item) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase()))
                       .map((item) => (
                       <div key={item.orderNo} className="history-row">
-                        <div>
+                        <div className="history-main">
                           <div className="history-order">{item.orderNo}</div>
                           <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
+                          <div className="history-statuses">
+                            <span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                            <span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span>
+                            <span className="badge badge-soft">{item.mainStatus}</span>
+                          </div>
                         </div>
-                        <div className="history-statuses">
-                          <span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                          <span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span>
-                          <span className="badge badge-soft">{item.mainStatus}</span>
+                        <div className="history-side">
+                          <div className="history-amount">${item.amount}</div>
+                          <button type="button" className="ghost-button compact-btn history-detail-btn">查看詳情</button>
                         </div>
-                        <div className="history-amount">${item.amount}</div>
                       </div>
                     ))}
                   </div>
