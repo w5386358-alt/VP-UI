@@ -18,11 +18,19 @@ import {
   Warehouse,
   ChevronRight,
   Sparkles,
-  ScanLine,
   CreditCard,
   Boxes,
   ClipboardList,
   ArrowUpRight,
+  Truck,
+  Store,
+  MapPin,
+  Phone,
+  User,
+  Wallet,
+  BadgePercent,
+  FileText,
+  Receipt,
 } from 'lucide-react';
 
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
@@ -32,6 +40,9 @@ type Product = { id: string; code: string; name: string; category: string; price
 type Customer = { id: string; name: string; phone: string; level: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string };
+type ShippingMethod = '宅配' | '店到店' | '自取';
+type CartItem = Product & { qty: number };
+type WarehouseTab = 'shipping' | 'stock' | 'query';
 
 type WorkflowCard = {
   title: string;
@@ -46,6 +57,8 @@ const mockProducts: Product[] = [
   { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
   { id: '3', code: 'P301', name: '瞬白激光精華4G', category: '保養', price: 1680, enabled: true, stock: 9 },
   { id: '4', code: 'P304', name: '奇肌修復全能霜', category: '保養', price: 1980, enabled: false, stock: 0 },
+  { id: '5', code: 'P305', name: '超逆齡修復菁萃', category: '保養', price: 2280, enabled: true, stock: 14 },
+  { id: '6', code: 'E408', name: '魔力抹茶機能飲', category: '保健', price: 1380, enabled: true, stock: 22 },
 ];
 
 const mockCustomers: Customer[] = [
@@ -65,14 +78,33 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
   { key: 'products', label: '商品', icon: Package },
   { key: 'customers', label: '客戶', icon: Users },
   { key: 'staff', label: '人員', icon: UserCog },
-  { key: 'orders', label: '訂單', icon: ShoppingCart },
+  { key: 'orders', label: '訂購', icon: ShoppingCart },
   { key: 'inventory', label: '倉儲', icon: Warehouse },
+];
+
+
+const shippingQueue = [
+  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high' },
+  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium' },
+  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium' },
+];
+
+const inventoryFlow = [
+  { title: '入庫作業', desc: '對齊 inventory_logs，支援商品條碼 + QR 身分識別寫入。', tags: ['入庫', '期初', '供應商'] },
+  { title: '庫存查詢', desc: '以商品條碼查總庫存，以 QR 身分識別查個別數量。', tags: ['商品條碼', 'QR(A)*2', 'QR(B)*1'] },
+  { title: '異動紀錄', desc: '出貨、退貨、換貨退回、換貨出庫、報廢都能留痕跡。', tags: ['inventory_logs', '時間軸', '防超賣'] },
+];
+
+const queryExamples = [
+  { label: '商品條碼查詢', value: '顯示商品名稱、商品條碼、總庫存、最近入庫時間、各 QR 加總' },
+  { label: 'QR 身分識別查詢', value: '顯示該 QR 數量、入庫時間、入庫人員、商品名稱與條碼' },
+  { label: '訂單查詢', value: '顯示待出貨 / 已出貨 / 已退款 / 已換貨，供出貨與回補判讀' },
 ];
 
 const workflowCards: WorkflowCard[] = [
   {
     title: '訂購介面',
-    desc: '依 GAS 既有邏輯承接商品、客戶、價格層級、購物車與下單流程，之後直接延伸為正式前台。',
+    desc: '依 GAS 既有邏輯承接商品、客戶、價格層級、購物車與下單流程，這版先把前台骨架與資料卡位整理好。',
     accent: 'rose',
     icon: Sparkles,
     bullets: ['商品列表 / 分類 / 搜尋', '客戶資料 / 配送欄位', '訂單主檔 / 訂單明細'],
@@ -168,12 +200,18 @@ function getSearchPlaceholder(active: NavKey) {
     case 'staff':
       return '搜尋姓名 / 登入ID / 角色 / 階級';
     case 'orders':
-      return '之後會接訂單編號 / 客戶 / 收款 / 出貨';
+      return '搜尋商品 / 客戶 / 電話 / 配送方式';
     case 'inventory':
       return '之後會接條碼 / QR / 商品 / 出貨狀態';
     default:
       return '搜尋系統資料與模組';
   }
+}
+
+function getShippingFee(method: ShippingMethod) {
+  if (method === '宅配') return 100;
+  if (method === '店到店') return 65;
+  return 0;
 }
 
 function StatusBadge({ enabled }: { enabled: boolean }) {
@@ -260,6 +298,19 @@ export default function App() {
   const [dataMode, setDataMode] = useState<'firebase' | 'mock'>('mock');
   const [user] = useState<SessionUser>({ name: '吳秉宸', loginId: 'vp001', role: 'admin', rank: '核心人員' });
 
+  const [cart, setCart] = useState<CartItem[]>([
+    { ...mockProducts[0], qty: 1 },
+    { ...mockProducts[2], qty: 2 },
+  ]);
+  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('宅配');
+  const [customerName, setCustomerName] = useState('王小美');
+  const [customerPhone, setCustomerPhone] = useState('0912345678');
+  const [customerAddress, setCustomerAddress] = useState('新竹市東區食品路 88 號');
+  const [remark, setRemark] = useState('晚上可收件，若自取請先通知。');
+  const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
+  const [discountValue, setDiscountValue] = useState(0);
+  const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
+
   async function loadFirebaseData() {
     setBooting(true);
     try {
@@ -325,10 +376,48 @@ export default function App() {
     return staff.filter((s) => [s.name, s.loginId, s.role, s.rank].join(' ').toLowerCase().includes(q));
   }, [keyword, staff]);
 
+  const filteredOrderProducts = useMemo(() => {
+    const q = keyword.trim().toLowerCase();
+    const source = products.filter((item) => item.enabled);
+    if (!q) return source;
+    return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
+  }, [keyword, products]);
+
+  const shippingFee = getShippingFee(shippingMethod);
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const discountAmount = discountMode === '固定金額' ? discountValue : 0;
+  const grandTotal = Math.max(0, subtotal + shippingFee - discountAmount);
+
   const lowStockCount = products.filter((p) => p.stock <= 10).length;
   const enabledProducts = products.filter((p) => p.enabled).length;
   const vipCustomers = customers.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
+
+  function addToCart(item: Product) {
+    if (!item.enabled || item.stock <= 0) return;
+    setCart((prev) => {
+      const found = prev.find((entry) => entry.id === item.id);
+      if (found) {
+        return prev.map((entry) =>
+          entry.id === item.id ? { ...entry, qty: Math.min(entry.qty + 1, Math.max(item.stock, 1)) } : entry,
+        );
+      }
+      return [...prev, { ...item, qty: 1 }];
+    });
+  }
+
+  function updateQty(id: string, nextQty: number) {
+    setCart((prev) =>
+      prev
+        .map((entry) => (entry.id === id ? { ...entry, qty: Math.max(1, Math.min(nextQty, Math.max(entry.stock, 1))) } : entry))
+        .filter((entry) => entry.qty > 0),
+    );
+  }
+
+  function removeFromCart(id: string) {
+    setCart((prev) => prev.filter((entry) => entry.id !== id));
+  }
 
   return (
     <div className="app-shell">
@@ -528,17 +617,21 @@ export default function App() {
               <>
                 <SectionIntro
                   title="客戶主資料"
-                  desc="維持你原本客戶檔資料邏輯，先把姓名、電話、客戶層級做成適合手機閱讀的資訊卡。"
-                  stats={[`總數 ${customers.length}`, `VIP / 代理 ${vipCustomers}`, '後續可接地址 / 配送資訊']}
+                  desc="先把客戶姓名、電話與客戶層級整理成較易閱讀的卡片模式，後續可直接接地址、收件方式、歷史訂單。"
+                  stats={[`總數 ${customers.length}`, `VIP / 代理 ${vipCustomers}`, '可延伸地址 / 配送資訊']}
                 />
                 <section className="record-grid customer-grid">
                   {filteredCustomers.map((item) => (
-                    <div key={item.id} className="card data-card customer-card">
+                    <div key={item.id} className="card data-card">
+                      <div className="data-card-top">
+                        <span className="badge badge-neutral">客戶資料</span>
+                        <span className="badge badge-soft">{item.level}</span>
+                      </div>
                       <div className="data-card-title">{item.name}</div>
-                      <div className="data-card-subtitle">{item.phone}</div>
+                      <div className="data-card-subtitle">電話：{item.phone}</div>
                       <div className="data-chip-row">
-                        <span className="badge badge-role">{item.level}</span>
-                        <span className="badge badge-neutral">客戶ID {item.id}</span>
+                        <span className="badge badge-neutral">地址欄位待接</span>
+                        <span className="badge badge-neutral">歷史訂單待接</span>
                       </div>
                     </div>
                   ))}
@@ -549,22 +642,22 @@ export default function App() {
             {active === 'staff' && (
               <>
                 <SectionIntro
-                  title="人員主資料"
-                  desc="這區保留你的人員管理邏輯，強化角色、階級、登入 ID 的呈現，方便後面接權限與個人資料頁。"
-                  stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '後續可接角色權限']}
+                  title="人員管理"
+                  desc="承接你原本人員管理表的邏輯，這版先整理登入 ID、角色、階級與啟用狀態的視覺層級。"
+                  stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限骨架']}
                 />
                 <section className="record-grid staff-grid">
                   {filteredStaff.map((item) => (
-                    <div key={item.id} className="card data-card staff-card">
+                    <div key={item.id} className="card data-card">
                       <div className="data-card-top">
-                        <span className="badge badge-neutral">{item.role}</span>
+                        <span className="badge badge-role">{item.role}</span>
                         <StatusBadge enabled={item.enabled} />
                       </div>
                       <div className="data-card-title">{item.name}</div>
                       <div className="data-card-subtitle">登入 ID：{item.loginId}</div>
                       <div className="data-chip-row">
-                        <span className={getRankClass(item.rank)}>{item.rank}</span>
-                        <span className="badge badge-role">{item.role}</span>
+                        <span className={getRankClass(item.rank)}>階級 / {item.rank}</span>
+                        <span className="badge badge-neutral">權限模組待接</span>
                       </div>
                     </div>
                   ))}
@@ -573,39 +666,260 @@ export default function App() {
             )}
 
             {active === 'orders' && (
-              <PlaceholderCard
-                title="訂單模組 UI 骨架已預留"
-                desc="下一步直接承接 orders / order_items / payments。畫面會朝你的 GAS 下單邏輯做：客戶資料、配送方式、購物車、價格層級、收款狀態。"
-                bullets={['訂單主檔 / 明細', '客戶資料 / 地址 / 配送', '已收款 / 待出貨 / 已完成', '行動版購物車抽屜']}
-              />
+              <>
+                <SectionIntro
+                  title="訂購介面骨架"
+                  desc="這版先把前台購物、客戶資料、配送方式、訂單摘要放進同一個工作流裡，版型直接對齊你之後要接的 GAS 下單邏輯。"
+                  stats={[`購物車 ${itemCount} 件`, `配送 ${shippingMethod}`, `合計 $${grandTotal}`]}
+                />
+
+                <section className="order-layout">
+                  <div className="order-main">
+                    <div className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">商品列表</div>
+                          <div className="panel-desc">保留商品分類 / 搜尋 / 加入購物車節奏，後續可直接接前台正式下單流程。</div>
+                        </div>
+                        <span className="badge badge-soft">價格層級 / {user.rank === '核心人員' ? '總代理價格' : 'VIP價格'}</span>
+                      </div>
+
+                      <div className="catalog-grid">
+                        {filteredOrderProducts.map((item) => (
+                          <div key={item.id} className="catalog-card">
+                            <div className="catalog-meta-row">
+                              <span className="data-code">{item.code}</span>
+                              <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>
+                                {item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}
+                              </span>
+                            </div>
+                            <div className="catalog-name">{item.name}</div>
+                            <div className="catalog-desc">{item.category} / 依身分與階級可切換價格顯示</div>
+                            <div className="catalog-footer">
+                              <div>
+                                <div className="mini-label">目前價格</div>
+                                <div className="catalog-price">${item.price}</div>
+                              </div>
+                              <button type="button" className="mini-add-btn" onClick={() => addToCart(item)} disabled={!item.enabled || item.stock <= 0}>
+                                加入
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">客戶與配送資料</div>
+                          <div className="panel-desc">欄位命名依你後續 GAS 邏輯保留：客戶姓名、電話、地址、配送方式、備註。</div>
+                        </div>
+                        <span className="badge badge-neutral">訂單主檔欄位</span>
+                      </div>
+
+                      <div className="form-grid two-col">
+                        <label className="field-card">
+                          <span className="field-label"><User className="small-icon" />客戶姓名</span>
+                          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="請輸入客戶姓名" />
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Phone className="small-icon" />客戶電話</span>
+                          <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="請輸入電話" />
+                        </label>
+                        <label className="field-card field-span-2">
+                          <span className="field-label"><MapPin className="small-icon" />收件地址 / 店名</span>
+                          <input value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="宅配填地址，店到店填店名，自取可留空" />
+                        </label>
+                      </div>
+
+                      <div className="shipping-method-row">
+                        {(['宅配', '店到店', '自取'] as ShippingMethod[]).map((method) => (
+                          <button
+                            key={method}
+                            type="button"
+                            className={`shipping-chip ${shippingMethod === method ? 'active' : ''}`}
+                            onClick={() => setShippingMethod(method)}
+                          >
+                            {method === '自取' ? <Store className="small-icon" /> : <Truck className="small-icon" />}
+                            <span>{method}</span>
+                            <strong>${getShippingFee(method)}</strong>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="form-grid two-col form-gap-top">
+                        <label className="field-card">
+                          <span className="field-label"><BadgePercent className="small-icon" />折扣模式</span>
+                          <select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as '無' | '固定金額')}>
+                            <option value="無">無</option>
+                            <option value="固定金額">固定金額</option>
+                          </select>
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Wallet className="small-icon" />折扣金額</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={discountValue}
+                            onChange={(e) => setDiscountValue(Number(e.target.value || 0))}
+                            placeholder="0"
+                            disabled={discountMode === '無'}
+                          />
+                        </label>
+                        <label className="field-card field-span-2">
+                          <span className="field-label"><FileText className="small-icon" />訂單備註</span>
+                          <textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={4} placeholder="例：收款提醒、配送備註、時間要求" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="order-side">
+                    <div className="card order-panel sticky-panel">
+                      <div className="panel-head compact-head">
+                        <div>
+                          <div className="panel-title">購物車摘要</div>
+                          <div className="panel-desc">之後可直接對接 order_items、shipping、payments。</div>
+                        </div>
+                        <span className="badge badge-role">{itemCount} 件</span>
+                      </div>
+
+                      <div className="cart-list">
+                        {cart.map((item) => (
+                          <div key={item.id} className="cart-item">
+                            <div className="cart-item-top">
+                              <div>
+                                <div className="cart-name">{item.name}</div>
+                                <div className="cart-meta">{item.code} / 單價 ${item.price}</div>
+                              </div>
+                              <button type="button" className="text-button" onClick={() => removeFromCart(item.id)}>移除</button>
+                            </div>
+                            <div className="cart-item-bottom">
+                              <div className="qty-box">
+                                <button type="button" onClick={() => updateQty(item.id, item.qty - 1)}>-</button>
+                                <span>{item.qty}</span>
+                                <button type="button" onClick={() => updateQty(item.id, item.qty + 1)}>+</button>
+                              </div>
+                              <strong>${item.price * item.qty}</strong>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="summary-lines">
+                        <div><span>商品小計</span><strong>${subtotal}</strong></div>
+                        <div><span>運費</span><strong>${shippingFee}</strong></div>
+                        <div><span>折扣</span><strong>-${discountAmount}</strong></div>
+                        <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
+                      </div>
+
+                      <button type="button" className="primary-button full-width">
+                        <Receipt className="small-icon" />送出訂單（UI示意）
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </>
             )}
 
             {active === 'inventory' && (
-              <PlaceholderCard
-                title="倉儲模組 UI 骨架已預留"
-                desc="下一步直接承接 inventory / inventory_logs / shipping，對齊你現在的條碼、QR、入庫、出貨、退貨、換貨邏輯。"
-                bullets={['出貨區 / 庫存區 / 查詢區', '商品條碼 / QR 身分識別', '出入庫紀錄時間軸', '退貨 / 換貨 / 回補庫存']}
-              />
+              <>
+                <SectionIntro
+                  title="倉儲中心骨架"
+                  desc="這版先把倉儲拆成出貨區、庫存區、查詢區，版面依你原本 GAS 倉儲邏輯去排，不亂動資料規則。"
+                  stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單骨架']}
+                />
+
+                <div className="warehouse-tab-row">
+                  <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}>
+                    <Truck className="small-icon" />出貨區
+                  </button>
+                  <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}>
+                    <Boxes className="small-icon" />庫存區
+                  </button>
+                  <button type="button" className={`warehouse-tab ${warehouseTab === 'query' ? 'active' : ''}`} onClick={() => setWarehouseTab('query')}>
+                    <Search className="small-icon" />查詢區
+                  </button>
+                </div>
+
+                {warehouseTab === 'shipping' && (
+                  <section className="warehouse-layout">
+                    <div className="warehouse-main">
+                      <div className="card order-panel">
+                        <div className="panel-head">
+                          <div>
+                            <div className="panel-title">待出貨訂單</div>
+                            <div className="panel-desc">先把出貨作業、出貨單、已收款判斷集中在同一區，方便你下一步接 shipping 與 orders。</div>
+                          </div>
+                          <span className="badge badge-danger">需優先處理 {shippingQueue.length} 筆</span>
+                        </div>
+
+                        <div className="shipping-queue">
+                          {shippingQueue.map((item) => (
+                            <div key={item.orderNo} className="shipping-row">
+                              <div>
+                                <div className="shipping-order">{item.orderNo}</div>
+                                <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
+                              </div>
+                              <div className="shipping-actions">
+                                <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
+                                <button type="button" className="ghost-button compact-btn">出貨作業</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="warehouse-side">
+                      <div className="card order-panel sticky-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">出貨區重點</div>
+                            <div className="panel-desc">直接對齊你原本出貨邏輯。</div>
+                          </div>
+                        </div>
+                        <div className="stack-list compact">
+                          <div>已收款才可出貨</div>
+                          <div>同 QR 多數量要依剩餘可出貨數量判讀</div>
+                          <div>換貨 B 需自動產生金額 0 的出貨單</div>
+                          <div>shipping / orders / inventory / inventory_logs 要一起留痕跡</div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {warehouseTab === 'stock' && (
+                  <section className="warehouse-flow-grid">
+                    {inventoryFlow.map((item) => (
+                      <div key={item.title} className="card flow-card">
+                        <div className="flow-title">{item.title}</div>
+                        <div className="flow-desc">{item.desc}</div>
+                        <div className="data-chip-row">
+                          {item.tags.map((tag) => <span key={tag} className="badge badge-neutral">{tag}</span>)}
+                        </div>
+                      </div>
+                    ))}
+                  </section>
+                )}
+
+                {warehouseTab === 'query' && (
+                  <section className="warehouse-query-grid">
+                    {queryExamples.map((item) => (
+                      <div key={item.label} className="card query-card">
+                        <div className="query-label">{item.label}</div>
+                        <div className="query-value">{item.value}</div>
+                      </div>
+                    ))}
+                  </section>
+                )}
+              </>
             )}
           </>
         )}
       </main>
-
-      <div className="mobile-nav">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button key={item.key} type="button" className={`mobile-nav-btn ${active === item.key ? 'active' : ''}`} onClick={() => setActive(item.key)}>
-              <Icon className="nav-icon" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-        <button type="button" className="mobile-nav-btn refresh" onClick={() => void loadFirebaseData()}>
-          <RefreshCw className="nav-icon" />
-          <span>刷新</span>
-        </button>
-      </div>
     </div>
   );
 }
