@@ -1098,7 +1098,7 @@ export default function App() {
                   ))}
                 </section>
               </>
-
+            )}
 
             {active === 'profile' && (
               <>
