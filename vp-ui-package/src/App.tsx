@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
-type NavKey = 'dashboard' | 'products' | 'customers' | 'staff' | 'orders' | 'inventory';
+type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff';
 
 type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number };
 type Customer = { id: string; name: string; phone: string; level: string };
@@ -75,11 +75,12 @@ const mockStaff: Staff[] = [
 
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'dashboard', label: '總覽', icon: BarChart3 },
+  { key: 'orders', label: '訂購', icon: ShoppingCart },
+  { key: 'inventory', label: '倉儲', icon: Warehouse },
+  { key: 'accounting', label: '會計中心', icon: CreditCard },
   { key: 'products', label: '商品', icon: Package },
   { key: 'customers', label: '客戶', icon: Users },
   { key: 'staff', label: '人員', icon: UserCog },
-  { key: 'orders', label: '訂購', icon: ShoppingCart },
-  { key: 'inventory', label: '倉儲', icon: Warehouse },
 ];
 
 
@@ -99,6 +100,38 @@ const queryExamples = [
   { label: '商品條碼查詢', value: '顯示商品名稱、商品條碼、總庫存、最近入庫時間、各 QR 加總' },
   { label: 'QR 身分識別查詢', value: '顯示該 QR 數量、入庫時間、入庫人員、商品名稱與條碼' },
   { label: '訂單查詢', value: '顯示待出貨 / 已出貨 / 已退款 / 已換貨，供出貨與回補判讀' },
+];
+
+
+const paymentQueue = [
+  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳' },
+  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳' },
+  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單' },
+];
+
+const accountingSummary = [
+  { title: '今日實收', value: '$7,149', sub: '依實收總額統計' },
+  { title: '待收款', value: '$4,259', sub: '待確認收款 1 筆' },
+  { title: '退款處理', value: '$65', sub: '換貨運費獨立處理' },
+  { title: '本月毛利', value: '$18,420', sub: '原價 - 稅額 - 運費 - 成本' },
+];
+
+const accountingBoards = [
+  {
+    title: '收款 / 退款作業',
+    desc: '保留未稅價、應稅價%、運費、實收總額、統一編號、收款證明上傳的版位。',
+    bullets: ['已收款 / 已退款 防呆', '訂單紀錄日期區間', '收據 / 匯款截圖 / AI辨識位'],
+  },
+  {
+    title: '銷售統計',
+    desc: '給會議看的營收板，後續可直接接區間營收、稅額、運費、毛利與商品銷售圖。',
+    bullets: ['區間營收', '稅金總額', '運費總額'],
+  },
+  {
+    title: '排行榜 / 熱銷',
+    desc: '銷售冠軍、完成訂單數、熱門商品、退貨影響值都先預留位置。',
+    bullets: ['人員排行', '商品熱銷排行', '退款扣回績效'],
+  },
 ];
 
 const workflowCards: WorkflowCard[] = [
@@ -203,6 +236,8 @@ function getSearchPlaceholder(active: NavKey) {
       return '搜尋商品 / 客戶 / 電話 / 配送方式';
     case 'inventory':
       return '之後會接條碼 / QR / 商品 / 出貨狀態';
+    case 'accounting':
+      return '搜尋訂單編號 / 客戶 / 收款狀態 / 退款狀態 / 收款證明';
     default:
       return '搜尋系統資料與模組';
   }
@@ -446,6 +481,7 @@ export default function App() {
           {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
         </div>
 
+        <div className="nav-group-title">主功能選單</div>
         <div className="nav-list">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -461,6 +497,17 @@ export default function App() {
               </button>
             );
           })}
+        </div>
+
+        <div className="card accounting-shortcut">
+          <div className="shortcut-title">本版修正</div>
+          <button
+            type="button"
+            onClick={() => setActive('accounting')}
+            className={`shortcut-button ${active === 'accounting' ? 'active' : ''}`}
+          >
+            <CreditCard className="small-icon" />會計中心
+          </button>
         </div>
 
         <div className="sidebar-tip card">
@@ -915,6 +962,119 @@ export default function App() {
                     ))}
                   </section>
                 )}
+              </>
+            )}
+
+
+            {active === 'accounting' && (
+              <>
+                <SectionIntro
+                  title="會計中心骨架"
+                  desc="這版先把收款 / 退款作業、銷售統計、排行榜三塊版位整理好，欄位命名直接對齊你後面要接的 GAS 會計邏輯。"
+                  stats={[`待收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
+                />
+
+                <section className="summary-grid">
+                  {accountingSummary.map((item) => (
+                    <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />
+                  ))}
+                </section>
+
+                <section className="two-column-grid accounting-top-grid">
+                  <div className="card order-panel">
+                    <div className="panel-head">
+                      <div>
+                        <div className="panel-title">收款 / 退款作業</div>
+                        <div className="panel-desc">保留你指定的欄位：統一編號、未稅價、應稅價%、運費、實收總額、收款證明。</div>
+                      </div>
+                      <span className="badge badge-role">會計流程</span>
+                    </div>
+
+                    <div className="form-grid two-col accounting-form-grid">
+                      <label className="field-card">
+                        <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
+                        <input value="VP20260331-001" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><User className="small-icon" />客戶姓名</span>
+                        <input value="王小美" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><Wallet className="small-icon" />未稅價</span>
+                        <input value="4056" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
+                        <input value="5" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><Truck className="small-icon" />運費</span>
+                        <input value="100" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
+                        <input value="4259" readOnly />
+                      </label>
+                      <label className="field-card field-span-2">
+                        <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
+                        <textarea rows={4} readOnly value="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
+                      </label>
+                    </div>
+
+                    <div className="accounting-action-row">
+                      <button type="button" className="primary-button"><CreditCard className="small-icon" />確認收款</button>
+                      <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
+                    </div>
+                  </div>
+
+                  <div className="card order-panel">
+                    <div className="panel-head compact-head">
+                      <div>
+                        <div className="panel-title">會計模組重點</div>
+                        <div className="panel-desc">依你目前規格，這邊先把規則放好。</div>
+                      </div>
+                    </div>
+                    <div className="stack-list compact">
+                      <div>待收款 / 未收款 / 待出貨一律紅色</div>
+                      <div>已收款 / 已完成 / 已出貨一律綠色</div>
+                      <div>已退款必須防重複操作</div>
+                      <div>退款會影響報表、毛利、排行、個人業績</div>
+                      <div>訂單紀錄需支援日期區間與狀態篩選</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="card order-panel">
+                  <div className="panel-head">
+                    <div>
+                      <div className="panel-title">訂單紀錄 / 收款狀態</div>
+                      <div className="panel-desc">這裡先整理會計最常看的列表，後續直接接 payments / refunds / sales_report。</div>
+                    </div>
+                    <span className="badge badge-soft">日期區間 / 狀態篩選待接</span>
+                  </div>
+
+                  <div className="shipping-queue accounting-queue">
+                    {paymentQueue.map((item) => (
+                      <div key={item.orderNo} className="shipping-row accounting-row">
+                        <div>
+                          <div className="shipping-order">{item.orderNo}</div>
+                          <div className="shipping-meta">{item.customer} / 運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                        </div>
+                        <div className="shipping-actions accounting-statuses">
+                          <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                          <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : 'badge-soft'}`}>{item.shippingStatus}</span>
+                          <strong className="accounting-amount">${item.amount}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="three-column-grid">
+                  {accountingBoards.map((item) => (
+                    <PlaceholderCard key={item.title} title={item.title} desc={item.desc} bullets={item.bullets} />
+                  ))}
+                </section>
               </>
             )}
           </>

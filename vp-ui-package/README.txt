@@ -11,3 +11,6 @@ Firestore collections 預設讀取：
 - products
 - customers
 - staff
+
+
+2026-03-31 v5 修正：左側加入『會計中心』主選單與快捷入口，後續版本以此版為基底。

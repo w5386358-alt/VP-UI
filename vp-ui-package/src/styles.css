@@ -100,7 +100,8 @@ button:hover { transform: translateY(-1px); }
 
 .user-card,
 .source-card,
-.sidebar-tip {
+.sidebar-tip,
+.accounting-shortcut {
   margin-top: 16px;
   padding: 18px;
 }
@@ -119,7 +120,50 @@ button:hover { transform: translateY(-1px); }
 .sidebar-tip-title { font-size: 15px; font-weight: 800; }
 .sidebar-tip-desc { margin-top: 8px; line-height: 1.7; font-size: 13px; }
 
-.nav-list { margin-top: 16px; display: grid; gap: 10px; }
+
+.nav-group-title {
+  margin-top: 18px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #b86b86;
+}
+
+.accounting-shortcut {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fff4f8 0%, #fff9fc 100%);
+}
+
+.shortcut-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #c71f54;
+}
+
+.shortcut-button {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid #f2bfd0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: white;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.shortcut-button.active {
+  background: linear-gradient(135deg, var(--primary) 0%, #ff6d98 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.nav-list { margin-top: 10px; display: grid; gap: 10px; }
 .nav-button,
 .mobile-nav-btn {
   width: 100%;
@@ -906,6 +950,54 @@ button:hover { transform: translateY(-1px); }
   .warehouse-layout,
   .warehouse-flow-grid,
   .warehouse-query-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.three-column-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.accounting-top-grid {
+  align-items: start;
+}
+
+.accounting-form-grid input,
+.accounting-form-grid textarea {
+  background: #fffafc;
+}
+
+.accounting-action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.accounting-queue {
+  margin-top: 8px;
+}
+
+.accounting-row {
+  gap: 16px;
+}
+
+.accounting-statuses {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.accounting-amount {
+  font-size: 20px;
+  color: var(--text);
+}
+
+@media (max-width: 1080px) {
+  .three-column-grid {
     grid-template-columns: 1fr;
   }
 }
