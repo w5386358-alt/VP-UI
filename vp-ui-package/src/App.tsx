@@ -1,51 +1,63 @@
-import React,{useState} from "react";
+let products = [];
+let cart = [];
 
-export default function App(){
+// 載入商品
+async function loadProducts(){
+  const res = await fetch(API_URL + "?action=getProducts");
+  products = await res.json();
 
-const [cart,setCart]=useState([]);
-const [name,setName]=useState("");
-const [phone,setPhone]=useState("");
-const [address,setAddress]=useState("");
-
-function addProduct(){
-  setCart([...cart,{name:"商品",price:100,qty:1}]);
+  renderProducts();
 }
 
-function createOrder(){
-  if(!name) return alert("請填姓名");
-  if(!phone) return alert("請填電話");
-  if(cart.length===0) return alert("請加商品");
+// 渲染商品
+function renderProducts(){
+  const el = document.getElementById("productList");
+  el.innerHTML = "";
 
-  console.log("ORDER:",{
-    customer:name,
-    phone,
-    address,
-    items:cart
+  products.forEach(p=>{
+    el.innerHTML += `
+      <div class="product">
+        <h4>${p.name}</h4>
+        <p>$${p.price}</p>
+        <button onclick="addToCart('${p.id}')">加入</button>
+      </div>
+    `;
+  });
+}
+
+// 加入購物車
+function addToCart(id){
+  const item = products.find(p=>p.id==id);
+  cart.push(item);
+  renderCart();
+}
+
+// 購物車
+function renderCart(){
+  const el = document.getElementById("cartItems");
+  el.innerHTML = "";
+
+  cart.forEach(i=>{
+    el.innerHTML += `<div>${i.name}</div>`;
+  });
+}
+
+// 送出訂單
+async function submitOrder(){
+  const data = {
+    name: document.getElementById("name").value,
+    phone: document.getElementById("phone").value,
+    address: document.getElementById("address").value,
+    shipping: document.getElementById("shipping").value,
+    items: cart
+  };
+
+  await fetch(API_URL,{
+    method:"POST",
+    body: JSON.stringify(data)
   });
 
-  alert("訂單建立成功（流程已通）");
+  alert("訂單送出成功");
 }
 
-return(
-<div style={{padding:20}}>
-<h2>訂購系統（可用版）</h2>
-
-<button onClick={addProduct}>加入商品</button>
-
-<div>
-<h3>購物車</h3>
-{cart.map((i,idx)=><div key={idx}>{i.name}</div>)}
-</div>
-
-<div>
-<h3>客戶資料</h3>
-<input placeholder="姓名" value={name} onChange={e=>setName(e.target.value)}/>
-<input placeholder="電話" value={phone} onChange={e=>setPhone(e.target.value)}/>
-<input placeholder="地址" value={address} onChange={e=>setAddress(e.target.value)}/>
-</div>
-
-<button onClick={createOrder}>建立訂單</button>
-
-</div>
-);
-}
+loadProducts();
