@@ -25,6 +25,7 @@ type Product = { id: string; code: string; name: string; category: string; price
 type Customer = { id: string; name: string; phone: string; level: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
 type Order = { id: string; orderNo: string; customerName: string; paymentStatus: string; orderStatus: string; totalAmount: number; createdAt: string };
+type CartItem = { productId: string; code: string; name: string; price: number; qty: number; subtotal: number };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string };
 
 const mockProducts: Product[] = [
@@ -51,6 +52,8 @@ const mockOrders: Order[] = [
   { id: 'o2', orderNo: 'VP20260331-002', customerName: '林雅雯', paymentStatus: '未收款', orderStatus: '待出貨', totalAmount: 1380, createdAt: '2026/03/31 11:05' },
   { id: 'o3', orderNo: 'VP20260331-003', customerName: '陳佳玲', paymentStatus: '已收款', orderStatus: '待出貨', totalAmount: 899, createdAt: '2026/03/31 12:40' },
 ];
+
+const priceTierOptions = ['VIP價格', '代理商價格', '總代理價格'] as const;
 
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'dashboard', label: '總覽', icon: BarChart3 },
@@ -167,6 +170,11 @@ export default function App() {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [dataMode, setDataMode] = useState<'firebase' | 'mock'>('mock');
   const [user] = useState<SessionUser>({ name: '吳秉宸', loginId: 'vp001', role: 'admin', rank: '核心人員' });
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [priceTier, setPriceTier] = useState<(typeof priceTierOptions)[number]>('VIP價格');
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [orderMessage, setOrderMessage] = useState('');
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -244,13 +252,76 @@ export default function App() {
     return orders.filter((o) => [o.orderNo, o.customerName, o.paymentStatus, o.orderStatus].join(' ').toLowerCase().includes(q));
   }, [keyword, orders]);
 
+  const selectedCustomer = useMemo(() => customers.find((c) => c.id === selectedCustomerId) || null, [customers, selectedCustomerId]);
+  const cartTotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.subtotal, 0), [cartItems]);
+
+  function resolvePrice(product: Product) {
+    return product.price;
+  }
+
+  function addToCart(product: Product) {
+    const price = resolvePrice(product);
+    setCartItems((prev) => {
+      const found = prev.find((item) => item.productId === product.id);
+      if (found) {
+        return prev.map((item) => item.productId === product.id ? { ...item, qty: item.qty + 1, subtotal: (item.qty + 1) * item.price } : item);
+      }
+      return [...prev, { productId: product.id, code: product.code, name: product.name, price, qty: 1, subtotal: price }];
+    });
+    setOrderMessage('');
+  }
+
+  function updateCartQty(productId: string, nextQty: number) {
+    if (nextQty <= 0) {
+      setCartItems((prev) => prev.filter((item) => item.productId !== productId));
+      return;
+    }
+    setCartItems((prev) => prev.map((item) => item.productId === productId ? { ...item, qty: nextQty, subtotal: nextQty * item.price } : item));
+  }
+
+  async function createOrder() {
+    if (!selectedCustomer) {
+      setOrderMessage('請先選擇客戶');
+      return;
+    }
+    if (!cartItems.length) {
+      setOrderMessage('請先加入商品到購物車');
+      return;
+    }
+
+    const now = new Date();
+    const orderNo = `VP${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(orders.length + 1).padStart(3, '0')}`;
+    const createdAt = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    setCreatingOrder(true);
+    try {
+      const nextOrder: Order = {
+        id: `local-${Date.now()}`,
+        orderNo,
+        customerName: selectedCustomer.name,
+        paymentStatus: '未收款',
+        orderStatus: '待處理',
+        totalAmount: cartTotal,
+        createdAt,
+      };
+      setOrders((prev) => [nextOrder, ...prev]);
+      setCartItems([]);
+      setSelectedCustomerId('');
+      setPriceTier('VIP價格');
+      setActive('orders');
+      setOrderMessage('下單UI已完成，下一步接 Firebase 寫入 orders / order_items');
+    } finally {
+      setCreatingOrder(false);
+    }
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand card">
           <div className="brand-kicker">VP SYSTEM</div>
           <div className="brand-title">Vercel UI</div>
-          <div className="brand-subtitle">Phase 1.6 Firebase + Orders</div>
+          <div className="brand-subtitle">Phase 2 下單 UI</div>
         </div>
 
         <div className="card user-card">
@@ -298,7 +369,7 @@ export default function App() {
         <div className="topbar">
           <div>
             <div className="page-kicker">VP 訂購系統 / Vercel UI</div>
-            <h1>Phase 1.6</h1>
+            <h1>Phase 2</h1>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
@@ -342,25 +413,25 @@ export default function App() {
             {active === 'dashboard' && (
               <section className="two-column-grid">
                 <div className="card content-card">
-                  <h2>Phase 1.6 完成內容</h2>
+                  <h2>Phase 2 完成內容</h2>
                   <div className="stack-list">
-                    <div>1. products / customers / staff / orders 已改成可接 Firebase</div>
-                    <div>2. 加入 fallback 機制，沒設好也不會炸版</div>
-                    <div>3. 加入資料來源狀態顯示</div>
-                    <div>4. 刷新按鈕已可重抓 Firebase</div>
-                    <div>5. 訂單列表已上線</div>
-                    <div>6. 下一步接 order_items / payments / 下單表單</div>
+                    <div>1. 已建立下單 UI 骨架</div>
+                    <div>2. 已加入購物車</div>
+                    <div>3. 已加入客戶選擇</div>
+                    <div>4. 已加入價格層級選擇</div>
+                    <div>5. 已可本地建立訂單列表</div>
+                    <div>6. 下一步接 Firebase 寫入 orders / order_items</div>
                   </div>
                 </div>
                 <div className="card content-card">
-                  <h2>你現在要補的環境變數</h2>
+                  <h2>現在要接的資料</h2>
                   <div className="stack-list compact">
-                    <div>VITE_FIREBASE_API_KEY</div>
-                    <div>VITE_FIREBASE_AUTH_DOMAIN</div>
-                    <div>VITE_FIREBASE_PROJECT_ID</div>
-                    <div>VITE_FIREBASE_STORAGE_BUCKET</div>
-                    <div>VITE_FIREBASE_MESSAGING_SENDER_ID</div>
-                    <div>VITE_FIREBASE_APP_ID</div>
+                    <div>orders</div>
+                    <div>order_items</div>
+                    <div>payments</div>
+                    <div>sales_report</div>
+                    <div>customer selector</div>
+                    <div>price tier mapping</div>
                   </div>
                 </div>
               </section>
@@ -425,9 +496,95 @@ export default function App() {
             )}
 
             {active === 'orders' && (
-              <section className="two-column-grid orders-grid">
-                <div className="card content-card">
-                  <h2>訂單列表</h2>
+              <section className="orders-layout">
+                <div className="card content-card order-builder-card">
+                  <div className="section-header-row">
+                    <h2>建立訂單</h2>
+                    <span className="badge badge-role">{priceTier}</span>
+                  </div>
+
+                  <div className="order-builder-grid">
+                    <div className="builder-panel">
+                      <div className="field-label">選擇客戶</div>
+                      <select className="field-select" value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)}>
+                        <option value="">請選擇客戶</option>
+                        {customers.map((item) => (
+                          <option key={item.id} value={item.id}>{item.name} / {item.phone}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="builder-panel">
+                      <div className="field-label">價格層級</div>
+                      <select className="field-select" value={priceTier} onChange={(e) => setPriceTier(e.target.value as (typeof priceTierOptions)[number])}>
+                        {priceTierOptions.map((item) => (
+                          <option key={item} value={item}>{item}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="product-picker-title">商品選擇</div>
+                  <div className="product-picker-grid">
+                    {products.map((item) => (
+                      <button key={item.id} type="button" className="product-pick-card" onClick={() => addToCart(item)}>
+                        <div className="product-pick-name">{item.name}</div>
+                        <div className="product-pick-meta">{item.code} ・ {item.category}</div>
+                        <div className="product-pick-footer">
+                          <span className="badge badge-price">${resolvePrice(item)}</span>
+                          <span className="badge badge-neutral">庫存 {item.stock}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card content-card cart-card">
+                  <div className="section-header-row">
+                    <h2>購物車</h2>
+                    <span className="badge badge-neutral">{cartItems.length} 項</span>
+                  </div>
+
+                  <div className="record-list scrollable cart-list">
+                    {cartItems.length ? cartItems.map((item) => (
+                      <div key={item.productId} className="record-item cart-item-row">
+                        <div>
+                          <div className="record-title">{item.name}</div>
+                          <div className="record-subtitle">{item.code} ・ 單價 ${item.price}</div>
+                        </div>
+                        <div className="cart-qty-wrap">
+                          <button type="button" className="qty-btn" onClick={() => updateCartQty(item.productId, item.qty - 1)}>-</button>
+                          <span className="qty-value">{item.qty}</span>
+                          <button type="button" className="qty-btn" onClick={() => updateCartQty(item.productId, item.qty + 1)}>+</button>
+                        </div>
+                        <span className="badge badge-price">${item.subtotal}</span>
+                      </div>
+                    )) : <div className="empty-cart">尚未加入商品</div>}
+                  </div>
+
+                  <div className="cart-summary">
+                    <div>
+                      <div className="muted-label">客戶</div>
+                      <div className="cart-summary-value">{selectedCustomer ? selectedCustomer.name : '未選擇'}</div>
+                    </div>
+                    <div>
+                      <div className="muted-label">訂單總額</div>
+                      <div className="cart-summary-total">${cartTotal}</div>
+                    </div>
+                  </div>
+
+                  {orderMessage ? <div className="order-message">{orderMessage}</div> : null}
+
+                  <button type="button" className="primary-button create-order-button" onClick={() => void createOrder()} disabled={creatingOrder}>
+                    <ShoppingCart className="small-icon" />{creatingOrder ? '建立中...' : '建立訂單'}
+                  </button>
+                </div>
+
+                <div className="card content-card order-list-card">
+                  <div className="section-header-row">
+                    <h2>訂單列表</h2>
+                    <span className="badge badge-role">已接 orders</span>
+                  </div>
                   <div className="record-list scrollable">
                     {filteredOrders.map((item) => (
                       <div key={item.id} className="record-item">
@@ -442,16 +599,6 @@ export default function App() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-                <div className="card content-card">
-                  <h2>訂單模組下一步</h2>
-                  <div className="stack-list">
-                    <div>1. 接 order_items</div>
-                    <div>2. 接 payments</div>
-                    <div>3. 做下單表單</div>
-                    <div>4. 做購物車抽屜</div>
-                    <div>5. 接客戶選擇與價格層級</div>
                   </div>
                 </div>
               </section>
