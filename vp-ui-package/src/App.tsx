@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
-import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
-import { Badge } from "./components/ui/badge";
-import { Tabs, TabsList, TabsContent } from "./components/ui/tabs";
-import { ScrollArea } from "./components/ui/scroll-area";
-import { Separator } from "./components/ui/separator";
+
 import { Search, Package, Users, UserCog, ShoppingCart, Warehouse, BarChart3, LogOut, RefreshCw, Bell, ShieldCheck, Database, Wifi, WifiOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { initializeApp, getApps, getApp } from "firebase/app";
@@ -536,6 +530,61 @@ export default function VercelUIPhase1() {
       </div>
     </div>
   );
+}
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function Card({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn("rounded-3xl border bg-white", className)}>{children}</div>;
+}
+
+function CardHeader({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn("p-4 pb-0", className)}>{children}</div>;
+}
+
+function CardTitle({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <h3 className={cn("text-xl font-bold", className)}>{children}</h3>;
+}
+
+function CardContent({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn("p-4", className)}>{children}</div>;
+}
+
+function Button({ className = "", children, variant, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "outline" | "default" }) {
+  const base = variant === "outline"
+    ? "border bg-white text-slate-700 hover:bg-slate-50"
+    : "bg-rose-600 text-white hover:bg-rose-700";
+  return <button {...props} className={cn("inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition", base, className)}>{children}</button>;
+}
+
+function Input({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={cn("w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none", className)} />;
+}
+
+function Badge({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <span className={cn("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium", className)}>{children}</span>;
+}
+
+function Tabs({ children }: { value: string; onValueChange: (value: string) => void; children: React.ReactNode }) {
+  return <div>{children}</div>;
+}
+
+function TabsList({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <div className={className}>{children}</div>;
+}
+
+function TabsContent({ value, className = "", children }: { value: string; className?: string; children: React.ReactNode }) {
+  return <div data-tab={value} className={className}>{children}</div>;
+}
+
+function ScrollArea({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn("overflow-auto", className)}>{children}</div>;
+}
+
+function Separator() {
+  return <div className="mx-4 border-t border-rose-100" />;
 }
 
 function SummaryCard({ title, value, sub }: { title: string; value: string; sub: string }) {
