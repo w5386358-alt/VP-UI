@@ -1,3 +1,33 @@
+import { getDB } from "./firebase";
+import { collection, getDocs } from "firebase/firestore";
+
+2. 找 useEffect，改成：
+
+useEffect(() => {
+  async function init() {
+    try {
+      const db = getDB();
+      const snap = await getDocs(collection(db, "products"));
+
+      const list = snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      if (list.length) {
+        setProducts(list as any);
+        setDataMode("firebase");
+        setFirebaseReady(true);
+      }
+    } catch (e) {
+      console.error("Firebase error", e);
+    } finally {
+      setBooting(false);
+    }
+  }
+  init();
+}, []);
+
 import { useState } from "react";
 
 export default function App(){
