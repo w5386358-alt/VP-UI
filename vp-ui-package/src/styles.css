@@ -1247,3 +1247,149 @@ button:hover { transform: translateY(-1px); }
     color: #bf2f5d;
   }
 }
+
+
+.warehouse-stack,
+.warehouse-stack-section {
+  display: grid;
+  gap: 16px;
+}
+
+.warehouse-main,
+.warehouse-side {
+  min-width: 0;
+}
+
+.warehouse-detail-grid,
+.warehouse-stock-grid,
+.warehouse-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.warehouse-detail-card,
+.warehouse-tool-card,
+.stock-snapshot-card {
+  padding: 20px;
+}
+
+.warehouse-card-head,
+.stock-card-top,
+.warehouse-log-item,
+.warehouse-result-item,
+.warehouse-check-item {
+  display: flex;
+  gap: 12px;
+}
+
+.warehouse-card-head,
+.stock-card-top {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.warehouse-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.warehouse-form-grid .wide,
+.warehouse-tool-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.warehouse-checklist,
+.warehouse-log-list,
+.warehouse-result-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.warehouse-check-item,
+.warehouse-log-item,
+.warehouse-result-item {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.88);
+}
+
+.warehouse-check-item,
+.warehouse-result-item {
+  flex-direction: column;
+}
+
+.warehouse-check-title,
+.warehouse-log-type,
+.warehouse-result-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.warehouse-check-desc,
+.warehouse-log-note,
+.warehouse-result-desc {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.warehouse-log-time {
+  min-width: 44px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #be2f5f;
+}
+
+.stock-big-number {
+  margin-top: 18px;
+  font-size: 42px;
+  font-weight: 900;
+  color: #243042;
+}
+
+.stock-sub {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.sidebar {
+  padding-bottom: 32px;
+}
+
+.accounting-shortcut {
+  margin-top: 14px;
+}
+
+.sidebar-tip {
+  margin-top: 14px;
+}
+
+@media (max-width: 1380px) {
+  .warehouse-detail-grid,
+  .warehouse-tool-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1180px) {
+  .warehouse-stock-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .warehouse-form-grid,
+  .shipping-row,
+  .warehouse-log-item {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .shipping-actions {
+    justify-content: flex-start;
+  }
+}
