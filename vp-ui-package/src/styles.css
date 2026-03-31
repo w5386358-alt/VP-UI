@@ -908,9 +908,10 @@ button:hover { transform: translateY(-1px); }
 }
 .warehouse-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .8fr);
-  gap: 16px;
-  margin-top: 16px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.82fr);
+  gap: 18px;
+  margin-top: 18px;
+  align-items: start;
 }
 .warehouse-flow-grid,
 .warehouse-query-grid {
@@ -933,6 +934,7 @@ button:hover { transform: translateY(-1px); }
   border: 1px solid var(--line);
   border-radius: 20px;
   background: rgba(255,255,255,0.92);
+  align-items: center;
 }
 .shipping-order, .flow-title, .query-label { font-size: 18px; font-weight: 800; }
 .shipping-meta, .flow-desc, .query-value { margin-top: 8px; color: var(--muted); line-height: 1.7; }
@@ -945,6 +947,21 @@ button:hover { transform: translateY(-1px); }
 }
 .compact-btn { padding: 10px 14px; border-radius: 14px; }
 .flow-card, .query-card { padding: 20px; }
+
+.warehouse-main > .order-panel,
+.warehouse-side > .order-panel {
+  padding: 22px;
+}
+
+.warehouse-side > .order-panel:last-child {
+  min-height: 0;
+}
+
+.warehouse-detail-card .accounting-action-row {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
 
 @media (max-width: 1080px) {
   .warehouse-layout,
@@ -1265,13 +1282,24 @@ button:hover { transform: translateY(-1px); }
 .warehouse-tool-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
+}
+
+.warehouse-detail-grid {
+  align-items: stretch;
 }
 
 .warehouse-detail-card,
 .warehouse-tool-card,
 .stock-snapshot-card {
   padding: 20px;
+}
+
+.warehouse-detail-card,
+.warehouse-tool-card {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .warehouse-card-head,
@@ -1307,6 +1335,25 @@ button:hover { transform: translateY(-1px); }
   display: grid;
   gap: 12px;
   margin-top: 16px;
+}
+
+.warehouse-checklist {
+  flex: 1;
+}
+
+.warehouse-log-list {
+  max-height: 438px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.warehouse-log-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.warehouse-log-list::-webkit-scrollbar-thumb {
+  background: #f4c2d2;
+  border-radius: 999px;
 }
 
 .warehouse-check-item,
@@ -1357,7 +1404,13 @@ button:hover { transform: translateY(-1px); }
 }
 
 .sidebar {
-  padding-bottom: 32px;
+  padding-bottom: 44px;
+}
+
+.sidebar-actions,
+.accounting-shortcut,
+.sidebar-tip {
+  scroll-margin-bottom: 28px;
 }
 
 .accounting-shortcut {
