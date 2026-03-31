@@ -159,6 +159,14 @@ const personalOrders = [
 ];
 
 
+const orderCategoryChips = ['全部商品', '保健', '保養', '優惠組合'];
+
+const quickCustomerCards = [
+  { name: '王小美', phone: '0912345678', address: '新竹市東區食品路 88 號', method: '宅配' as ShippingMethod },
+  { name: '林雅雯', phone: '0988777666', address: '竹北市成功八路 12 號', method: '店到店' as ShippingMethod },
+  { name: '門市自取客', phone: '0900111222', address: '自取免填地址', method: '自取' as ShippingMethod },
+];
+
 
 const workflowCards: WorkflowCard[] = [
   {
@@ -373,6 +381,7 @@ export default function App() {
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
+  const [orderCategory, setOrderCategory] = useState('全部商品');
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -441,10 +450,10 @@ export default function App() {
 
   const filteredOrderProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    const source = products.filter((item) => item.enabled);
+    const source = products.filter((item) => item.enabled).filter((item) => orderCategory === '全部商品' || item.category === orderCategory);
     if (!q) return source;
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
-  }, [keyword, products]);
+  }, [keyword, products, orderCategory]);
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -480,6 +489,13 @@ export default function App() {
 
   function removeFromCart(id: string) {
     setCart((prev) => prev.filter((entry) => entry.id !== id));
+  }
+
+  function applyQuickCustomer(name: string, phone: string, address: string, method: ShippingMethod) {
+    setCustomerName(name);
+    setCustomerPhone(phone);
+    setCustomerAddress(address);
+    setShippingMethod(method);
   }
 
   return (
@@ -649,6 +665,14 @@ export default function App() {
                     </div>
                   </div>
                 </section>
+
+                <div className="mobile-order-bar card">
+                  <div>
+                    <div className="mobile-order-title">訂單摘要</div>
+                    <div className="mobile-order-sub">{itemCount} 件商品 / {shippingMethod}</div>
+                  </div>
+                  <div className="mobile-order-total">${grandTotal}</div>
+                </div>
               </>
             )}
 
@@ -759,6 +783,22 @@ export default function App() {
                         <span className="badge badge-soft">價格層級 / {user.rank === '核心人員' ? '總代理價格' : 'VIP價格'}</span>
                       </div>
 
+                      <div className="order-toolbar-row">
+                        <div className="chip-filter-row">
+                          {orderCategoryChips.map((chip) => (
+                            <button
+                              key={chip}
+                              type="button"
+                              className={`filter-chip ${orderCategory === chip ? 'active' : ''}`}
+                              onClick={() => setOrderCategory(chip)}
+                            >
+                              {chip}
+                            </button>
+                          ))}
+                        </div>
+                        <button type="button" className="ghost-button compact-btn">輸入</button>
+                      </div>
+
                       <div className="catalog-grid">
                         {filteredOrderProducts.map((item) => (
                           <div key={item.id} className="catalog-card">
@@ -791,6 +831,20 @@ export default function App() {
                           <div className="panel-desc">欄位命名依你後續 GAS 邏輯保留：客戶姓名、電話、地址、配送方式、備註。</div>
                         </div>
                         <span className="badge badge-neutral">訂單主檔欄位</span>
+                      </div>
+
+                      <div className="quick-customer-grid">
+                        {quickCustomerCards.map((item) => (
+                          <button
+                            key={item.name}
+                            type="button"
+                            className="quick-customer-card"
+                            onClick={() => applyQuickCustomer(item.name, item.phone, item.address, item.method)}
+                          >
+                            <div className="quick-customer-name">{item.name}</div>
+                            <div className="quick-customer-meta">{item.phone} / {item.method}</div>
+                          </button>
+                        ))}
                       </div>
 
                       <div className="form-grid two-col">
