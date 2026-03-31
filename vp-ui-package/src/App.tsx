@@ -136,9 +136,9 @@ const warehouseRecentLogs = [
 
 
 const paymentQueue = [
-  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳' },
-  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳' },
-  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單' },
+  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳', date: '2026/03/31', paymentMethod: '銀行轉帳', invoiceNo: '待補' },
+  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳', date: '2026/03/31', paymentMethod: 'LINE Pay', invoiceNo: 'AA-20318' },
+  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單', date: '2026/03/30', paymentMethod: '退款重開單', invoiceNo: 'EX-99001' },
 ];
 
 const accountingSummary = [
@@ -431,6 +431,9 @@ export default function App() {
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
+  const [accountingKeyword, setAccountingKeyword] = useState('');
+  const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
+  const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [orderCategory, setOrderCategory] = useState('全部商品');
 
   async function loadFirebaseData() {
@@ -504,6 +507,18 @@ export default function App() {
     if (!q) return source;
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory]);
+
+  const filteredAccountingQueue = useMemo(() => {
+    const q = accountingKeyword.trim().toLowerCase();
+    return paymentQueue.filter((item) => {
+      const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
+      const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
+      const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
+      return matchKeyword && matchPayment && matchShipping;
+    });
+  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter]);
+
+  const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -680,15 +695,15 @@ export default function App() {
               </div>
             </div>
 
+            <section className="summary-grid">
+              <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
+              <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
+              <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
+              <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
+            </section>
+
             {active === 'dashboard' && (
               <>
-                <section className="summary-grid">
-                  <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
-                  <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
-                  <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
-                  <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
-                </section>
-
                 <section className="workflow-grid">
                   {workflowCards.map((card) => <WorkflowModule key={card.title} card={card} />)}
                 </section>
@@ -1265,9 +1280,58 @@ export default function App() {
                         <div className="panel-head">
                           <div>
                             <div className="panel-title">收款 / 退款作業</div>
-                            <div className="panel-desc">保留你指定的欄位：統一編號、未稅價、應稅價%、運費、實收總額、收款證明。</div>
+                            <div className="panel-desc">先把會計最常用的查詢、狀態篩選、收款證明入口整理好，直接對齊你後面 GAS 的付款處理節奏。</div>
                           </div>
-                          <span className="badge badge-role">會計流程</span>
+                          <span className="badge badge-role">作業入口</span>
+                        </div>
+
+                        <div className="accounting-filter-grid">
+                          <label className="field-card field-span-2">
+                            <span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶 / 發票</span>
+                            <input value={accountingKeyword} onChange={(e) => setAccountingKeyword(e.target.value)} placeholder="輸入訂單編號、客戶、收款方式、發票號碼" />
+                          </label>
+                          <label className="field-card">
+                            <span className="field-label"><CreditCard className="small-icon" />款項狀態</span>
+                            <select value={accountingPaymentFilter} onChange={(e) => setAccountingPaymentFilter(e.target.value)}>
+                              <option value="全部">全部</option>
+                              <option value="待收款">待收款</option>
+                              <option value="已收款">已收款</option>
+                              <option value="退款處理中">退款處理中</option>
+                            </select>
+                          </label>
+                          <label className="field-card">
+                            <span className="field-label"><Truck className="small-icon" />商品狀態</span>
+                            <select value={accountingShippingFilter} onChange={(e) => setAccountingShippingFilter(e.target.value)}>
+                              <option value="全部">全部</option>
+                              <option value="待出貨">待出貨</option>
+                              <option value="理貨中">理貨中</option>
+                              <option value="換貨待出庫">換貨待出庫</option>
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className="accounting-proof-grid">
+                          <div className="accounting-proof-card">
+                            <div className="accounting-proof-title">收據上傳</div>
+                            <div className="accounting-proof-desc">保留收據、轉帳證明與對帳附件位置</div>
+                          </div>
+                          <div className="accounting-proof-card">
+                            <div className="accounting-proof-title">匯款截圖</div>
+                            <div className="accounting-proof-desc">之後直接接照片上傳或檔案上傳</div>
+                          </div>
+                          <div className="accounting-proof-card">
+                            <div className="accounting-proof-title">AI 辨識位</div>
+                            <div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">本次選取單</div>
+                            <div className="panel-desc">先固定你要的結算欄位，不碰原本邏輯。</div>
+                          </div>
                         </div>
 
                         <div className="form-grid two-col accounting-form-grid">
@@ -1306,43 +1370,28 @@ export default function App() {
                           <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
                         </div>
                       </div>
-
-                      <div className="card order-panel">
-                        <div className="panel-head compact-head">
-                          <div>
-                            <div className="panel-title">會計模組重點</div>
-                            <div className="panel-desc">依你目前規格，這邊先把規則放好。</div>
-                          </div>
-                        </div>
-                        <div className="stack-list compact">
-                          <div>待收款 / 未收款 / 待出貨一律紅色</div>
-                          <div>已收款 / 已完成 / 已出貨一律綠色</div>
-                          <div>已退款必須防重複操作</div>
-                          <div>退款會影響報表、毛利、排行、個人業績</div>
-                          <div>訂單紀錄需支援日期區間與狀態篩選</div>
-                        </div>
-                      </div>
                     </section>
 
                     <section className="card order-panel">
                       <div className="panel-head">
                         <div>
                           <div className="panel-title">訂單紀錄 / 收款狀態</div>
-                          <div className="panel-desc">這裡先整理會計最常看的列表，後續直接接 payments / refunds / sales_report。</div>
+                          <div className="panel-desc">這裡開始承接會計操作邏輯，已可用關鍵字與狀態做前端篩選。</div>
                         </div>
-                        <span className="badge badge-soft">日期區間 / 狀態篩選待接</span>
+                        <span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span>
                       </div>
 
                       <div className="shipping-queue accounting-queue">
-                        {paymentQueue.map((item) => (
+                        {filteredAccountingQueue.map((item) => (
                           <div key={item.orderNo} className="shipping-row accounting-row">
                             <div>
                               <div className="shipping-order">{item.orderNo}</div>
-                              <div className="shipping-meta">{item.customer} / 運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                              <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
+                              <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
                             </div>
                             <div className="shipping-actions accounting-statuses">
                               <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                              <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : 'badge-soft'}`}>{item.shippingStatus}</span>
+                              <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : 'badge-neutral'}`}>{item.shippingStatus}</span>
                               <strong className="accounting-amount">${item.amount}</strong>
                             </div>
                           </div>
@@ -1358,7 +1407,7 @@ export default function App() {
                       <div className="panel-head">
                         <div>
                           <div className="panel-title">銷售統計</div>
-                          <div className="panel-desc">依你現在規格，先把區間營收、稅金總額、運費總額、毛利做成可開會的摘要區。</div>
+                          <div className="panel-desc">把會議會看到的摘要放在同一區，後面直接承接 sales_report。</div>
                         </div>
                         <span className="badge badge-role">報表摘要</span>
                       </div>
@@ -1375,24 +1424,46 @@ export default function App() {
                           <div className="accounting-mini-value">$18,420</div>
                         </div>
                       </div>
+
+                      <div className="accounting-breakdown-list">
+                        <div className="accounting-breakdown-item"><span>已收款占比</span><strong>74%</strong></div>
+                        <div className="accounting-breakdown-item"><span>待收款占比</span><strong>22%</strong></div>
+                        <div className="accounting-breakdown-item"><span>退款占比</span><strong>4%</strong></div>
+                      </div>
                     </div>
 
-                    <div className="card order-panel">
-                      <div className="panel-head compact-head">
-                        <div>
-                          <div className="panel-title">營收趨勢</div>
-                          <div className="panel-desc">先把圖表區的閱讀節奏定好，後面直接接真資料。</div>
+                    <div className="accounting-stats-side">
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">營收趨勢</div>
+                            <div className="panel-desc">先把圖表區的閱讀節奏定好，後面直接接真資料。</div>
+                          </div>
+                        </div>
+                        <div className="trend-chart">
+                          {accountingTrendBars.map((item) => (
+                            <div key={item.label} className="trend-bar-col">
+                              <div className="trend-bar-wrap">
+                                <div className="trend-bar" style={{ height: `${item.value}%` }} />
+                              </div>
+                              <span>{item.label}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <div className="trend-chart">
-                        {accountingTrendBars.map((item) => (
-                          <div key={item.label} className="trend-bar-col">
-                            <div className="trend-bar-wrap">
-                              <div className="trend-bar" style={{ height: `${item.value}%` }} />
-                            </div>
-                            <span>{item.label}</span>
+
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">報表提醒</div>
+                            <div className="panel-desc">延續你現在的 GAS 規則。</div>
                           </div>
-                        ))}
+                        </div>
+                        <div className="stack-list compact">
+                          <div>退款與退貨都要同步反扣毛利</div>
+                          <div>運費要獨立統計，不與商品銷售額混算</div>
+                          <div>已收款才納入正式營收統計</div>
+                        </div>
                       </div>
                     </div>
                   </section>
@@ -1445,8 +1516,8 @@ export default function App() {
                     <div className="card order-panel">
                       <div className="panel-head compact-head">
                         <div>
-                          <div className="panel-title">本頁保留重點</div>
-                          <div className="panel-desc">這區先把你要的邏輯提醒固定下來。</div>
+                          <div className="panel-title">排行規則提醒</div>
+                          <div className="panel-desc">保留後續接真資料時的判讀規則。</div>
                         </div>
                       </div>
                       <div className="stack-list compact">
@@ -1459,7 +1530,9 @@ export default function App() {
                   </section>
                 )}
               </>
-            )}            {active === 'profile' && (
+            )}
+
+            {active === 'profile' && (
               <>
                 <SectionIntro
                   title="個人資料 / 我的歷史訂單"
