@@ -53,31 +53,22 @@ async function createOrder(){
 }
 
 return (
-<div>
+  <div style={{padding:20}}>
+    <h2>VP訂購系統</h2>
 
-<div className="card">
-<h3>商品</h3>
-<button onClick={addItem}>加入商品</button>
-</div>
+    <button onClick={addItem}>加入商品</button>
 
-<div className="card">
-<h3>購物車</h3>
-{cart.map((i,idx)=><div key={idx}>{i.name}</div>)}
-</div>
+    <div>
+      <h3>購物車</h3>
+      {cart.map((i,idx)=><div key={idx}>{i.name}</div>)}
+    </div>
 
-<div className="card">
-<h3>客戶資料</h3>
-<input placeholder="姓名" value={name} onChange={e=>setName(e.target.value)}/>
-<input placeholder="電話" value={phone} onChange={e=>setPhone(e.target.value)}/>
-<select value={shipping} onChange={e=>setShipping(e.target.value)}>
-<option>自取</option>
-<option>宅配</option>
-</select>
-{shipping==="宅配" && <input placeholder="地址" value={address} onChange={e=>setAddress(e.target.value)}/>}
-</div>
+    <div>
+      <h3>客戶資料</h3>
+      <input placeholder="姓名" value={name} onChange={e=>setName(e.target.value)}/>
+      <input placeholder="電話" value={phone} onChange={e=>setPhone(e.target.value)}/>
+    </div>
 
-<button onClick={createOrder}>建立訂單</button>
-
-</div>
+    <button onClick={createOrder}>送出</button>
+  </div>
 );
-}
