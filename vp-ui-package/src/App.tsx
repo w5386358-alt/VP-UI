@@ -611,3 +611,32 @@ export default function App() {
     </div>
   );
 }
+
+
+/* ================= 下單UI完整美化 ================= */
+.orders-layout{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+.order-builder-card,.cart-card,.order-list-card{border-radius:18px;padding:16px}
+.order-builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.builder-panel{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:12px;color:#888}
+.field-select{padding:8px;border-radius:10px;border:1px solid #eee}
+.product-picker-title{margin:12px 0 8px;font-weight:600}
+.product-picker-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.product-pick-card{border:1px solid #eee;border-radius:14px;padding:10px;background:#fff;cursor:pointer;transition:.2s}
+.product-pick-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.product-pick-name{font-weight:600}
+.product-pick-meta{font-size:12px;color:#888}
+.product-pick-footer{display:flex;justify-content:space-between;margin-top:6px}
+
+.cart-list{max-height:260px;overflow:auto}
+.cart-item-row{display:flex;align-items:center;justify-content:space-between}
+.cart-qty-wrap{display:flex;align-items:center;gap:6px}
+.qty-btn{width:26px;height:26px;border-radius:6px;border:none;background:#f3f3f3;cursor:pointer}
+.qty-value{min-width:20px;text-align:center}
+.cart-summary{display:flex;justify-content:space-between;margin:12px 0;padding:10px;background:#fafafa;border-radius:12px}
+.cart-summary-value{font-weight:600}
+.cart-summary-total{font-size:18px;font-weight:700;color:#e91e63}
+.create-order-button{width:100%;margin-top:8px}
+.empty-cart{text-align:center;color:#aaa;padding:20px}
+.order-message{margin-top:8px;color:#e91e63;font-size:13px}
+.section-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
