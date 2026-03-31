@@ -654,5 +654,3 @@ async function createOrder() {
     </div>
   );
 }
-
-
