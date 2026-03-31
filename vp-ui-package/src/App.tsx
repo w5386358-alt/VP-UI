@@ -65,10 +65,30 @@ return (
 
     <div>
       <h3>客戶資料</h3>
-      <input placeholder="姓名" value={name} onChange={e=>setName(e.target.value)}/>
-      <input placeholder="電話" value={phone} onChange={e=>setPhone(e.target.value)}/>
+      <input
+        placeholder="姓名"
+        value={name}
+        onChange={e=>setName(e.target.value)}
+      />
+      <input
+        placeholder="電話"
+        value={phone}
+        onChange={e=>setPhone(e.target.value)}
+      />
+      <select value={shipping} onChange={e=>setShipping(e.target.value)}>
+        <option>自取</option>
+        <option>宅配</option>
+      </select>
+
+      {shipping==="宅配" && (
+        <input
+          placeholder="地址"
+          value={address}
+          onChange={e=>setAddress(e.target.value)}
+        />
+      )}
     </div>
 
-    <button onClick={createOrder}>送出</button>
+    <button onClick={createOrder}>建立訂單</button>
   </div>
 );
