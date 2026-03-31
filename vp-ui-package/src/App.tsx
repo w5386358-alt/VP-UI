@@ -47,7 +47,6 @@ type SessionUser = { name: string; loginId: string; role: Role; rank: string };
 type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
-type AccountingTab = 'ops' | 'stats' | 'ranking';
 
 type WorkflowCard = {
   title: string;
@@ -165,28 +164,6 @@ const accountingBoards = [
     bullets: ['人員排行', '商品熱銷排行', '退款扣回績效'],
   },
 ];
-
-const accountingTrendBars = [
-  { label: '3/27', value: 62 },
-  { label: '3/28', value: 78 },
-  { label: '3/29', value: 54 },
-  { label: '3/30', value: 86 },
-  { label: '3/31', value: 92 },
-  { label: '4/01', value: 73 },
-];
-
-const salesRanking = [
-  { name: '吳秉宸', value: '$128,600', meta: '完成 86 單 / 退款扣回已計入' },
-  { name: '王小婷', value: '$92,400', meta: '完成 63 單 / 穩定成長' },
-  { name: '陳小安', value: '$88,120', meta: '會計支援 / 兼銷售績效' },
-];
-
-const hotProductsBoard = [
-  { name: '女神酵素液', value: '168 件', meta: '本月回購最高' },
-  { name: '瞬白激光精華4G', value: '121 件', meta: '高單價主力商品' },
-  { name: '魔力抹茶機能飲', value: '96 件', meta: '促銷轉換佳' },
-];
-
 const personalSummary = [
   { title: '累積業績', value: '$128,600', sub: '退款與退貨需反向扣回' },
   { title: '完成訂單數', value: '86', sub: '含正常完成與已出貨單' },
@@ -430,7 +407,6 @@ export default function App() {
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
-  const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [orderCategory, setOrderCategory] = useState('全部商品');
 
   async function loadFirebaseData() {
@@ -689,7 +665,6 @@ export default function App() {
                   <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
                 </section>
 
-              <>
                 <section className="workflow-grid">
                   {workflowCards.map((card) => <WorkflowModule key={card.title} card={card} />)}
                 </section>
@@ -1237,7 +1212,7 @@ export default function App() {
               <>
                 <SectionIntro
                   title="會計中心骨架"
-                  desc="這一步改成更接近實際後台的三分頁：收款 / 退款作業、銷售統計、排行榜 / 熱銷。版位命名直接對齊你後面要接的 GAS 會計邏輯。"
+                  desc="這版先把收款 / 退款作業、銷售統計、排行榜三塊版位整理好，欄位命名直接對齊你後面要接的 GAS 會計邏輯。"
                   stats={[`待收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
                 />
 
@@ -1247,220 +1222,105 @@ export default function App() {
                   ))}
                 </section>
 
-                <div className="accounting-tab-row">
-                  <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}>
-                    <CreditCard className="small-icon" />收款 / 退款作業
-                  </button>
-                  <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}>
-                    <BarChart3 className="small-icon" />銷售統計
-                  </button>
-                  <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}>
-                    <Trophy className="small-icon" />排行榜 / 熱銷
-                  </button>
-                </div>
-
-                {accountingTab === 'ops' && (
-                  <>
-                    <section className="two-column-grid accounting-top-grid">
-                      <div className="card order-panel">
-                        <div className="panel-head">
-                          <div>
-                            <div className="panel-title">收款 / 退款作業</div>
-                            <div className="panel-desc">保留你指定的欄位：統一編號、未稅價、應稅價%、運費、實收總額、收款證明。</div>
-                          </div>
-                          <span className="badge badge-role">會計流程</span>
-                        </div>
-
-                        <div className="form-grid two-col accounting-form-grid">
-                          <label className="field-card">
-                            <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
-                            <input value="VP20260331-001" readOnly />
-                          </label>
-                          <label className="field-card">
-                            <span className="field-label"><User className="small-icon" />客戶姓名</span>
-                            <input value="王小美" readOnly />
-                          </label>
-                          <label className="field-card">
-                            <span className="field-label"><Wallet className="small-icon" />未稅價</span>
-                            <input value="4056" readOnly />
-                          </label>
-                          <label className="field-card">
-                            <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
-                            <input value="5" readOnly />
-                          </label>
-                          <label className="field-card">
-                            <span className="field-label"><Truck className="small-icon" />運費</span>
-                            <input value="100" readOnly />
-                          </label>
-                          <label className="field-card">
-                            <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
-                            <input value="4259" readOnly />
-                          </label>
-                          <label className="field-card field-span-2">
-                            <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
-                            <textarea rows={4} readOnly value="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
-                          </label>
-                        </div>
-
-                        <div className="accounting-action-row">
-                          <button type="button" className="primary-button"><CreditCard className="small-icon" />確認收款</button>
-                          <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
-                        </div>
+                <section className="two-column-grid accounting-top-grid">
+                  <div className="card order-panel">
+                    <div className="panel-head">
+                      <div>
+                        <div className="panel-title">收款 / 退款作業</div>
+                        <div className="panel-desc">保留你指定的欄位：統一編號、未稅價、應稅價%、運費、實收總額、收款證明。</div>
                       </div>
-
-                      <div className="card order-panel">
-                        <div className="panel-head compact-head">
-                          <div>
-                            <div className="panel-title">會計模組重點</div>
-                            <div className="panel-desc">依你目前規格，這邊先把規則放好。</div>
-                          </div>
-                        </div>
-                        <div className="stack-list compact">
-                          <div>待收款 / 未收款 / 待出貨一律紅色</div>
-                          <div>已收款 / 已完成 / 已出貨一律綠色</div>
-                          <div>已退款必須防重複操作</div>
-                          <div>退款會影響報表、毛利、排行、個人業績</div>
-                          <div>訂單紀錄需支援日期區間與狀態篩選</div>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section className="card order-panel">
-                      <div className="panel-head">
-                        <div>
-                          <div className="panel-title">訂單紀錄 / 收款狀態</div>
-                          <div className="panel-desc">這裡先整理會計最常看的列表，後續直接接 payments / refunds / sales_report。</div>
-                        </div>
-                        <span className="badge badge-soft">日期區間 / 狀態篩選待接</span>
-                      </div>
-
-                      <div className="shipping-queue accounting-queue">
-                        {paymentQueue.map((item) => (
-                          <div key={item.orderNo} className="shipping-row accounting-row">
-                            <div>
-                              <div className="shipping-order">{item.orderNo}</div>
-                              <div className="shipping-meta">{item.customer} / 運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
-                            </div>
-                            <div className="shipping-actions accounting-statuses">
-                              <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                              <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : 'badge-soft'}`}>{item.shippingStatus}</span>
-                              <strong className="accounting-amount">${item.amount}</strong>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  </>
-                )}
-
-                {accountingTab === 'stats' && (
-                  <section className="accounting-stats-grid">
-                    <div className="card order-panel">
-                      <div className="panel-head">
-                        <div>
-                          <div className="panel-title">銷售統計</div>
-                          <div className="panel-desc">依你現在規格，先把區間營收、稅金總額、運費總額、毛利做成可開會的摘要區。</div>
-                        </div>
-                        <span className="badge badge-role">報表摘要</span>
-                      </div>
-
-                      <div className="accounting-stat-cards">
-                        {accountingBoards[1].bullets.map((item) => (
-                          <div key={item} className="accounting-mini-card">
-                            <div className="accounting-mini-title">{item}</div>
-                            <div className="accounting-mini-value">{item === '區間營收' ? '$128,600' : item === '稅金總額' ? '$6,430' : '$3,120'}</div>
-                          </div>
-                        ))}
-                        <div className="accounting-mini-card accent">
-                          <div className="accounting-mini-title">毛利</div>
-                          <div className="accounting-mini-value">$18,420</div>
-                        </div>
-                      </div>
+                      <span className="badge badge-role">會計流程</span>
                     </div>
 
-                    <div className="card order-panel">
-                      <div className="panel-head compact-head">
-                        <div>
-                          <div className="panel-title">營收趨勢</div>
-                          <div className="panel-desc">先把圖表區的閱讀節奏定好，後面直接接真資料。</div>
-                        </div>
-                      </div>
-                      <div className="trend-chart">
-                        {accountingTrendBars.map((item) => (
-                          <div key={item.label} className="trend-bar-col">
-                            <div className="trend-bar-wrap">
-                              <div className="trend-bar" style={{ height: `${item.value}%` }} />
-                            </div>
-                            <span>{item.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                {accountingTab === 'ranking' && (
-                  <section className="three-column-grid accounting-ranking-grid">
-                    <div className="card order-panel">
-                      <div className="panel-head compact-head">
-                        <div>
-                          <div className="panel-title">銷售排行</div>
-                          <div className="panel-desc">後面可直接接你的人員業績與退款扣回邏輯。</div>
-                        </div>
-                      </div>
-                      <div className="ranking-list">
-                        {salesRanking.map((item, idx) => (
-                          <div key={item.name} className="ranking-item">
-                            <div className="ranking-badge">#{idx + 1}</div>
-                            <div className="ranking-main">
-                              <div className="ranking-name">{item.name}</div>
-                              <div className="ranking-meta">{item.meta}</div>
-                            </div>
-                            <div className="ranking-value">{item.value}</div>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="form-grid two-col accounting-form-grid">
+                      <label className="field-card">
+                        <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
+                        <input value="VP20260331-001" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><User className="small-icon" />客戶姓名</span>
+                        <input value="王小美" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><Wallet className="small-icon" />未稅價</span>
+                        <input value="4056" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
+                        <input value="5" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><Truck className="small-icon" />運費</span>
+                        <input value="100" readOnly />
+                      </label>
+                      <label className="field-card">
+                        <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
+                        <input value="4259" readOnly />
+                      </label>
+                      <label className="field-card field-span-2">
+                        <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
+                        <textarea rows={4} readOnly value="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
+                      </label>
                     </div>
 
-                    <div className="card order-panel">
-                      <div className="panel-head compact-head">
-                        <div>
-                          <div className="panel-title">熱銷商品</div>
-                          <div className="panel-desc">之後直接接商品統計與銷售件數。</div>
-                        </div>
-                      </div>
-                      <div className="ranking-list">
-                        {hotProductsBoard.map((item, idx) => (
-                          <div key={item.name} className="ranking-item">
-                            <div className="ranking-badge">#{idx + 1}</div>
-                            <div className="ranking-main">
-                              <div className="ranking-name">{item.name}</div>
-                              <div className="ranking-meta">{item.meta}</div>
-                            </div>
-                            <div className="ranking-value">{item.value}</div>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="accounting-action-row">
+                      <button type="button" className="primary-button"><CreditCard className="small-icon" />確認收款</button>
+                      <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
                     </div>
+                  </div>
 
-                    <div className="card order-panel">
-                      <div className="panel-head compact-head">
-                        <div>
-                          <div className="panel-title">本頁保留重點</div>
-                          <div className="panel-desc">這區先把你要的邏輯提醒固定下來。</div>
-                        </div>
-                      </div>
-                      <div className="stack-list compact">
-                        <div>排行榜要扣除退款 / 退貨影響</div>
-                        <div>熱銷商品可延伸到會計與倉儲共用</div>
-                        <div>報表區之後直接承接 sales_report</div>
-                        <div>會計中心維持獨立子頁結構</div>
+                  <div className="card order-panel">
+                    <div className="panel-head compact-head">
+                      <div>
+                        <div className="panel-title">會計模組重點</div>
+                        <div className="panel-desc">依你目前規格，這邊先把規則放好。</div>
                       </div>
                     </div>
-                  </section>
-                )}
+                    <div className="stack-list compact">
+                      <div>待收款 / 未收款 / 待出貨一律紅色</div>
+                      <div>已收款 / 已完成 / 已出貨一律綠色</div>
+                      <div>已退款必須防重複操作</div>
+                      <div>退款會影響報表、毛利、排行、個人業績</div>
+                      <div>訂單紀錄需支援日期區間與狀態篩選</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="card order-panel">
+                  <div className="panel-head">
+                    <div>
+                      <div className="panel-title">訂單紀錄 / 收款狀態</div>
+                      <div className="panel-desc">這裡先整理會計最常看的列表，後續直接接 payments / refunds / sales_report。</div>
+                    </div>
+                    <span className="badge badge-soft">日期區間 / 狀態篩選待接</span>
+                  </div>
+
+                  <div className="shipping-queue accounting-queue">
+                    {paymentQueue.map((item) => (
+                      <div key={item.orderNo} className="shipping-row accounting-row">
+                        <div>
+                          <div className="shipping-order">{item.orderNo}</div>
+                          <div className="shipping-meta">{item.customer} / 運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                        </div>
+                        <div className="shipping-actions accounting-statuses">
+                          <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                          <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : 'badge-soft'}`}>{item.shippingStatus}</span>
+                          <strong className="accounting-amount">${item.amount}</strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="three-column-grid">
+                  {accountingBoards.map((item) => (
+                    <PlaceholderCard key={item.title} title={item.title} desc={item.desc} bullets={item.bullets} />
+                  ))}
+                </section>
               </>
-            )}            {active === 'profile' && (
+            )}
+
+            {active === 'profile' && (
               <>
                 <SectionIntro
                   title="個人資料 / 我的歷史訂單"
@@ -1581,29 +1441,6 @@ export default function App() {
             )}
           </>
         )}
-
-        <div className="mobile-nav">
-          {[
-            { key: 'dashboard' as NavKey, label: '總覽', icon: BarChart3 },
-            { key: 'orders' as NavKey, label: '訂購', icon: ShoppingCart },
-            { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
-            { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
-            { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                className={`mobile-nav-btn ${active === item.key ? 'active' : ''}`}
-                onClick={() => setActive(item.key)}
-              >
-                <Icon className="small-icon" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
       </main>
     </div>
   );
