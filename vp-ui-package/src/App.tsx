@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -279,41 +279,84 @@ export default function App() {
     setCartItems((prev) => prev.map((item) => item.productId === productId ? { ...item, qty: nextQty, subtotal: nextQty * item.price } : item));
   }
 
-  async function createOrder() {
-    if (!selectedCustomer) {
-      setOrderMessage('請先選擇客戶');
-      return;
-    }
-    if (!cartItems.length) {
-      setOrderMessage('請先加入商品到購物車');
-      return;
-    }
-
-    const now = new Date();
-    const orderNo = `VP${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(orders.length + 1).padStart(3, '0')}`;
-    const createdAt = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    setCreatingOrder(true);
-    try {
-      const nextOrder: Order = {
-        id: `local-${Date.now()}`,
-        orderNo,
-        customerName: selectedCustomer.name,
-        paymentStatus: '未收款',
-        orderStatus: '待處理',
-        totalAmount: cartTotal,
-        createdAt,
-      };
-      setOrders((prev) => [nextOrder, ...prev]);
-      setCartItems([]);
-      setSelectedCustomerId('');
-      setPriceTier('VIP價格');
-      setActive('orders');
-      setOrderMessage('下單UI已完成，下一步接 Firebase 寫入 orders / order_items');
-    } finally {
-      setCreatingOrder(false);
-    }
+async function createOrder() {
+  if (!selectedCustomer) {
+    setOrderMessage('請先選擇客戶');
+    return;
   }
+  if (!cartItems.length) {
+    setOrderMessage('請先加入商品到購物車');
+    return;
+  }
+
+  const db = getDb();
+  if (!db) {
+    setOrderMessage('Firebase 尚未連線');
+    return;
+  }
+
+  const now = new Date();
+  const orderNo = `VP${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(orders.length + 1).padStart(3, '0')}`;
+  const createdAt = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  setCreatingOrder(true);
+  setOrderMessage('');
+
+  try {
+    const orderPayload = {
+      orderNo,
+      customerId: selectedCustomer.id,
+      customerName: selectedCustomer.name,
+      customerPhone: selectedCustomer.phone,
+      paymentStatus: '未收款',
+      orderStatus: '待處理',
+      totalAmount: cartTotal,
+      priceTier,
+      createdAt,
+      createdAtServer: serverTimestamp(),
+      createdBy: user.loginId,
+    };
+
+    const orderRef = await addDoc(collection(db, 'orders'), orderPayload);
+
+    for (const item of cartItems) {
+      await addDoc(collection(db, 'order_items'), {
+        orderId: orderRef.id,
+        orderNo,
+        productId: item.productId,
+        productCode: item.code,
+        productName: item.name,
+        price: item.price,
+        qty: item.qty,
+        subtotal: item.subtotal,
+        createdAt,
+        createdAtServer: serverTimestamp(),
+      });
+    }
+
+    const nextOrder: Order = {
+      id: orderRef.id,
+      orderNo,
+      customerName: selectedCustomer.name,
+      paymentStatus: '未收款',
+      orderStatus: '待處理',
+      totalAmount: cartTotal,
+      createdAt,
+    };
+
+    setOrders((prev) => [nextOrder, ...prev]);
+    setCartItems([]);
+    setSelectedCustomerId('');
+    setPriceTier('VIP價格');
+    setActive('orders');
+    setOrderMessage('訂單已成功寫入 Firebase');
+  } catch (error) {
+    console.error(error);
+    setOrderMessage('寫入 Firebase 失敗');
+  } finally {
+    setCreatingOrder(false);
+  }
+}
 
   return (
     <div className="app-shell">
