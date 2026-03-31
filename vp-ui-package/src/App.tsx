@@ -680,14 +680,15 @@ export default function App() {
               </div>
             </div>
 
-            <section className="summary-grid">
-              <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
-              <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
-              <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
-              <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
-            </section>
-
             {active === 'dashboard' && (
+              <>
+                <section className="summary-grid">
+                  <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
+                  <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
+                  <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
+                  <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
+                </section>
+
               <>
                 <section className="workflow-grid">
                   {workflowCards.map((card) => <WorkflowModule key={card.title} card={card} />)}
