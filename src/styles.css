@@ -1700,23 +1700,6 @@ button:hover { transform: translateY(-1px); }
 @media (max-width: 1180px){.product-admin-layout,.product-admin-grid{grid-template-columns:1fr;}}
 
 
-.accounting-notice-banner{
-  margin-top:16px;
-}
-
-.accounting-select-row{
-  width:100%;
-  text-align:left;
-  cursor:pointer;
-}
-
-.accounting-select-row.selected{
-  border-color:#f0bfd0;
-  box-shadow:0 14px 34px rgba(231,62,114,.12);
-  background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,240,246,0.96) 100%);
-}
-
-.accounting-select-row:focus-visible{
-  outline:2px solid rgba(231,62,114,.35);
-  outline-offset:2px;
-}
+.shipping-row-selectable{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;}
+.shipping-row-selectable.selected{border-color:#f0bfd0;box-shadow:0 18px 40px rgba(231,62,114,.10);background:linear-gradient(180deg,rgba(255,255,255,.98) 0%,rgba(255,244,248,.94) 100%);}
+.compact-result-item{padding-top:12px;padding-bottom:12px;}
