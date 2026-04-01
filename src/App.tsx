@@ -446,6 +446,16 @@ function toProductDraft(item: Product): ProductDraft {
   };
 }
 
+function mergeByOrderNo<T extends { orderNo: string }>(primary: T[], secondary: T[]) {
+  const seen = new Set<string>();
+  return [...primary, ...secondary].filter((item) => {
+    if (seen.has(item.orderNo)) return false;
+    seen.add(item.orderNo);
+    return true;
+  });
+}
+
+
 function StatusBadge({ enabled }: { enabled: boolean }) {
   return <span className={enabled ? 'badge badge-success' : 'badge badge-danger'}>{enabled ? '啟用中' : '停用'}</span>;
 }
@@ -661,7 +671,33 @@ export default function App() {
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory]);
 
-const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0], [selectedWarehouseOrderNo]);
+  useEffect(() => {
+    if (!dynamicShippingQueue.length) return;
+    if (!dynamicShippingQueue.some((item) => item.orderNo === selectedWarehouseOrderNo)) {
+      setSelectedWarehouseOrderNo(dynamicShippingQueue[0].orderNo);
+    }
+  }, [dynamicShippingQueue, selectedWarehouseOrderNo]);
+
+const dynamicShippingQueue = useMemo(() => {
+    const orderDrivenQueue = orderRecords
+      .filter((item) => ['待出貨', '理貨中', '已出貨'].includes(item.shippingStatus))
+      .map((item) => ({
+        orderNo: item.orderNo,
+        customer: item.customer,
+        paymentStatus: item.paymentStatus,
+        shippingStatus: item.shippingStatus,
+        itemCount: item.itemCount,
+        urgency: item.shippingStatus === '待出貨' ? 'high' : 'medium',
+        shippingMethod: item.shippingMethod,
+        address: item.address,
+        trackingNo: item.shippingStatus === '已出貨' ? `AUTO-${item.orderNo.slice(-3)}` : '未建立',
+        scanStatus: item.shippingStatus === '已出貨' ? '已完成出貨驗證' : `待驗證 ${item.itemCount} 件商品`,
+        qrSummary: item.items.map((sub) => `${sub.code}*${sub.qty}`).join(' / '),
+      }));
+    return mergeByOrderNo(orderDrivenQueue, shippingQueue);
+  }, [orderRecords]);
+
+  const selectedWarehouseOrder = useMemo(() => dynamicShippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || dynamicShippingQueue[0], [selectedWarehouseOrderNo, dynamicShippingQueue]);
 
   const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode]);
 
@@ -708,7 +744,7 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
       return;
     }
 
-    const matchedOrder = shippingQueue.find((item) => item.orderNo.toUpperCase().includes(normalized));
+    const matchedOrder = dynamicShippingQueue.find((item) => item.orderNo.toUpperCase().includes(normalized));
     if (!matchedOrder) {
       setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
       setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
@@ -729,7 +765,11 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
       setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
       return;
     }
+    if (orderRecords.some((item) => item.orderNo === selectedWarehouseOrder.orderNo)) {
+      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedWarehouseOrder.orderNo ? { ...item, shippingStatus: '已出貨', mainStatus: '已出貨' } : item));
+    }
     setWarehouseNotice({ text: `✅ 已出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ Orders 已同步出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
   };
 
   const handleWarehousePrint = () => {
@@ -745,9 +785,26 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
 
   const selectedOrderRecord = useMemo(() => orderRecords.find((item) => item.orderNo === selectedOrderNo) || orderRecords[0] || null, [orderRecords, selectedOrderNo]);
 
+  const dynamicPaymentQueue = useMemo(() => {
+    const orderDrivenQueue = orderRecords.map((item) => ({
+      orderNo: item.orderNo,
+      customer: item.customer,
+      paymentStatus: item.paymentStatus,
+      shippingStatus: item.shippingStatus,
+      amount: item.amount,
+      shippingFee: getShippingFee(item.shippingMethod),
+      taxRate: 0,
+      proof: item.paymentStatus === '已收款' ? 'Orders 模組收款完成' : '待上傳',
+      date: item.date.split(' ')[0],
+      paymentMethod: item.paymentStatus === '已收款' ? '系統確認收款' : '待確認',
+      invoiceNo: '待補',
+    }));
+    return mergeByOrderNo(orderDrivenQueue, paymentQueue);
+  }, [orderRecords]);
+
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
-    return paymentQueue.filter((item) => {
+    return dynamicPaymentQueue.filter((item) => {
       const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
       const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
       const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
@@ -756,7 +813,7 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
       const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
       return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
     });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+  }, [dynamicPaymentQueue, accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
 
   useEffect(() => {
     if (!filteredAccountingQueue.length) return;
@@ -766,8 +823,8 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
   }, [filteredAccountingQueue, selectedAccountingOrderNo]);
 
   const selectedAccountingRecord = useMemo(
-    () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
-    [filteredAccountingQueue, selectedAccountingOrderNo],
+    () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || dynamicPaymentQueue[0],
+    [filteredAccountingQueue, selectedAccountingOrderNo, dynamicPaymentQueue],
   );
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
@@ -988,7 +1045,11 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
         setAccountingNotice({ text: '❌ 此訂單處於退款流程，請先確認退款結果', tone: 'danger' });
         return;
       }
+      if (orderRecords.some((item) => item.orderNo === selectedAccountingRecord.orderNo)) {
+        setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
+      }
       setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+      setOrderNotice({ text: `✅ Orders 已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       return;
     }
 
@@ -996,7 +1057,11 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
       setAccountingNotice({ text: '❌ 此訂單已進入退款流程', tone: 'danger' });
       return;
     }
+    if (orderRecords.some((item) => item.orderNo === selectedAccountingRecord.orderNo)) {
+      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '退款處理中', mainStatus: '退款處理中' } : item));
+    }
     setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ Orders 已同步退款狀態：${selectedAccountingRecord.orderNo}`, tone: 'neutral' });
   }
 
   return (
@@ -1154,10 +1219,10 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <InventoryModule lowStockCount={lowStockCount} shippingQueue={dynamicShippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <AccountingModule paymentQueue={dynamicPaymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
               <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
