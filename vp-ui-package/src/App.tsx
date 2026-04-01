@@ -57,6 +57,25 @@ type WorkflowCard = {
   bullets: string[];
 };
 
+type PaymentRecord = {
+  orderNo: string;
+  customer: string;
+  paymentStatus: string;
+  shippingStatus: string;
+  amount: number;
+  shippingFee: number;
+  taxRate: number;
+  proof: string;
+  date: string;
+  paymentMethod: string;
+  invoiceNo: string;
+};
+
+type ActionNotice = {
+  tone: 'success' | 'error' | 'idle';
+  text: string;
+};
+
 const mockProducts: Product[] = [
   { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
   { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
@@ -90,7 +109,7 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
-const initialShippingQueue = [
+const shippingQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high' },
   { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium' },
   { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium' },
@@ -127,7 +146,7 @@ const stockSnapshot = [
   { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常' },
 ];
 
-const initialWarehouseRecentLogs = [
+const warehouseRecentLogs = [
   { time: '09:12', type: '出貨', note: 'VP20260331-001 完成出貨，扣減 E401*2 / P301*1' },
   { time: '10:45', type: '入庫', note: 'E402 補貨 12 件，寫入 inventory_logs' },
   { time: '11:18', type: '換貨', note: 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立' },
@@ -135,17 +154,10 @@ const initialWarehouseRecentLogs = [
 ];
 
 
-const initialPaymentQueue = [
+const initialPaymentQueue: PaymentRecord[] = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳', date: '2026/03/31', paymentMethod: '銀行轉帳', invoiceNo: '待補' },
   { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳', date: '2026/03/31', paymentMethod: 'LINE Pay', invoiceNo: 'AA-20318' },
   { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單', date: '2026/03/30', paymentMethod: '退款重開單', invoiceNo: 'EX-99001' },
-];
-
-const accountingSummary = [
-  { title: '今日實收', value: '$7,149', sub: '依實收總額統計' },
-  { title: '待收款', value: '$4,259', sub: '待確認收款 1 筆' },
-  { title: '退款處理', value: '$65', sub: '換貨運費獨立處理' },
-  { title: '本月毛利', value: '$18,420', sub: '原價 - 稅額 - 運費 - 成本' },
 ];
 
 const accountingBoards = [
@@ -200,7 +212,7 @@ const profileQuickActions = [
   { title: '業績查詢', desc: '之後直接承接個人排名、退款扣回與完成單數。', icon: Trophy },
 ];
 
-const initialPersonalOrders = [
+const personalOrders = [
   { orderNo: 'VP20260329-021', date: '2026/03/29 14:20', amount: 3680, paymentStatus: '已收款', shippingStatus: '已出貨', mainStatus: '已完成' },
   { orderNo: 'VP20260330-008', date: '2026/03/30 11:05', amount: 4259, paymentStatus: '待收款', shippingStatus: '待出貨', mainStatus: '處理中' },
   { orderNo: 'EX20260330-001', date: '2026/03/30 18:42', amount: 65, paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', mainStatus: '換貨處理' },
@@ -435,13 +447,9 @@ export default function App() {
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [orderCategory, setOrderCategory] = useState('全部商品');
-
-  const [paymentQueue, setPaymentQueue] = useState(initialPaymentQueue);
-  const [shippingQueue, setShippingQueue] = useState(initialShippingQueue);
-  const [warehouseRecentLogs, setWarehouseRecentLogs] = useState(initialWarehouseRecentLogs);
-  const [personalOrders, setPersonalOrders] = useState(initialPersonalOrders);
-  const [selectedOrderNo, setSelectedOrderNo] = useState(initialPaymentQueue[0]?.orderNo ?? '');
-  const [notice, setNotice] = useState('已啟動全模組操作版，目前為前端互動狀態。');
+  const [paymentQueue, setPaymentQueue] = useState<PaymentRecord[]>(initialPaymentQueue);
+  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialPaymentQueue[0]?.orderNo || '');
+  const [actionNotice, setActionNotice] = useState<ActionNotice>({ tone: 'idle', text: '會計中心已啟動' });
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -515,6 +523,24 @@ export default function App() {
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory]);
 
+  const selectedAccountingRecord = useMemo(
+    () => paymentQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || paymentQueue[0] || null,
+    [paymentQueue, selectedAccountingOrderNo],
+  );
+
+  const accountingSummary = useMemo(() => {
+    const collected = paymentQueue.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + item.amount, 0);
+    const pending = paymentQueue.filter((item) => item.paymentStatus === '待收款').reduce((sum, item) => sum + item.amount, 0);
+    const refunded = paymentQueue.filter((item) => item.paymentStatus === '已退款' || item.paymentStatus === '退款處理中').reduce((sum, item) => sum + item.amount, 0);
+    const gross = Math.max(0, collected - refunded);
+    return [
+      { title: '今日實收', value: `$${collected.toLocaleString()}`, sub: '依實收總額統計' },
+      { title: '待收款', value: `$${pending.toLocaleString()}`, sub: `待確認收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆` },
+      { title: '退款處理', value: `$${refunded.toLocaleString()}`, sub: '含退款處理與已退款' },
+      { title: '目前毛利', value: `$${gross.toLocaleString()}`, sub: '示意值，後續再接真實成本' },
+    ];
+  }, [paymentQueue]);
+
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
     return paymentQueue.filter((item) => {
@@ -525,16 +551,7 @@ export default function App() {
     });
   }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter]);
 
-  const selectedPaymentRow = paymentQueue.find((item) => item.orderNo === selectedOrderNo) ?? filteredAccountingQueue[0] ?? paymentQueue[0] ?? null;
-
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
-
-  const liveAccountingSummary = [
-    { title: '今日實收', value: `$${paymentQueue.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + item.amount, 0).toLocaleString()}`, sub: '依前端狀態模擬統計' },
-    { title: '待收款', value: `$${paymentQueue.filter((item) => item.paymentStatus === '待收款').reduce((sum, item) => sum + item.amount, 0).toLocaleString()}`, sub: `待確認收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆` },
-    { title: '退款處理', value: `$${paymentQueue.filter((item) => item.paymentStatus.includes('退款')).reduce((sum, item) => sum + item.amount, 0).toLocaleString()}`, sub: '含退款處理中 / 已退款' },
-    { title: '本月毛利', value: '$18,420', sub: '目前為 UI 模擬值' },
-  ];
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -572,87 +589,61 @@ export default function App() {
     setCart((prev) => prev.filter((entry) => entry.id !== id));
   }
 
-
-  function pushLog(type: string, note: string) {
-    const stamp = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
-    setWarehouseRecentLogs((prev) => [{ time: stamp, type, note }, ...prev].slice(0, 12));
-  }
-
-  function syncPersonalOrder(orderNo: string, updater: (row: any) => any) {
-    setPersonalOrders((prev) => prev.map((row) => row.orderNo === orderNo ? updater(row) : row));
-  }
-
-  function handleFakeAction(message: string) {
-    setNotice(message);
-  }
-
-  function handleSelectAccounting(orderNo: string) {
-    setSelectedOrderNo(orderNo);
-    setNotice(`已選取訂單 ${orderNo}`);
-  }
-
-  function handleConfirmPayment() {
-    if (!selectedPaymentRow) return;
-    if (selectedPaymentRow.paymentStatus === '已收款') {
-      setNotice(`訂單 ${selectedPaymentRow.orderNo} 已收款，不能重複確認。`);
-      return;
-    }
-    if (selectedPaymentRow.paymentStatus === '已退款') {
-      setNotice(`訂單 ${selectedPaymentRow.orderNo} 已退款，不能再收款。`);
-      return;
-    }
-    setPaymentQueue((prev) => prev.map((item) => item.orderNo === selectedPaymentRow.orderNo ? { ...item, paymentStatus: '已收款' } : item));
-    setShippingQueue((prev) => prev.map((item) => item.orderNo === selectedPaymentRow.orderNo ? { ...item, paymentStatus: '已收款', shippingStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.shippingStatus } : item));
-    syncPersonalOrder(selectedPaymentRow.orderNo, (row) => ({ ...row, paymentStatus: '已收款', mainStatus: row.shippingStatus === '已出貨' ? '已完成' : row.mainStatus }));
-    pushLog('收款', `${selectedPaymentRow.orderNo} 已確認收款，倉儲可繼續出貨。`);
-    setNotice(`收款完成：${selectedPaymentRow.orderNo}`);
-  }
-
-  function handleConfirmRefund() {
-    if (!selectedPaymentRow) return;
-    const canRefund = selectedPaymentRow.shippingStatus === '待出貨' || selectedPaymentRow.shippingStatus.includes('換貨') || selectedPaymentRow.paymentStatus.includes('退款');
-    if (!canRefund) {
-      setNotice(`訂單 ${selectedPaymentRow.orderNo} 目前狀態不可直接退款。`);
-      return;
-    }
-    if (selectedPaymentRow.paymentStatus === '已退款') {
-      setNotice(`訂單 ${selectedPaymentRow.orderNo} 已退款，不能重複退款。`);
-      return;
-    }
-    setPaymentQueue((prev) => prev.map((item) => item.orderNo === selectedPaymentRow.orderNo ? { ...item, paymentStatus: '已退款', proof: '已退款' } : item));
-    setShippingQueue((prev) => prev.map((item) => item.orderNo === selectedPaymentRow.orderNo ? { ...item, paymentStatus: '已退款', shippingStatus: '退款待回補' } : item));
-    syncPersonalOrder(selectedPaymentRow.orderNo, (row) => ({ ...row, paymentStatus: '已退款', shippingStatus: '退款待回補', mainStatus: '退款完成' }));
-    pushLog('退款', `${selectedPaymentRow.orderNo} 已退款，待回補庫存。`);
-    setNotice(`退款完成：${selectedPaymentRow.orderNo}`);
-  }
-
-  function handleCompleteShipping(orderNo?: string) {
-    const target = shippingQueue.find((item) => item.orderNo === (orderNo ?? selectedOrderNo));
-    if (!target) {
-      setNotice('目前沒有可出貨的訂單。');
-      return;
-    }
-    if (!(target.paymentStatus === '已收款' || target.paymentStatus === '免收款')) {
-      setNotice(`訂單 ${target.orderNo} 尚未收款，暫時不可出貨。`);
-      return;
-    }
-    setShippingQueue((prev) => prev.map((item) => item.orderNo === target.orderNo ? { ...item, shippingStatus: '已出貨' } : item));
-    setPaymentQueue((prev) => prev.map((item) => item.orderNo === target.orderNo ? { ...item, shippingStatus: '已出貨' } : item));
-    syncPersonalOrder(target.orderNo, (row) => ({ ...row, shippingStatus: '已出貨', mainStatus: '已完成', paymentStatus: target.paymentStatus === '免收款' ? row.paymentStatus : '已收款' }));
-    pushLog('出貨', `${target.orderNo} 已完成出貨。`);
-    setNotice(`出貨完成：${target.orderNo}`);
-  }
-
-  function handleSubmitOrder() {
-    setNotice(`已模擬送出訂單：${customerName || '未命名客戶'} / 共 ${itemCount} 件 / 金額 $${grandTotal}`);
-  }
-
   function applyQuickCustomer(name: string, phone: string, address: string, method: ShippingMethod) {
     setCustomerName(name);
     setCustomerPhone(phone);
     setCustomerAddress(address);
     setShippingMethod(method);
   }
+
+  function pushActionNotice(tone: ActionNotice['tone'], text: string) {
+    setActionNotice({ tone, text });
+  }
+
+  function selectAccountingRecord(orderNo: string) {
+    setSelectedAccountingOrderNo(orderNo);
+    const found = paymentQueue.find((item) => item.orderNo === orderNo);
+    if (found) pushActionNotice('success', `✅ 已選取 ${found.orderNo}`);
+  }
+
+  function handleAccountingProofClick(text: string) {
+    pushActionNotice('success', text);
+  }
+
+  function handleConfirmPayment() {
+    if (!selectedAccountingRecord) return pushActionNotice('error', '❌ 尚未選取訂單');
+    if (selectedAccountingRecord.paymentStatus === '已收款') return pushActionNotice('error', '❌ 此單已收款');
+    if (selectedAccountingRecord.paymentStatus === '已退款') return pushActionNotice('error', '❌ 此單已退款');
+    setPaymentQueue((prev) =>
+      prev.map((item) =>
+        item.orderNo === selectedAccountingRecord.orderNo
+          ? { ...item, paymentStatus: '已收款', proof: item.proof === '待上傳' ? '已確認' : item.proof }
+          : item,
+      ),
+    );
+    pushActionNotice('success', '✅ 已收款');
+  }
+
+  function handleConfirmRefund() {
+    if (!selectedAccountingRecord) return pushActionNotice('error', '❌ 尚未選取訂單');
+    if (selectedAccountingRecord.paymentStatus === '已退款') return pushActionNotice('error', '❌ 此單已退款');
+    if (selectedAccountingRecord.shippingStatus === '已出貨') return pushActionNotice('error', '❌ 請先退貨');
+    setPaymentQueue((prev) =>
+      prev.map((item) =>
+        item.orderNo === selectedAccountingRecord.orderNo
+          ? { ...item, paymentStatus: '已退款', shippingStatus: item.shippingStatus === '待出貨' ? '已退款' : item.shippingStatus }
+          : item,
+      ),
+    );
+    pushActionNotice('success', '✅ 已退款');
+  }
+
+  const selectedUntaxedAmount = selectedAccountingRecord
+    ? Math.round(selectedAccountingRecord.amount / (1 + selectedAccountingRecord.taxRate / 100))
+    : 0;
+  const selectedTaxAmount = selectedAccountingRecord ? selectedAccountingRecord.amount - selectedUntaxedAmount : 0;
+  const canCollect = Boolean(selectedAccountingRecord && !['已收款', '已退款'].includes(selectedAccountingRecord.paymentStatus));
+  const canRefund = Boolean(selectedAccountingRecord && selectedAccountingRecord.paymentStatus !== '已退款' && selectedAccountingRecord.shippingStatus !== '已出貨');
 
   return (
     <div className="app-shell">
@@ -785,8 +776,6 @@ export default function App() {
                 </div>
               </div>
             </div>
-
-            <div className="card notice-card">{notice}</div>
 
             <section className="summary-grid">
               <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
@@ -1101,7 +1090,7 @@ export default function App() {
                         <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
                       </div>
 
-                      <button type="button" className="primary-button full-width" onClick={handleSubmitOrder}>
+                      <button type="button" className="primary-button full-width">
                         <Receipt className="small-icon" />送出訂單（UI示意）
                       </button>
                     </div>
@@ -1157,8 +1146,8 @@ export default function App() {
                               </div>
                               <div className="shipping-actions">
                                 <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                                <button type="button" className="ghost-button compact-btn" onClick={() => handleFakeAction(`掃碼出貨已啟動：${item.orderNo}`)}>掃碼出貨</button>
-                                <button type="button" className="ghost-button compact-btn" onClick={() => handleFakeAction(`已開啟出貨單預覽：${item.orderNo}`)}>查看出貨單</button>
+                                <button type="button" className="ghost-button compact-btn">掃碼出貨</button>
+                                <button type="button" className="ghost-button compact-btn">查看出貨單</button>
                               </div>
                             </div>
                           ))}
@@ -1200,7 +1189,7 @@ export default function App() {
                             <div className="fake-field wide"><span>掃碼結果</span><strong>商品條碼 + QR 身分識別比對成功後才放行</strong></div>
                           </div>
                           <div className="accounting-action-row">
-                            <button type="button" className="primary-button" onClick={() => handleCompleteShipping()}><Truck className="small-icon" />完成出貨</button>
+                            <button type="button" className="primary-button"><Truck className="small-icon" />完成出貨</button>
                             <button type="button" className="ghost-button"><Receipt className="small-icon" />列印出貨單</button>
                           </div>
                         </div>
@@ -1305,8 +1294,8 @@ export default function App() {
                           <div className="fake-field"><span>最近紀錄</span><strong>保留 20 筆</strong></div>
                         </div>
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button" onClick={() => handleFakeAction('查詢功能已啟動，目前為前端模擬結果。')}><Search className="small-icon" />立即查詢</button>
-                          <button type="button" className="ghost-button" onClick={() => handleFakeAction('掃碼功能已預留啟動點，下一階段再接真掃碼。')}><QrCode className="small-icon" />掃碼帶入</button>
+                          <button type="button" className="primary-button"><Search className="small-icon" />立即查詢</button>
+                          <button type="button" className="ghost-button"><QrCode className="small-icon" />掃碼帶入</button>
                         </div>
                       </div>
 
@@ -1345,11 +1334,11 @@ export default function App() {
                 <SectionIntro
                   title="會計中心骨架"
                   desc="這一步改成更接近實際後台的三分頁：收款 / 退款作業、銷售統計、排行榜 / 熱銷。版位命名直接對齊你後面要接的 GAS 會計邏輯。"
-                  stats={[`待收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
+                  stats={[`待收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆`, '按鈕已啟動', '已收款 / 已退款 極簡提示']}
                 />
 
                 <section className="summary-grid">
-                  {liveAccountingSummary.map((item) => (
+                  {accountingSummary.map((item) => (
                     <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />
                   ))}
                 </section>
@@ -1364,6 +1353,11 @@ export default function App() {
                   <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}>
                     <Trophy className="small-icon" />排行榜 / 熱銷
                   </button>
+                </div>
+
+                <div className={`card action-notice-bar ${actionNotice.tone}`}>
+                  <div className="action-notice-label">操作提示</div>
+                  <div className="action-notice-text">{actionNotice.text}</div>
                 </div>
 
                 {accountingTab === 'ops' && (
@@ -1404,18 +1398,18 @@ export default function App() {
                         </div>
 
                         <div className="accounting-proof-grid">
-                          <div className="accounting-proof-card">
+                          <button type="button" className="accounting-proof-card interactive" onClick={() => handleAccountingProofClick('✅ 已開啟收據上傳')}>
                             <div className="accounting-proof-title">收據上傳</div>
                             <div className="accounting-proof-desc">保留收據、轉帳證明與對帳附件位置</div>
-                          </div>
-                          <div className="accounting-proof-card">
+                          </button>
+                          <button type="button" className="accounting-proof-card interactive" onClick={() => handleAccountingProofClick('✅ 已開啟匯款截圖')}>
                             <div className="accounting-proof-title">匯款截圖</div>
                             <div className="accounting-proof-desc">之後直接接照片上傳或檔案上傳</div>
-                          </div>
-                          <div className="accounting-proof-card">
+                          </button>
+                          <button type="button" className="accounting-proof-card interactive" onClick={() => handleAccountingProofClick('✅ 已開啟 AI 辨識位')}>
                             <div className="accounting-proof-title">AI 辨識位</div>
                             <div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div>
-                          </div>
+                          </button>
                         </div>
                       </div>
 
@@ -1430,37 +1424,41 @@ export default function App() {
                         <div className="form-grid two-col accounting-form-grid">
                           <label className="field-card">
                             <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
-                            <input value={selectedPaymentRow?.orderNo ?? ''} readOnly />
+                            <input value={selectedAccountingRecord?.orderNo || ''} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><User className="small-icon" />客戶姓名</span>
-                            <input value={selectedPaymentRow?.customer ?? ''} readOnly />
+                            <input value={selectedAccountingRecord?.customer || ''} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Wallet className="small-icon" />未稅價</span>
-                            <input value={String(selectedPaymentRow ? Math.max(0, selectedPaymentRow.amount - selectedPaymentRow.shippingFee) : 0)} readOnly />
+                            <input value={String(selectedUntaxedAmount)} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
-                            <input value={String(selectedPaymentRow?.taxRate ?? 0)} readOnly />
+                            <input value={String(selectedAccountingRecord?.taxRate || 0)} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Truck className="small-icon" />運費</span>
-                            <input value={String(selectedPaymentRow?.shippingFee ?? 0)} readOnly />
+                            <input value={String(selectedAccountingRecord?.shippingFee || 0)} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
-                            <input value={String(selectedPaymentRow?.amount ?? 0)} readOnly />
+                            <input value={String(selectedAccountingRecord?.amount || 0)} readOnly />
                           </label>
                           <label className="field-card field-span-2">
                             <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
-                            <textarea rows={4} readOnly value={selectedPaymentRow ? `付款方式：${selectedPaymentRow.paymentMethod}｜證明：${selectedPaymentRow.proof}｜發票：${selectedPaymentRow.invoiceNo}` : '尚未選取訂單'} />
+                            <textarea rows={4} readOnly value={selectedAccountingRecord ? `證明：${selectedAccountingRecord.proof} / 稅額：$${selectedTaxAmount}` : ''} />
                           </label>
                         </div>
 
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button" onClick={handleConfirmPayment}><CreditCard className="small-icon" />確認收款</button>
-                          <button type="button" className="ghost-button compact-btn" onClick={handleConfirmRefund}><RefreshCw className="small-icon" />確認退款</button>
+                          <button type="button" className="primary-button" onClick={handleConfirmPayment} disabled={!canCollect}>
+                            <CreditCard className="small-icon" />確認收款
+                          </button>
+                          <button type="button" className="ghost-button compact-btn" onClick={handleConfirmRefund} disabled={!canRefund}>
+                            <RefreshCw className="small-icon" />確認退款
+                          </button>
                         </div>
                       </div>
                     </section>
@@ -1476,7 +1474,12 @@ export default function App() {
 
                       <div className="shipping-queue accounting-queue">
                         {filteredAccountingQueue.map((item) => (
-                          <div key={item.orderNo} className={`shipping-row accounting-row ${selectedOrderNo === item.orderNo ? 'is-selected' : ''}`} onClick={() => handleSelectAccounting(item.orderNo)}>
+                          <button
+                            key={item.orderNo}
+                            type="button"
+                            className={`shipping-row accounting-row accounting-select-row ${selectedAccountingOrderNo === item.orderNo ? 'selected' : ''}`}
+                            onClick={() => selectAccountingRecord(item.orderNo)}
+                          >
                             <div>
                               <div className="shipping-order">{item.orderNo}</div>
                               <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
@@ -1487,7 +1490,7 @@ export default function App() {
                               <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : 'badge-neutral'}`}>{item.shippingStatus}</span>
                               <strong className="accounting-amount">${item.amount}</strong>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </section>
@@ -1707,8 +1710,8 @@ export default function App() {
                       <div className="panel-desc">保留你指定的搜尋、掃碼、刷新整理三個操作節奏，後續可直接接歷史訂單完整查詢。</div>
                     </div>
                     <div className="history-toolbar">
-                      <button type="button" className="ghost-button compact-btn" onClick={() => handleFakeAction('個人掃碼入口已啟動，下一步再接手機掃碼。')}><QrCode className="small-icon" />掃碼</button>
-                      <button type="button" className="ghost-button compact-btn" onClick={() => handleFakeAction('個人歷史訂單已刷新。')}><RefreshCw className="small-icon" />刷新整理</button>
+                      <button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button>
+                      <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />刷新整理</button>
                     </div>
                   </div>
 
@@ -1717,7 +1720,7 @@ export default function App() {
                       <Search className="search-icon" />
                       <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" />
                     </div>
-                    <button type="button" className="primary-button compact-primary" onClick={() => handleFakeAction('歷史訂單搜尋已啟動。')}>輸入</button>
+                    <button type="button" className="primary-button compact-primary">輸入</button>
                   </div>
 
                   <div className="history-list">
