@@ -50,6 +50,7 @@ type SessionUser = { name: string; loginId: string; role: Role; rank: string };
 type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
+type WarehouseQueryMode = 'barcode' | 'qr' | 'order';
 type AccountingTab = 'ops' | 'stats' | 'ranking';
 
 type WorkflowCard = {
@@ -106,9 +107,9 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 
 
 const shippingQueue = [
-  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high' },
-  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium' },
-  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium' },
+  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high', shippingMethod: '宅配', address: '新竹市東區食品路 88 號', trackingNo: '未建立', scanStatus: '待掃碼驗證', qrSummary: 'E401*2 / P301*1' },
+  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium', shippingMethod: '店到店', address: '竹北成功門市', trackingNo: 'TCAT-203188', scanStatus: '已完成商品掃描', qrSummary: 'E402*1 / E408*1' },
+  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium', shippingMethod: '宅配', address: '新竹市北區湳雅街 10 號', trackingNo: '待建立', scanStatus: '換貨單待驗證', qrSummary: 'P305*1' },
 ];
 
 const inventoryFlow = [
@@ -137,9 +138,9 @@ const shippingChecklist = [
 ];
 
 const stockSnapshot = [
-  { code: 'E401', name: '女神酵素液', stock: 36, safe: 12, qr: 'QR(A)*18 / QR(B)*18', status: '正常' },
-  { code: 'P301', name: '瞬白激光精華4G', stock: 9, safe: 10, qr: 'QR(P1)*6 / QR(P2)*3', status: '低庫存' },
-  { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常' },
+  { code: 'E401', name: '女神酵素液', stock: 36, safe: 12, qr: 'QR(A)*18 / QR(B)*18', status: '正常', updated: '今日 10:45 更新' },
+  { code: 'P301', name: '瞬白激光精華4G', stock: 9, safe: 10, qr: 'QR(P1)*6 / QR(P2)*3', status: '低庫存', updated: '今日 09:12 出貨後下降' },
+  { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常', updated: '今日 11:18 換貨預留' },
 ];
 
 const warehouseRecentLogs = [
@@ -461,6 +462,17 @@ export default function App() {
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
+  const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(shippingQueue[0]?.orderNo ?? '');
+  const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
+    text: '✅ 倉儲頁已進入可操作版，可切換訂單與查詢模式',
+    tone: 'success',
+  });
+  const [warehouseQueryMode, setWarehouseQueryMode] = useState<WarehouseQueryMode>('barcode');
+  const [warehouseQueryInput, setWarehouseQueryInput] = useState('E401');
+  const [warehouseQueryResult, setWarehouseQueryResult] = useState<{ title: string; desc: string; meta: string[] }[]>([
+    { title: '女神酵素液', desc: '商品條碼 E401 / 目前庫存 36 / 最近入庫 2026/03/31 10:45', meta: ['QR(A)*18', 'QR(B)*18', '狀態：正常'] },
+  ]);
+  const [selectedStockCode, setSelectedStockCode] = useState(stockSnapshot[0]?.code ?? '');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
@@ -562,6 +574,88 @@ export default function App() {
     if (!q) return source;
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory]);
+
+const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0], [selectedWarehouseOrderNo]);
+
+  const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode]);
+
+  const runWarehouseQuery = (input = warehouseQueryInput, mode = warehouseQueryMode) => {
+    const value = input.trim();
+    if (!value) {
+      setWarehouseNotice({ text: '❌ 請先輸入查詢條件', tone: 'danger' });
+      return;
+    }
+
+    const normalized = value.toUpperCase();
+
+    if (mode === 'barcode') {
+      const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
+      if (!matched) {
+        setWarehouseQueryResult([{ title: '查無商品條碼', desc: `找不到 ${value} 的商品資料`, meta: ['請改掃 QR 或訂單編號'] }]);
+        setWarehouseNotice({ text: '❌ 商品條碼查無資料', tone: 'danger' });
+        return;
+      }
+      setSelectedStockCode(matched.code);
+      setWarehouseQueryResult([{
+        title: matched.name,
+        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
+        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
+      }]);
+      setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
+      return;
+    }
+
+    if (mode === 'qr') {
+      const qrMap: Record<string, { title: string; desc: string; meta: string[] }> = {
+        'QR(A)': { title: 'QR(A)', desc: '女神酵素液 / 目前庫存 18 / 最近入庫 2026/03/31 10:45', meta: ['入庫人員：VP001', '商品條碼：E401', '狀態：可出貨'] },
+        'QR(P1)': { title: 'QR(P1)', desc: '瞬白激光精華4G / 目前庫存 6 / 最近入庫 2026/03/31 09:12', meta: ['入庫人員：VP002', '商品條碼：P301', '狀態：低庫存注意'] },
+        'QR(M)': { title: 'QR(M)', desc: '魔力抹茶機能飲 / 目前庫存 22 / 最近入庫 2026/03/31 11:18', meta: ['入庫人員：VP003', '商品條碼：E408', '狀態：正常'] },
+      };
+      const matched = qrMap[normalized] || qrMap[value];
+      if (!matched) {
+        setWarehouseQueryResult([{ title: '查無 QR 身分識別', desc: `找不到 ${value} 的 QR 記錄`, meta: ['請確認是否已入庫'] }]);
+        setWarehouseNotice({ text: '❌ QR 身分識別查無資料', tone: 'danger' });
+        return;
+      }
+      setWarehouseQueryResult([matched]);
+      setWarehouseNotice({ text: `✅ 已查到 ${matched.title}`, tone: 'success' });
+      return;
+    }
+
+    const matchedOrder = shippingQueue.find((item) => item.orderNo.toUpperCase().includes(normalized));
+    if (!matchedOrder) {
+      setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
+      setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
+      return;
+    }
+    setSelectedWarehouseOrderNo(matchedOrder.orderNo);
+    setWarehouseQueryResult([{
+      title: matchedOrder.orderNo,
+      desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
+      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.qrSummary}`, `地址：${matchedOrder.address}`],
+    }]);
+    setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
+  };
+
+  const handleWarehouseShip = () => {
+    if (!selectedWarehouseOrder) return;
+    if (selectedWarehouseOrder.paymentStatus !== '已收款' && selectedWarehouseOrder.paymentStatus !== '免收款') {
+      setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
+      return;
+    }
+    setWarehouseNotice({ text: `✅ 已出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
+  };
+
+  const handleWarehousePrint = () => {
+    if (!selectedWarehouseOrder) return;
+    setWarehouseNotice({ text: `✅ 已開啟出貨單：${selectedWarehouseOrder.orderNo}`, tone: 'neutral' });
+  };
+
+  const handleWarehouseScanFill = () => {
+    const next = warehouseQueryMode === 'barcode' ? 'P301' : warehouseQueryMode === 'qr' ? 'QR(P1)' : 'VP20260331-002';
+    setWarehouseQueryInput(next);
+    setWarehouseNotice({ text: `✅ 已帶入 ${next}`, tone: 'neutral' });
+  };
 
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
@@ -1348,19 +1442,33 @@ export default function App() {
                           <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
                         </div>
 
+                        {warehouseNotice && (
+                          <div className={`card product-notice-banner ${warehouseNotice.tone} warehouse-notice-banner`}>
+                            <strong>{warehouseNotice.text}</strong>
+                          </div>
+                        )}
+
                         <div className="shipping-queue">
                           {shippingQueue.map((item) => (
-                            <div key={item.orderNo} className="shipping-row">
+                            <button
+                              key={item.orderNo}
+                              type="button"
+                              className={`shipping-row warehouse-select-row ${selectedWarehouseOrder?.orderNo === item.orderNo ? 'selected' : ''}`}
+                              onClick={() => {
+                                setSelectedWarehouseOrderNo(item.orderNo);
+                                setWarehouseNotice({ text: `✅ 已切換 ${item.orderNo}`, tone: 'neutral' });
+                              }}
+                            >
                               <div>
                                 <div className="shipping-order">{item.orderNo}</div>
                                 <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
+                                <div className="shipping-meta">{item.shippingMethod} / {item.address}</div>
                               </div>
                               <div className="shipping-actions">
                                 <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                                <button type="button" className="ghost-button compact-btn">掃碼出貨</button>
-                                <button type="button" className="ghost-button compact-btn">查看出貨單</button>
+                                <span className="badge badge-soft">{item.scanStatus}</span>
                               </div>
-                            </div>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -1393,15 +1501,18 @@ export default function App() {
                             <FileText className="small-icon" />
                           </div>
                           <div className="warehouse-form-grid">
-                            <div className="fake-field"><span>訂單編號</span><strong>VP20260331-001</strong></div>
-                            <div className="fake-field"><span>出貨狀態</span><strong>待出貨</strong></div>
-                            <div className="fake-field"><span>收款狀態</span><strong>已收款</strong></div>
-                            <div className="fake-field"><span>追蹤編號</span><strong>待填入</strong></div>
-                            <div className="fake-field wide"><span>掃碼結果</span><strong>商品條碼 + QR 身分識別比對成功後才放行</strong></div>
+                            <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '-'}</strong></div>
+                            <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
+                            <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
+                            <div className="fake-field"><span>追蹤編號</span><strong>{selectedWarehouseOrder?.trackingNo || '-'}</strong></div>
+                            <div className="fake-field"><span>配送方式</span><strong>{selectedWarehouseOrder?.shippingMethod || '-'}</strong></div>
+                            <div className="fake-field"><span>收件資訊</span><strong>{selectedWarehouseOrder?.address || '-'}</strong></div>
+                            <div className="fake-field wide"><span>掃碼結果</span><strong>{selectedWarehouseOrder?.scanStatus || '商品條碼 + QR 身分識別比對成功後才放行'}</strong></div>
+                            <div className="fake-field wide"><span>本單內容</span><strong>{selectedWarehouseOrder?.qrSummary || '-'}</strong></div>
                           </div>
                           <div className="accounting-action-row">
-                            <button type="button" className="primary-button"><Truck className="small-icon" />完成出貨</button>
-                            <button type="button" className="ghost-button"><Receipt className="small-icon" />列印出貨單</button>
+                            <button type="button" className="primary-button" onClick={handleWarehouseShip}><Truck className="small-icon" />完成出貨</button>
+                            <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單</button>
                           </div>
                         </div>
                       </div>
@@ -1462,7 +1573,7 @@ export default function App() {
 
                     <div className="warehouse-stock-grid">
                       {stockSnapshot.map((item) => (
-                        <div key={item.code} className="card stock-snapshot-card">
+                        <button key={item.code} type="button" className={`card stock-snapshot-card stock-select-card ${selectedStockItem?.code === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
                           <div className="stock-card-top">
                             <div>
                               <div className="shipping-order">{item.name}</div>
@@ -1473,7 +1584,8 @@ export default function App() {
                           <div className="stock-big-number">{item.stock}</div>
                           <div className="stock-sub">目前庫存</div>
                           <div className="fake-field wide"><span>QR 身分識別</span><strong>{item.qr}</strong></div>
-                        </div>
+                          <div className="stock-updated">{item.updated}</div>
+                        </button>
                       ))}
                     </div>
                   </section>
@@ -1499,14 +1611,22 @@ export default function App() {
                           </div>
                           <Search className="small-icon" />
                         </div>
+                        <div className="warehouse-query-mode-row">
+                          <button type="button" className={`warehouse-mode-chip ${warehouseQueryMode === 'barcode' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('barcode')}>商品條碼</button>
+                          <button type="button" className={`warehouse-mode-chip ${warehouseQueryMode === 'qr' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('qr')}>QR 身分識別</button>
+                          <button type="button" className={`warehouse-mode-chip ${warehouseQueryMode === 'order' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('order')}>訂單編號</button>
+                        </div>
                         <div className="warehouse-form-grid">
-                          <div className="fake-field wide"><span>查詢條件</span><strong>輸入商品條碼 / QR 身分識別 / 訂單編號</strong></div>
-                          <div className="fake-field"><span>查詢模式</span><strong>精準查詢</strong></div>
-                          <div className="fake-field"><span>最近紀錄</span><strong>保留 20 筆</strong></div>
+                          <label className="field-card field-span-2">
+                            <span className="field-label"><Search className="small-icon" />查詢條件</span>
+                            <input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR 身分識別 / 訂單編號" />
+                          </label>
+                          <div className="fake-field"><span>查詢模式</span><strong>{warehouseQueryMode === 'barcode' ? '商品條碼' : warehouseQueryMode === 'qr' ? 'QR 身分識別' : '訂單編號'}</strong></div>
+                          <div className="fake-field"><span>最近紀錄</span><strong>{warehouseQueryInput || '保留 20 筆'}</strong></div>
                         </div>
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button"><Search className="small-icon" />立即查詢</button>
-                          <button type="button" className="ghost-button"><QrCode className="small-icon" />掃碼帶入</button>
+                          <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>
+                          <button type="button" className="ghost-button" onClick={handleWarehouseScanFill}><QrCode className="small-icon" />掃碼帶入</button>
                         </div>
                       </div>
 
@@ -1519,18 +1639,15 @@ export default function App() {
                           <History className="small-icon" />
                         </div>
                         <div className="warehouse-result-list">
-                          <div className="warehouse-result-item">
-                            <div className="warehouse-result-title">商品條碼模式</div>
-                            <div className="warehouse-result-desc">商品名稱、商品條碼、總庫存、最近入庫時間、QR(A)*2 / QR(B)*1</div>
-                          </div>
-                          <div className="warehouse-result-item">
-                            <div className="warehouse-result-title">QR 模式</div>
-                            <div className="warehouse-result-desc">只顯示該 QR 的數量、入庫時間、入庫人員、商品名稱、商品條碼</div>
-                          </div>
-                          <div className="warehouse-result-item">
-                            <div className="warehouse-result-title">訂單模式</div>
-                            <div className="warehouse-result-desc">顯示未出貨 / 待出貨 / 已退款 / 已換貨，提供出貨與回補判讀</div>
-                          </div>
+                          {warehouseQueryResult.map((item) => (
+                            <div key={item.title} className="warehouse-result-item">
+                              <div className="warehouse-result-title">{item.title}</div>
+                              <div className="warehouse-result-desc">{item.desc}</div>
+                              <div className="data-chip-row">
+                                {item.meta.map((meta) => <span key={meta} className="badge badge-neutral">{meta}</span>)}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
