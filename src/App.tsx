@@ -1161,19 +1161,21 @@ export default function App() {
               <span className="badge badge-soft">對齊 GAS 功能邏輯</span>
             </div>
           </div>
-          <div className="hero-side">
-            <div className="hero-status card">
-              <div className="hero-status-head">
-                {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
-                <span>{bootMessage}</span>
-              </div>
-              <div className="hero-status-list">
-                <div><span>商品資料</span><strong>{products.length}</strong></div>
-                <div><span>客戶資料</span><strong>{customers.length}</strong></div>
-                <div><span>人員資料</span><strong>{staff.length}</strong></div>
+          {active !== 'orders' && (
+            <div className="hero-side">
+              <div className="hero-status card">
+                <div className="hero-status-head">
+                  {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
+                  <span>{bootMessage}</span>
+                </div>
+                <div className="hero-status-list">
+                  <div><span>商品資料</span><strong>{products.length}</strong></div>
+                  <div><span>客戶資料</span><strong>{customers.length}</strong></div>
+                  <div><span>人員資料</span><strong>{staff.length}</strong></div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="topbar">
@@ -1212,12 +1214,14 @@ export default function App() {
               </div>
             </div>
 
-            <section className="summary-grid">
-              <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
-              <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
-              <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
-              <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
-            </section>
+            {active !== 'orders' && (
+              <section className="summary-grid">
+                <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
+                <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
+                <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
+                <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
+              </section>
+            )}
 
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
