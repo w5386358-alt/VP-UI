@@ -2006,3 +2006,23 @@ button:hover { transform: translateY(-1px); }
   line-height:1.75;
   font-size:13px;
 }
+
+
+.accounting-sync-card{
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,247,250,0.92) 100%);
+}
+
+.accounting-sync-title{
+  font-size:15px;
+  font-weight:800;
+  color:#c72f60;
+}
+
+.accounting-sync-desc{
+  margin-top:8px;
+  color:var(--muted);
+  line-height:1.7;
+}

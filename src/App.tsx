@@ -1324,11 +1324,8 @@ export default function App() {
         return;
       }
       setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
-      setSelectedWarehouseOrderNo(selectedAccountingRecord.orderNo);
-      setWarehouseTab('shipping');
-      setActive('inventory');
-      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，已同步解鎖倉儲出貨`, tone: 'success' });
-      setWarehouseNotice({ text: `✅ 會計已確認收款，可開始出貨：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，倉儲端將依狀態判定可出貨`, tone: 'success' });
+      setWarehouseNotice({ text: `✅ 收款狀態已更新：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       setOrderNotice({ text: `✅ 會計已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       return;
     }
