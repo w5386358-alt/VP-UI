@@ -10,10 +10,6 @@ export default function ProfileModule(props: any) {
         stats={[`歷史訂單 ${personalOrders.length} 筆`, '個人資料 / 業績雙區塊', '掃碼 / 刷新整理 預留']}
       />
 
-      <section className="summary-grid">
-        {personalSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}
-      </section>
-
       <section className="profile-action-grid">
         {profileQuickActions.map((item: any) => {
           const Icon = item.icon;

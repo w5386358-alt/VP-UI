@@ -23,10 +23,6 @@ export default function AccountingModule(props: any) {
         stats={[`待收款 ${paymentQueue.filter((item: any) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
       />
 
-      <section className="summary-grid">
-        {accountingSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}
-      </section>
-
       <div className="accounting-tab-row">
         <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" />收款 / 退款作業</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />銷售統計</button>
