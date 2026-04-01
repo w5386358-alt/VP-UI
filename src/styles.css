@@ -2148,33 +2148,84 @@ button:hover { transform: translateY(-1px); }
   position:relative;
   z-index:1;
 }
+.user-card:hover{
+  transform: translateY(-2px);
+}
+.user-card .badge-row{
+  align-items:flex-end;
+}
+.user-card .badge-row span:last-child{
+  position: relative;
+  overflow: visible;
+}
+.user-card-core .badge-row span:last-child{
+  background: transparent;
+  border-color: transparent;
+  color: rgba(125,39,72,.18);
+  font-size: 58px;
+  line-height: .9;
+  font-weight: 900;
+  padding: 0;
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  letter-spacing: .04em;
+  text-shadow: none;
+  pointer-events: none;
+}
+.user-card-core:hover .badge-row span:last-child{
+  color: rgba(125,39,72,.22);
+}
 
-/* 核心：黑金，亮一點＋亮片感 */
+/* 核心：專屬柔霧玫瑰金＋一點點金 */
 .user-card-core{
   background:
-    radial-gradient(circle at 18% 22%, rgba(255,240,190,.22) 0 2px, transparent 2.6px),
-    radial-gradient(circle at 78% 26%, rgba(255,225,150,.18) 0 1.8px, transparent 2.4px),
-    radial-gradient(circle at 64% 68%, rgba(255,245,210,.12) 0 1.6px, transparent 2.2px),
-    linear-gradient(145deg, #161616 0%, #2b220d 36%, #4f3a12 72%, #d3b06a 100%);
-  border-color: rgba(214,177,106,.45);
+    radial-gradient(circle at 16% 18%, rgba(255,255,255,.34) 0 2px, transparent 2.6px),
+    radial-gradient(circle at 82% 24%, rgba(255,233,204,.26) 0 1.9px, transparent 2.5px),
+    radial-gradient(circle at 74% 74%, rgba(255,212,225,.20) 0 1.8px, transparent 2.4px),
+    linear-gradient(145deg, #fff6f8 0%, #f4cad8 34%, #e8b8c6 62%, #e8cfa9 100%);
+  border-color: rgba(227, 191, 170, .62);
   box-shadow:
-    0 18px 42px rgba(20,16,8,.28),
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 0 18px rgba(242,210,122,.18);
+    0 18px 42px rgba(214, 149, 172, .18),
+    inset 0 1px 0 rgba(255,255,255,.58),
+    0 0 18px rgba(237, 204, 164, .12);
 }
 .user-card-core::before{
   background:
-    linear-gradient(120deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 38%),
-    radial-gradient(circle at 85% 18%, rgba(255,233,170,.25) 0%, transparent 22%);
+    linear-gradient(120deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.10) 34%, rgba(255,255,255,0) 58%),
+    radial-gradient(circle at 84% 18%, rgba(255,228,186,.34) 0%, transparent 24%);
 }
 .user-card-core::after{
-  background: radial-gradient(circle, rgba(255,220,140,.55) 0%, rgba(255,220,140,0) 68%);
+  background: radial-gradient(circle, rgba(241,208,168,.44) 0%, rgba(241,208,168,0) 72%);
+  opacity: .42;
+}
+.user-card-core:hover{
+  transform: translateY(-3px);
+  border-color: rgba(229, 186, 165, .78);
+  box-shadow:
+    0 22px 48px rgba(214, 149, 172, .22),
+    inset 0 1px 0 rgba(255,255,255,.64),
+    0 0 26px rgba(237, 204, 164, .18);
+}
+.user-card-core:hover::before{
+  background:
+    linear-gradient(118deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,.52) 22%, rgba(255,255,255,.14) 40%, rgba(255,255,255,0) 62%),
+    radial-gradient(circle at 84% 18%, rgba(255,228,186,.40) 0%, transparent 26%);
+}
+.user-card-core:hover::after{
+  opacity: .56;
+  transform: scale(1.06);
 }
 .user-card-core .muted-label,
-.user-card-core .user-id{ color: rgba(255,243,218,.82); }
+.user-card-core .user-id{ color: #7d5b68; }
 .user-card-core .user-name{
-  color:#fff3cf;
-  text-shadow: 0 1px 0 rgba(0,0,0,.22), 0 0 14px rgba(255,223,138,.16);
+  color:#7d2748;
+  text-shadow: 0 1px 0 rgba(255,255,255,.52), 0 0 10px rgba(243,208,170,.12);
+}
+.user-card-core .badge-role{
+  background: rgba(255,255,255,.24);
+  color: #7f2d4b;
+  border-color: rgba(255,255,255,.18);
 }
 
 /* 菁英：暖金（與高級互換後） */
@@ -2223,81 +2274,4 @@ button:hover { transform: translateY(-1px); }
   background: linear-gradient(135deg, #f8e2e8 0%, #f0c4d2 100%);
   color: #8f3654;
   border-color: #e9b9c8;
-}
-
-
-/* === 登入卡微調 === */
-.user-card{
-  isolation:isolate;
-}
-
-.user-rank-watermark{
-  position:absolute;
-  right:20px;
-  bottom:14px;
-  z-index:0;
-  font-size:48px;
-  line-height:1;
-  font-weight:900;
-  letter-spacing:.08em;
-  color:rgba(255,255,255,.18);
-  pointer-events:none;
-  user-select:none;
-  text-transform:none;
-}
-
-.user-card-core .user-rank-watermark{
-  color:rgba(255,236,185,.16);
-  text-shadow:0 0 22px rgba(255,214,120,.08);
-}
-
-.user-card-elite .user-rank-watermark{
-  color:rgba(140,97,16,.14);
-}
-
-.user-card-senior .user-rank-watermark{
-  color:rgba(123,35,66,.14);
-}
-
-.user-card-normal .user-rank-watermark{
-  color:rgba(95,83,88,.12);
-}
-
-.user-badge-row{
-  margin-top:12px;
-}
-
-.user-role-badge{
-  background:transparent;
-  border-color:transparent;
-  box-shadow:none;
-  padding:0;
-  border-radius:0;
-  font-size:15px;
-  font-weight:900;
-}
-
-.user-card-core .user-role-badge{ color:#f6edd7; }
-.user-card-elite .user-role-badge{ color:#8c6110; }
-.user-card-senior .user-role-badge{ color:#8f3654; }
-.user-card-normal .user-role-badge{ color:#7d5f69; }
-
-.rank-switch-btn.elite.active{
-  background:linear-gradient(135deg, #fff3df 0%, #e8c78f 100%);
-  color:#8f6000;
-  border-color:transparent;
-}
-
-.rank-switch-btn.senior.active{
-  background:linear-gradient(135deg, #f8e2e8 0%, #e4a6bb 100%);
-  color:#7c2848;
-  border-color:transparent;
-}
-
-@media (max-width:900px){
-  .user-rank-watermark{
-    font-size:42px;
-    right:16px;
-    bottom:12px;
-  }
 }
