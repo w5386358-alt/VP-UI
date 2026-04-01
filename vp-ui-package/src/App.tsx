@@ -48,32 +48,6 @@ type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
 type AccountingTab = 'ops' | 'stats' | 'ranking';
-type NoticeTone = 'success' | 'error' | 'info';
-
-type PaymentRecord = {
-  orderNo: string;
-  customer: string;
-  paymentStatus: string;
-  shippingStatus: string;
-  amount: number;
-  shippingFee: number;
-  taxRate: number;
-  proof: string;
-  date: string;
-  paymentMethod: string;
-  invoiceNo: string;
-};
-
-type ShippingRecord = {
-  orderNo: string;
-  customer: string;
-  paymentStatus: string;
-  shippingStatus: string;
-  itemCount: number;
-  urgency: string;
-};
-
-type LogRecord = { time: string; type: string; note: string };
 
 type WorkflowCard = {
   title: string;
@@ -116,7 +90,7 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
-const initialShippingQueue: ShippingRecord[] = [
+const shippingQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high' },
   { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium' },
   { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium' },
@@ -153,7 +127,7 @@ const stockSnapshot = [
   { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常' },
 ];
 
-const initialWarehouseRecentLogs: LogRecord[] = [
+const warehouseRecentLogs = [
   { time: '09:12', type: '出貨', note: 'VP20260331-001 完成出貨，扣減 E401*2 / P301*1' },
   { time: '10:45', type: '入庫', note: 'E402 補貨 12 件，寫入 inventory_logs' },
   { time: '11:18', type: '換貨', note: 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立' },
@@ -161,7 +135,7 @@ const initialWarehouseRecentLogs: LogRecord[] = [
 ];
 
 
-const initialPaymentQueue: PaymentRecord[] = [
+const paymentQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳', date: '2026/03/31', paymentMethod: '銀行轉帳', invoiceNo: '待補' },
   { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳', date: '2026/03/31', paymentMethod: 'LINE Pay', invoiceNo: 'AA-20318' },
   { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單', date: '2026/03/30', paymentMethod: '退款重開單', invoiceNo: 'EX-99001' },
@@ -461,12 +435,7 @@ export default function App() {
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [orderCategory, setOrderCategory] = useState('全部商品');
-  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>(initialPaymentQueue);
-  const [shippingRecords, setShippingRecords] = useState<ShippingRecord[]>(initialShippingQueue);
-  const [recentLogs, setRecentLogs] = useState<LogRecord[]>(initialWarehouseRecentLogs);
-  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialPaymentQueue[0]?.orderNo || '');
-  const [activeWarehouseOrderNo, setActiveWarehouseOrderNo] = useState(initialShippingQueue[0]?.orderNo || '');
-  const [actionNotice, setActionNotice] = useState<{ tone: NoticeTone; text: string }>({ tone: 'info', text: '⚠️ 功能啟動模式' });
+  const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error' | 'warn' | 'info'; text: string } | null>(null);
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -542,114 +511,15 @@ export default function App() {
 
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
-    return paymentRecords.filter((item) => {
+    return paymentQueue.filter((item) => {
       const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
       const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
       const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
       return matchKeyword && matchPayment && matchShipping;
     });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, paymentRecords]);
+  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter]);
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
-  const selectedAccountingOrder = useMemo(
-    () => paymentRecords.find((item) => item.orderNo === selectedAccountingOrderNo) || paymentRecords[0] || null,
-    [paymentRecords, selectedAccountingOrderNo],
-  );
-  const activeWarehouseOrder = useMemo(
-    () => shippingRecords.find((item) => item.orderNo === activeWarehouseOrderNo) || shippingRecords[0] || null,
-    [shippingRecords, activeWarehouseOrderNo],
-  );
-
-  useEffect(() => {
-    if (!selectedAccountingOrderNo && paymentRecords[0]) setSelectedAccountingOrderNo(paymentRecords[0].orderNo);
-  }, [paymentRecords, selectedAccountingOrderNo]);
-
-  useEffect(() => {
-    if (!activeWarehouseOrderNo && shippingRecords[0]) setActiveWarehouseOrderNo(shippingRecords[0].orderNo);
-  }, [shippingRecords, activeWarehouseOrderNo]);
-
-  function nowLabel() {
-    return new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-
-  function pushNotice(tone: NoticeTone, text: string) {
-    setActionNotice({ tone, text });
-  }
-
-  function prependLog(type: string, note: string) {
-    setRecentLogs((prev) => [{ time: nowLabel(), type, note }, ...prev].slice(0, 12));
-  }
-
-  function syncShippingFromPayment(orderNo: string, nextPaymentStatus: string) {
-    setShippingRecords((prev) =>
-      prev.map((item) => {
-        if (item.orderNo !== orderNo) return item;
-        const nextShippingStatus = nextPaymentStatus === '已退款'
-          ? '退款待回補'
-          : item.shippingStatus === '待出貨' || item.shippingStatus === '理貨中'
-            ? '待出貨'
-            : item.shippingStatus;
-        return { ...item, paymentStatus: nextPaymentStatus, shippingStatus: nextShippingStatus };
-      }),
-    );
-  }
-
-  function handleAccountingAction(action: 'collect' | 'refund') {
-    if (!selectedAccountingOrder) return;
-    if (action === 'collect') {
-      if (selectedAccountingOrder.paymentStatus === '已收款') {
-        pushNotice('error', '❌ 此單已收款');
-        return;
-      }
-      if (selectedAccountingOrder.paymentStatus === '已退款') {
-        pushNotice('error', '❌ 此單已退款');
-        return;
-      }
-      setPaymentRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingOrder.orderNo ? { ...item, paymentStatus: '已收款', proof: item.proof === '待上傳' ? '已確認' : item.proof } : item));
-      syncShippingFromPayment(selectedAccountingOrder.orderNo, '已收款');
-      prependLog('收款', `${selectedAccountingOrder.orderNo} 已收款`);
-      pushNotice('success', '✅ 已收款');
-      return;
-    }
-    if (selectedAccountingOrder.paymentStatus === '已退款') {
-      pushNotice('error', '❌ 此單已退款');
-      return;
-    }
-    setPaymentRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingOrder.orderNo ? { ...item, paymentStatus: '已退款', shippingStatus: item.shippingStatus.includes('已出貨') ? '已退款待回補' : '已退款' } : item));
-    syncShippingFromPayment(selectedAccountingOrder.orderNo, '已退款');
-    prependLog('退款', `${selectedAccountingOrder.orderNo} 已退款`);
-    pushNotice('success', '✅ 已退款');
-  }
-
-  function handleProofAction(label: string) {
-    pushNotice('info', `⚠️ ${label}待接`);
-  }
-
-  function handleWarehouseAction(action: 'scan' | 'view' | 'ship' | 'stockIn' | 'query' | 'scanFill', orderNo?: string) {
-    const targetOrderNo = orderNo || activeWarehouseOrder?.orderNo;
-    if (action === 'scan') return pushNotice('info', '⚠️ 掃碼待接');
-    if (action === 'view') return pushNotice('success', '✅ 已開啟');
-    if (action === 'stockIn') {
-      prependLog('入庫', '手動入庫流程已觸發');
-      return pushNotice('success', '✅ 已入庫');
-    }
-    if (action === 'query') return pushNotice('success', '✅ 已查詢');
-    if (action === 'scanFill') return pushNotice('info', '⚠️ 掃碼待接');
-    const row = shippingRecords.find((item) => item.orderNo === targetOrderNo);
-    if (!row) return;
-    if (!(row.paymentStatus === '已收款' || row.paymentStatus === '免收款')) {
-      pushNotice('error', '❌ 未收款');
-      return;
-    }
-    if (row.shippingStatus === '已出貨') {
-      pushNotice('error', '❌ 已出貨');
-      return;
-    }
-    setShippingRecords((prev) => prev.map((item) => item.orderNo === row.orderNo ? { ...item, shippingStatus: '已出貨' } : item));
-    setPaymentRecords((prev) => prev.map((item) => item.orderNo === row.orderNo ? { ...item, shippingStatus: '已出貨' } : item));
-    prependLog('出貨', `${row.orderNo} 已出貨`);
-    pushNotice('success', '✅ 已出貨');
-  }
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -692,6 +562,38 @@ export default function App() {
     setCustomerPhone(phone);
     setCustomerAddress(address);
     setShippingMethod(method);
+    setActionNotice({ type: 'success', text: `✅ 已帶入 ${name}` });
+  }
+
+  function setOrderNotice(type: 'success' | 'error' | 'warn' | 'info', text: string) {
+    setActionNotice({ type, text });
+  }
+
+  function handleOrderSearch() {
+    const total = filteredOrderProducts.length;
+    setOrderNotice('info', total ? `✅ 已顯示 ${total} 項商品` : '❌ 查無商品');
+  }
+
+  function handleShippingMethodChange(method: ShippingMethod) {
+    setShippingMethod(method);
+    setOrderNotice('success', `✅ ${method}`);
+  }
+
+  function handleSubmitOrder() {
+    if (!cart.length) {
+      setOrderNotice('error', '❌ 購物車為空');
+      return;
+    }
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setOrderNotice('error', '❌ 客戶資料未完成');
+      return;
+    }
+    if (shippingMethod !== '自取' && !customerAddress.trim()) {
+      setOrderNotice('error', '❌ 收件資料未完成');
+      return;
+    }
+    const orderNo = `VPUI${String(Date.now()).slice(-6)}`;
+    setOrderNotice('success', `✅ 已建立 ${orderNo}`);
   }
 
   return (
@@ -806,6 +708,12 @@ export default function App() {
           </div>
         </div>
 
+        {actionNotice && (
+          <div className={`action-notice action-${actionNotice.type}`}>
+            <strong>{actionNotice.text}</strong>
+          </div>
+        )}
+
         {booting ? (
           <div className="card loading-card">
             <div className="spinner" />
@@ -824,10 +732,6 @@ export default function App() {
                     : '目前先用 mock 畫面保底，不影響你後續接真資料。'}
                 </div>
               </div>
-            </div>
-
-            <div className={`card action-notice-card ${actionNotice.tone}`}>
-              <div className="action-notice-text">{actionNotice.text}</div>
             </div>
 
             <section className="summary-grid">
@@ -996,10 +900,16 @@ export default function App() {
                             </button>
                           ))}
                         </div>
-                        <button type="button" className="ghost-button compact-btn">輸入</button>
+                        <button type="button" className="ghost-button compact-btn" onClick={handleOrderSearch}>輸入</button>
                       </div>
 
                       <div className="catalog-grid">
+                        {!filteredOrderProducts.length && (
+                          <div className="catalog-empty-state">
+                            <strong>目前沒有符合條件的商品</strong>
+                            <span>可調整分類或搜尋關鍵字後再查一次。</span>
+                          </div>
+                        )}
                         {filteredOrderProducts.map((item) => (
                           <div key={item.id} className="catalog-card">
                             <div className="catalog-meta-row">
@@ -1015,7 +925,7 @@ export default function App() {
                                 <div className="mini-label">目前價格</div>
                                 <div className="catalog-price">${item.price}</div>
                               </div>
-                              <button type="button" className="mini-add-btn" onClick={() => addToCart(item)} disabled={!item.enabled || item.stock <= 0}>
+                              <button type="button" className="mini-add-btn" onClick={() => { addToCart(item); setOrderNotice('success', `✅ 已加入 ${item.name}`); }} disabled={!item.enabled || item.stock <= 0}>
                                 加入
                               </button>
                             </div>
@@ -1068,7 +978,7 @@ export default function App() {
                             key={method}
                             type="button"
                             className={`shipping-chip ${shippingMethod === method ? 'active' : ''}`}
-                            onClick={() => setShippingMethod(method)}
+                            onClick={() => handleShippingMethodChange(method)}
                           >
                             {method === '自取' ? <Store className="small-icon" /> : <Truck className="small-icon" />}
                             <span>{method}</span>
@@ -1122,13 +1032,13 @@ export default function App() {
                                 <div className="cart-name">{item.name}</div>
                                 <div className="cart-meta">{item.code} / 單價 ${item.price}</div>
                               </div>
-                              <button type="button" className="text-button" onClick={() => removeFromCart(item.id)}>移除</button>
+                              <button type="button" className="text-button" onClick={() => { removeFromCart(item.id); setOrderNotice('warn', `⚠️ 已移除 ${item.name}`); }}>移除</button>
                             </div>
                             <div className="cart-item-bottom">
                               <div className="qty-box">
-                                <button type="button" onClick={() => updateQty(item.id, item.qty - 1)}>-</button>
+                                <button type="button" onClick={() => { updateQty(item.id, item.qty - 1); setOrderNotice('info', `✅ ${item.name} 數量已更新`); }}>-</button>
                                 <span>{item.qty}</span>
-                                <button type="button" onClick={() => updateQty(item.id, item.qty + 1)}>+</button>
+                                <button type="button" onClick={() => { updateQty(item.id, item.qty + 1); setOrderNotice('info', `✅ ${item.name} 數量已更新`); }}>+</button>
                               </div>
                               <strong>${item.price * item.qty}</strong>
                             </div>
@@ -1143,8 +1053,8 @@ export default function App() {
                         <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
                       </div>
 
-                      <button type="button" className="primary-button full-width">
-                        <Receipt className="small-icon" />送出訂單（UI示意）
+                      <button type="button" className="primary-button full-width" onClick={handleSubmitOrder}>
+                        <Receipt className="small-icon" />送出訂單
                       </button>
                     </div>
                   </div>
@@ -1157,7 +1067,7 @@ export default function App() {
                 <SectionIntro
                   title="倉儲中心細化版"
                   desc="這版開始把出貨、庫存、查詢三區做得更接近實際操作畫面，仍然只動 UI，不去破壞你原本 GAS 倉儲邏輯。"
-                  stats={[`待出貨 ${shippingRecords.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
+                  stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
                 />
 
                 <section className="summary-grid">
@@ -1187,24 +1097,20 @@ export default function App() {
                             <div className="panel-title">待出貨訂單</div>
                             <div className="panel-desc">先把待出貨、已收款、換貨待出庫集中在同一個作業面板。</div>
                           </div>
-                          <span className="badge badge-danger">今日重點 {shippingRecords.length} 筆</span>
+                          <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
                         </div>
 
                         <div className="shipping-queue">
-                          {shippingRecords.map((item) => (
-                            <div
-                              key={item.orderNo}
-                              className={`shipping-row interactive-row ${activeWarehouseOrderNo === item.orderNo ? 'row-active' : ''}`}
-                              onClick={() => setActiveWarehouseOrderNo(item.orderNo)}
-                            >
+                          {shippingQueue.map((item) => (
+                            <div key={item.orderNo} className="shipping-row">
                               <div>
                                 <div className="shipping-order">{item.orderNo}</div>
                                 <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
                               </div>
                               <div className="shipping-actions">
                                 <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                                <button type="button" className="ghost-button compact-btn" onClick={(e) => { e.stopPropagation(); handleWarehouseAction('scan', item.orderNo); }}>掃碼出貨</button>
-                                <button type="button" className="ghost-button compact-btn" onClick={(e) => { e.stopPropagation(); handleWarehouseAction('view', item.orderNo); }}>查看出貨單</button>
+                                <button type="button" className="ghost-button compact-btn">掃碼出貨</button>
+                                <button type="button" className="ghost-button compact-btn">查看出貨單</button>
                               </div>
                             </div>
                           ))}
@@ -1239,15 +1145,15 @@ export default function App() {
                             <FileText className="small-icon" />
                           </div>
                           <div className="warehouse-form-grid">
-                            <div className="fake-field"><span>訂單編號</span><strong>{activeWarehouseOrder?.orderNo || '-'}</strong></div>
-                            <div className="fake-field"><span>出貨狀態</span><strong>{activeWarehouseOrder?.shippingStatus || '-'}</strong></div>
-                            <div className="fake-field"><span>收款狀態</span><strong>{activeWarehouseOrder?.paymentStatus || '-'}</strong></div>
+                            <div className="fake-field"><span>訂單編號</span><strong>VP20260331-001</strong></div>
+                            <div className="fake-field"><span>出貨狀態</span><strong>待出貨</strong></div>
+                            <div className="fake-field"><span>收款狀態</span><strong>已收款</strong></div>
                             <div className="fake-field"><span>追蹤編號</span><strong>待填入</strong></div>
                             <div className="fake-field wide"><span>掃碼結果</span><strong>商品條碼 + QR 身分識別比對成功後才放行</strong></div>
                           </div>
                           <div className="accounting-action-row">
-                            <button type="button" className="primary-button" onClick={() => handleWarehouseAction('ship')}><Truck className="small-icon" />完成出貨</button>
-                            <button type="button" className="ghost-button" onClick={() => handleWarehouseAction('view')}><Receipt className="small-icon" />列印出貨單</button>
+                            <button type="button" className="primary-button"><Truck className="small-icon" />完成出貨</button>
+                            <button type="button" className="ghost-button"><Receipt className="small-icon" />列印出貨單</button>
                           </div>
                         </div>
                       </div>
@@ -1277,7 +1183,7 @@ export default function App() {
                           </div>
                         </div>
                         <div className="warehouse-log-list">
-                          {recentLogs.map((item) => (
+                          {warehouseRecentLogs.map((item) => (
                             <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
                               <div className="warehouse-log-time">{item.time}</div>
                               <div>
@@ -1304,11 +1210,6 @@ export default function App() {
                           </div>
                         </div>
                       ))}
-                    </div>
-
-                    <div className="accounting-action-row">
-                      <button type="button" className="primary-button" onClick={() => handleWarehouseAction('stockIn')}><Boxes className="small-icon" />入庫作業</button>
-                      <button type="button" className="ghost-button" onClick={() => handleWarehouseAction('query')}><Search className="small-icon" />刷新庫存</button>
                     </div>
 
                     <div className="warehouse-stock-grid">
@@ -1356,8 +1257,8 @@ export default function App() {
                           <div className="fake-field"><span>最近紀錄</span><strong>保留 20 筆</strong></div>
                         </div>
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button" onClick={() => handleWarehouseAction('query')}><Search className="small-icon" />立即查詢</button>
-                          <button type="button" className="ghost-button" onClick={() => handleWarehouseAction('scanFill')}><QrCode className="small-icon" />掃碼帶入</button>
+                          <button type="button" className="primary-button"><Search className="small-icon" />立即查詢</button>
+                          <button type="button" className="ghost-button"><QrCode className="small-icon" />掃碼帶入</button>
                         </div>
                       </div>
 
@@ -1396,7 +1297,7 @@ export default function App() {
                 <SectionIntro
                   title="會計中心骨架"
                   desc="這一步改成更接近實際後台的三分頁：收款 / 退款作業、銷售統計、排行榜 / 熱銷。版位命名直接對齊你後面要接的 GAS 會計邏輯。"
-                  stats={[`待收款 ${paymentRecords.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
+                  stats={[`待收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
                 />
 
                 <section className="summary-grid">
@@ -1455,18 +1356,18 @@ export default function App() {
                         </div>
 
                         <div className="accounting-proof-grid">
-                          <button type="button" className="accounting-proof-card proof-button" onClick={() => handleProofAction('收據上傳')}>
+                          <div className="accounting-proof-card">
                             <div className="accounting-proof-title">收據上傳</div>
                             <div className="accounting-proof-desc">保留收據、轉帳證明與對帳附件位置</div>
-                          </button>
-                          <button type="button" className="accounting-proof-card proof-button" onClick={() => handleProofAction('匯款截圖')}>
+                          </div>
+                          <div className="accounting-proof-card">
                             <div className="accounting-proof-title">匯款截圖</div>
                             <div className="accounting-proof-desc">之後直接接照片上傳或檔案上傳</div>
-                          </button>
-                          <button type="button" className="accounting-proof-card proof-button" onClick={() => handleProofAction('AI辨識位')}>
+                          </div>
+                          <div className="accounting-proof-card">
                             <div className="accounting-proof-title">AI 辨識位</div>
                             <div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div>
-                          </button>
+                          </div>
                         </div>
                       </div>
 
@@ -1481,37 +1382,37 @@ export default function App() {
                         <div className="form-grid two-col accounting-form-grid">
                           <label className="field-card">
                             <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
-                            <input value={selectedAccountingOrder?.orderNo || '-'} readOnly />
+                            <input value="VP20260331-001" readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><User className="small-icon" />客戶姓名</span>
-                            <input value={selectedAccountingOrder?.customer || '-'} readOnly />
+                            <input value="王小美" readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Wallet className="small-icon" />未稅價</span>
-                            <input value={String(Math.max(0, (selectedAccountingOrder?.amount || 0) - (selectedAccountingOrder?.shippingFee || 0)))} readOnly />
+                            <input value="4056" readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
-                            <input value={String(selectedAccountingOrder?.taxRate || 0)} readOnly />
+                            <input value="5" readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Truck className="small-icon" />運費</span>
-                            <input value={String(selectedAccountingOrder?.shippingFee || 0)} readOnly />
+                            <input value="100" readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
-                            <input value={String(selectedAccountingOrder?.amount || 0)} readOnly />
+                            <input value="4259" readOnly />
                           </label>
                           <label className="field-card field-span-2">
                             <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
-                            <textarea rows={4} readOnly value={`${selectedAccountingOrder?.proof || '待補'} / 極簡回饋模式已啟動`} />
+                            <textarea rows={4} readOnly value="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
                           </label>
                         </div>
 
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button" onClick={() => handleAccountingAction('collect')}><CreditCard className="small-icon" />確認收款</button>
-                          <button type="button" className="ghost-button compact-btn" onClick={() => handleAccountingAction('refund')}><RefreshCw className="small-icon" />確認退款</button>
+                          <button type="button" className="primary-button"><CreditCard className="small-icon" />確認收款</button>
+                          <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
                         </div>
                       </div>
                     </section>
@@ -1527,11 +1428,7 @@ export default function App() {
 
                       <div className="shipping-queue accounting-queue">
                         {filteredAccountingQueue.map((item) => (
-                          <div
-                            key={item.orderNo}
-                            className={`shipping-row accounting-row interactive-row ${selectedAccountingOrderNo === item.orderNo ? 'row-active' : ''}`}
-                            onClick={() => setSelectedAccountingOrderNo(item.orderNo)}
-                          >
+                          <div key={item.orderNo} className="shipping-row accounting-row">
                             <div>
                               <div className="shipping-order">{item.orderNo}</div>
                               <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
