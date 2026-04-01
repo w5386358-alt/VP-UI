@@ -13,6 +13,7 @@ export default function InventoryModule(props: any) {
     warehouseNotice,
     shippingChecklist,
     handleWarehouseShip,
+    handleWarehouseInbound,
     handleWarehousePrint,
     inventoryFlow,
     stockSnapshot,
@@ -183,6 +184,22 @@ export default function InventoryModule(props: any) {
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
+            </div>
+            <div className="accounting-action-row">
+              <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />確認入庫 +1</button>
+              <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+            </div>
+          </div>
+
+          <div className="card order-panel">
+            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">入庫 / 出庫 操作成功後，這裡會立即更新。</div></div></div>
+            <div className="warehouse-log-list">
+              {warehouseRecentLogs.map((item: any) => (
+                <div key={`${item.time}-${item.type}-${item.note}`} className="warehouse-log-item">
+                  <div className="warehouse-log-time">{item.time}</div>
+                  <div><div className="warehouse-log-type">{item.type}</div><div className="warehouse-log-note">{item.note}</div></div>
+                </div>
+              ))}
             </div>
           </div>
         </section>

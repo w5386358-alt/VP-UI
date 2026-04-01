@@ -161,13 +161,13 @@ const shippingChecklist = [
   { title: '完成連動', desc: 'shipping、orders、inventory、inventory_logs、sales_report 同步留痕跡。' },
 ];
 
-const stockSnapshot = [
+const initialStockSnapshot = [
   { code: 'E401', name: '女神酵素液', stock: 36, safe: 12, qr: 'QR(A)*18 / QR(B)*18', status: '正常', updated: '今日 10:45 更新' },
   { code: 'P301', name: '瞬白激光精華4G', stock: 9, safe: 10, qr: 'QR(P1)*6 / QR(P2)*3', status: '低庫存', updated: '今日 09:12 出貨後下降' },
   { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常', updated: '今日 11:18 換貨預留' },
 ];
 
-const warehouseRecentLogs = [
+const initialWarehouseRecentLogs = [
   { time: '09:12', type: '出貨', note: 'VP20260331-001 完成出貨，扣減 E401*2 / P301*1' },
   { time: '10:45', type: '入庫', note: 'E402 補貨 12 件，寫入 inventory_logs' },
   { time: '11:18', type: '換貨', note: 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立' },
@@ -547,7 +547,9 @@ export default function App() {
   const [warehouseQueryResult, setWarehouseQueryResult] = useState<{ title: string; desc: string; meta: string[] }[]>([
     { title: '女神酵素液', desc: '商品條碼 E401 / 目前庫存 36 / 最近入庫 2026/03/31 10:45', meta: ['QR(A)*18', 'QR(B)*18', '狀態：正常'] },
   ]);
-  const [selectedStockCode, setSelectedStockCode] = useState(stockSnapshot[0]?.code ?? '');
+  const [stockSnapshot, setStockSnapshot] = useState(initialStockSnapshot);
+  const [warehouseRecentLogs, setWarehouseRecentLogs] = useState(initialWarehouseRecentLogs);
+  const [selectedStockCode, setSelectedStockCode] = useState(initialStockSnapshot[0]?.code ?? '');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
@@ -784,14 +786,61 @@ export default function App() {
       setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
       return;
     }
+
+    const shippedAt = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+
     setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedWarehouseOrder.orderNo ? {
       ...item,
       shippingStatus: '已出貨',
       mainStatus: '已完成',
       paymentStatus: item.paymentStatus === '待收款' ? '已收款' : item.paymentStatus,
     } : item));
+
+    setStockSnapshot((prev) => prev.map((stock) => {
+      const shippedItem = selectedWarehouseOrder.items?.find((entry: any) => entry.code === stock.code);
+      if (!shippedItem) return stock;
+      const nextStock = Math.max(0, stock.stock - shippedItem.qty);
+      return {
+        ...stock,
+        stock: nextStock,
+        status: nextStock <= stock.safe ? '低庫存' : '正常',
+        updated: `今日 ${shippedAt} 出貨扣減`,
+      };
+    }));
+
+    setWarehouseRecentLogs((prev) => [{
+      time: shippedAt,
+      type: '出庫',
+      note: `${selectedWarehouseOrder.orderNo} 完成出貨，扣減 ${selectedWarehouseOrder.items.map((entry: any) => `${entry.code}*${entry.qty}`).join(' / ')}`
+    }, ...prev].slice(0, 12));
+
     setWarehouseNotice({ text: `✅ 已出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 訂單已同步出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
+  };
+
+  const handleWarehouseInbound = () => {
+    if (!selectedStockItem) {
+      setWarehouseNotice({ text: '❌ 請先選擇商品再入庫', tone: 'danger' });
+      return;
+    }
+
+    const inboundAt = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const nextStock = (selectedStockItem.stock || 0) + 1;
+
+    setStockSnapshot((prev) => prev.map((item) => item.code === selectedStockItem.code ? {
+      ...item,
+      stock: nextStock,
+      status: nextStock <= item.safe ? '低庫存' : '正常',
+      updated: `今日 ${inboundAt} 入庫補入`,
+    } : item));
+
+    setWarehouseRecentLogs((prev) => [{
+      time: inboundAt,
+      type: '入庫',
+      note: `${selectedStockItem.code} ${selectedStockItem.name} 已補入 1 件`
+    }, ...prev].slice(0, 12));
+
+    setWarehouseNotice({ text: `✅ 已入庫：${selectedStockItem.code} +1`, tone: 'success' });
   };
 
   const handleWarehousePrint = () => {
@@ -1212,7 +1261,7 @@ export default function App() {
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'accounting' && (
               <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
