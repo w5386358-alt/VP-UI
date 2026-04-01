@@ -370,6 +370,44 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 }
 
 function SummaryCard({ title, value, sub }: { title: string; value: string; sub: string }) {
+
+  function handleAccountingSelect(orderNo: string) {
+    setSelectedAccountingOrderId(orderNo);
+    setAccountingNotice({ text: '📄 已選取', tone: 'neutral' });
+  }
+
+  function handleAccountingReceive() {
+    if (!selectedAccountingOrder) return;
+    if (selectedAccountingOrder.paymentStatus === '已收款') {
+      setAccountingNotice({ text: '❌ 此單已收款', tone: 'danger' });
+      return;
+    }
+    if (selectedAccountingOrder.paymentStatus === '已退款') {
+      setAccountingNotice({ text: '❌ 此單已退款', tone: 'danger' });
+      return;
+    }
+    setAccountingOrders((prev) =>
+      prev.map((item) =>
+        item.orderNo === selectedAccountingOrder.orderNo ? { ...item, paymentStatus: '已收款' } : item,
+      ),
+    );
+    setAccountingNotice({ text: '✅ 已收款', tone: 'success' });
+  }
+
+  function handleAccountingRefund() {
+    if (!selectedAccountingOrder) return;
+    if (selectedAccountingOrder.paymentStatus === '已退款') {
+      setAccountingNotice({ text: '❌ 此單已退款', tone: 'danger' });
+      return;
+    }
+    setAccountingOrders((prev) =>
+      prev.map((item) =>
+        item.orderNo === selectedAccountingOrder.orderNo ? { ...item, paymentStatus: '已退款' } : item,
+      ),
+    );
+    setAccountingNotice({ text: '✅ 已退款', tone: 'success' });
+  }
+
   return (
     <div className="card summary-card">
       <div className="summary-title">{title}</div>
@@ -470,6 +508,9 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
   const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
+  const [accountingOrders, setAccountingOrders] = useState(paymentQueue);
+  const [selectedAccountingOrderId, setSelectedAccountingOrderId] = useState(paymentQueue[0]?.orderNo ?? '');
+  const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -558,7 +599,7 @@ export default function App() {
 
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
-    return paymentQueue.filter((item) => {
+    return accountingOrders.filter((item) => {
       const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
       const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
       const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
@@ -567,6 +608,17 @@ export default function App() {
   }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter]);
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
+
+  const selectedAccountingOrder =
+    accountingOrders.find((item) => item.orderNo === selectedAccountingOrderId) ||
+    filteredAccountingQueue[0] ||
+    accountingOrders[0] ||
+    null;
+
+  useEffect(() => {
+    if (!selectedAccountingOrder) return;
+    setSelectedAccountingOrderId((prev) => prev || selectedAccountingOrder.orderNo);
+  }, [selectedAccountingOrder]);
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -1496,8 +1548,14 @@ export default function App() {
                 <SectionIntro
                   title="會計中心骨架"
                   desc="這一步改成更接近實際後台的三分頁：收款 / 退款作業、銷售統計、排行榜 / 熱銷。版位命名直接對齊你後面要接的 GAS 會計邏輯。"
-                  stats={[`待收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
+                  stats={[`待收款 ${accountingOrders.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
                 />
+
+                {accountingNotice && (
+                  <div className={`card product-notice-banner ${accountingNotice.tone}`}>
+                    <strong>{accountingNotice.text}</strong>
+                  </div>
+                )}
 
                 <section className="summary-grid">
                   {accountingSummary.map((item) => (
@@ -1581,37 +1639,37 @@ export default function App() {
                         <div className="form-grid two-col accounting-form-grid">
                           <label className="field-card">
                             <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
-                            <input value="VP20260331-001" readOnly />
+                            <input value={selectedAccountingOrder?.orderNo || '-'} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><User className="small-icon" />客戶姓名</span>
-                            <input value="王小美" readOnly />
+                            <input value={selectedAccountingOrder?.customer || '-'} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Wallet className="small-icon" />未稅價</span>
-                            <input value="4056" readOnly />
+                            <input value={Math.max((selectedAccountingOrder?.amount || 0) - (selectedAccountingOrder?.shippingFee || 0), 0)} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
-                            <input value="5" readOnly />
+                            <input value={selectedAccountingOrder?.taxRate ?? 0} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Truck className="small-icon" />運費</span>
-                            <input value="100" readOnly />
+                            <input value={selectedAccountingOrder?.shippingFee ?? 0} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
-                            <input value="4259" readOnly />
+                            <input value={selectedAccountingOrder?.amount ?? 0} readOnly />
                           </label>
                           <label className="field-card field-span-2">
                             <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
-                            <textarea rows={4} readOnly value="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
+                            <textarea rows={4} readOnly value={selectedAccountingOrder ? `付款方式：${selectedAccountingOrder.paymentMethod}｜發票：${selectedAccountingOrder.invoiceNo}｜證明：${selectedAccountingOrder.proof}` : '-'} />
                           </label>
                         </div>
 
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button"><CreditCard className="small-icon" />確認收款</button>
-                          <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
+                          <button type="button" className="primary-button" onClick={handleAccountingReceive}><CreditCard className="small-icon" />確認收款</button>
+                          <button type="button" className="ghost-button compact-btn" onClick={handleAccountingRefund}><RefreshCw className="small-icon" />確認退款</button>
                         </div>
                       </div>
                     </section>
@@ -1627,7 +1685,12 @@ export default function App() {
 
                       <div className="shipping-queue accounting-queue">
                         {filteredAccountingQueue.map((item) => (
-                          <div key={item.orderNo} className="shipping-row accounting-row">
+                          <div
+                            key={item.orderNo}
+                            className={`shipping-row accounting-row ${selectedAccountingOrderId === item.orderNo ? 'selected-accounting-row' : ''}`}
+                            onClick={() => handleAccountingSelect(item.orderNo)}
+                            style={{ cursor: 'pointer', borderColor: selectedAccountingOrderId === item.orderNo ? '#f0bfd0' : undefined, boxShadow: selectedAccountingOrderId === item.orderNo ? '0 0 0 2px rgba(231,62,114,0.08)' : undefined }}
+                          >
                             <div>
                               <div className="shipping-order">{item.orderNo}</div>
                               <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
