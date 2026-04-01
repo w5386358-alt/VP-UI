@@ -60,8 +60,18 @@ export default function AccountingModule(props: any) {
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(selectedAccountingRecord?.amount || 0)} readOnly /></label>
                 <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} readOnly value={`付款方式：${selectedAccountingRecord?.paymentMethod || '-'}\n發票：${selectedAccountingRecord?.invoiceNo || '-'}\n證明：${selectedAccountingRecord?.proof || '-'}`} /></label>
               </div>
+              <div className="accounting-sync-card">
+                <div className="accounting-sync-title">倉儲串接狀態</div>
+                <div className="accounting-sync-desc">
+                  {selectedAccountingRecord?.paymentStatus === '已收款'
+                    ? '此單已解鎖倉儲出貨，可直接進出貨區。'
+                    : selectedAccountingRecord?.paymentStatus?.includes('退款')
+                      ? '此單處於退款流程，不可解鎖出貨。'
+                      : '這筆訂單尚未收款，確認收款後會自動切到倉儲並解鎖出貨。'}
+                </div>
+              </div>
               <div className="accounting-action-row">
-                <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
+                <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款並解鎖出貨</button>
                 <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><RefreshCw className="small-icon" />確認退款</button>
               </div>
             </div>

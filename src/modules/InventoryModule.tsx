@@ -72,6 +72,7 @@ export default function InventoryModule(props: any) {
                       <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
                     </div>
                     <div className="shipping-actions">
+                      <span className={`badge ${item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? 'badge-success' : 'badge-danger'}`}>{item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? '已解鎖出貨' : '未解鎖出貨'}</span>
                       <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
                       <span className="badge badge-soft">切換</span>
                     </div>
@@ -155,6 +156,7 @@ export default function InventoryModule(props: any) {
               </div>
               <div className="stack-list compact">
                 <div>未收款不可出貨</div>
+                <div>會計確認收款後，訂單會自動解鎖出貨</div>
                 <div>依 QR 剩餘數量分配扣減</div>
                 <div>扣減來源改為 inventory_logs</div>
                 <div>訂單完成後同步改出貨狀態</div>
