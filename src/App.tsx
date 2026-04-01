@@ -542,7 +542,7 @@ export default function App() {
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
-  const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(shippingQueue[0]?.orderNo ?? '');
+  const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 倉儲頁已進入可操作版，可切換訂單與查詢模式',
     tone: 'success',
@@ -559,7 +559,7 @@ export default function App() {
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
   const [accountingDateEnd, setAccountingDateEnd] = useState('2026-04-01');
-  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(paymentQueue[0]?.orderNo ?? '');
+  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
     tone: 'success',
@@ -661,7 +661,67 @@ export default function App() {
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory]);
 
-const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0], [selectedWarehouseOrderNo]);
+  const shippingQueue = useMemo(() => {
+    return orderRecords
+      .filter((item) => item.shippingStatus !== '已出貨' && item.mainStatus !== '已完成' && !item.paymentStatus.includes('退款'))
+      .map((item) => ({
+        orderNo: item.orderNo,
+        customer: item.customer,
+        paymentStatus: item.paymentStatus,
+        shippingStatus: item.shippingStatus,
+        itemCount: item.itemCount,
+        urgency: item.paymentStatus === '待收款' ? 'high' : 'medium',
+        shippingMethod: item.shippingMethod,
+        address: item.address,
+        trackingNo: item.shippingStatus === '已出貨' ? `TRK-${item.orderNo.slice(-3)}` : '未建立',
+        scanStatus: item.shippingStatus === '理貨中' ? '已完成商品掃描' : '待掃碼驗證',
+        qrSummary: item.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / '),
+      }));
+  }, [orderRecords]);
+
+  const paymentQueue = useMemo(() => {
+    return orderRecords.map((item) => ({
+      orderNo: item.orderNo,
+      customer: item.customer,
+      paymentStatus: item.paymentStatus,
+      shippingStatus: item.shippingStatus,
+      amount: item.amount,
+      shippingFee: item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
+      taxRate: 0,
+      proof: item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳',
+      date: item.date.split(' ')[0],
+      paymentMethod: item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認',
+      invoiceNo: item.paymentStatus.includes('退款') ? '退款單' : '待補',
+    }));
+  }, [orderRecords]);
+
+  const warehouseSummary = useMemo(() => {
+    const pending = shippingQueue.length;
+    const lowStock = products.filter((item) => item.stock <= 10).length;
+    const shippedToday = orderRecords.filter((item) => item.shippingStatus === '已出貨').length;
+    const issueCount = orderRecords.filter((item) => item.paymentStatus === '待收款' && item.shippingStatus === '待出貨').length;
+    return [
+      { title: '待出貨', value: String(pending), sub: `待處理 ${pending} 筆` },
+      { title: '低庫存', value: String(lowStock), sub: '安全值以下需先補貨' },
+      { title: '今日入出庫', value: String(shippedToday), sub: '含出貨完成筆數' },
+      { title: '待查異常', value: String(issueCount), sub: '待收款但待出貨需覆核' },
+    ];
+  }, [shippingQueue, products, orderRecords]);
+
+  const accountingSummary = useMemo(() => {
+    const paid = paymentQueue.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + item.amount, 0);
+    const pending = paymentQueue.filter((item) => item.paymentStatus === '待收款').reduce((sum, item) => sum + item.amount, 0);
+    const refund = paymentQueue.filter((item) => item.paymentStatus.includes('退款')).reduce((sum, item) => sum + item.amount, 0);
+    const gross = Math.max(paid - refund, 0);
+    return [
+      { title: '今日實收', value: `$${paid.toLocaleString()}`, sub: '依實收總額統計' },
+      { title: '待收款', value: `$${pending.toLocaleString()}`, sub: `待確認收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆` },
+      { title: '退款處理', value: `$${refund.toLocaleString()}`, sub: '退款流程中訂單金額' },
+      { title: '本月毛利', value: `$${gross.toLocaleString()}`, sub: '依目前 UI 假資料估算' },
+    ];
+  }, [paymentQueue]);
+
+  const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0] || null, [selectedWarehouseOrderNo, shippingQueue]);
 
   const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode]);
 
@@ -729,7 +789,14 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
       setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
       return;
     }
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedWarehouseOrder.orderNo ? {
+      ...item,
+      shippingStatus: '已出貨',
+      mainStatus: '已完成',
+      paymentStatus: item.paymentStatus === '待收款' ? '已收款' : item.paymentStatus,
+    } : item));
     setWarehouseNotice({ text: `✅ 已出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 訂單已同步出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
   };
 
   const handleWarehousePrint = () => {
@@ -744,6 +811,13 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
   };
 
   const selectedOrderRecord = useMemo(() => orderRecords.find((item) => item.orderNo === selectedOrderNo) || orderRecords[0] || null, [orderRecords, selectedOrderNo]);
+
+  useEffect(() => {
+    if (!shippingQueue.length) return;
+    if (!shippingQueue.some((item) => item.orderNo === selectedWarehouseOrderNo)) {
+      setSelectedWarehouseOrderNo(shippingQueue[0].orderNo);
+    }
+  }, [shippingQueue, selectedWarehouseOrderNo]);
 
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
@@ -959,6 +1033,7 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
     }
     setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
     setOrderNotice({ text: `✅ 已收款：${orderNo}`, tone: 'success' });
+    setAccountingNotice({ text: `✅ Orders 已同步收款：${orderNo}`, tone: 'success' });
   }
 
   function markOrderShippingReady(orderNo: string) {
@@ -970,6 +1045,8 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
     }
     setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, shippingStatus: '待出貨', mainStatus: '待出貨' } : item));
     setOrderNotice({ text: `✅ 已更新待出貨：${orderNo}`, tone: 'success' });
+    setWarehouseNotice({ text: `✅ Orders 已同步待出貨：${orderNo}`, tone: 'success' });
+    setSelectedWarehouseOrderNo(orderNo);
   }
 
   function selectAccountingOrder(orderNo: string) {
@@ -988,7 +1065,9 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
         setAccountingNotice({ text: '❌ 此訂單處於退款流程，請先確認退款結果', tone: 'danger' });
         return;
       }
+      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
       setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+      setOrderNotice({ text: `✅ 會計已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       return;
     }
 
@@ -996,7 +1075,9 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
       setAccountingNotice({ text: '❌ 此訂單已進入退款流程', tone: 'danger' });
       return;
     }
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '退款處理中', shippingStatus: item.shippingStatus === '已出貨' ? item.shippingStatus : '已退款', mainStatus: '退款處理' } : item));
     setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
   return (
