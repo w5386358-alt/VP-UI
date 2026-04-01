@@ -38,9 +38,9 @@ export default function InventoryModule(props: any) {
   return (
     <>
       <SectionIntro
-        title="倉儲中心｜GAS SOP 第一包"
-        desc="這一版開始改成 inventory_logs 驅動，不再直接改目前庫存。入庫、出貨、查詢都先對齊你 GAS 的核心方向。"
-        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'inventory_logs 驅動']}
+        title="倉儲中心｜GAS SOP 第二包"
+        desc="這版接續倉儲 GAS SOP 第二包，主軸是防超賣 + QR 邏輯測試。入庫、出貨、查詢都改由 inventory_logs 與 QR 餘量判讀。"
+        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
       />
 
       <div className="warehouse-tab-row">
@@ -185,7 +185,7 @@ export default function InventoryModule(props: any) {
           </div>
 
           <div className="card order-panel">
-            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">這裡現在直接反映 inventory_logs 最新 12 筆。</div></div></div>
+            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">這裡直接反映 inventory_logs 最新 12 筆，方便測第二包 SOP 是否正常留痕。</div></div></div>
             <div className="warehouse-log-list">
               {warehouseRecentLogs.map((item: any) => (
                 <div key={`${item.time}-${item.type}-${item.note}`} className="warehouse-log-item">

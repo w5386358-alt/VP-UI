@@ -660,7 +660,7 @@ export default function App() {
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 倉儲頁已進入可操作版，可切換訂單與查詢模式',
+    text: '✅ 倉儲 SOP 第二包已裝入，可直接測防超賣與 QR 查詢',
     tone: 'success',
   });
   const [warehouseQueryMode, setWarehouseQueryMode] = useState<WarehouseQueryMode>('barcode');
@@ -1356,7 +1356,7 @@ export default function App() {
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">目前策略</div>
-          <div className="sidebar-tip-desc">先穩定承接 GAS 功能邏輯，再往訂購、會計、倉儲三大主模組擴充。</div>
+          <div className="sidebar-tip-desc">先把倉儲 SOP 第二包測穩，再決定是否進會計 ↔ 倉儲串接。</div>
         </div>
 
         <div className="sidebar-actions">
