@@ -40,10 +40,6 @@ export default function InventoryModule(props: any) {
         stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
       />
 
-      <section className="summary-grid">
-        {warehouseSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}
-      </section>
-
       <div className="warehouse-tab-row">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
         <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}><Boxes className="small-icon" />庫存區</button>
@@ -138,17 +134,6 @@ export default function InventoryModule(props: any) {
               </div>
             </div>
 
-            <div className="card order-panel">
-              <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">把 inventory_logs 的閱讀感先做出來。</div></div></div>
-              <div className="warehouse-log-list">
-                {warehouseRecentLogs.map((item: any) => (
-                  <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
-                    <div className="warehouse-log-time">{item.time}</div>
-                    <div><div className="warehouse-log-type">{item.type}</div><div className="warehouse-log-note">{item.note}</div></div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </section>
       )}
@@ -187,6 +172,18 @@ export default function InventoryModule(props: any) {
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
+            </div>
+          </div>
+
+          <div className="card order-panel">
+            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">入庫 / 出庫 留在庫存區閱讀，和倉儲邏輯更一致。</div></div></div>
+            <div className="warehouse-log-list">
+              {warehouseRecentLogs.map((item: any) => (
+                <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
+                  <div className="warehouse-log-time">{item.time}</div>
+                  <div><div className="warehouse-log-type">{item.type}</div><div className="warehouse-log-note">{item.note}</div></div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
