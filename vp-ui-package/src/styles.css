@@ -1680,3 +1680,99 @@ button:hover { transform: translateY(-1px); }
     grid-template-columns:1fr;
   }
 }
+
+
+button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.accounting-status-card {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff7fa 0%, #ffffff 100%);
+}
+
+.accounting-status-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #c62f60;
+}
+
+.accounting-status-desc {
+  margin-top: 8px;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.accounting-status-tags {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.accounting-calc-strip {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.calc-chip {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.92);
+}
+
+.calc-chip span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.calc-chip strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+  color: var(--text);
+}
+
+.calc-chip.emphasis {
+  background: linear-gradient(135deg, #ffeef4 0%, #fff9fb 100%);
+  border-color: #f1bfd0;
+}
+
+.calc-chip.emphasis strong {
+  color: #c62f60;
+}
+
+.selected-accounting-row {
+  border-color: #efb9cb;
+  box-shadow: inset 0 0 0 1px rgba(231, 62, 114, 0.12);
+  background: linear-gradient(135deg, rgba(255,245,249,0.96) 0%, rgba(255,255,255,0.98) 100%);
+}
+
+.accounting-row-tip {
+  margin-top: 8px;
+  color: #7d5162;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1080px) {
+  .accounting-calc-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .accounting-calc-strip {
+    grid-template-columns: 1fr;
+  }
+}
