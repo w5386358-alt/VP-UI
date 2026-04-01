@@ -2026,3 +2026,72 @@ button:hover { transform: translateY(-1px); }
   color:var(--muted);
   line-height:1.7;
 }
+
+
+.role-preview-card{
+  margin-top:16px;
+  padding:18px;
+  background:linear-gradient(135deg,#fff7fa 0%, #fffdfd 100%);
+}
+
+.role-preview-title{
+  margin-top:8px;
+  font-size:18px;
+  font-weight:800;
+  color:#c71f54;
+}
+
+.role-preview-desc{
+  margin-top:10px;
+  color:var(--muted);
+  line-height:1.7;
+  font-size:13px;
+}
+
+.role-switch-row{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+
+.role-switch-btn{
+  border:1px solid var(--line-strong);
+  background:#fff;
+  color:var(--text);
+  border-radius:16px;
+  padding:11px 12px;
+  cursor:pointer;
+  font-weight:800;
+}
+
+.role-switch-btn.active{
+  background:linear-gradient(135deg,var(--primary) 0%, #ff6d98 100%);
+  color:#fff;
+  border-color:transparent;
+}
+
+.access-denied-card{
+  margin-top:16px;
+  padding:24px;
+  background:linear-gradient(135deg,#fff6f8 0%, #fffdfd 100%);
+  border:1px solid #f2c0cf;
+}
+
+.access-denied-title{
+  font-size:22px;
+  font-weight:900;
+  color:#c43360;
+}
+
+.access-denied-desc{
+  margin-top:10px;
+  color:var(--muted);
+  line-height:1.8;
+}
+
+@media (max-width:900px){
+  .role-switch-row{
+    grid-template-columns:1fr 1fr;
+  }
+}

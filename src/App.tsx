@@ -262,6 +262,32 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
+const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
+  admin: ['dashboard', 'orders', 'inventory', 'accounting', 'products', 'customers', 'staff', 'profile'],
+  sales: ['dashboard', 'orders', 'customers', 'profile'],
+  accounting: ['dashboard', 'accounting', 'customers', 'profile'],
+  warehouse: ['dashboard', 'inventory', 'profile'],
+};
+
+const ROLE_LABEL: Record<Role, string> = {
+  admin: '管理員',
+  sales: '銷售',
+  accounting: '會計',
+  warehouse: '倉儲',
+};
+
+const ROLE_RANK: Record<Role, string> = {
+  admin: '核心人員',
+  sales: '普通銷售',
+  accounting: '高級銷售',
+  warehouse: '高級銷售',
+};
+
+function canAccessNav(role: Role, key: NavKey) {
+  return ROLE_NAV_ACCESS[role].includes(key);
+}
+
+
 const shippingQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high', shippingMethod: '宅配', address: '新竹市東區食品路 88 號', trackingNo: '未建立', scanStatus: '待掃碼驗證', qrSummary: 'E401*2 / P301*1' },
   { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium', shippingMethod: '店到店', address: '竹北成功門市', trackingNo: 'TCAT-203188', scanStatus: '已完成商品掃描', qrSummary: 'E402*1 / E408*1' },
@@ -644,7 +670,13 @@ export default function App() {
   const [staff, setStaff] = useState<Staff[]>(mockStaff);
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [dataMode, setDataMode] = useState<'firebase' | 'mock'>('mock');
-  const [user] = useState<SessionUser>({ name: '吳秉宸', loginId: 'vp001', role: 'admin', rank: '核心人員' });
+  const [userRoleView, setUserRoleView] = useState<Role>('admin');
+  const user = useMemo<SessionUser>(() => ({
+    name: '吳秉宸',
+    loginId: 'vp001',
+    role: userRoleView,
+    rank: ROLE_RANK[userRoleView],
+  }), [userRoleView]);
 
   const [cart, setCart] = useState<CartItem[]>([
     { ...mockProducts[0], qty: 1 },
@@ -1115,6 +1147,14 @@ export default function App() {
   const vipCustomers = customers.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
 
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+
+  useEffect(() => {
+    if (!canAccessNav(user.role, active)) {
+      setActive(ROLE_NAV_ACCESS[user.role][0]);
+    }
+  }, [user.role, active]);
+
   function addToCart(item: Product) {
     if (!item.enabled || item.stock <= 0) return;
     setCart((prev) => {
@@ -1353,7 +1393,7 @@ export default function App() {
           <div className="user-name">{user.name}</div>
           <div className="user-id">ID：{user.loginId}</div>
           <div className="badge-row">
-            <span className="badge badge-role">身分 / 管理員</span>
+            <span className="badge badge-role">身分 / {ROLE_LABEL[user.role]}</span>
             <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
           </div>
         </div>
@@ -1366,9 +1406,27 @@ export default function App() {
           {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
         </div>
 
+        <div className="card role-preview-card">
+          <div className="muted-label">權限預覽</div>
+          <div className="role-preview-title">目前視角：{ROLE_LABEL[user.role]}</div>
+          <div className="role-switch-row">
+            {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
+              <button
+                key={role}
+                type="button"
+                className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
+                onClick={() => setUserRoleView(role)}
+              >
+                {ROLE_LABEL[role]}
+              </button>
+            ))}
+          </div>
+          <div className="role-preview-desc">這版先做權限隔離 UI：會計看不到倉儲，倉儲看不到會計，只靠訂單狀態串接。</div>
+        </div>
+
         <div className="nav-group-title">主功能選單</div>
         <div className="nav-list">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -1384,6 +1442,7 @@ export default function App() {
           })}
         </div>
 
+        {canAccessNav(user.role, 'accounting') && (
         <div className="card accounting-shortcut">
           <div className="shortcut-title">本版修正</div>
           <button
@@ -1394,6 +1453,7 @@ export default function App() {
             <CreditCard className="small-icon" />會計中心
           </button>
         </div>
+        )}
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">目前策略</div>
@@ -1425,7 +1485,7 @@ export default function App() {
 
         <div className="topbar">
           <div>
-            <div className="section-tag">{navItems.find((item) => item.key === active)?.label}</div>
+            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
             <div className="topbar-title">模組操作區</div>
           </div>
           <div className="toolbar">
@@ -1459,6 +1519,13 @@ export default function App() {
               </div>
             </div>
 
+
+            {!canAccessNav(user.role, active) && (
+              <div className="card access-denied-card">
+                <div className="access-denied-title">此角色不可進入目前模組</div>
+                <div className="access-denied-desc">目前視角是「{ROLE_LABEL[user.role]}」。這版已改成權限隔離流程：會計只改收款狀態，倉儲只依狀態解鎖出貨，不互看對方模組。</div>
+              </div>
+            )}
 
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
@@ -1494,7 +1561,7 @@ export default function App() {
             { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
             { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
             { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
-          ].map((item) => {
+          ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
             const Icon = item.icon;
             return (
               <button
