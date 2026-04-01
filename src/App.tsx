@@ -465,6 +465,13 @@ export default function App() {
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
+  const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
+  const [accountingDateEnd, setAccountingDateEnd] = useState('2026-04-01');
+  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(paymentQueue[0]?.orderNo ?? '');
+  const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
+    text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
+    tone: 'success',
+  });
   const [orderCategory, setOrderCategory] = useState('全部商品');
   const [productEditorMode, setProductEditorMode] = useState<ProductEditorMode>('view');
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
@@ -562,9 +569,24 @@ export default function App() {
       const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
       const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
       const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
-      return matchKeyword && matchPayment && matchShipping;
+      const itemDateKey = item.date.replace(/\//g, '-');
+      const matchDateStart = !accountingDateStart || itemDateKey >= accountingDateStart;
+      const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
+      return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
     });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter]);
+  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+
+  useEffect(() => {
+    if (!filteredAccountingQueue.length) return;
+    if (!filteredAccountingQueue.some((item) => item.orderNo === selectedAccountingOrderNo)) {
+      setSelectedAccountingOrderNo(filteredAccountingQueue[0].orderNo);
+    }
+  }, [filteredAccountingQueue, selectedAccountingOrderNo]);
+
+  const selectedAccountingRecord = useMemo(
+    () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
+    [filteredAccountingQueue, selectedAccountingOrderNo],
+  );
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
@@ -693,6 +715,33 @@ export default function App() {
     setSelectedProductId(item.id);
     setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
     setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
+  }
+
+  function selectAccountingOrder(orderNo: string) {
+    setSelectedAccountingOrderNo(orderNo);
+    setAccountingNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
+  }
+
+  function triggerAccountingAction(action: 'pay' | 'refund') {
+    if (!selectedAccountingRecord) return;
+    if (action === 'pay') {
+      if (selectedAccountingRecord.paymentStatus === '已收款') {
+        setAccountingNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
+        return;
+      }
+      if (selectedAccountingRecord.paymentStatus.includes('退款')) {
+        setAccountingNotice({ text: '❌ 此訂單處於退款流程，請先確認退款結果', tone: 'danger' });
+        return;
+      }
+      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+      return;
+    }
+
+    if (selectedAccountingRecord.paymentStatus.includes('退款')) {
+      setAccountingNotice({ text: '❌ 此訂單已進入退款流程', tone: 'danger' });
+      return;
+    }
+    setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
   return (
@@ -1535,6 +1584,14 @@ export default function App() {
                             <input value={accountingKeyword} onChange={(e) => setAccountingKeyword(e.target.value)} placeholder="輸入訂單編號、客戶、收款方式、發票號碼" />
                           </label>
                           <label className="field-card">
+                            <span className="field-label"><CalendarRange className="small-icon" />起算日</span>
+                            <input type="date" value={accountingDateStart} onChange={(e) => setAccountingDateStart(e.target.value)} />
+                          </label>
+                          <label className="field-card">
+                            <span className="field-label"><CalendarRange className="small-icon" />結算日</span>
+                            <input type="date" value={accountingDateEnd} onChange={(e) => setAccountingDateEnd(e.target.value)} />
+                          </label>
+                          <label className="field-card">
                             <span className="field-label"><CreditCard className="small-icon" />款項狀態</span>
                             <select value={accountingPaymentFilter} onChange={(e) => setAccountingPaymentFilter(e.target.value)}>
                               <option value="全部">全部</option>
@@ -1568,6 +1625,12 @@ export default function App() {
                             <div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div>
                           </div>
                         </div>
+
+                        {accountingNotice && (
+                          <div className={`card product-notice-banner ${accountingNotice.tone} accounting-notice-banner`}>
+                            <strong>{accountingNotice.text}</strong>
+                          </div>
+                        )}
                       </div>
 
                       <div className="card order-panel">
@@ -1581,37 +1644,37 @@ export default function App() {
                         <div className="form-grid two-col accounting-form-grid">
                           <label className="field-card">
                             <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
-                            <input value="VP20260331-001" readOnly />
+                            <input value={selectedAccountingRecord?.orderNo || ''} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><User className="small-icon" />客戶姓名</span>
-                            <input value="王小美" readOnly />
+                            <input value={selectedAccountingRecord?.customer || ''} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Wallet className="small-icon" />未稅價</span>
-                            <input value="4056" readOnly />
+                            <input value={String(Math.max((selectedAccountingRecord?.amount || 0) - (selectedAccountingRecord?.shippingFee || 0), 0))} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
-                            <input value="5" readOnly />
+                            <input value={String(selectedAccountingRecord?.taxRate || 0)} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><Truck className="small-icon" />運費</span>
-                            <input value="100" readOnly />
+                            <input value={String(selectedAccountingRecord?.shippingFee || 0)} readOnly />
                           </label>
                           <label className="field-card">
                             <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
-                            <input value="4259" readOnly />
+                            <input value={String(selectedAccountingRecord?.amount || 0)} readOnly />
                           </label>
                           <label className="field-card field-span-2">
                             <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
-                            <textarea rows={4} readOnly value="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
+                            <textarea rows={4} readOnly value={`付款方式：${selectedAccountingRecord?.paymentMethod || '-'}\n發票：${selectedAccountingRecord?.invoiceNo || '-'}\n證明：${selectedAccountingRecord?.proof || '-'}`} />
                           </label>
                         </div>
 
                         <div className="accounting-action-row">
-                          <button type="button" className="primary-button"><CreditCard className="small-icon" />確認收款</button>
-                          <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />確認退款</button>
+                          <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
+                          <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><RefreshCw className="small-icon" />確認退款</button>
                         </div>
                       </div>
                     </section>
@@ -1627,7 +1690,7 @@ export default function App() {
 
                       <div className="shipping-queue accounting-queue">
                         {filteredAccountingQueue.map((item) => (
-                          <div key={item.orderNo} className="shipping-row accounting-row">
+                          <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
                             <div>
                               <div className="shipping-order">{item.orderNo}</div>
                               <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
@@ -1638,7 +1701,7 @@ export default function App() {
                               <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : 'badge-neutral'}`}>{item.shippingStatus}</span>
                               <strong className="accounting-amount">${item.amount}</strong>
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </section>
