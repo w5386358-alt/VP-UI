@@ -35,6 +35,9 @@ import {
   Trophy,
   QrCode,
   CalendarRange,
+  Plus,
+  PencilLine,
+  Eye,
 } from 'lucide-react';
 
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
@@ -57,8 +60,17 @@ type WorkflowCard = {
   bullets: string[];
 };
 
-type NoticeTone = 'success' | 'warning' | 'error';
-type ActionNotice = { text: string; tone: NoticeTone };
+type ProductEditorMode = 'create' | 'edit' | 'view';
+
+type ProductDraft = {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  price: string;
+  stock: string;
+  enabled: boolean;
+};
 
 const mockProducts: Product[] = [
   { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
@@ -337,6 +349,22 @@ function getShippingFee(method: ShippingMethod) {
   return 0;
 }
 
+function makeEmptyProductDraft(nextCode = ''): ProductDraft {
+  return { id: '', code: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
+}
+
+function toProductDraft(item: Product): ProductDraft {
+  return {
+    id: item.id,
+    code: item.code,
+    name: item.name,
+    category: item.category,
+    price: String(item.price),
+    stock: String(item.stock),
+    enabled: item.enabled,
+  };
+}
+
 function StatusBadge({ enabled }: { enabled: boolean }) {
   return <span className={enabled ? 'badge badge-success' : 'badge badge-danger'}>{enabled ? '啟用中' : '停用'}</span>;
 }
@@ -438,10 +466,10 @@ export default function App() {
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [orderCategory, setOrderCategory] = useState('全部商品');
-  const [profileKeyword, setProfileKeyword] = useState('');
-  const [profileOrders, setProfileOrders] = useState(personalOrders);
-  const [selectedProfileOrder, setSelectedProfileOrder] = useState(personalOrders[0]);
-  const [actionNotice, setActionNotice] = useState<ActionNotice>({ text: '', tone: 'success' });
+  const [productEditorMode, setProductEditorMode] = useState<ProductEditorMode>('view');
+  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
+  const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
+  const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -490,24 +518,24 @@ export default function App() {
     void loadFirebaseData();
   }, []);
 
-  useEffect(() => {
-    if (!actionNotice.text) return;
-    const timer = window.setTimeout(() => {
-      setActionNotice((prev) => (prev.text ? { ...prev, text: '' } : prev));
-    }, 1800);
-    return () => window.clearTimeout(timer);
-  }, [actionNotice]);
-
-  function showActionNotice(text: string, tone: NoticeTone = 'success') {
-    setActionNotice({ text, tone });
-  }
-
-
   const filteredProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
     if (!q) return products;
     return products.filter((p) => [p.code, p.name, p.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products]);
+
+  const selectedProduct = useMemo(() => products.find((item) => item.id === selectedProductId) || filteredProducts[0] || products[0] || null, [products, filteredProducts, selectedProductId]);
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    setSelectedProductId((prev) => prev || selectedProduct.id);
+    if (productEditorMode === 'view' || !productDraft.id) {
+      setProductDraft((prev) => {
+        if (productEditorMode === 'edit' && prev.id && prev.id !== selectedProduct.id) return prev;
+        return toProductDraft(selectedProduct);
+      });
+    }
+  }, [selectedProduct]);
 
   const filteredCustomers = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -537,12 +565,6 @@ export default function App() {
       return matchKeyword && matchPayment && matchShipping;
     });
   }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter]);
-
-  const filteredProfileOrders = useMemo(() => {
-    const q = profileKeyword.trim().toLowerCase();
-    if (!q) return profileOrders;
-    return profileOrders.filter((item) => `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(q));
-  }, [profileKeyword, profileOrders]);
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
@@ -589,24 +611,88 @@ export default function App() {
     setShippingMethod(method);
   }
 
-  function handleProfileAction(action: 'scan' | 'refresh' | 'search' | 'detail', order = selectedProfileOrder) {
-    if (action === 'scan') {
-      showActionNotice('⚠️ 掃碼待接', 'warning');
+  function getNextProductCode() {
+    const next = products.length + 1;
+    return `VPP${String(next).padStart(3, '0')}`;
+  }
+
+  function openCreateProduct() {
+    setProductEditorMode('create');
+    setSelectedProductId('');
+    setProductDraft(makeEmptyProductDraft(getNextProductCode()));
+    setProductNotice({ text: '✅ 新增模式', tone: 'neutral' });
+  }
+
+  function openEditProduct(item: Product) {
+    setProductEditorMode('edit');
+    setSelectedProductId(item.id);
+    setProductDraft(toProductDraft(item));
+    setProductNotice({ text: '✅ 已載入商品', tone: 'neutral' });
+  }
+
+  function openViewProduct(item: Product) {
+    setProductEditorMode('view');
+    setSelectedProductId(item.id);
+    setProductDraft(toProductDraft(item));
+    setProductNotice({ text: '✅ 已顯示詳情', tone: 'neutral' });
+  }
+
+  function saveProductDraft() {
+    if (!productDraft.code.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
+      setProductNotice({ text: '❌ 欄位未完成', tone: 'danger' });
       return;
     }
-    if (action === 'refresh') {
-      const refreshed = [...profileOrders].sort((a, b) => b.date.localeCompare(a.date));
-      setProfileOrders(refreshed);
-      setSelectedProfileOrder(refreshed[0]);
-      showActionNotice('✅ 已更新');
+
+    const price = Number(productDraft.price || 0);
+    const stock = Number(productDraft.stock || 0);
+
+    if (price < 0 || stock < 0) {
+      setProductNotice({ text: '❌ 數值錯誤', tone: 'danger' });
       return;
     }
-    if (action === 'search') {
-      showActionNotice(filteredProfileOrders.length ? '✅ 已查詢' : '❌ 查無資料', filteredProfileOrders.length ? 'success' : 'error');
+
+    if (productEditorMode === 'create') {
+      const nextProduct: Product = {
+        id: `product-${Date.now()}`,
+        code: productDraft.code.trim(),
+        name: productDraft.name.trim(),
+        category: productDraft.category.trim(),
+        price,
+        stock,
+        enabled: productDraft.enabled,
+      };
+      setProducts((prev) => [nextProduct, ...prev]);
+      setSelectedProductId(nextProduct.id);
+      setProductDraft(toProductDraft(nextProduct));
+      setProductEditorMode('edit');
+      setProductNotice({ text: '✅ 已新增', tone: 'success' });
       return;
     }
-    setSelectedProfileOrder(order);
-    showActionNotice(`✅ ${order.orderNo}`);
+
+    if (!productDraft.id) {
+      setProductNotice({ text: '❌ 未選商品', tone: 'danger' });
+      return;
+    }
+
+    setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
+      ...item,
+      code: productDraft.code.trim(),
+      name: productDraft.name.trim(),
+      category: productDraft.category.trim(),
+      price,
+      stock,
+      enabled: productDraft.enabled,
+    } : item));
+    setProductEditorMode('edit');
+    setProductNotice({ text: '✅ 已更新', tone: 'success' });
+  }
+
+  function toggleProductEnabled(item: Product) {
+    const nextEnabled = !item.enabled;
+    setProducts((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, enabled: nextEnabled } : entry));
+    setSelectedProductId(item.id);
+    setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
+    setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
   }
 
   return (
@@ -721,10 +807,6 @@ export default function App() {
           </div>
         </div>
 
-        {actionNotice.text && (
-          <div className={`action-notice action-notice-${actionNotice.tone}`}>{actionNotice.text}</div>
-        )}
-
         {booting ? (
           <div className="card loading-card">
             <div className="spinner" />
@@ -794,35 +876,147 @@ export default function App() {
             {active === 'products' && (
               <>
                 <SectionIntro
-                  title="商品主資料"
-                  desc="這區先承接你原本產品資料庫邏輯，重點放在編號、名稱、分類、價格與庫存狀態的閱讀效率。"
-                  stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `低庫存 ${lowStockCount}`]}
+                  title="商品後台編輯區"
+                  desc="這區正式定義為內部商品管理，不對外開放。先完成新增、查看、編輯、啟用 / 停用的功能啟動。"
+                  stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
                 />
-                <section className="record-grid">
-                  {filteredProducts.map((item) => (
-                    <div key={item.id} className="card data-card product-card">
-                      <div className="data-card-top">
-                        <span className="data-code">{item.code}</span>
-                        <StatusBadge enabled={item.enabled} />
+
+                {productNotice && (
+                  <div className={`card product-notice-banner ${productNotice.tone}`}>
+                    <strong>{productNotice.text}</strong>
+                  </div>
+                )}
+
+                <section className="product-admin-layout">
+                  <div className="product-admin-main">
+                    <div className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">商品卡片列表</div>
+                          <div className="panel-desc">可即時搜尋、切換商品、查看目前狀態。這區是後台編輯區，不是前台展示頁。</div>
+                        </div>
+                        <button type="button" className="primary-button" onClick={openCreateProduct}>
+                          <Plus className="small-icon" />新增商品
+                        </button>
                       </div>
-                      <div className="data-card-title">{item.name}</div>
-                      <div className="data-card-subtitle">{item.category}</div>
-                      <div className="metric-row three">
-                        <div className="metric-box">
-                          <span>價格</span>
-                          <strong>${item.price}</strong>
-                        </div>
-                        <div className="metric-box">
-                          <span>庫存</span>
-                          <strong>{item.stock}</strong>
-                        </div>
-                        <div className="metric-box">
-                          <span>狀態</span>
-                          <strong>{item.enabled ? '上架' : '停用'}</strong>
-                        </div>
+
+                      <div className="product-editor-chip-row">
+                        <span className="badge badge-neutral">內部管理</span>
+                        <span className="badge badge-soft">卡片式</span>
+                        <span className="badge badge-soft">右側編輯面板</span>
+                      </div>
+
+                      <div className="product-admin-grid">
+                        {filteredProducts.map((item) => (
+                          <div key={item.id} className={`card data-card product-admin-card ${selectedProductId === item.id ? 'selected' : ''}`}>
+                            <div className="data-card-top">
+                              <span className="data-code">{item.code}</span>
+                              <StatusBadge enabled={item.enabled} />
+                            </div>
+                            <div className="data-card-title">{item.name}</div>
+                            <div className="data-card-subtitle">{item.category}</div>
+                            <div className="metric-row three">
+                              <div className="metric-box">
+                                <span>價格</span>
+                                <strong>${item.price}</strong>
+                              </div>
+                              <div className="metric-box">
+                                <span>庫存</span>
+                                <strong>{item.stock}</strong>
+                              </div>
+                              <div className="metric-box">
+                                <span>狀態</span>
+                                <strong>{item.enabled ? '啟用' : '停用'}</strong>
+                              </div>
+                            </div>
+
+                            <div className="product-card-actions">
+                              <button type="button" className="ghost-button compact-btn" onClick={() => openViewProduct(item)}>
+                                <Eye className="small-icon" />查看
+                              </button>
+                              <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
+                                <PencilLine className="small-icon" />編輯
+                              </button>
+                              <button type="button" className={`ghost-button compact-btn ${item.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => toggleProductEnabled(item)}>
+                                {item.enabled ? '停用' : '啟用'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  </div>
+
+                  <aside className="product-admin-side">
+                    <div className="card order-panel sticky-panel product-editor-panel">
+                      <div className="panel-head compact-head">
+                        <div>
+                          <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
+                          <div className="panel-desc">右側滑出編輯面板先做成功能啟動，後面再接真資料儲存。</div>
+                        </div>
+                        <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
+                      </div>
+
+                      <div className="form-grid two-col form-gap-top">
+                        <label className="field-card">
+                          <span className="field-label"><Package className="small-icon" />商品編號</span>
+                          <input value={productDraft.code} onChange={(e) => setProductDraft((prev) => ({ ...prev, code: e.target.value }))} readOnly={productEditorMode === 'view'} />
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
+                          <select value={productDraft.category} onChange={(e) => setProductDraft((prev) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
+                            <option value="保健">保健</option>
+                            <option value="保養">保養</option>
+                            <option value="優惠組合">優惠組合</option>
+                          </select>
+                        </label>
+                        <label className="field-card field-span-2">
+                          <span className="field-label"><FileText className="small-icon" />商品名稱</span>
+                          <input value={productDraft.name} onChange={(e) => setProductDraft((prev) => ({ ...prev, name: e.target.value }))} readOnly={productEditorMode === 'view'} />
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Wallet className="small-icon" />價格</span>
+                          <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} />
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Boxes className="small-icon" />庫存</span>
+                          <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
+                        </label>
+                      </div>
+
+                      <div className="product-editor-status">
+                        <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '目前啟用' : '目前停用'}</span>
+                        {productEditorMode !== 'view' && (
+                          <button type="button" className={`ghost-button compact-btn ${productDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => setProductDraft((prev) => ({ ...prev, enabled: !prev.enabled }))}>
+                            {productDraft.enabled ? '切換停用' : '切換啟用'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="stack-list compact product-editor-notes">
+                        <div>這區是內部編輯區，不對外開放</div>
+                        <div>先完成新增 / 編輯 / 啟用 / 停用 / 查看</div>
+                        <div>圖片上傳與 Firebase 連動後續再接</div>
+                      </div>
+
+                      <div className="accounting-action-row">
+                        {productEditorMode === 'view' ? (
+                          <button type="button" className="primary-button full-width" onClick={() => selectedProduct && openEditProduct(selectedProduct)}>
+                            <PencilLine className="small-icon" />切換編輯
+                          </button>
+                        ) : (
+                          <>
+                            <button type="button" className="primary-button" onClick={saveProductDraft}>
+                              <Package className="small-icon" />{productEditorMode === 'create' ? '確認新增' : '確認更新'}
+                            </button>
+                            <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : setProductEditorMode('view')}>
+                              <Eye className="small-icon" />返回查看
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </aside>
                 </section>
               </>
             )}
@@ -1586,8 +1780,8 @@ export default function App() {
               <>
                 <SectionIntro
                   title="個人資料 / 我的歷史訂單"
-                  desc="第四區先把個人頁常用功能全部啟動：掃碼、刷新、查詢、選單切換與訂單明細查看都先有反應。"
-                  stats={[`歷史訂單 ${profileOrders.length} 筆`, '個人資料 / 業績雙區塊', '掃碼 / 刷新 / 查詢 已啟動']}
+                  desc="這版先把個人資料、累積業績、歷史訂單、掃碼與刷新整理按鈕的位置排好，後面直接沿用你原本 GAS 的個人流程去接。"
+                  stats={[`歷史訂單 ${personalOrders.length} 筆`, '個人資料 / 業績雙區塊', '掃碼 / 刷新整理 預留']}
                 />
 
                 <section className="summary-grid">
@@ -1599,17 +1793,12 @@ export default function App() {
                 <section className="profile-action-grid">
                   {profileQuickActions.map((item) => {
                     const Icon = item.icon;
-                    const onClick = item.title === '員編掃碼'
-                      ? () => handleProfileAction('scan')
-                      : item.title === '歷史刷新'
-                        ? () => handleProfileAction('refresh')
-                        : () => handleProfileAction('search');
                     return (
-                      <button key={item.title} type="button" className="card profile-action-card profile-action-button" onClick={onClick}>
+                      <div key={item.title} className="card profile-action-card">
                         <div className="profile-action-icon"><Icon className="small-icon" /></div>
                         <div className="profile-action-title">{item.title}</div>
                         <div className="profile-action-desc">{item.desc}</div>
-                      </button>
+                      </div>
                     );
                   })}
                 </section>
@@ -1619,7 +1808,7 @@ export default function App() {
                     <div className="panel-head">
                       <div>
                         <div className="panel-title">個人資料</div>
-                        <div className="panel-desc">上半部固定個人資訊卡位，下半部可直接切到員編掃碼與歷史訂單查詢。</div>
+                        <div className="panel-desc">上半部先固定你的個人資訊卡位：姓名、員工編號、登入 ID、身分、階級、員編 QR。</div>
                       </div>
                       <span className="badge badge-role">個人中心</span>
                     </div>
@@ -1635,10 +1824,10 @@ export default function App() {
                           <span className="badge badge-neutral">價格層級 / 總代理價格</span>
                         </div>
                       </div>
-                      <button type="button" className="profile-qr-box profile-qr-button" onClick={() => handleProfileAction('scan')}>
+                      <div className="profile-qr-box">
                         <QrCode className="profile-qr-icon" />
-                        <span>點我掃碼</span>
-                      </button>
+                        <span>員編 QR 預留</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1646,18 +1835,18 @@ export default function App() {
                     <div className="panel-head compact-head">
                       <div>
                         <div className="panel-title">我的累積業績</div>
-                        <div className="panel-desc">第四區先讓數據卡位穩定可讀，後面再接真資料。</div>
+                        <div className="panel-desc">下半部對齊你的個人業績與排名邏輯。</div>
                       </div>
                     </div>
                     <div className="profile-performance-grid">
                       <div className="metric-box large"><span>累積業績</span><strong>$128,600</strong></div>
-                      <div className="metric-box large"><span>完成訂單數</span><strong>{profileOrders.length}</strong></div>
+                      <div className="metric-box large"><span>完成訂單數</span><strong>86</strong></div>
                       <div className="metric-box large"><span>目前排名</span><strong>#3</strong></div>
-                      <div className="metric-box large"><span>目前選取單</span><strong>{selectedProfileOrder.orderNo}</strong></div>
+                      <div className="metric-box large"><span>退款扣回影響</span><strong>-$1,240</strong></div>
                     </div>
                     <div className="profile-note-list">
                       <div className="profile-note-item">本月主力商品：女神酵素液 / 美妍X關鍵賦活飲</div>
-                      <div className="profile-note-item">目前查看：{selectedProfileOrder.mainStatus} / {selectedProfileOrder.shippingStatus}</div>
+                      <div className="profile-note-item">待追蹤：1 筆待收款、2 筆待出貨、1 筆換貨處理</div>
                     </div>
                   </div>
                 </section>
@@ -1666,60 +1855,42 @@ export default function App() {
                   <div className="panel-head">
                     <div>
                       <div className="panel-title">我的歷史訂單</div>
-                      <div className="panel-desc">搜尋、掃碼、刷新整理、查看詳情都先做成可點可測的 UI 版本。</div>
+                      <div className="panel-desc">保留你指定的搜尋、掃碼、刷新整理三個操作節奏，後續可直接接歷史訂單完整查詢。</div>
                     </div>
                     <div className="history-toolbar">
-                      <button type="button" className="ghost-button compact-btn" onClick={() => handleProfileAction('scan')}><QrCode className="small-icon" />掃碼</button>
-                      <button type="button" className="ghost-button compact-btn" onClick={() => handleProfileAction('refresh')}><RefreshCw className="small-icon" />刷新整理</button>
+                      <button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button>
+                      <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />刷新整理</button>
                     </div>
                   </div>
 
                   <div className="history-filter-row">
                     <div className="search-wrap inline-search">
                       <Search className="search-icon" />
-                      <input value={profileKeyword} onChange={(e) => setProfileKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" />
+                      <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" />
                     </div>
-                    <button type="button" className="primary-button compact-primary" onClick={() => handleProfileAction('search')}>輸入</button>
+                    <button type="button" className="primary-button compact-primary">輸入</button>
                   </div>
 
-                  <div className="profile-history-grid">
-                    <div className="history-list">
-                      {filteredProfileOrders.map((item) => (
-                        <button key={item.orderNo} type="button" className={`history-row history-row-button ${selectedProfileOrder.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedProfileOrder(item)}>
-                          <div className="history-main">
-                            <div className="history-order">{item.orderNo}</div>
-                            <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
-                            <div className="history-statuses">
-                              <span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                              <span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span>
-                              <span className="badge badge-soft">{item.mainStatus}</span>
-                            </div>
+                  <div className="history-list">
+                    {personalOrders
+                      .filter((item) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase()))
+                      .map((item) => (
+                      <div key={item.orderNo} className="history-row">
+                        <div className="history-main">
+                          <div className="history-order">{item.orderNo}</div>
+                          <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
+                          <div className="history-statuses">
+                            <span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                            <span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span>
+                            <span className="badge badge-soft">{item.mainStatus}</span>
                           </div>
-                          <div className="history-side">
-                            <div className="history-amount">${item.amount}</div>
-                            <span className="ghost-button compact-btn history-detail-btn">選取</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="card profile-detail-card">
-                      <div className="panel-head compact-head">
-                        <div>
-                          <div className="panel-title">訂單詳情</div>
-                          <div className="panel-desc">點選左側訂單後，這裡會同步切換。</div>
                         </div>
-                        <button type="button" className="ghost-button compact-btn" onClick={() => handleProfileAction('detail', selectedProfileOrder)}>查看詳情</button>
+                        <div className="history-side">
+                          <div className="history-amount">${item.amount}</div>
+                          <button type="button" className="ghost-button compact-btn history-detail-btn">查看詳情</button>
+                        </div>
                       </div>
-
-                      <div className="profile-detail-grid">
-                        <div className="fake-field"><span>訂單編號</span><strong>{selectedProfileOrder.orderNo}</strong></div>
-                        <div className="fake-field"><span>訂單金額</span><strong>${selectedProfileOrder.amount}</strong></div>
-                        <div className="fake-field"><span>收款狀態</span><strong>{selectedProfileOrder.paymentStatus}</strong></div>
-                        <div className="fake-field"><span>出貨狀態</span><strong>{selectedProfileOrder.shippingStatus}</strong></div>
-                        <div className="fake-field wide"><span>主狀態</span><strong>{selectedProfileOrder.mainStatus}</strong></div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </section>
               </>
