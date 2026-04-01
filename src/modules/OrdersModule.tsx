@@ -1,4 +1,4 @@
-import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt } from 'lucide-react';
+import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, CreditCard, ClipboardList } from 'lucide-react';
 
 export default function OrdersModule(props: any) {
   const {
@@ -12,16 +12,24 @@ export default function OrdersModule(props: any) {
     remark, setRemark,
     cart, removeFromCart, updateQty,
     subtotal, shippingFee, discountAmount,
+    orderRecords, selectedOrderRecord, selectedOrderNo, selectOrderRecord,
+    createOrderRecord, markOrderPaid, markOrderShippingReady, orderNotice,
     SectionIntro,
   } = props;
 
   return (
     <>
       <SectionIntro
-        title="訂購介面骨架"
-        desc="這版先把前台購物、客戶資料、配送方式、訂單摘要放進同一個工作流裡，版型直接對齊你之後要接的 GAS 下單邏輯。"
-        stats={[`購物車 ${itemCount} 件`, `配送 ${shippingMethod}`, `合計 $${grandTotal}`]}
+        title="訂單模組"
+        desc="先把建單、訂單狀態、訂單列表與訂單詳情做成可操作版，後面再去串會計與倉儲。"
+        stats={[`購物車 ${itemCount} 件`, `配送 ${shippingMethod}`, `訂單紀錄 ${orderRecords.length} 筆`]}
       />
+
+      {orderNotice && (
+        <div className={`card product-notice-banner ${orderNotice.tone} order-notice-banner`}>
+          <strong>{orderNotice.text}</strong>
+        </div>
+      )}
 
       <section className="order-layout">
         <div className="order-main">
@@ -109,7 +117,7 @@ export default function OrdersModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">購物車摘要</div>
-                <div className="panel-desc">之後可直接對接 order_items、shipping、payments。</div>
+                <div className="panel-desc">現在可直接建立訂單，先做 UI 流程連動。</div>
               </div>
               <span className="badge badge-role">{itemCount} 件</span>
             </div>
@@ -143,8 +151,85 @@ export default function OrdersModule(props: any) {
               <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
             </div>
 
-            <button type="button" className="primary-button full-width"><Receipt className="small-icon" />送出訂單（UI示意）</button>
+            <button type="button" className="primary-button full-width" onClick={createOrderRecord}><Receipt className="small-icon" />建立訂單</button>
           </div>
+        </div>
+      </section>
+
+      <section className="order-record-layout">
+        <div className="card order-panel">
+          <div className="panel-head">
+            <div>
+              <div className="panel-title">訂單列表</div>
+              <div className="panel-desc">已建立的訂單可點選切換，先把主幹流程做起來。</div>
+            </div>
+            <span className="badge badge-soft">共 {orderRecords.length} 筆</span>
+          </div>
+
+          <div className="order-record-list">
+            {orderRecords.map((item: any) => (
+              <button key={item.orderNo} type="button" className={`order-record-card ${selectedOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectOrderRecord(item.orderNo)}>
+                <div className="order-record-top">
+                  <div>
+                    <div className="order-record-no">{item.orderNo}</div>
+                    <div className="order-record-meta">{item.customer} / {item.date}</div>
+                  </div>
+                  <div className="order-record-amount">${item.amount}</div>
+                </div>
+                <div className="order-record-tags">
+                  <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                  <span className={`badge ${item.shippingStatus === '待出貨' ? 'badge-danger' : item.shippingStatus.includes('理貨') || item.shippingStatus.includes('已出貨') ? 'badge-success' : 'badge-soft'}`}>{item.shippingStatus}</span>
+                  <span className="badge badge-soft">{item.mainStatus}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="card order-panel">
+          <div className="panel-head compact-head">
+            <div>
+              <div className="panel-title">訂單詳情</div>
+              <div className="panel-desc">先做訂單狀態切換，之後再讓會計與倉儲直接承接。</div>
+            </div>
+            <span className="badge badge-role">Orders</span>
+          </div>
+
+          {selectedOrderRecord ? (
+            <>
+              <div className="order-detail-grid">
+                <div className="fake-field"><span>訂單編號</span><strong>{selectedOrderRecord.orderNo}</strong></div>
+                <div className="fake-field"><span>客戶姓名</span><strong>{selectedOrderRecord.customer}</strong></div>
+                <div className="fake-field"><span>配送方式</span><strong>{selectedOrderRecord.shippingMethod}</strong></div>
+                <div className="fake-field"><span>訂單總額</span><strong>${selectedOrderRecord.amount}</strong></div>
+                <div className="fake-field"><span>收款狀態</span><strong>{selectedOrderRecord.paymentStatus}</strong></div>
+                <div className="fake-field"><span>出貨狀態</span><strong>{selectedOrderRecord.shippingStatus}</strong></div>
+                <div className="fake-field wide"><span>地址 / 備註</span><strong>{selectedOrderRecord.address} / {selectedOrderRecord.remark}</strong></div>
+              </div>
+
+              <div className="order-detail-items">
+                <div className="order-detail-title"><ClipboardList className="small-icon" />商品明細</div>
+                <div className="order-detail-item-list">
+                  {selectedOrderRecord.items.map((item: any) => (
+                    <div key={`${selectedOrderRecord.orderNo}-${item.code}`} className="order-detail-item-row">
+                      <div>
+                        <strong>{item.name}</strong>
+                        <div className="order-record-meta">{item.code} / 數量 {item.qty}</div>
+                      </div>
+                      <div className="order-record-amount">${item.price * item.qty}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="accounting-action-row">
+                <button type="button" className="primary-button" onClick={() => markOrderPaid(selectedOrderRecord.orderNo)}><CreditCard className="small-icon" />確認收款</button>
+                <button type="button" className="ghost-button" onClick={() => markOrderShippingReady(selectedOrderRecord.orderNo)}><Truck className="small-icon" />標記待出貨</button>
+              </div>
+            </>
+          ) : (
+            <div className="empty-order-state">目前尚未建立訂單</div>
+          )}
         </div>
       </section>
     </>

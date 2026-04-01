@@ -81,6 +81,22 @@ type ProductDraft = {
   enabled: boolean;
 };
 
+type OrderRecord = {
+  orderNo: string;
+  customer: string;
+  phone: string;
+  shippingMethod: ShippingMethod;
+  address: string;
+  amount: number;
+  itemCount: number;
+  paymentStatus: string;
+  shippingStatus: string;
+  mainStatus: string;
+  date: string;
+  remark: string;
+  items: Array<{ code: string; name: string; qty: number; price: number }>;
+};
+
 const mockProducts: Product[] = [
   { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
   { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
@@ -238,6 +254,62 @@ const quickCustomerCards = [
   { name: '王小美', phone: '0912345678', address: '新竹市東區食品路 88 號', method: '宅配' as ShippingMethod },
   { name: '林雅雯', phone: '0988777666', address: '竹北市成功八路 12 號', method: '店到店' as ShippingMethod },
   { name: '門市自取客', phone: '0900111222', address: '自取免填地址', method: '自取' as ShippingMethod },
+];
+
+const initialOrderRecords: OrderRecord[] = [
+  {
+    orderNo: 'VP20260331-001',
+    customer: '王小美',
+    phone: '0912345678',
+    shippingMethod: '宅配',
+    address: '新竹市東區食品路 88 號',
+    amount: 4259,
+    itemCount: 3,
+    paymentStatus: '待收款',
+    shippingStatus: '待出貨',
+    mainStatus: '處理中',
+    date: '2026/03/31 10:12',
+    remark: '首批訂單',
+    items: [
+      { code: 'E401', name: '女神酵素液', qty: 2, price: 899 },
+      { code: 'P301', name: '瞬白激光精華4G', qty: 1, price: 1680 },
+    ],
+  },
+  {
+    orderNo: 'VP20260331-002',
+    customer: '林雅雯',
+    phone: '0988777666',
+    shippingMethod: '店到店',
+    address: '竹北市成功八路 12 號',
+    amount: 2825,
+    itemCount: 2,
+    paymentStatus: '已收款',
+    shippingStatus: '理貨中',
+    mainStatus: '出貨中',
+    date: '2026/03/31 13:26',
+    remark: '已上傳收款證明',
+    items: [
+      { code: 'E402', name: '美妍X關鍵賦活飲', qty: 1, price: 1380 },
+      { code: 'E408', name: '魔力抹茶機能飲', qty: 1, price: 1380 },
+    ],
+  },
+  {
+    orderNo: 'EX20260331-001',
+    customer: '陳佳玲',
+    phone: '0933555777',
+    shippingMethod: '宅配',
+    address: '新竹市北區湳雅街 10 號',
+    amount: 65,
+    itemCount: 1,
+    paymentStatus: '退款處理中',
+    shippingStatus: '換貨待出庫',
+    mainStatus: '換貨處理',
+    date: '2026/03/31 16:08',
+    remark: '換貨單，商品金額 0',
+    items: [
+      { code: 'P305', name: '超逆齡修復菁萃', qty: 1, price: 0 },
+    ],
+  },
 ];
 
 
@@ -497,6 +569,12 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
   const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
+  const [orderRecords, setOrderRecords] = useState<OrderRecord[]>(initialOrderRecords);
+  const [selectedOrderNo, setSelectedOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
+  const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
+    text: '✅ Orders 模組已啟動，可建立訂單與切換訂單紀錄',
+    tone: 'success',
+  });
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -665,6 +743,8 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
     setWarehouseNotice({ text: `✅ 已帶入 ${next}`, tone: 'neutral' });
   };
 
+  const selectedOrderRecord = useMemo(() => orderRecords.find((item) => item.orderNo === selectedOrderNo) || orderRecords[0] || null, [orderRecords, selectedOrderNo]);
+
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
     return paymentQueue.filter((item) => {
@@ -817,6 +897,79 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
     setSelectedProductId(item.id);
     setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
     setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
+  }
+
+  function makeNextOrderNo() {
+    const next = orderRecords.length + 1;
+    return `VP${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(next).padStart(3, '0')}`;
+  }
+
+  function createOrderRecord() {
+    if (!cart.length) {
+      setOrderNotice({ text: '❌ 購物車沒有商品', tone: 'danger' });
+      return;
+    }
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setOrderNotice({ text: '❌ 客戶資料未完成', tone: 'danger' });
+      return;
+    }
+
+    const orderNo = makeNextOrderNo();
+    const now = new Date();
+    const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const nextRecord: OrderRecord = {
+      orderNo,
+      customer: customerName.trim(),
+      phone: customerPhone.trim(),
+      shippingMethod,
+      address: customerAddress.trim() || (shippingMethod === '自取' ? '自取免填地址' : '-'),
+      amount: grandTotal,
+      itemCount,
+      paymentStatus: '待收款',
+      shippingStatus: '待出貨',
+      mainStatus: '處理中',
+      date,
+      remark: remark.trim() || '—',
+      items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
+    };
+    setOrderRecords((prev) => [nextRecord, ...prev]);
+    setSelectedOrderNo(orderNo);
+    setOrderNotice({ text: `✅ 已建立訂單：${orderNo}`, tone: 'success' });
+    setCart([]);
+    setRemark('');
+    setDiscountMode('無');
+    setDiscountValue(0);
+  }
+
+  function selectOrderRecord(orderNo: string) {
+    setSelectedOrderNo(orderNo);
+    setOrderNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
+  }
+
+  function markOrderPaid(orderNo: string) {
+    const target = orderRecords.find((item) => item.orderNo === orderNo);
+    if (!target) return;
+    if (target.paymentStatus === '已收款') {
+      setOrderNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
+      return;
+    }
+    if (target.paymentStatus.includes('退款')) {
+      setOrderNotice({ text: '❌ 此訂單處於退款流程', tone: 'danger' });
+      return;
+    }
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
+    setOrderNotice({ text: `✅ 已收款：${orderNo}`, tone: 'success' });
+  }
+
+  function markOrderShippingReady(orderNo: string) {
+    const target = orderRecords.find((item) => item.orderNo === orderNo);
+    if (!target) return;
+    if (target.paymentStatus !== '已收款') {
+      setOrderNotice({ text: '❌ 需先確認收款', tone: 'danger' });
+      return;
+    }
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, shippingStatus: '待出貨', mainStatus: '待出貨' } : item));
+    setOrderNotice({ text: `✅ 已更新待出貨：${orderNo}`, tone: 'success' });
   }
 
   function selectAccountingOrder(orderNo: string) {
@@ -998,7 +1151,7 @@ const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.o
               <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} />
+              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
