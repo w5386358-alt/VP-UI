@@ -2224,3 +2224,80 @@ button:hover { transform: translateY(-1px); }
   color: #8f3654;
   border-color: #e9b9c8;
 }
+
+
+/* === 登入卡微調 === */
+.user-card{
+  isolation:isolate;
+}
+
+.user-rank-watermark{
+  position:absolute;
+  right:20px;
+  bottom:14px;
+  z-index:0;
+  font-size:48px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:rgba(255,255,255,.18);
+  pointer-events:none;
+  user-select:none;
+  text-transform:none;
+}
+
+.user-card-core .user-rank-watermark{
+  color:rgba(255,236,185,.16);
+  text-shadow:0 0 22px rgba(255,214,120,.08);
+}
+
+.user-card-elite .user-rank-watermark{
+  color:rgba(140,97,16,.14);
+}
+
+.user-card-senior .user-rank-watermark{
+  color:rgba(123,35,66,.14);
+}
+
+.user-card-normal .user-rank-watermark{
+  color:rgba(95,83,88,.12);
+}
+
+.user-badge-row{
+  margin-top:12px;
+}
+
+.user-role-badge{
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+  padding:0;
+  border-radius:0;
+  font-size:15px;
+  font-weight:900;
+}
+
+.user-card-core .user-role-badge{ color:#f6edd7; }
+.user-card-elite .user-role-badge{ color:#8c6110; }
+.user-card-senior .user-role-badge{ color:#8f3654; }
+.user-card-normal .user-role-badge{ color:#7d5f69; }
+
+.rank-switch-btn.elite.active{
+  background:linear-gradient(135deg, #fff3df 0%, #e8c78f 100%);
+  color:#8f6000;
+  border-color:transparent;
+}
+
+.rank-switch-btn.senior.active{
+  background:linear-gradient(135deg, #f8e2e8 0%, #e4a6bb 100%);
+  color:#7c2848;
+  border-color:transparent;
+}
+
+@media (max-width:900px){
+  .user-rank-watermark{
+    font-size:42px;
+    right:16px;
+    bottom:12px;
+  }
+}
