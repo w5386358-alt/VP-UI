@@ -1680,7 +1680,24 @@ button:hover { transform: translateY(-1px); }
     grid-template-columns:1fr;
   }
 }
+/* ===== 商品卡按鈕顯示修正 ===== */
+.product-card-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
+.product-admin-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* 避免按鈕被裁掉 */
+.data-card {
+  overflow: visible !important;
+}
 
 .product-notice-banner{margin-top:16px;padding:16px 18px;}
 .product-notice-banner.success{background:var(--success-bg);border-color:#cdeed9;color:var(--success-text);}
