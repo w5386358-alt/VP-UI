@@ -2159,12 +2159,12 @@ button:hover { transform: translateY(-1px); }
 
     /* 🌸 粉色主體（你要求提高比例） */
     linear-gradient(135deg,
-      #f3c1cf 0%,
-      #e19ab0 30%,
+      #f3c1cf 10%,
+      #e19ab0 40%,
 
       /* 💛 金色區塊（比例提升但不蓋掉粉） */
-      #d7b06a 60%,
-      #f3d79a 100%
+      #d7b06a 30%,
+      #f3d79a 50%
     );
 
   border-color: rgba(220,170,120,.45);
@@ -2178,7 +2178,7 @@ button:hover { transform: translateY(-1px); }
 /* 光感層 */
 .user-card-core::before{
   background:
-    linear-gradient(120deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 40%),
+    linear-gradient(120deg, rgba(255,255,255,.18) 0%, rgba(255,255,255,0) 30%),
     radial-gradient(circle at 85% 20%, rgba(255,220,170,.35) 0%, transparent 25%);
 }
 
