@@ -1509,7 +1509,7 @@ export default function App() {
           <div className="brand-subtitle">沿用你目前版本，只做 UI 設計優化，不破壞既有架構</div>
         </div>
 
-        <div className={`card user-card user-card-${user.rankKey}`}>
+        <div className="card user-card">
           <div className="muted-label">目前登入</div>
           <div className="user-name">{user.name}</div>
           <div className="user-id">ID：{user.loginId}</div>
