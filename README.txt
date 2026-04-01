@@ -44,3 +44,14 @@ v9：倉儲中心細化版
 - 倉儲中心「出貨資訊面板」改為格子化資訊卡
 - 補上 label / value 視覺分層
 - 不動功能邏輯，只修 UI 閱讀性
+
+2026-04-01 模組化拆分版：
+- src/modules/DashboardModule.tsx
+- src/modules/OrdersModule.tsx
+- src/modules/InventoryModule.tsx
+- src/modules/AccountingModule.tsx
+- src/modules/ProductsModule.tsx
+- src/modules/CustomersModule.tsx
+- src/modules/StaffModule.tsx
+- src/modules/ProfileModule.tsx
+- App.tsx 僅保留主框架、切頁、共用狀態與資料
