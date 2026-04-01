@@ -11,6 +11,8 @@ export default function InventoryModule(props: any) {
     setSelectedWarehouseOrderNo,
     warehouseNotice,
     shippingChecklist,
+    warehouseValidation,
+    warehouseTestSummary,
     handleWarehouseShip,
     handleWarehouseInbound,
     warehouseInboundQty,
@@ -39,8 +41,8 @@ export default function InventoryModule(props: any) {
     <>
       <SectionIntro
         title="倉儲中心｜GAS SOP 第二包"
-        desc="這版接續倉儲 GAS SOP 第二包，主軸是防超賣 + QR 邏輯測試。入庫、出貨、查詢都改由 inventory_logs 與 QR 餘量判讀。"
-        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
+        desc="這版進到第二包測試節奏：防超賣、QR 邏輯、inventory_logs 留痕都先在前端操作層做明確驗證，再決定是否往會計 ↔ 倉儲串接。"
+        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '第二包測試中']}
       />
 
       <div className="warehouse-tab-row">
@@ -50,6 +52,15 @@ export default function InventoryModule(props: any) {
       </div>
 
       {warehouseNotice && <div className={`card product-notice-banner ${warehouseNotice.tone} accounting-notice-banner`}><strong>{warehouseNotice.text}</strong></div>}
+
+      <section className="warehouse-test-summary">
+        {warehouseTestSummary.map((item: any) => (
+          <div key={item.label} className={`card warehouse-test-card ${item.tone}`}>
+            <div className="warehouse-test-label">{item.label}</div>
+            <div className="warehouse-test-value">{item.value}</div>
+          </div>
+        ))}
+      </section>
 
       {warehouseTab === 'shipping' && (
         <section className="warehouse-layout">
@@ -106,6 +117,12 @@ export default function InventoryModule(props: any) {
                   </div>
                   <FileText className="small-icon" />
                 </div>
+                <div className={`warehouse-validation-card ${warehouseValidation.tone}`}>
+                  <div className="warehouse-validation-title">{warehouseValidation.title}</div>
+                  <div className="warehouse-validation-lines">
+                    {warehouseValidation.lines.map((line: string) => <div key={line}>{line}</div>)}
+                  </div>
+                </div>
                 <div className="warehouse-form-grid">
                   <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '未選擇'}</strong></div>
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
@@ -114,7 +131,7 @@ export default function InventoryModule(props: any) {
                   <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
                 </div>
                 <div className="accounting-action-row">
-                  <button type="button" className="primary-button" onClick={handleWarehouseShip}><Truck className="small-icon" />依 SOP 完成出貨</button>
+                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseValidation.canShip}><Truck className="small-icon" />依 SOP 完成出貨</button>
                   <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單</button>
                 </div>
               </div>
@@ -134,6 +151,7 @@ export default function InventoryModule(props: any) {
                 <div>依 QR 剩餘數量分配扣減</div>
                 <div>扣減來源改為 inventory_logs</div>
                 <div>訂單完成後同步改出貨狀態</div>
+                <div>第二包先測穩，再往會計串接</div>
               </div>
             </div>
           </div>
@@ -185,7 +203,7 @@ export default function InventoryModule(props: any) {
           </div>
 
           <div className="card order-panel">
-            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">這裡直接反映 inventory_logs 最新 12 筆，方便測第二包 SOP 是否正常留痕。</div></div></div>
+            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">這裡現在直接反映 inventory_logs 最新 12 筆。</div></div></div>
             <div className="warehouse-log-list">
               {warehouseRecentLogs.map((item: any) => (
                 <div key={`${item.time}-${item.type}-${item.note}`} className="warehouse-log-item">
