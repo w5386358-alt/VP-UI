@@ -1700,52 +1700,23 @@ button:hover { transform: translateY(-1px); }
 @media (max-width: 1180px){.product-admin-layout,.product-admin-grid{grid-template-columns:1fr;}}
 
 
-.warehouse-notice-banner{margin-top:16px;}
-.warehouse-select-row{
+.accounting-notice-banner{
+  margin-top:16px;
+}
+
+.accounting-select-row{
   width:100%;
   text-align:left;
   cursor:pointer;
 }
-.warehouse-select-row.selected{
+
+.accounting-select-row.selected{
   border-color:#f0bfd0;
   box-shadow:0 14px 34px rgba(231,62,114,.12);
   background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,240,246,0.96) 100%);
 }
-.warehouse-select-row:focus-visible{
+
+.accounting-select-row:focus-visible{
   outline:2px solid rgba(231,62,114,.35);
   outline-offset:2px;
-}
-.stock-select-card{
-  width:100%;
-  text-align:left;
-  cursor:pointer;
-}
-.stock-select-card.selected{
-  border-color:#f0bfd0;
-  box-shadow:0 14px 34px rgba(231,62,114,.12);
-}
-.stock-updated{
-  margin-top:12px;
-  color:var(--muted);
-  font-size:13px;
-}
-.warehouse-query-mode-row{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:16px;
-}
-.warehouse-mode-chip{
-  border:1px solid var(--line-strong);
-  background:rgba(255,255,255,0.96);
-  color:var(--text);
-  border-radius:999px;
-  padding:10px 14px;
-  cursor:pointer;
-  font-weight:700;
-}
-.warehouse-mode-chip.active{
-  background:linear-gradient(135deg,#ffeaf1 0%,#fff7fa 100%);
-  color:#c62f60;
-  border-color:#f0bfd0;
 }
