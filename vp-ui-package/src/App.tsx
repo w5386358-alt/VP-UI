@@ -73,6 +73,9 @@ type AccountingOrder = {
   note?: string;
 };
 
+type OperationLog = { time: string; type: string; note: string };
+type ShippingQueueItem = { orderNo: string; customer: string; paymentStatus: string; shippingStatus: string; itemCount: number; urgency: 'high' | 'medium' | 'low' };
+
 const mockProducts: Product[] = [
   { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
   { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
@@ -106,12 +109,6 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
-const shippingQueue = [
-  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high' },
-  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium' },
-  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium' },
-];
-
 const inventoryFlow = [
   { title: '入庫作業', desc: '對齊 inventory_logs，支援商品條碼 + QR 身分識別寫入。', tags: ['入庫', '期初', '供應商'] },
   { title: '庫存查詢', desc: '以商品條碼查總庫存，以 QR 身分識別查個別數量。', tags: ['商品條碼', 'QR(A)*2', 'QR(B)*1'] },
@@ -124,12 +121,6 @@ const queryExamples = [
   { label: '訂單查詢', value: '顯示待出貨 / 已出貨 / 已退款 / 已換貨，供出貨與回補判讀' },
 ];
 
-const warehouseSummary = [
-  { title: '待出貨', value: '12', sub: '已收款待出貨 8 / 換貨待出庫 4' },
-  { title: '低庫存', value: '3', sub: '安全值以下需先補貨' },
-  { title: '今日入出庫', value: '26', sub: '含入庫 / 出貨 / 退貨 / 換貨' },
-  { title: '待查異常', value: '2', sub: 'QR 重覆掃描 / 數量需覆核' },
-];
 
 const shippingChecklist = [
   { title: '掃描驗證', desc: '商品條碼 + QR 身分識別雙條件驗證，先擋掉錯貨與重覆出貨。' },
@@ -143,12 +134,6 @@ const stockSnapshot = [
   { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常' },
 ];
 
-const warehouseRecentLogs = [
-  { time: '09:12', type: '出貨', note: 'VP20260331-001 完成出貨，扣減 E401*2 / P301*1' },
-  { time: '10:45', type: '入庫', note: 'E402 補貨 12 件，寫入 inventory_logs' },
-  { time: '11:18', type: '換貨', note: 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立' },
-  { time: '13:05', type: '退貨', note: 'QR(A-018) 驗退回庫，待 QC 判定是否可再販售' },
-];
 
 
 const paymentQueueSeed: AccountingOrder[] = [
@@ -350,6 +335,33 @@ function getShippingFee(method: ShippingMethod) {
   return 0;
 }
 
+function getNowTimeLabel() {
+  return new Intl.DateTimeFormat('zh-TW', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Taipei',
+  }).format(new Date());
+}
+
+function getQueueItemCount(orderNo: string) {
+  if (orderNo.startsWith('EX')) return 1;
+  if (orderNo.endsWith('001')) return 3;
+  if (orderNo.endsWith('002')) return 2;
+  return 1;
+}
+
+function getQueueUrgency(order: AccountingOrder): 'high' | 'medium' | 'low' {
+  if (order.paymentStatus === '待收款') return 'high';
+  if (order.shippingStatus.includes('待')) return 'high';
+  if (order.shippingStatus.includes('理貨') || order.shippingStatus.includes('換貨')) return 'medium';
+  return 'low';
+}
+
+function createOperationLog(type: string, note: string): OperationLog {
+  return { time: getNowTimeLabel(), type, note };
+}
+
 
 function getAccountingActionHint(order: AccountingOrder) {
   if (order.paymentStatus === '已退款') return '此單已退款，禁止重複退款';
@@ -487,6 +499,10 @@ export default function App() {
   const [selectedShippingFee, setSelectedShippingFee] = useState(paymentQueueSeed[0].shippingFee);
   const [selectedProof, setSelectedProof] = useState(paymentQueueSeed[0].proof);
   const [selectedNote, setSelectedNote] = useState(paymentQueueSeed[0].note || '');
+  const [operationLogs, setOperationLogs] = useState<OperationLog[]>([
+    createOperationLog('入庫', 'E402 補貨 12 件，寫入 inventory_logs'),
+    createOperationLog('換貨', 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立'),
+  ]);
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -604,6 +620,36 @@ export default function App() {
   const accountingPendingTotal = accountingOrders.filter((item) => item.paymentStatus === '待收款').reduce((sum, item) => sum + item.amount, 0);
   const accountingRefundTotal = accountingOrders.filter((item) => item.paymentStatus.includes('退款')).reduce((sum, item) => sum + item.amount, 0);
 
+  const shippingQueue = useMemo<ShippingQueueItem[]>(() => (
+    accountingOrders
+      .filter((item) => item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款')
+      .map((item) => ({
+        orderNo: item.orderNo,
+        customer: item.customer,
+        paymentStatus: item.paymentStatus,
+        shippingStatus: item.shippingStatus,
+        itemCount: getQueueItemCount(item.orderNo),
+        urgency: getQueueUrgency(item),
+      }))
+  ), [accountingOrders]);
+
+  const selectedWarehouseOrder = useMemo(
+    () => shippingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || shippingQueue[0] || null,
+    [selectedAccountingOrderNo, shippingQueue],
+  );
+
+  const warehouseSummary = useMemo(() => {
+    const pendingShipping = shippingQueue.filter((item) => item.shippingStatus.includes('待') || item.shippingStatus.includes('理貨') || item.shippingStatus.includes('換貨')).length;
+    const releasable = accountingOrders.filter((item) => canReleaseShipping(item) && item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款').length;
+    const refundRestock = accountingOrders.filter((item) => item.paymentStatus === '已退款').length;
+    return [
+      { title: '待出貨', value: String(pendingShipping), sub: `已收款可放行 ${releasable} / 已退款待回補 ${refundRestock}` },
+      { title: '低庫存', value: String(products.filter((p) => p.stock <= 10).length), sub: '安全值以下需先補貨' },
+      { title: '今日入出庫', value: String(operationLogs.length + shippingQueue.length), sub: '含入庫 / 出貨 / 退貨 / 換貨' },
+      { title: '待查異常', value: String(accountingOrders.filter((item) => !canReleaseShipping(item) && item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款').length), sub: '未收款禁止放行 / 需人工覆核' },
+    ];
+  }, [shippingQueue, accountingOrders, products, operationLogs.length]);
+
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const itemCount = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -661,6 +707,10 @@ export default function App() {
       proof: selectedProof || '已補上',
       note: selectedNote || '已完成收款，可往出貨流程進行',
     });
+    setOperationLogs((prev) => [
+      createOperationLog('收款', `${selectedAccountingOrder.orderNo} 已確認收款，可放行出貨`),
+      ...prev,
+    ]);
   }
 
   function handleRefundPayment() {
@@ -672,8 +722,29 @@ export default function App() {
       shippingFee: selectedShippingFee,
       invoiceNo: selectedInvoiceNo,
       proof: selectedProof || '退款佐證已補上',
+      shippingStatus: selectedAccountingOrder.shippingStatus === '待出貨' || selectedAccountingOrder.shippingStatus === '未出貨' ? '已退款' : '退貨回補中',
+      returnStatus: '已退貨',
       note: selectedNote || '已退款，後續需同步回補庫存與績效',
     });
+    setOperationLogs((prev) => [
+      createOperationLog('退款', `${selectedAccountingOrder.orderNo} 已退款，待同步回補庫存與績效`),
+      ...prev,
+    ]);
+  }
+
+  function handleCompleteShipping() {
+    if (!selectedWarehouseOrder) return;
+    const target = accountingOrders.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!target || !canReleaseShipping(target)) return;
+    setAccountingOrders((prev) => prev.map((item) => item.orderNo === target.orderNo ? {
+      ...item,
+      shippingStatus: '已出貨',
+      note: item.note || '已完成出貨，等待簽收',
+    } : item));
+    setOperationLogs((prev) => [
+      createOperationLog('出貨', `${target.orderNo} 完成出貨，inventory / inventory_logs 已留待同步`),
+      ...prev,
+    ]);
   }
 
   function applyQuickCustomer(name: string, phone: string, address: string, method: ShippingMethod) {
@@ -1142,7 +1213,7 @@ export default function App() {
                 <SectionIntro
                   title="倉儲中心細化版"
                   desc="這版開始把出貨、庫存、查詢三區做得更接近實際操作畫面，仍然只動 UI，不去破壞你原本 GAS 倉儲邏輯。"
-                  stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
+                  stats={[`待出貨 ${shippingQueue.length}`, `可放行 ${accountingOrders.filter((item) => canReleaseShipping(item) && item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款').length}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
                 />
 
                 <section className="summary-grid">
@@ -1177,14 +1248,14 @@ export default function App() {
 
                         <div className="shipping-queue">
                           {shippingQueue.map((item) => (
-                            <div key={item.orderNo} className="shipping-row">
+                            <div key={item.orderNo} className={`shipping-row ${selectedWarehouseOrder?.orderNo === item.orderNo ? 'selected-accounting-row' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)} role="button" tabIndex={0}>
                               <div>
                                 <div className="shipping-order">{item.orderNo}</div>
                                 <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
                               </div>
                               <div className="shipping-actions">
                                 <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                                <button type="button" className="ghost-button compact-btn">掃碼出貨</button>
+                                <button type="button" className="ghost-button compact-btn" disabled={!canReleaseShipping(accountingOrders.find((order) => order.orderNo === item.orderNo) || paymentQueueSeed[0])}>掃碼出貨</button>
                                 <button type="button" className="ghost-button compact-btn">查看出貨單</button>
                               </div>
                             </div>
@@ -1220,14 +1291,14 @@ export default function App() {
                             <FileText className="small-icon" />
                           </div>
                           <div className="warehouse-form-grid">
-                            <div className="fake-field"><span>訂單編號</span><strong>VP20260331-001</strong></div>
-                            <div className="fake-field"><span>出貨狀態</span><strong>待出貨</strong></div>
-                            <div className="fake-field"><span>收款狀態</span><strong>已收款</strong></div>
-                            <div className="fake-field"><span>追蹤編號</span><strong>待填入</strong></div>
-                            <div className="fake-field wide"><span>掃碼結果</span><strong>商品條碼 + QR 身分識別比對成功後才放行</strong></div>
+                            <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '目前無待出貨單'}</strong></div>
+                            <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '—'}</strong></div>
+                            <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '—'}</strong></div>
+                            <div className="fake-field"><span>追蹤編號</span><strong>{selectedWarehouseOrder ? '待填入' : '—'}</strong></div>
+                            <div className="fake-field wide"><span>掃碼結果</span><strong>{selectedWarehouseOrder ? (canReleaseShipping(accountingOrders.find((order) => order.orderNo === selectedWarehouseOrder.orderNo) || paymentQueueSeed[0]) ? '收款已確認，可進入商品條碼 + QR 身分識別放行流程' : '尚未收款，系統鎖定出貨') : '目前沒有可操作訂單'}</strong></div>
                           </div>
                           <div className="accounting-action-row">
-                            <button type="button" className="primary-button"><Truck className="small-icon" />完成出貨</button>
+                            <button type="button" className="primary-button" onClick={handleCompleteShipping} disabled={!selectedWarehouseOrder || !canReleaseShipping(accountingOrders.find((order) => order.orderNo === selectedWarehouseOrder.orderNo) || paymentQueueSeed[0])}><Truck className="small-icon" />完成出貨</button>
                             <button type="button" className="ghost-button"><Receipt className="small-icon" />列印出貨單</button>
                           </div>
                         </div>
@@ -1244,8 +1315,8 @@ export default function App() {
                         </div>
                         <div className="stack-list compact">
                           <div>未收款不可出貨</div>
-                          <div>同 QR 多數量要看剩餘可出貨數量</div>
-                          <div>換貨 B 要自動產生金額 0 出貨單</div>
+                          <div>收款後會自動放行出貨按鈕</div>
+                          <div>退款後需回補庫存與績效</div>
                           <div>舊資料也要留下 shipping 痕跡</div>
                         </div>
                       </div>
@@ -1258,7 +1329,7 @@ export default function App() {
                           </div>
                         </div>
                         <div className="warehouse-log-list">
-                          {warehouseRecentLogs.map((item) => (
+                          {operationLogs.map((item) => (
                             <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
                               <div className="warehouse-log-time">{item.time}</div>
                               <div>
