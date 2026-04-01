@@ -876,7 +876,7 @@ export default function App() {
             {active === 'products' && (
               <>
                 <SectionIntro
-                  title="商品後台編輯區_TEST"
+                  title="商品後台編輯區"
                   desc="這區正式定義為內部商品管理，不對外開放。先完成新增、查看、編輯、啟用 / 停用的功能啟動。"
                   stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
                 />
