@@ -2226,134 +2226,31 @@ button:hover { transform: translateY(-1px); }
 }
 
 
-/* === 登入卡微調 === */
-.user-card{
-  isolation:isolate;
+/* 版面調整：左側整排改到右邊，方便操作 */
+.app-shell{
+  grid-template-columns: minmax(0, 1fr) 292px !important;
 }
 
-.user-rank-watermark{
-  position:absolute;
-  right:20px;
-  bottom:14px;
-  z-index:0;
-  font-size:48px;
-  line-height:1;
-  font-weight:900;
-  letter-spacing:.08em;
-  color:rgba(255,255,255,.18);
-  pointer-events:none;
-  user-select:none;
-  text-transform:none;
+.sidebar{
+  grid-column: 2 !important;
+  border-right: none !important;
+  border-left: 1px solid var(--line) !important;
 }
 
-.user-card-core .user-rank-watermark{
-  color:rgba(255,236,185,.16);
-  text-shadow:0 0 22px rgba(255,214,120,.08);
+.main-content{
+  grid-column: 1 !important;
 }
 
-.user-card-elite .user-rank-watermark{
-  color:rgba(140,97,16,.14);
-}
-
-.user-card-senior .user-rank-watermark{
-  color:rgba(123,35,66,.14);
-}
-
-.user-card-normal .user-rank-watermark{
-  color:rgba(95,83,88,.12);
-}
-
-.user-badge-row{
-  margin-top:12px;
-}
-
-.user-role-badge{
-  background:transparent;
-  border-color:transparent;
-  box-shadow:none;
-  padding:0;
-  border-radius:0;
-  font-size:15px;
-  font-weight:900;
-}
-
-.user-card-core .user-role-badge{ color:#f6edd7; }
-.user-card-elite .user-role-badge{ color:#8c6110; }
-.user-card-senior .user-role-badge{ color:#8f3654; }
-.user-card-normal .user-role-badge{ color:#7d5f69; }
-
-.rank-switch-btn.elite.active{
-  background:linear-gradient(135deg, #fff3df 0%, #e8c78f 100%);
-  color:#8f6000;
-  border-color:transparent;
-}
-
-.rank-switch-btn.senior.active{
-  background:linear-gradient(135deg, #f8e2e8 0%, #e4a6bb 100%);
-  color:#7c2848;
-  border-color:transparent;
-}
-
-@media (max-width:900px){
-  .user-rank-watermark{
-    font-size:42px;
-    right:16px;
-    bottom:12px;
+@media (max-width: 900px){
+  .app-shell{
+    grid-template-columns: 1fr !important;
   }
-}
-
-
-/* 訂購頁右側版面微調：縮小空白、讓購物車高度自適應 */
-.order-side{
-  gap: 10px !important;
-  align-content: start;
-}
-
-.order-side .order-panel{
-  margin: 0 !important;
-}
-
-.cart-list{
-  margin-top: 12px !important;
-  gap: 10px !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-.cart-item{
-  height: auto !important;
-}
-
-.cart-item-top{
-  align-items: flex-start !important;
-  flex-wrap: wrap !important;
-}
-
-.cart-item-bottom{
-  flex-wrap: wrap !important;
-}
-
-.summary-lines{
-  margin-top: 12px !important;
-  padding-top: 12px !important;
-}
-
-.quick-customer-grid{
-  margin-top: 12px !important;
-}
-
-.form-gap-top{
-  margin-top: 12px !important;
-}
-
-.field-card,
-.cart-item,
-.quick-customer-card{
-  min-height: auto !important;
-}
-
-@media (max-width: 1180px){
-  .order-side{
-    gap: 12px !important;
+  .sidebar{
+    grid-column: auto !important;
+    border-left: none !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .main-content{
+    grid-column: auto !important;
   }
 }
