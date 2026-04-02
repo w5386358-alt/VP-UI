@@ -49,12 +49,23 @@ import AccountingModule from './modules/AccountingModule';
 import ProfileModule from './modules/ProfileModule';
 
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
+type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
 type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number };
-type Customer = { id: string; name: string; phone: string; level: string };
+type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
-type SessionUser = { name: string; loginId: string; role: Role; rank: string };
+type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
+
+type PermissionProfile = {
+  canViewAllCustomers: boolean;
+  canViewOwnCustomers: boolean;
+  canViewAssignedOrderCustomers: boolean;
+  canViewCustomerSensitiveFields: boolean;
+  canEditPrice: boolean;
+  canOverrideInventory: boolean;
+  canRefund: boolean;
+};
 type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
@@ -239,9 +250,9 @@ const mockProducts: Product[] = [
 ];
 
 const mockCustomers: Customer[] = [
-  { id: 'c1', name: '王小美', phone: '0912345678', level: 'VIP' },
-  { id: 'c2', name: '林雅雯', phone: '0988777666', level: '一般' },
-  { id: 'c3', name: '陳佳玲', phone: '0933555777', level: '代理' },
+  { id: 'c1', name: '王小美', phone: '0912345678', level: 'VIP', ownerLoginId: 'vp001', ownerName: '吳秉宸' },
+  { id: 'c2', name: '林雅雯', phone: '0988777666', level: '一般', ownerLoginId: 'vp002', ownerName: '王小婷' },
+  { id: 'c3', name: '陳佳玲', phone: '0933555777', level: '代理', ownerLoginId: 'vp001', ownerName: '吳秉宸' },
 ];
 
 const mockStaff: Staff[] = [
@@ -260,6 +271,117 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
   { key: 'staff', label: '人員', icon: UserCog },
   { key: 'profile', label: '個人資料', icon: ClipboardList },
 ];
+
+
+const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
+  admin: ['dashboard', 'orders', 'inventory', 'accounting', 'products', 'customers', 'staff', 'profile'],
+  sales: ['dashboard', 'orders', 'profile'],
+  accounting: ['dashboard', 'orders', 'accounting', 'customers', 'profile'],
+  warehouse: ['dashboard', 'orders', 'inventory', 'customers', 'profile'],
+};
+
+const ROLE_LABEL: Record<Role, string> = {
+  admin: '系統',
+  sales: '其他身分',
+  accounting: '會計',
+  warehouse: '倉儲',
+};
+
+const ROLE_RANK: Record<Role, string> = {
+  admin: '核心成員',
+  sales: '普通銷售',
+  accounting: '高級銷售',
+  warehouse: '高級銷售',
+};
+
+const RANK_LABEL: Record<Rank, string> = {
+  core: '核心成員',
+  elite: '菁英成員',
+  senior: '高級銷售',
+  normal: '普通銷售',
+};
+
+const RANK_DISPLAY: Record<Rank, string> = {
+  core: '核心',
+  elite: '菁英',
+  senior: '高級',
+  normal: '普通',
+};
+
+function canAccessNav(role: Role, key: NavKey) {
+  return ROLE_NAV_ACCESS[role].includes(key);
+}
+
+function getPermissionProfile(role: Role, rankKey: Rank): PermissionProfile {
+  const base: PermissionProfile = {
+    canViewAllCustomers: false,
+    canViewOwnCustomers: false,
+    canViewAssignedOrderCustomers: false,
+    canViewCustomerSensitiveFields: false,
+    canEditPrice: false,
+    canOverrideInventory: false,
+    canRefund: false,
+  };
+
+  if (role === 'admin') {
+    return {
+      canViewAllCustomers: true,
+      canViewOwnCustomers: true,
+      canViewAssignedOrderCustomers: true,
+      canViewCustomerSensitiveFields: true,
+      canEditPrice: true,
+      canOverrideInventory: true,
+      canRefund: true,
+    };
+  }
+
+  if (role === 'warehouse') {
+    return {
+      ...base,
+      canViewAssignedOrderCustomers: true,
+    };
+  }
+
+  if (role === 'accounting') {
+    return {
+      ...base,
+      canViewAssignedOrderCustomers: true,
+      canRefund: rankKey === 'core' || rankKey === 'elite',
+    };
+  }
+
+  if (rankKey === 'core') {
+    return {
+      ...base,
+      canViewAllCustomers: true,
+      canViewOwnCustomers: true,
+      canViewCustomerSensitiveFields: true,
+      canEditPrice: true,
+      canOverrideInventory: true,
+      canRefund: true,
+    };
+  }
+
+  return {
+    ...base,
+    canViewOwnCustomers: true,
+    canViewCustomerSensitiveFields: true,
+    canEditPrice: rankKey === 'elite',
+  };
+}
+
+function getRankToneClass(rankKey: Rank) {
+  switch (rankKey) {
+    case 'core':
+      return 'badge badge-rank-core';
+    case 'elite':
+      return 'badge badge-rank-elite';
+    case 'senior':
+      return 'badge badge-rank-senior';
+    default:
+      return 'badge badge-rank-normal';
+  }
+}
 
 
 const shippingQueue = [
@@ -504,6 +626,8 @@ function normalizeCustomer(id: string, data: any): Customer {
     name: data.name || data.customerName || '未命名客戶',
     phone: data.phone || data.customerPhone || '-',
     level: data.level || data.tier || data.customerLevel || '一般',
+    ownerLoginId: data.ownerLoginId || data.salesLoginId || data.createdByLoginId || 'vp001',
+    ownerName: data.ownerName || data.salesName || data.createdByName || '未指派',
   };
 }
 
@@ -520,6 +644,7 @@ function normalizeStaff(id: string, data: any): Staff {
 
 function getRankClass(rank: string) {
   if (rank.includes('核心')) return 'badge badge-rank-core';
+  if (rank.includes('菁英')) return 'badge badge-rank-elite';
   if (rank.includes('高級')) return 'badge badge-rank-senior';
   return 'badge badge-rank-normal';
 }
@@ -644,7 +769,16 @@ export default function App() {
   const [staff, setStaff] = useState<Staff[]>(mockStaff);
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [dataMode, setDataMode] = useState<'firebase' | 'mock'>('mock');
-  const [user] = useState<SessionUser>({ name: '吳秉宸', loginId: 'vp001', role: 'admin', rank: '核心人員' });
+  const [userRoleView, setUserRoleView] = useState<Role>('admin');
+  const [userRankView, setUserRankView] = useState<Rank>('core');
+  const user = useMemo<SessionUser>(() => ({
+    name: '吳秉宸',
+    loginId: 'vp001',
+    role: userRoleView,
+    rank: RANK_LABEL[userRankView] || ROLE_RANK[userRoleView],
+    rankKey: userRankView,
+  }), [userRoleView, userRankView]);
+  const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
 
   const [cart, setCart] = useState<CartItem[]>([
     { ...mockProducts[0], qty: 1 },
@@ -660,7 +794,7 @@ export default function App() {
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 倉儲頁已進入可操作版，可切換訂單與查詢模式',
+    text: '✅ 倉儲 SOP 第二包已裝入，可直接測防超賣與 QR 查詢',
     tone: 'success',
   });
   const [warehouseQueryMode, setWarehouseQueryMode] = useState<WarehouseQueryMode>('barcode');
@@ -761,11 +895,22 @@ export default function App() {
     }
   }, [selectedProduct]);
 
+  const visibleCustomerRecords = useMemo(() => {
+    const assignedNames = new Set(orderRecords.map((item) => item.customer));
+
+    return customers.filter((customer) => {
+      if (permissionProfile.canViewAllCustomers) return true;
+      if (permissionProfile.canViewAssignedOrderCustomers) return assignedNames.has(customer.name);
+      if (permissionProfile.canViewOwnCustomers) return customer.ownerLoginId === user.loginId;
+      return false;
+    });
+  }, [customers, orderRecords, permissionProfile, user.loginId]);
+
   const filteredCustomers = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    if (!q) return customers;
-    return customers.filter((c) => [c.name, c.phone, c.level].join(' ').toLowerCase().includes(q));
-  }, [keyword, customers]);
+    if (!q) return visibleCustomerRecords;
+    return visibleCustomerRecords.filter((c) => [c.name, c.phone, c.level, c.ownerName].join(' ').toLowerCase().includes(q));
+  }, [keyword, visibleCustomerRecords]);
 
   const filteredStaff = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -846,6 +991,46 @@ export default function App() {
   }, [paymentQueue]);
 
   const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0] || null, [selectedWarehouseOrderNo, shippingQueue]);
+
+  const warehouseShipValidation = useMemo(() => {
+    if (!selectedWarehouseOrder) {
+      return {
+        canShip: false,
+        paymentOk: false,
+        issues: ['請先選擇待出貨訂單'],
+      };
+    }
+
+    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!order) {
+      return {
+        canShip: false,
+        paymentOk: false,
+        issues: ['找不到對應訂單資料'],
+      };
+    }
+
+    const paymentOk = selectedWarehouseOrder.paymentStatus === '已收款' || selectedWarehouseOrder.paymentStatus === '免收款';
+    const issues: string[] = [];
+
+    if (!paymentOk) {
+      issues.push('未收款，不可出貨');
+    }
+
+    order.items.forEach((entry) => {
+      const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
+      const totalAvailable = buckets.reduce((sum, item) => sum + item.qty, 0);
+      if (totalAvailable < entry.qty) {
+        issues.push(`${entry.code} 庫存不足：剩 ${totalAvailable}，需 ${entry.qty}`);
+      }
+    });
+
+    return {
+      canShip: issues.length === 0,
+      paymentOk,
+      issues,
+    };
+  }, [selectedWarehouseOrder, orderRecords, inventoryLogs]);
 
   const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode, stockSnapshot]);
 
@@ -1072,8 +1257,24 @@ export default function App() {
 
   const lowStockCount = stockSnapshot.filter((p) => p.stock <= p.safe).length;
   const enabledProducts = products.filter((p) => p.enabled).length;
-  const vipCustomers = customers.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
+  const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
+
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
+  const customerScopeLabel = permissionProfile.canViewAllCustomers
+    ? '全部客戶完整資料'
+    : permissionProfile.canViewAssignedOrderCustomers
+      ? '僅訂單必要客戶資訊'
+      : permissionProfile.canViewOwnCustomers
+        ? '僅自己推銷客戶'
+        : '無客戶權限';
+
+  useEffect(() => {
+    if (!canAccessNav(user.role, active)) {
+      setActive(ROLE_NAV_ACCESS[user.role][0]);
+    }
+  }, [user.role, active]);
 
   function addToCart(item: Product) {
     if (!item.enabled || item.stock <= 0) return;
@@ -1284,7 +1485,8 @@ export default function App() {
         return;
       }
       setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
-      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，倉儲端將依狀態判定可出貨`, tone: 'success' });
+      setWarehouseNotice({ text: `✅ 收款狀態已更新：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       setOrderNotice({ text: `✅ 會計已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       return;
     }
@@ -1307,13 +1509,13 @@ export default function App() {
           <div className="brand-subtitle">沿用你目前版本，只做 UI 設計優化，不破壞既有架構</div>
         </div>
 
-        <div className="card user-card">
+        <div className={`card user-card user-card-${user.rankKey}`}>
           <div className="muted-label">目前登入</div>
-          <div className={`user-name user-name-card ${user.rank.includes("核心") ? "rank-name-core" : user.rank.includes("高級") ? "rank-name-advanced" : user.rank.includes("普通") ? "rank-name-basic" : "rank-name-elite"}`}>{user.name}</div>
+          <div className="user-name">{user.name}</div>
           <div className="user-id">ID：{user.loginId}</div>
           <div className="badge-row">
-            <span className="badge badge-role">身分 / 管理員</span>
-            <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
+            <span className="badge badge-role">身分 / {ROLE_LABEL[user.role]}</span>
+            <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
           </div>
         </div>
 
@@ -1325,9 +1527,50 @@ export default function App() {
           {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
         </div>
 
+        <div className="card role-preview-card">
+          <div className="muted-label">權限預覽</div>
+          <div className="role-preview-title">目前視角：{ROLE_LABEL[user.role]}</div>
+          <div className="role-switch-group">
+            <div className="role-switch-label">身分</div>
+            <div className="role-switch-row">
+              {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
+                  onClick={() => setUserRoleView(role)}
+                >
+                  {ROLE_LABEL[role]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="role-switch-group">
+            <div className="role-switch-label">階級</div>
+            <div className="rank-switch-row">
+              {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
+                <button
+                  key={rank}
+                  type="button"
+                  className={`rank-switch-btn ${rank} ${user.rankKey === rank ? 'active' : ''}`}
+                  onClick={() => setUserRankView(rank)}
+                >
+                  {RANK_DISPLAY[rank]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="permission-chip-row">
+            <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
+            <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
+            <span className="badge badge-neutral">退費 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
+          </div>
+          <div className="role-preview-desc">這版先做 UI + 權限套用：模組可見性看身分，客戶可見範圍與進階操作看階級與客製化授權。</div>
+        </div>
+
         <div className="nav-group-title">主功能選單</div>
         <div className="nav-list">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -1343,6 +1586,7 @@ export default function App() {
           })}
         </div>
 
+        {canAccessNav(user.role, 'accounting') && (
         <div className="card accounting-shortcut">
           <div className="shortcut-title">本版修正</div>
           <button
@@ -1353,10 +1597,11 @@ export default function App() {
             <CreditCard className="small-icon" />會計中心
           </button>
         </div>
+        )}
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">目前策略</div>
-          <div className="sidebar-tip-desc">先穩定承接 GAS 功能邏輯，再往訂購、會計、倉儲三大主模組擴充。</div>
+          <div className="sidebar-tip-desc">先把倉儲 SOP 第二包測穩，再決定是否進會計 ↔ 倉儲串接。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -1384,7 +1629,7 @@ export default function App() {
 
         <div className="topbar">
           <div>
-            <div className="section-tag">{navItems.find((item) => item.key === active)?.label}</div>
+            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
             <div className="topbar-title">模組操作區</div>
           </div>
           <div className="toolbar">
@@ -1419,6 +1664,13 @@ export default function App() {
             </div>
 
 
+            {!canAccessNav(user.role, active) && (
+              <div className="card access-denied-card">
+                <div className="access-denied-title">此角色不可進入目前模組</div>
+                <div className="access-denied-desc">目前視角是「{ROLE_LABEL[user.role]}」。這版已改成權限隔離流程：會計只改收款狀態，倉儲只依狀態解鎖出貨，不互看對方模組。</div>
+              </div>
+            )}
+
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
@@ -1426,7 +1678,7 @@ export default function App() {
               <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'customers' && (
-              <CustomersModule customers={customers} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} />
+              <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
             )}
             {active === 'staff' && (
               <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
@@ -1435,7 +1687,7 @@ export default function App() {
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
               <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
@@ -1453,7 +1705,7 @@ export default function App() {
             { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
             { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
             { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
-          ].map((item) => {
+          ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
             const Icon = item.icon;
             return (
               <button
