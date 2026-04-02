@@ -1,0 +1,17 @@
+
+/* 🔧 修正：購物車不卡表單（安全版） */
+
+.sticky-panel{
+  position: static !important;
+}
+
+/* 購物車內滾動 */
+.cart-list{
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* 右側保持正常排版 */
+.order-side{
+  position: relative;
+}
