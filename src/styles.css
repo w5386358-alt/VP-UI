@@ -2225,13 +2225,32 @@ button:hover { transform: translateY(-1px); }
   border-color: #e9b9c8;
 }
 
-/* 修正右側側欄造成上方留白 */
+
+/* 版面調整：左側整排改到右邊，方便操作 */
+.app-shell{
+  grid-template-columns: minmax(0, 1fr) 292px !important;
+}
+
 .sidebar{
   grid-column: 2 !important;
-  grid-row: 1 !important;
+  border-right: none !important;
+  border-left: 1px solid var(--line) !important;
 }
 
 .main-content{
   grid-column: 1 !important;
-  grid-row: 1 !important;
+}
+
+@media (max-width: 900px){
+  .app-shell{
+    grid-template-columns: 1fr !important;
+  }
+  .sidebar{
+    grid-column: auto !important;
+    border-left: none !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .main-content{
+    grid-column: auto !important;
+  }
 }
