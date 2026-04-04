@@ -1508,18 +1508,16 @@ export default function App() {
   }
 
   function updateAccountingRecord(patch: Partial<OrderRecord>) {
-    if (!selectedAccountingOrderNo) return;
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingOrderNo ? { ...item, ...patch } : item));
+    if (!selectedAccountingRecord) return;
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, ...patch } : item));
   }
 
   function updateAccountingAmountField(field: 'untaxedAmount' | 'shippingFee' | 'taxRate', rawValue: string) {
-    if (!selectedAccountingOrderNo) return;
-    const current = orderRecords.find((item) => item.orderNo === selectedAccountingOrderNo);
-    if (!current) return;
+    if (!selectedAccountingRecord) return;
     const value = Math.max(0, Number(rawValue || 0));
-    const untaxedAmount = field === 'untaxedAmount' ? value : (current.untaxedAmount ?? Math.max(current.amount - (current.shippingFee ?? 0), 0));
-    const shippingFeeValue = field === 'shippingFee' ? value : (current.shippingFee ?? 0);
-    const taxRateValue = field === 'taxRate' ? value : (current.taxRate ?? 0);
+    const untaxedAmount = field === 'untaxedAmount' ? value : (selectedAccountingRecord.untaxedAmount ?? Math.max(selectedAccountingRecord.amount - selectedAccountingRecord.shippingFee, 0));
+    const shippingFeeValue = field === 'shippingFee' ? value : (selectedAccountingRecord.shippingFee ?? 0);
+    const taxRateValue = field === 'taxRate' ? value : (selectedAccountingRecord.taxRate ?? 0);
     updateAccountingRecord({
       untaxedAmount,
       shippingFee: shippingFeeValue,
