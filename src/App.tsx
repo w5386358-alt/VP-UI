@@ -105,6 +105,12 @@ type OrderRecord = {
   mainStatus: string;
   date: string;
   remark: string;
+  shippingFee?: number;
+  taxRate?: number;
+  untaxedAmount?: number;
+  paymentMethod?: string;
+  invoiceNo?: string;
+  proof?: string;
   items: Array<{ code: string; name: string; qty: number; price: number }>;
 };
 
@@ -676,6 +682,22 @@ function getShippingFee(method: ShippingMethod) {
   return 0;
 }
 
+function getTodayDateKey() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function calculateAccountingTotal(untaxedAmount: number, shippingFee: number, taxRate: number) {
+  const safeUntaxed = Math.max(0, Number.isFinite(untaxedAmount) ? untaxedAmount : 0);
+  const safeShipping = Math.max(0, Number.isFinite(shippingFee) ? shippingFee : 0);
+  const safeTaxRate = Math.max(0, Number.isFinite(taxRate) ? taxRate : 0);
+  const taxed = Math.round(safeUntaxed * (safeTaxRate / 100));
+  return safeUntaxed + safeShipping + taxed;
+}
+
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
   return { id: '', code: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
 }
@@ -811,7 +833,7 @@ export default function App() {
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
-  const [accountingDateEnd, setAccountingDateEnd] = useState('2026-04-01');
+  const [accountingDateEnd, setAccountingDateEnd] = useState(getTodayDateKey());
   const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
@@ -944,19 +966,25 @@ export default function App() {
   }, [orderRecords]);
 
   const paymentQueue = useMemo(() => {
-    return orderRecords.map((item) => ({
-      orderNo: item.orderNo,
-      customer: item.customer,
-      paymentStatus: item.paymentStatus,
-      shippingStatus: item.shippingStatus,
-      amount: item.amount,
-      shippingFee: item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
-      taxRate: 0,
-      proof: item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳',
-      date: item.date.split(' ')[0],
-      paymentMethod: item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認',
-      invoiceNo: item.paymentStatus.includes('退款') ? '退款單' : '待補',
-    }));
+    return orderRecords.map((item) => {
+      const shippingFee = item.shippingFee ?? getShippingFee(item.shippingMethod);
+      const taxRate = item.taxRate ?? 0;
+      const untaxedAmount = item.untaxedAmount ?? Math.max(item.amount - shippingFee, 0);
+      return {
+        orderNo: item.orderNo,
+        customer: item.customer,
+        paymentStatus: item.paymentStatus,
+        shippingStatus: item.shippingStatus,
+        amount: item.amount,
+        shippingFee,
+        taxRate,
+        untaxedAmount,
+        proof: item.proof || (item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
+        date: item.date.split(' ')[0],
+        paymentMethod: item.paymentMethod || (item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
+        invoiceNo: item.invoiceNo || (item.paymentStatus.includes('退款') ? '退款單' : '待補'),
+      };
+    });
   }, [orderRecords]);
 
   const stockSnapshot = useMemo(() => deriveStockSnapshot(products, inventoryLogs), [products, inventoryLogs]);
@@ -1423,11 +1451,22 @@ export default function App() {
       mainStatus: '處理中',
       date,
       remark: remark.trim() || '—',
+      shippingFee,
+      taxRate: 0,
+      untaxedAmount: Math.max(subtotal - discountAmount, 0),
+      paymentMethod: '待確認',
+      invoiceNo: '待補',
+      proof: '待上傳',
       items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
     };
+    const orderDateKey = date.split(' ')[0].replace(/\//g, '-');
     setOrderRecords((prev) => [nextRecord, ...prev]);
     setSelectedOrderNo(orderNo);
+    setSelectedAccountingOrderNo(orderNo);
+    setAccountingDateEnd((prev) => (prev && prev > orderDateKey ? prev : orderDateKey));
+    setAccountingDateStart((prev) => (!prev || prev <= orderDateKey ? prev : orderDateKey));
     setOrderNotice({ text: `✅ 已建立訂單：${orderNo}`, tone: 'success' });
+    setAccountingNotice({ text: `✅ 新訂單已同步到會計：${orderNo}`, tone: 'success' });
     setCart([]);
     setRemark('');
     setDiscountMode('無');
@@ -1466,6 +1505,25 @@ export default function App() {
     setOrderNotice({ text: `✅ 已更新待出貨：${orderNo}`, tone: 'success' });
     setWarehouseNotice({ text: `✅ Orders 已同步待出貨：${orderNo}`, tone: 'success' });
     setSelectedWarehouseOrderNo(orderNo);
+  }
+
+  function updateAccountingRecord(patch: Partial<OrderRecord>) {
+    if (!selectedAccountingRecord) return;
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, ...patch } : item));
+  }
+
+  function updateAccountingAmountField(field: 'untaxedAmount' | 'shippingFee' | 'taxRate', rawValue: string) {
+    if (!selectedAccountingRecord) return;
+    const value = Math.max(0, Number(rawValue || 0));
+    const untaxedAmount = field === 'untaxedAmount' ? value : (selectedAccountingRecord.untaxedAmount ?? Math.max(selectedAccountingRecord.amount - selectedAccountingRecord.shippingFee, 0));
+    const shippingFeeValue = field === 'shippingFee' ? value : (selectedAccountingRecord.shippingFee ?? 0);
+    const taxRateValue = field === 'taxRate' ? value : (selectedAccountingRecord.taxRate ?? 0);
+    updateAccountingRecord({
+      untaxedAmount,
+      shippingFee: shippingFeeValue,
+      taxRate: taxRateValue,
+      amount: calculateAccountingTotal(untaxedAmount, shippingFeeValue, taxRateValue),
+    });
   }
 
   function selectAccountingOrder(orderNo: string) {
@@ -1690,7 +1748,7 @@ export default function App() {
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} updateAccountingRecord={updateAccountingRecord} updateAccountingAmountField={updateAccountingAmountField} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
               <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
