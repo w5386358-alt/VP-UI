@@ -92,6 +92,18 @@ type ProductDraft = {
   enabled: boolean;
 };
 
+type AccountingDraft = {
+  orderNo: string;
+  customer: string;
+  untaxedAmount: string;
+  taxRate: string;
+  shippingFee: string;
+  actualReceived: string;
+  paymentMethod: string;
+  invoiceNo: string;
+  proof: string;
+};
+
 type OrderRecord = {
   orderNo: string;
   customer: string;
@@ -105,9 +117,9 @@ type OrderRecord = {
   mainStatus: string;
   date: string;
   remark: string;
-  shippingFee?: number;
   taxRate?: number;
-  untaxedAmount?: number;
+  shippingFeeOverride?: number;
+  actualReceived?: number;
   paymentMethod?: string;
   invoiceNo?: string;
   proof?: string;
@@ -682,24 +694,52 @@ function getShippingFee(method: ShippingMethod) {
   return 0;
 }
 
-function getTodayDateKey() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function calculateAccountingTotal(untaxedAmount: number, shippingFee: number, taxRate: number) {
-  const safeUntaxed = Math.max(0, Number.isFinite(untaxedAmount) ? untaxedAmount : 0);
-  const safeShipping = Math.max(0, Number.isFinite(shippingFee) ? shippingFee : 0);
-  const safeTaxRate = Math.max(0, Number.isFinite(taxRate) ? taxRate : 0);
-  const taxed = Math.round(safeUntaxed * (safeTaxRate / 100));
-  return safeUntaxed + safeShipping + taxed;
-}
-
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
   return { id: '', code: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
+}
+
+function getTodayDateInputValue() {
+  const now = new Date();
+  const taipei = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  return taipei.toISOString().slice(0, 10);
+}
+
+function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
+  if (!record) {
+    return {
+      orderNo: '',
+      customer: '',
+      untaxedAmount: '0',
+      taxRate: '0',
+      shippingFee: '0',
+      actualReceived: '0',
+      paymentMethod: '待確認',
+      invoiceNo: '待補',
+      proof: '待上傳',
+    };
+  }
+
+  const shippingFee = typeof record.shippingFeeOverride === 'number'
+    ? record.shippingFeeOverride
+    : record.shippingMethod === '宅配'
+      ? 100
+      : record.shippingMethod === '店到店'
+        ? 65
+        : 0;
+  const actualReceived = typeof record.actualReceived === 'number' ? record.actualReceived : record.amount;
+  const untaxedAmount = Math.max(actualReceived - shippingFee, 0);
+
+  return {
+    orderNo: record.orderNo,
+    customer: record.customer,
+    untaxedAmount: String(untaxedAmount),
+    taxRate: String(typeof record.taxRate === 'number' ? record.taxRate : 0),
+    shippingFee: String(shippingFee),
+    actualReceived: String(actualReceived),
+    paymentMethod: record.paymentMethod || (record.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
+    invoiceNo: record.invoiceNo || (record.paymentStatus.includes('退款') ? '退款單' : '待補'),
+    proof: record.proof || (record.paymentStatus === '已收款' ? '已上傳' : record.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
+  };
 }
 
 function toProductDraft(item: Product): ProductDraft {
@@ -833,8 +873,9 @@ export default function App() {
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
-  const [accountingDateEnd, setAccountingDateEnd] = useState(getTodayDateKey());
+  const [accountingDateEnd, setAccountingDateEnd] = useState(getTodayDateInputValue());
   const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
+  const [accountingDraft, setAccountingDraft] = useState<AccountingDraft>(() => makeAccountingDraft(initialOrderRecords[0] || null));
   const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
     tone: 'success',
@@ -966,25 +1007,19 @@ export default function App() {
   }, [orderRecords]);
 
   const paymentQueue = useMemo(() => {
-    return orderRecords.map((item) => {
-      const shippingFee = item.shippingFee ?? getShippingFee(item.shippingMethod);
-      const taxRate = item.taxRate ?? 0;
-      const untaxedAmount = item.untaxedAmount ?? Math.max(item.amount - shippingFee, 0);
-      return {
-        orderNo: item.orderNo,
-        customer: item.customer,
-        paymentStatus: item.paymentStatus,
-        shippingStatus: item.shippingStatus,
-        amount: item.amount,
-        shippingFee,
-        taxRate,
-        untaxedAmount,
-        proof: item.proof || (item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
-        date: item.date.split(' ')[0],
-        paymentMethod: item.paymentMethod || (item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
-        invoiceNo: item.invoiceNo || (item.paymentStatus.includes('退款') ? '退款單' : '待補'),
-      };
-    });
+    return orderRecords.map((item) => ({
+      orderNo: item.orderNo,
+      customer: item.customer,
+      paymentStatus: item.paymentStatus,
+      shippingStatus: item.shippingStatus,
+      amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
+      shippingFee: typeof item.shippingFeeOverride === 'number' ? item.shippingFeeOverride : item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
+      taxRate: typeof item.taxRate === 'number' ? item.taxRate : 0,
+      proof: item.proof || (item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
+      date: item.date.split(' ')[0],
+      paymentMethod: item.paymentMethod || (item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
+      invoiceNo: item.invoiceNo || (item.paymentStatus.includes('退款') ? '退款單' : '待補'),
+    }));
   }, [orderRecords]);
 
   const stockSnapshot = useMemo(() => deriveStockSnapshot(products, inventoryLogs), [products, inventoryLogs]);
@@ -1275,6 +1310,11 @@ export default function App() {
     [filteredAccountingQueue, selectedAccountingOrderNo],
   );
 
+  useEffect(() => {
+    const sourceRecord = orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null;
+    setAccountingDraft(makeAccountingDraft(sourceRecord));
+  }, [selectedAccountingRecord?.orderNo, orderRecords]);
+
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
   const shippingFee = getShippingFee(shippingMethod);
@@ -1438,6 +1478,7 @@ export default function App() {
     const orderNo = makeNextOrderNo();
     const now = new Date();
     const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const defaultShippingFee = shippingMethod === '宅配' ? 100 : shippingMethod === '店到店' ? 65 : 0;
     const nextRecord: OrderRecord = {
       orderNo,
       customer: customerName.trim(),
@@ -1451,22 +1492,21 @@ export default function App() {
       mainStatus: '處理中',
       date,
       remark: remark.trim() || '—',
-      shippingFee,
       taxRate: 0,
-      untaxedAmount: Math.max(subtotal - discountAmount, 0),
+      shippingFeeOverride: defaultShippingFee,
+      actualReceived: grandTotal,
       paymentMethod: '待確認',
       invoiceNo: '待補',
       proof: '待上傳',
       items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
     };
-    const orderDateKey = date.split(' ')[0].replace(/\//g, '-');
     setOrderRecords((prev) => [nextRecord, ...prev]);
     setSelectedOrderNo(orderNo);
     setSelectedAccountingOrderNo(orderNo);
-    setAccountingDateEnd((prev) => (prev && prev > orderDateKey ? prev : orderDateKey));
-    setAccountingDateStart((prev) => (!prev || prev <= orderDateKey ? prev : orderDateKey));
+    setAccountingDraft(makeAccountingDraft(nextRecord));
+    setAccountingDateEnd(getTodayDateInputValue());
+    setAccountingNotice({ text: `✅ 訂單已串接會計：${orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 已建立訂單：${orderNo}`, tone: 'success' });
-    setAccountingNotice({ text: `✅ 新訂單已同步到會計：${orderNo}`, tone: 'success' });
     setCart([]);
     setRemark('');
     setDiscountMode('無');
@@ -1507,23 +1547,40 @@ export default function App() {
     setSelectedWarehouseOrderNo(orderNo);
   }
 
-  function updateAccountingRecord(patch: Partial<OrderRecord>) {
-    if (!selectedAccountingRecord) return;
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, ...patch } : item));
+  function updateAccountingDraftField(field: keyof AccountingDraft, value: string) {
+    setAccountingDraft((prev) => ({ ...prev, [field]: value }));
   }
 
-  function updateAccountingAmountField(field: 'untaxedAmount' | 'shippingFee' | 'taxRate', rawValue: string) {
-    if (!selectedAccountingRecord) return;
-    const value = Math.max(0, Number(rawValue || 0));
-    const untaxedAmount = field === 'untaxedAmount' ? value : (selectedAccountingRecord.untaxedAmount ?? Math.max(selectedAccountingRecord.amount - selectedAccountingRecord.shippingFee, 0));
-    const shippingFeeValue = field === 'shippingFee' ? value : (selectedAccountingRecord.shippingFee ?? 0);
-    const taxRateValue = field === 'taxRate' ? value : (selectedAccountingRecord.taxRate ?? 0);
-    updateAccountingRecord({
-      untaxedAmount,
-      shippingFee: shippingFeeValue,
-      taxRate: taxRateValue,
-      amount: calculateAccountingTotal(untaxedAmount, shippingFeeValue, taxRateValue),
-    });
+  function saveAccountingDraft() {
+    if (!accountingDraft.orderNo) {
+      setAccountingNotice({ text: '❌ 尚未選擇訂單', tone: 'danger' });
+      return false;
+    }
+
+    const untaxedAmount = Number(accountingDraft.untaxedAmount || 0);
+    const taxRate = Number(accountingDraft.taxRate || 0);
+    const shippingFee = Number(accountingDraft.shippingFee || 0);
+    const actualReceived = Number(accountingDraft.actualReceived || 0);
+
+    if ([untaxedAmount, taxRate, shippingFee, actualReceived].some((value) => Number.isNaN(value) || value < 0)) {
+      setAccountingNotice({ text: '❌ 金額或稅率格式錯誤', tone: 'danger' });
+      return false;
+    }
+
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === accountingDraft.orderNo ? {
+      ...item,
+      customer: accountingDraft.customer.trim() || item.customer,
+      amount: actualReceived,
+      taxRate,
+      shippingFeeOverride: shippingFee,
+      actualReceived,
+      paymentMethod: accountingDraft.paymentMethod.trim() || '待確認',
+      invoiceNo: accountingDraft.invoiceNo.trim() || '待補',
+      proof: accountingDraft.proof.trim() || '待上傳',
+    } : item));
+    setAccountingNotice({ text: `✅ 已更新本次訂單：${accountingDraft.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 會計欄位已回寫：${accountingDraft.orderNo}`, tone: 'success' });
+    return true;
   }
 
   function selectAccountingOrder(orderNo: string) {
@@ -1533,6 +1590,7 @@ export default function App() {
 
   function triggerAccountingAction(action: 'pay' | 'refund') {
     if (!selectedAccountingRecord) return;
+    if (!saveAccountingDraft()) return;
     if (action === 'pay') {
       if (selectedAccountingRecord.paymentStatus === '已收款') {
         setAccountingNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
@@ -1748,7 +1806,7 @@ export default function App() {
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} updateAccountingRecord={updateAccountingRecord} updateAccountingAmountField={updateAccountingAmountField} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} accountingDraft={accountingDraft} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
               <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
