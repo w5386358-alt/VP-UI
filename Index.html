@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAIOS 查詢系統</title>
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <div class="page">
+    <div class="bg-grid"></div>
+
+    <main class="app-shell">
+      <section class="hero">
+        <div class="ring-wrap">
+          <div class="ring"></div>
+          <div class="hero-content">
+            <div class="logo">VAI<span>OS</span></div>
+            <div class="subtitle">權限查詢系統</div>
+            <div class="hint">登入後依歸屬權限查詢可查看的購買人序號，點一下可自動複製並標紅</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="loginPanel" class="panel auth-panel">
+        <div class="panel-title">登入系統</div>
+        <div class="auth-grid">
+          <input id="username" type="text" placeholder="帳號">
+          <input id="password" type="password" placeholder="密碼">
+          <button id="loginBtn" onclick="runLogin()">登入</button>
+        </div>
+        <div id="loginStatus" class="status muted">請先登入</div>
+      </section>
+
+      <section id="searchPanel" class="panel hidden">
+        <div class="user-bar">
+          <div>
+            <div class="user-name" id="userName">未登入</div>
+            <div class="user-meta" id="userMeta"></div>
+          </div>
+          <button class="ghost-btn" onclick="logout()">登出</button>
+        </div>
+
+        <div class="search-row">
+          <input id="keyword" type="text" placeholder="請輸入購買人姓名" autocomplete="off">
+          <button id="searchBtn" onclick="runSearch()">查詢</button>
+        </div>
+
+        <div id="status" class="status muted">等待查詢</div>
+        <div id="summary" class="summary hidden"></div>
+        <div id="results" class="results"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let currentUser = null;
+
+    const usernameEl = document.getElementById('username');
+    const passwordEl = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginStatusEl = document.getElementById('loginStatus');
+
+    const loginPanel = document.getElementById('loginPanel');
+    const searchPanel = document.getElementById('searchPanel');
+    const keywordEl = document.getElementById('keyword');
+    const statusEl = document.getElementById('status');
+    const summaryEl = document.getElementById('summary');
+    const resultsEl = document.getElementById('results');
+    const searchBtn = document.getElementById('searchBtn');
+    const userNameEl = document.getElementById('userName');
+    const userMetaEl = document.getElementById('userMeta');
+
+    usernameEl.addEventListener('keydown', handleLoginKeydown);
+    passwordEl.addEventListener('keydown', handleLoginKeydown);
+    keywordEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') runSearch();
+    });
+
+    function handleLoginKeydown(e) {
+      if (e.key === 'Enter') runLogin();
+    }
+
+    function setLoginLoading(isLoading) {
+      loginBtn.disabled = isLoading;
+      loginBtn.textContent = isLoading ? '登入中...' : '登入';
+      loginStatusEl.className = 'status ' + (isLoading ? 'loading' : 'muted');
+      loginStatusEl.textContent = isLoading ? '正在驗證帳號...' : '請先登入';
+    }
+
+    function runLogin() {
+      const username = usernameEl.value.trim();
+      const password = passwordEl.value.trim();
+
+      if (!username || !password) {
+        loginStatusEl.className = 'status error';
+        loginStatusEl.textContent = '請輸入帳號與密碼';
+        return;
+      }
+
+      setLoginLoading(true);
+
+      google.script.run
+        .withSuccessHandler(handleLoginSuccess)
+        .withFailureHandler(handleLoginError)
+        .login(username, password);
+    }
+
+    function handleLoginSuccess(res) {
+      setLoginLoading(false);
+
+      if (!res || !res.ok) {
+        loginStatusEl.className = 'status error';
+        loginStatusEl.textContent = (res && res.message) || '登入失敗';
+        return;
+      }
+
+      currentUser = res.user;
+      loginStatusEl.className = 'status success';
+      loginStatusEl.textContent = '登入成功';
+
+      loginPanel.classList.add('hidden');
+      searchPanel.classList.remove('hidden');
+
+      userNameEl.textContent = currentUser.username;
+      userMetaEl.textContent = currentUser.isAdmin
+        ? '管理員｜可查看全部資料'
+        : `角色：${currentUser.role || '一般使用者'}｜歸屬：${currentUser.scope || '-'}`;
+    }
+
+    function handleLoginError(err) {
+      setLoginLoading(false);
+      loginStatusEl.className = 'status error';
+      loginStatusEl.textContent = '系統錯誤：' + (err && err.message ? err.message : err);
+    }
+
+    function logout() {
+      currentUser = null;
+      loginPanel.classList.remove('hidden');
+      searchPanel.classList.add('hidden');
+      usernameEl.value = '';
+      passwordEl.value = '';
+      keywordEl.value = '';
+      summaryEl.classList.add('hidden');
+      resultsEl.innerHTML = '';
+      statusEl.className = 'status muted';
+      statusEl.textContent = '等待查詢';
+      loginStatusEl.className = 'status muted';
+      loginStatusEl.textContent = '請先登入';
+    }
+
+    function setLoading(isLoading) {
+      searchBtn.disabled = isLoading;
+      searchBtn.textContent = isLoading ? '查詢中...' : '查詢';
+      statusEl.className = 'status ' + (isLoading ? 'loading' : 'muted');
+      statusEl.textContent = isLoading ? '正在讀取試算表資料...' : '等待查詢';
+    }
+
+    function runSearch() {
+      const keyword = keywordEl.value.trim();
+      if (!keyword) {
+        statusEl.className = 'status error';
+        statusEl.textContent = '請先輸入購買人姓名';
+        summaryEl.classList.add('hidden');
+        resultsEl.innerHTML = '';
+        return;
+      }
+
+      if (!currentUser) {
+        statusEl.className = 'status error';
+        statusEl.textContent = '請先登入';
+        return;
+      }
+
+      setLoading(true);
+      summaryEl.classList.add('hidden');
+      resultsEl.innerHTML = '';
+
+      google.script.run
+        .withSuccessHandler(renderResult)
+        .withFailureHandler(handleError)
+        .searchBuyer(keyword, currentUser);
+    }
+
+    function renderResult(data) {
+      setLoading(false);
+
+      if (!data || !data.ok) {
+        statusEl.className = 'status error';
+        statusEl.textContent = (data && data.message) || '查詢失敗';
+        return;
+      }
+
+      if (!data.totalCount) {
+        statusEl.className = 'status error';
+        statusEl.textContent = data.message || '查無符合資料';
+        summaryEl.classList.add('hidden');
+        resultsEl.innerHTML = '';
+        return;
+      }
+
+      statusEl.className = 'status success';
+      statusEl.textContent = '查詢完成';
+
+      summaryEl.classList.remove('hidden');
+      summaryEl.innerHTML = `
+        <div class="summary-card">
+          <div class="summary-title">查詢結果</div>
+          <div class="summary-main">${escapeHtml(data.keyword)}</div>
+          <div class="summary-sub">共找到 <b>${data.totalCount}</b> 筆序號</div>
+        </div>
+      `;
+
+      resultsEl.innerHTML = `
+        <div class="serial-grid">
+          ${data.serials.map(item => `
+            <button class="serial-chip ${item.used ? 'used' : ''}" type="button"
+              data-serial="${escapeHtml(item.serial)}"
+              data-sheet-name="${escapeHtml(item.sheetName)}"
+              data-row-number="${item.rowNumber}">
+              <span class="chip-value">${escapeHtml(item.serial)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      bindCopyEvents();
+    }
+
+    function bindCopyEvents() {
+      const chips = resultsEl.querySelectorAll('.serial-chip');
+      chips.forEach(chip => {
+        chip.addEventListener('click', async function () {
+          const serial = this.getAttribute('data-serial') || '';
+          const sheetName = this.getAttribute('data-sheet-name') || '';
+          const rowNumber = Number(this.getAttribute('data-row-number') || '0');
+
+          try {
+            await copyText(serial);
+
+            google.script.run
+              .withSuccessHandler((res) => {
+                if (!res || !res.ok) {
+                  statusEl.className = 'status error';
+                  statusEl.textContent = (res && res.message) || '寫回失敗';
+                  return;
+                }
+
+                if (res.used) {
+                  chip.classList.add('used');
+                  statusEl.className = 'status success';
+                  statusEl.textContent = '已複製並標記使用：' + serial;
+                } else {
+                  chip.classList.remove('used');
+                  statusEl.className = 'status success';
+                  statusEl.textContent = '已複製並恢復未使用：' + serial;
+                }
+              })
+              .withFailureHandler((err) => {
+                statusEl.className = 'status error';
+                statusEl.textContent = '寫回失敗：' + (err && err.message ? err.message : err);
+              })
+              .toggleUsedStatus(sheetName, rowNumber);
+
+          } catch (err) {
+            chip.classList.add('copy-failed');
+            statusEl.className = 'status error';
+            statusEl.textContent = '複製失敗，請手動複製';
+          }
+        });
+      });
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (!ok) throw new Error('copy failed');
+    }
+
+    function handleError(err) {
+      setLoading(false);
+      statusEl.className = 'status error';
+      statusEl.textContent = '系統錯誤：' + (err && err.message ? err.message : err);
+      summaryEl.classList.add('hidden');
+      resultsEl.innerHTML = '';
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+  </script>
+</body>
+</html>

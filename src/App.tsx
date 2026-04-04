@@ -35,41 +35,18 @@ import {
   Trophy,
   QrCode,
   CalendarRange,
-  Plus,
-  PencilLine,
-  Eye,
 } from 'lucide-react';
-import DashboardModule from './modules/DashboardModule';
-import ProductsModule from './modules/ProductsModule';
-import CustomersModule from './modules/CustomersModule';
-import StaffModule from './modules/StaffModule';
-import OrdersModule from './modules/OrdersModule';
-import InventoryModule from './modules/InventoryModule';
-import AccountingModule from './modules/AccountingModule';
-import ProfileModule from './modules/ProfileModule';
 
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
-type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
 type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number };
-type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
+type Customer = { id: string; name: string; phone: string; level: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
-type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
-
-type PermissionProfile = {
-  canViewAllCustomers: boolean;
-  canViewOwnCustomers: boolean;
-  canViewAssignedOrderCustomers: boolean;
-  canViewCustomerSensitiveFields: boolean;
-  canEditPrice: boolean;
-  canOverrideInventory: boolean;
-  canRefund: boolean;
-};
+type SessionUser = { name: string; loginId: string; role: Role; rank: string };
 type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
-type WarehouseQueryMode = 'barcode' | 'qr' | 'order';
 type AccountingTab = 'ops' | 'stats' | 'ranking';
 
 type WorkflowCard = {
@@ -80,165 +57,24 @@ type WorkflowCard = {
   bullets: string[];
 };
 
-type ProductEditorMode = 'create' | 'edit' | 'view';
-
-type ProductDraft = {
-  id: string;
-  code: string;
-  name: string;
-  category: string;
-  price: string;
-  stock: string;
-  enabled: boolean;
-};
-
-type OrderRecord = {
+type AccountingOrder = {
   orderNo: string;
   customer: string;
-  phone: string;
-  shippingMethod: ShippingMethod;
-  address: string;
-  amount: number;
-  itemCount: number;
   paymentStatus: string;
   shippingStatus: string;
-  mainStatus: string;
+  amount: number;
+  shippingFee: number;
+  taxRate: number;
+  proof: string;
   date: string;
-  remark: string;
-  items: Array<{ code: string; name: string; qty: number; price: number }>;
+  paymentMethod: string;
+  invoiceNo: string;
+  returnStatus?: string;
+  note?: string;
 };
 
-
-type InventoryLogType = '入庫' | '出庫';
-
-type InventoryLog = {
-  id: string;
-  createdAt: string;
-  type: InventoryLogType;
-  code: string;
-  name: string;
-  qty: number;
-  qr: string;
-  operator: string;
-  note: string;
-  orderNo?: string;
-};
-
-type StockSnapshotItem = {
-  code: string;
-  name: string;
-  stock: number;
-  safe: number;
-  qr: string;
-  status: string;
-  updated: string;
-};
-
-const SAFE_STOCK_MAP: Record<string, number> = {
-  E401: 12,
-  E402: 8,
-  E408: 8,
-  P301: 10,
-  P304: 6,
-  P305: 8,
-};
-
-const INITIAL_QR_SEED: Record<string, Array<{ qr: string; qty: number }>> = {
-  E401: [{ qr: 'QR(A)', qty: 18 }, { qr: 'QR(B)', qty: 18 }],
-  E402: [{ qr: 'QR(E402)', qty: 18 }],
-  E408: [{ qr: 'QR(M)', qty: 22 }],
-  P301: [{ qr: 'QR(P1)', qty: 6 }, { qr: 'QR(P2)', qty: 3 }],
-  P305: [{ qr: 'QR(P305)', qty: 14 }],
-};
-
-function parseDateValue(value: string) {
-  return new Date(value.replace(/-/g, '/')).getTime();
-}
-
-function formatClock(value: string) {
-  return new Date(value.replace(/-/g, '/')).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-function formatDateTime(value: string) {
-  return new Date(value.replace(/-/g, '/')).toLocaleString('zh-TW', { hour12: false });
-}
-
-function buildInitialInventoryLogs(source: Product[]): InventoryLog[] {
-  const logs: InventoryLog[] = [];
-  source.forEach((product, productIndex) => {
-    const buckets = INITIAL_QR_SEED[product.code] ?? [{ qr: `QR(${product.code})`, qty: Math.max(product.stock, 0) }];
-    buckets.forEach((bucket, bucketIndex) => {
-      if (bucket.qty <= 0) return;
-      logs.push({
-        id: `seed-${product.code}-${bucketIndex + 1}`,
-        createdAt: `2026-03-31 ${String(8 + productIndex).padStart(2, '0')}:${String(10 + bucketIndex * 8).padStart(2, '0')}:00`,
-        type: '入庫',
-        code: product.code,
-        name: product.name,
-        qty: bucket.qty,
-        qr: bucket.qr,
-        operator: 'SYSTEM',
-        note: `${product.code} 建立期初庫存 ${bucket.qty} 件（${bucket.qr}）`,
-      });
-    });
-  });
-  return logs;
-}
-
-function getQrBalanceMap(logs: InventoryLog[], code: string) {
-  const map = new Map<string, number>();
-  logs.filter((item) => item.code === code).forEach((item) => {
-    const current = map.get(item.qr) ?? 0;
-    map.set(item.qr, current + (item.type === '入庫' ? item.qty : -item.qty));
-  });
-  return map;
-}
-
-function findAvailableQrBuckets(logs: InventoryLog[], code: string) {
-  return Array.from(getQrBalanceMap(logs, code).entries())
-    .map(([qr, qty]) => ({ qr, qty }))
-    .filter((item) => item.qty > 0)
-    .sort((a, b) => b.qty - a.qty);
-}
-
-function deriveStockSnapshot(source: Product[], logs: InventoryLog[]): StockSnapshotItem[] {
-  const latestByCode = new Map<string, InventoryLog>();
-  logs.forEach((item) => {
-    const current = latestByCode.get(item.code);
-    if (!current || parseDateValue(item.createdAt) >= parseDateValue(current.createdAt)) {
-      latestByCode.set(item.code, item);
-    }
-  });
-
-  return source
-    .map((product) => {
-      const qrBalances = findAvailableQrBuckets(logs, product.code);
-      const stock = qrBalances.reduce((sum, item) => sum + item.qty, 0);
-      const latest = latestByCode.get(product.code);
-      const safe = SAFE_STOCK_MAP[product.code] ?? 10;
-      return {
-        code: product.code,
-        name: product.name,
-        stock,
-        safe,
-        qr: qrBalances.length ? qrBalances.map((item) => `${item.qr}*${item.qty}`).join(' / ') : '無可用庫存',
-        status: stock <= safe ? '低庫存' : '正常',
-        updated: latest ? `${formatDateTime(latest.createdAt)} / ${latest.type}` : '尚無異動',
-      };
-    })
-    .filter((item) => item.stock > 0 || source.find((product) => product.code === item.code)?.enabled);
-}
-
-function buildRecentWarehouseLogs(logs: InventoryLog[]) {
-  return [...logs]
-    .sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))
-    .slice(0, 12)
-    .map((item) => ({
-      time: formatClock(item.createdAt),
-      type: item.type,
-      note: item.note,
-    }));
-}
+type OperationLog = { time: string; type: string; note: string };
+type ShippingQueueItem = { orderNo: string; customer: string; paymentStatus: string; shippingStatus: string; itemCount: number; urgency: 'high' | 'medium' | 'low' };
 
 const mockProducts: Product[] = [
   { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
@@ -250,9 +86,9 @@ const mockProducts: Product[] = [
 ];
 
 const mockCustomers: Customer[] = [
-  { id: 'c1', name: '王小美', phone: '0912345678', level: 'VIP', ownerLoginId: 'vp001', ownerName: '吳秉宸' },
-  { id: 'c2', name: '林雅雯', phone: '0988777666', level: '一般', ownerLoginId: 'vp002', ownerName: '王小婷' },
-  { id: 'c3', name: '陳佳玲', phone: '0933555777', level: '代理', ownerLoginId: 'vp001', ownerName: '吳秉宸' },
+  { id: 'c1', name: '王小美', phone: '0912345678', level: 'VIP' },
+  { id: 'c2', name: '林雅雯', phone: '0988777666', level: '一般' },
+  { id: 'c3', name: '陳佳玲', phone: '0933555777', level: '代理' },
 ];
 
 const mockStaff: Staff[] = [
@@ -273,123 +109,6 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
-const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
-  admin: ['dashboard', 'orders', 'inventory', 'accounting', 'products', 'customers', 'staff', 'profile'],
-  sales: ['dashboard', 'orders', 'profile'],
-  accounting: ['dashboard', 'orders', 'accounting', 'customers', 'profile'],
-  warehouse: ['dashboard', 'orders', 'inventory', 'customers', 'profile'],
-};
-
-const ROLE_LABEL: Record<Role, string> = {
-  admin: '系統',
-  sales: '其他身分',
-  accounting: '會計',
-  warehouse: '倉儲',
-};
-
-const ROLE_RANK: Record<Role, string> = {
-  admin: '核心成員',
-  sales: '普通銷售',
-  accounting: '高級銷售',
-  warehouse: '高級銷售',
-};
-
-const RANK_LABEL: Record<Rank, string> = {
-  core: '核心成員',
-  elite: '菁英成員',
-  senior: '高級銷售',
-  normal: '普通銷售',
-};
-
-const RANK_DISPLAY: Record<Rank, string> = {
-  core: '核心',
-  elite: '菁英',
-  senior: '高級',
-  normal: '普通',
-};
-
-function canAccessNav(role: Role, key: NavKey) {
-  return ROLE_NAV_ACCESS[role].includes(key);
-}
-
-function getPermissionProfile(role: Role, rankKey: Rank): PermissionProfile {
-  const base: PermissionProfile = {
-    canViewAllCustomers: false,
-    canViewOwnCustomers: false,
-    canViewAssignedOrderCustomers: false,
-    canViewCustomerSensitiveFields: false,
-    canEditPrice: false,
-    canOverrideInventory: false,
-    canRefund: false,
-  };
-
-  if (role === 'admin') {
-    return {
-      canViewAllCustomers: true,
-      canViewOwnCustomers: true,
-      canViewAssignedOrderCustomers: true,
-      canViewCustomerSensitiveFields: true,
-      canEditPrice: true,
-      canOverrideInventory: true,
-      canRefund: true,
-    };
-  }
-
-  if (role === 'warehouse') {
-    return {
-      ...base,
-      canViewAssignedOrderCustomers: true,
-    };
-  }
-
-  if (role === 'accounting') {
-    return {
-      ...base,
-      canViewAssignedOrderCustomers: true,
-      canRefund: rankKey === 'core' || rankKey === 'elite',
-    };
-  }
-
-  if (rankKey === 'core') {
-    return {
-      ...base,
-      canViewAllCustomers: true,
-      canViewOwnCustomers: true,
-      canViewCustomerSensitiveFields: true,
-      canEditPrice: true,
-      canOverrideInventory: true,
-      canRefund: true,
-    };
-  }
-
-  return {
-    ...base,
-    canViewOwnCustomers: true,
-    canViewCustomerSensitiveFields: true,
-    canEditPrice: rankKey === 'elite',
-  };
-}
-
-function getRankToneClass(rankKey: Rank) {
-  switch (rankKey) {
-    case 'core':
-      return 'badge badge-rank-core';
-    case 'elite':
-      return 'badge badge-rank-elite';
-    case 'senior':
-      return 'badge badge-rank-senior';
-    default:
-      return 'badge badge-rank-normal';
-  }
-}
-
-
-const shippingQueue = [
-  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high', shippingMethod: '宅配', address: '新竹市東區食品路 88 號', trackingNo: '未建立', scanStatus: '待掃碼驗證', qrSummary: 'E401*2 / P301*1' },
-  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', itemCount: 2, urgency: 'medium', shippingMethod: '店到店', address: '竹北成功門市', trackingNo: 'TCAT-203188', scanStatus: '已完成商品掃描', qrSummary: 'E402*1 / E408*1' },
-  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '免收款', shippingStatus: '換貨待出庫', itemCount: 1, urgency: 'medium', shippingMethod: '宅配', address: '新竹市北區湳雅街 10 號', trackingNo: '待建立', scanStatus: '換貨單待驗證', qrSummary: 'P305*1' },
-];
-
 const inventoryFlow = [
   { title: '入庫作業', desc: '對齊 inventory_logs，支援商品條碼 + QR 身分識別寫入。', tags: ['入庫', '期初', '供應商'] },
   { title: '庫存查詢', desc: '以商品條碼查總庫存，以 QR 身分識別查個別數量。', tags: ['商品條碼', 'QR(A)*2', 'QR(B)*1'] },
@@ -402,12 +121,6 @@ const queryExamples = [
   { label: '訂單查詢', value: '顯示待出貨 / 已出貨 / 已退款 / 已換貨，供出貨與回補判讀' },
 ];
 
-const warehouseSummary = [
-  { title: '待出貨', value: '12', sub: '已收款待出貨 8 / 換貨待出庫 4' },
-  { title: '低庫存', value: '3', sub: '安全值以下需先補貨' },
-  { title: '今日入出庫', value: '26', sub: '含入庫 / 出貨 / 退貨 / 換貨' },
-  { title: '待查異常', value: '2', sub: 'QR 重覆掃描 / 數量需覆核' },
-];
 
 const shippingChecklist = [
   { title: '掃描驗證', desc: '商品條碼 + QR 身分識別雙條件驗證，先擋掉錯貨與重覆出貨。' },
@@ -415,13 +128,18 @@ const shippingChecklist = [
   { title: '完成連動', desc: 'shipping、orders、inventory、inventory_logs、sales_report 同步留痕跡。' },
 ];
 
-const initialInventoryLogs = buildInitialInventoryLogs(mockProducts);
+const stockSnapshot = [
+  { code: 'E401', name: '女神酵素液', stock: 36, safe: 12, qr: 'QR(A)*18 / QR(B)*18', status: '正常' },
+  { code: 'P301', name: '瞬白激光精華4G', stock: 9, safe: 10, qr: 'QR(P1)*6 / QR(P2)*3', status: '低庫存' },
+  { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常' },
+];
 
 
-const paymentQueue = [
-  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳', date: '2026/03/31', paymentMethod: '銀行轉帳', invoiceNo: '待補' },
-  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳', date: '2026/03/31', paymentMethod: 'LINE Pay', invoiceNo: 'AA-20318' },
-  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單', date: '2026/03/30', paymentMethod: '退款重開單', invoiceNo: 'EX-99001' },
+
+const paymentQueueSeed: AccountingOrder[] = [
+  { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '待收款', shippingStatus: '待出貨', amount: 4259, shippingFee: 100, taxRate: 5, proof: '待上傳', date: '2026/03/31', paymentMethod: '銀行轉帳', invoiceNo: '待補', returnStatus: '未退貨', note: '未收款不可出貨' },
+  { orderNo: 'VP20260331-002', customer: '林雅雯', paymentStatus: '已收款', shippingStatus: '理貨中', amount: 2825, shippingFee: 65, taxRate: 0, proof: '已上傳', date: '2026/03/31', paymentMethod: 'LINE Pay', invoiceNo: 'AA-20318', returnStatus: '未退貨', note: '已收款，可繼續理貨與出貨' },
+  { orderNo: 'EX20260331-001', customer: '陳佳玲', paymentStatus: '退款處理中', shippingStatus: '換貨待出庫', amount: 65, shippingFee: 65, taxRate: 0, proof: '換貨單', date: '2026/03/30', paymentMethod: '退款重開單', invoiceNo: 'EX-99001', returnStatus: '已退貨', note: '換貨運費獨立處理' },
 ];
 
 const accountingSummary = [
@@ -499,62 +217,6 @@ const quickCustomerCards = [
   { name: '門市自取客', phone: '0900111222', address: '自取免填地址', method: '自取' as ShippingMethod },
 ];
 
-const initialOrderRecords: OrderRecord[] = [
-  {
-    orderNo: 'VP20260331-001',
-    customer: '王小美',
-    phone: '0912345678',
-    shippingMethod: '宅配',
-    address: '新竹市東區食品路 88 號',
-    amount: 4259,
-    itemCount: 3,
-    paymentStatus: '待收款',
-    shippingStatus: '待出貨',
-    mainStatus: '處理中',
-    date: '2026/03/31 10:12',
-    remark: '首批訂單',
-    items: [
-      { code: 'E401', name: '女神酵素液', qty: 2, price: 899 },
-      { code: 'P301', name: '瞬白激光精華4G', qty: 1, price: 1680 },
-    ],
-  },
-  {
-    orderNo: 'VP20260331-002',
-    customer: '林雅雯',
-    phone: '0988777666',
-    shippingMethod: '店到店',
-    address: '竹北市成功八路 12 號',
-    amount: 2825,
-    itemCount: 2,
-    paymentStatus: '已收款',
-    shippingStatus: '理貨中',
-    mainStatus: '出貨中',
-    date: '2026/03/31 13:26',
-    remark: '已上傳收款證明',
-    items: [
-      { code: 'E402', name: '美妍X關鍵賦活飲', qty: 1, price: 1380 },
-      { code: 'E408', name: '魔力抹茶機能飲', qty: 1, price: 1380 },
-    ],
-  },
-  {
-    orderNo: 'EX20260331-001',
-    customer: '陳佳玲',
-    phone: '0933555777',
-    shippingMethod: '宅配',
-    address: '新竹市北區湳雅街 10 號',
-    amount: 65,
-    itemCount: 1,
-    paymentStatus: '退款處理中',
-    shippingStatus: '換貨待出庫',
-    mainStatus: '換貨處理',
-    date: '2026/03/31 16:08',
-    remark: '換貨單，商品金額 0',
-    items: [
-      { code: 'P305', name: '超逆齡修復菁萃', qty: 1, price: 0 },
-    ],
-  },
-];
-
 
 const workflowCards: WorkflowCard[] = [
   {
@@ -626,8 +288,6 @@ function normalizeCustomer(id: string, data: any): Customer {
     name: data.name || data.customerName || '未命名客戶',
     phone: data.phone || data.customerPhone || '-',
     level: data.level || data.tier || data.customerLevel || '一般',
-    ownerLoginId: data.ownerLoginId || data.salesLoginId || data.createdByLoginId || 'vp001',
-    ownerName: data.ownerName || data.salesName || data.createdByName || '未指派',
   };
 }
 
@@ -644,7 +304,6 @@ function normalizeStaff(id: string, data: any): Staff {
 
 function getRankClass(rank: string) {
   if (rank.includes('核心')) return 'badge badge-rank-core';
-  if (rank.includes('菁英')) return 'badge badge-rank-elite';
   if (rank.includes('高級')) return 'badge badge-rank-senior';
   return 'badge badge-rank-normal';
 }
@@ -676,20 +335,60 @@ function getShippingFee(method: ShippingMethod) {
   return 0;
 }
 
-function makeEmptyProductDraft(nextCode = ''): ProductDraft {
-  return { id: '', code: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
+function getNowTimeLabel() {
+  return new Intl.DateTimeFormat('zh-TW', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Taipei',
+  }).format(new Date());
 }
 
-function toProductDraft(item: Product): ProductDraft {
-  return {
-    id: item.id,
-    code: item.code,
-    name: item.name,
-    category: item.category,
-    price: String(item.price),
-    stock: String(item.stock),
-    enabled: item.enabled,
-  };
+function getQueueItemCount(orderNo: string) {
+  if (orderNo.startsWith('EX')) return 1;
+  if (orderNo.endsWith('001')) return 3;
+  if (orderNo.endsWith('002')) return 2;
+  return 1;
+}
+
+function getQueueUrgency(order: AccountingOrder): 'high' | 'medium' | 'low' {
+  if (order.paymentStatus === '待收款') return 'high';
+  if (order.shippingStatus.includes('待')) return 'high';
+  if (order.shippingStatus.includes('理貨') || order.shippingStatus.includes('換貨')) return 'medium';
+  return 'low';
+}
+
+function createOperationLog(type: string, note: string): OperationLog {
+  return { time: getNowTimeLabel(), type, note };
+}
+
+
+function getAccountingActionHint(order: AccountingOrder) {
+  if (order.paymentStatus === '已退款') return '此單已退款，禁止重複退款';
+  if (order.paymentStatus === '已收款') return '已收款，可往出貨流程繼續';
+  if (order.paymentStatus.includes('退款')) return '退款流程進行中，暫不建議重複操作';
+  return '待收款，需先完成收款才可放行出貨';
+}
+
+function canCollectPayment(order: AccountingOrder) {
+  return !(order.paymentStatus === '已收款' || order.paymentStatus === '已退款' || order.paymentStatus.includes('退款'));
+}
+
+function canRefundPayment(order: AccountingOrder) {
+  if (order.paymentStatus === '已退款' || order.paymentStatus.includes('退款')) return false;
+  return order.shippingStatus === '待出貨' || order.shippingStatus === '未出貨' || order.returnStatus === '已退貨';
+}
+
+function canReleaseShipping(order: AccountingOrder) {
+  return order.paymentStatus === '已收款' || order.paymentStatus === '免收款';
+}
+
+function getAccountingFlowTag(order: AccountingOrder) {
+  if (order.paymentStatus === '已退款') return '退款完成';
+  if (order.paymentStatus.includes('退款')) return '退款處理中';
+  if (canReleaseShipping(order)) return '可出貨';
+  if (canRefundPayment(order)) return '可退款';
+  return '待收款';
 }
 
 function StatusBadge({ enabled }: { enabled: boolean }) {
@@ -731,12 +430,17 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro({ title, desc }: { title: string; desc: string; stats?: string[] }) {
+function SectionIntro({ title, desc, stats }: { title: string; desc: string; stats: string[] }) {
   return (
     <div className="card section-intro-card">
       <div>
         <div className="section-intro-title">{title}</div>
         <div className="section-intro-desc">{desc}</div>
+      </div>
+      <div className="section-stat-row">
+        {stats.map((stat) => (
+          <span key={stat} className="badge badge-neutral">{stat}</span>
+        ))}
       </div>
     </div>
   );
@@ -769,16 +473,7 @@ export default function App() {
   const [staff, setStaff] = useState<Staff[]>(mockStaff);
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [dataMode, setDataMode] = useState<'firebase' | 'mock'>('mock');
-  const [userRoleView, setUserRoleView] = useState<Role>('admin');
-  const [userRankView, setUserRankView] = useState<Rank>('core');
-  const user = useMemo<SessionUser>(() => ({
-    name: '吳秉宸',
-    loginId: 'vp001',
-    role: userRoleView,
-    rank: RANK_LABEL[userRankView] || ROLE_RANK[userRoleView],
-    rankKey: userRankView,
-  }), [userRoleView, userRankView]);
-  const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
+  const [user] = useState<SessionUser>({ name: '吳秉宸', loginId: 'vp001', role: 'admin', rank: '核心人員' });
 
   const [cart, setCart] = useState<CartItem[]>([
     { ...mockProducts[0], qty: 1 },
@@ -792,42 +487,22 @@ export default function App() {
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
-  const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
-  const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 倉儲 SOP 第二包已裝入，可直接測防超賣與 QR 查詢',
-    tone: 'success',
-  });
-  const [warehouseQueryMode, setWarehouseQueryMode] = useState<WarehouseQueryMode>('barcode');
-  const [warehouseQueryInput, setWarehouseQueryInput] = useState('E401');
-  const [warehouseQueryResult, setWarehouseQueryResult] = useState<{ title: string; desc: string; meta: string[] }[]>([
-    { title: '女神酵素液', desc: '商品條碼 E401 / 目前庫存 36 / 最近入庫 2026/03/31 10:45', meta: ['QR(A)*18', 'QR(B)*18', '狀態：正常'] },
-  ]);
-  const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>(initialInventoryLogs);
-  const [warehouseInboundQty, setWarehouseInboundQty] = useState(1);
-  const [warehouseInboundQr, setWarehouseInboundQr] = useState('');
-  const [selectedStockCode, setSelectedStockCode] = useState(mockProducts[0]?.code ?? '');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
-  const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
-  const [accountingDateEnd, setAccountingDateEnd] = useState('2026-04-01');
-  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
-  const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
-    tone: 'success',
-  });
   const [orderCategory, setOrderCategory] = useState('全部商品');
-  const [productEditorMode, setProductEditorMode] = useState<ProductEditorMode>('view');
-  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
-  const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
-  const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
-  const [orderRecords, setOrderRecords] = useState<OrderRecord[]>(initialOrderRecords);
-  const [selectedOrderNo, setSelectedOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
-  const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ Orders 模組已啟動，可建立訂單與切換訂單紀錄',
-    tone: 'success',
-  });
+  const [accountingOrders, setAccountingOrders] = useState<AccountingOrder[]>(paymentQueueSeed);
+  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(paymentQueueSeed[0].orderNo);
+  const [selectedInvoiceNo, setSelectedInvoiceNo] = useState(paymentQueueSeed[0].invoiceNo);
+  const [selectedTaxRate, setSelectedTaxRate] = useState(paymentQueueSeed[0].taxRate);
+  const [selectedShippingFee, setSelectedShippingFee] = useState(paymentQueueSeed[0].shippingFee);
+  const [selectedProof, setSelectedProof] = useState(paymentQueueSeed[0].proof);
+  const [selectedNote, setSelectedNote] = useState(paymentQueueSeed[0].note || '');
+  const [operationLogs, setOperationLogs] = useState<OperationLog[]>([
+    createOperationLog('入庫', 'E402 補貨 12 件，寫入 inventory_logs'),
+    createOperationLog('換貨', 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立'),
+  ]);
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -882,35 +557,11 @@ export default function App() {
     return products.filter((p) => [p.code, p.name, p.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products]);
 
-  const selectedProduct = useMemo(() => products.find((item) => item.id === selectedProductId) || filteredProducts[0] || products[0] || null, [products, filteredProducts, selectedProductId]);
-
-  useEffect(() => {
-    if (!selectedProduct) return;
-    setSelectedProductId((prev) => prev || selectedProduct.id);
-    if (productEditorMode === 'view' || !productDraft.id) {
-      setProductDraft((prev) => {
-        if (productEditorMode === 'edit' && prev.id && prev.id !== selectedProduct.id) return prev;
-        return toProductDraft(selectedProduct);
-      });
-    }
-  }, [selectedProduct]);
-
-  const visibleCustomerRecords = useMemo(() => {
-    const assignedNames = new Set(orderRecords.map((item) => item.customer));
-
-    return customers.filter((customer) => {
-      if (permissionProfile.canViewAllCustomers) return true;
-      if (permissionProfile.canViewAssignedOrderCustomers) return assignedNames.has(customer.name);
-      if (permissionProfile.canViewOwnCustomers) return customer.ownerLoginId === user.loginId;
-      return false;
-    });
-  }, [customers, orderRecords, permissionProfile, user.loginId]);
-
   const filteredCustomers = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    if (!q) return visibleCustomerRecords;
-    return visibleCustomerRecords.filter((c) => [c.name, c.phone, c.level, c.ownerName].join(' ').toLowerCase().includes(q));
-  }, [keyword, visibleCustomerRecords]);
+    if (!q) return customers;
+    return customers.filter((c) => [c.name, c.phone, c.level].join(' ').toLowerCase().includes(q));
+  }, [keyword, customers]);
 
   const filteredStaff = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -925,329 +576,79 @@ export default function App() {
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory]);
 
-  const shippingQueue = useMemo(() => {
-    return orderRecords
-      .filter((item) => item.shippingStatus !== '已出貨' && item.mainStatus !== '已完成' && !item.paymentStatus.includes('退款'))
+  const filteredAccountingQueue = useMemo(() => {
+    const q = accountingKeyword.trim().toLowerCase();
+    return accountingOrders.filter((item) => {
+      const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
+      const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
+      const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
+      return matchKeyword && matchPayment && matchShipping;
+    });
+  }, [accountingKeyword, accountingOrders, accountingPaymentFilter, accountingShippingFilter]);
+
+  const selectedAccountingOrder = useMemo(
+    () => accountingOrders.find((item) => item.orderNo === selectedAccountingOrderNo) || accountingOrders[0],
+    [accountingOrders, selectedAccountingOrderNo],
+  );
+
+  useEffect(() => {
+    if (!selectedAccountingOrder) return;
+    setSelectedInvoiceNo(selectedAccountingOrder.invoiceNo);
+    setSelectedTaxRate(selectedAccountingOrder.taxRate);
+    setSelectedShippingFee(selectedAccountingOrder.shippingFee);
+    setSelectedProof(selectedAccountingOrder.proof);
+    setSelectedNote(selectedAccountingOrder.note || '');
+  }, [selectedAccountingOrder]);
+
+  const selectedUntaxedAmount = useMemo(() => {
+    if (!selectedAccountingOrder) return 0;
+    return Math.max(selectedAccountingOrder.amount - selectedShippingFee, 0);
+  }, [selectedAccountingOrder, selectedShippingFee]);
+
+  const selectedTaxAmount = useMemo(
+    () => Math.round(selectedUntaxedAmount * (selectedTaxRate / 100)),
+    [selectedTaxRate, selectedUntaxedAmount],
+  );
+
+  const selectedActualAmount = useMemo(
+    () => selectedUntaxedAmount + selectedTaxAmount + selectedShippingFee,
+    [selectedShippingFee, selectedTaxAmount, selectedUntaxedAmount],
+  );
+
+  const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
+  const accountingPaidTotal = accountingOrders.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + item.amount, 0);
+  const accountingPendingTotal = accountingOrders.filter((item) => item.paymentStatus === '待收款').reduce((sum, item) => sum + item.amount, 0);
+  const accountingRefundTotal = accountingOrders.filter((item) => item.paymentStatus.includes('退款')).reduce((sum, item) => sum + item.amount, 0);
+
+  const shippingQueue = useMemo<ShippingQueueItem[]>(() => (
+    accountingOrders
+      .filter((item) => item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款')
       .map((item) => ({
         orderNo: item.orderNo,
         customer: item.customer,
         paymentStatus: item.paymentStatus,
         shippingStatus: item.shippingStatus,
-        itemCount: item.itemCount,
-        urgency: item.paymentStatus === '待收款' ? 'high' : 'medium',
-        shippingMethod: item.shippingMethod,
-        address: item.address,
-        trackingNo: item.shippingStatus === '已出貨' ? `TRK-${item.orderNo.slice(-3)}` : '未建立',
-        scanStatus: item.shippingStatus === '理貨中' ? '已完成商品掃描' : '待掃碼驗證',
-        qrSummary: item.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / '),
-      }));
-  }, [orderRecords]);
+        itemCount: getQueueItemCount(item.orderNo),
+        urgency: getQueueUrgency(item),
+      }))
+  ), [accountingOrders]);
 
-  const paymentQueue = useMemo(() => {
-    return orderRecords.map((item) => ({
-      orderNo: item.orderNo,
-      customer: item.customer,
-      paymentStatus: item.paymentStatus,
-      shippingStatus: item.shippingStatus,
-      amount: item.amount,
-      shippingFee: item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
-      taxRate: 0,
-      proof: item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳',
-      date: item.date.split(' ')[0],
-      paymentMethod: item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認',
-      invoiceNo: item.paymentStatus.includes('退款') ? '退款單' : '待補',
-    }));
-  }, [orderRecords]);
-
-  const stockSnapshot = useMemo(() => deriveStockSnapshot(products, inventoryLogs), [products, inventoryLogs]);
-
-  const warehouseRecentLogs = useMemo(() => buildRecentWarehouseLogs(inventoryLogs), [inventoryLogs]);
-
-  const warehouseSummary = useMemo(() => {
-    const pending = shippingQueue.length;
-    const lowStock = stockSnapshot.filter((item) => item.stock <= item.safe).length;
-    const todayKey = '2026-04-01';
-    const todayOps = inventoryLogs.filter((item) => item.createdAt.startsWith(todayKey)).reduce((sum, item) => sum + item.qty, 0);
-    const issueCount = orderRecords.filter((item) => item.paymentStatus === '待收款' && item.shippingStatus === '待出貨').length;
-    return [
-      { title: '待出貨', value: String(pending), sub: `待處理 ${pending} 筆` },
-      { title: '低庫存', value: String(lowStock), sub: '安全值以下需先補貨' },
-      { title: '今日入出庫', value: String(todayOps), sub: '依 inventory_logs 累計數量' },
-      { title: '待查異常', value: String(issueCount), sub: '待收款但待出貨需覆核' },
-    ];
-  }, [shippingQueue, stockSnapshot, inventoryLogs, orderRecords]);
-
-  const accountingSummary = useMemo(() => {
-    const paid = paymentQueue.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + item.amount, 0);
-    const pending = paymentQueue.filter((item) => item.paymentStatus === '待收款').reduce((sum, item) => sum + item.amount, 0);
-    const refund = paymentQueue.filter((item) => item.paymentStatus.includes('退款')).reduce((sum, item) => sum + item.amount, 0);
-    const gross = Math.max(paid - refund, 0);
-    return [
-      { title: '今日實收', value: `$${paid.toLocaleString()}`, sub: '依實收總額統計' },
-      { title: '待收款', value: `$${pending.toLocaleString()}`, sub: `待確認收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆` },
-      { title: '退款處理', value: `$${refund.toLocaleString()}`, sub: '退款流程中訂單金額' },
-      { title: '本月毛利', value: `$${gross.toLocaleString()}`, sub: '依目前 UI 假資料估算' },
-    ];
-  }, [paymentQueue]);
-
-  const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0] || null, [selectedWarehouseOrderNo, shippingQueue]);
-
-  const warehouseShipValidation = useMemo(() => {
-    if (!selectedWarehouseOrder) {
-      return {
-        canShip: false,
-        paymentOk: false,
-        issues: ['請先選擇待出貨訂單'],
-      };
-    }
-
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      return {
-        canShip: false,
-        paymentOk: false,
-        issues: ['找不到對應訂單資料'],
-      };
-    }
-
-    const paymentOk = selectedWarehouseOrder.paymentStatus === '已收款' || selectedWarehouseOrder.paymentStatus === '免收款';
-    const issues: string[] = [];
-
-    if (!paymentOk) {
-      issues.push('未收款，不可出貨');
-    }
-
-    order.items.forEach((entry) => {
-      const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
-      const totalAvailable = buckets.reduce((sum, item) => sum + item.qty, 0);
-      if (totalAvailable < entry.qty) {
-        issues.push(`${entry.code} 庫存不足：剩 ${totalAvailable}，需 ${entry.qty}`);
-      }
-    });
-
-    return {
-      canShip: issues.length === 0,
-      paymentOk,
-      issues,
-    };
-  }, [selectedWarehouseOrder, orderRecords, inventoryLogs]);
-
-  const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode, stockSnapshot]);
-
-  useEffect(() => {
-    if (!stockSnapshot.length) return;
-    if (!stockSnapshot.some((item) => item.code === selectedStockCode)) {
-      setSelectedStockCode(stockSnapshot[0].code);
-    }
-  }, [stockSnapshot, selectedStockCode]);
-
-  const runWarehouseQuery = (input = warehouseQueryInput, mode = warehouseQueryMode) => {
-    const value = input.trim();
-    if (!value) {
-      setWarehouseNotice({ text: '❌ 請先輸入查詢條件', tone: 'danger' });
-      return;
-    }
-
-    const normalized = value.toUpperCase();
-
-    if (mode === 'barcode') {
-      const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
-      if (!matched) {
-        setWarehouseQueryResult([{ title: '查無商品條碼', desc: `找不到 ${value} 的商品資料`, meta: ['請改掃 QR 或訂單編號'] }]);
-        setWarehouseNotice({ text: '❌ 商品條碼查無資料', tone: 'danger' });
-        return;
-      }
-      setSelectedStockCode(matched.code);
-      setWarehouseQueryResult([{
-        title: matched.name,
-        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
-        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
-      }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
-      return;
-    }
-
-    if (mode === 'qr') {
-      const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
-      if (!matchedLogs.length) {
-        setWarehouseQueryResult([{ title: '查無 QR 身分識別', desc: `找不到 ${value} 的 QR 記錄`, meta: ['請確認是否已入庫'] }]);
-        setWarehouseNotice({ text: '❌ QR 身分識別查無資料', tone: 'danger' });
-        return;
-      }
-      const latest = [...matchedLogs].sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))[0];
-      const balance = matchedLogs.reduce((sum, item) => sum + (item.type === '入庫' ? item.qty : -item.qty), 0);
-      setWarehouseQueryResult([{
-        title: latest.qr,
-        desc: `${latest.name} / 目前庫存 ${balance} / 最近異動 ${formatDateTime(latest.createdAt)}`,
-        meta: [`入庫人員：${latest.operator}`, `商品條碼：${latest.code}`, `狀態：${balance > 0 ? '可出貨' : '已出清'}`],
-      }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${latest.qr}`, tone: 'success' });
-      return;
-    }
-
-    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
-    if (!matchedOrder) {
-      setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
-      setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
-      return;
-    }
-    setSelectedWarehouseOrderNo(matchedOrder.orderNo);
-    setWarehouseQueryResult([{
-      title: matchedOrder.orderNo,
-      desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
-      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
-    }]);
-    setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
-  };
-
-  const handleWarehouseShip = () => {
-    if (!selectedWarehouseOrder) return;
-    if (selectedWarehouseOrder.paymentStatus !== '已收款' && selectedWarehouseOrder.paymentStatus !== '免收款') {
-      setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
-      return;
-    }
-
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
-      return;
-    }
-
-    const allocations: InventoryLog[] = [];
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
-    for (const entry of order.items) {
-      const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
-      const totalAvailable = buckets.reduce((sum, item) => sum + item.qty, 0);
-      if (totalAvailable < entry.qty) {
-        setWarehouseNotice({ text: `❌ ${entry.code} 可出貨數量不足，目前只剩 ${totalAvailable}`, tone: 'danger' });
-        return;
-      }
-
-      let remaining = entry.qty;
-      for (const bucket of buckets) {
-        if (remaining <= 0) break;
-        const picked = Math.min(bucket.qty, remaining);
-        allocations.push({
-          id: `out-${order.orderNo}-${entry.code}-${bucket.qr}-${remaining}`,
-          createdAt: timestamp,
-          type: '出庫',
-          code: entry.code,
-          name: entry.name,
-          qty: picked,
-          qr: bucket.qr,
-          operator: user.loginId,
-          orderNo: order.orderNo,
-          note: `${order.orderNo} 完成出貨，${entry.code} ${entry.name} 出庫 ${picked} 件（${bucket.qr}）`,
-        });
-        remaining -= picked;
-      }
-    }
-
-    setInventoryLogs((prev) => [...prev, ...allocations]);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
-      ...item,
-      shippingStatus: '已出貨',
-      mainStatus: '已完成',
-    } : item));
-    setWarehouseNotice({ text: `✅ 已依 inventory_logs 完成出貨：${order.orderNo}`, tone: 'success' });
-    setOrderNotice({ text: `✅ 訂單已同步出貨：${order.orderNo}`, tone: 'success' });
-    setWarehouseQueryResult([{ title: order.orderNo, desc: `${order.customer} / 已出貨 / ${order.shippingMethod}`, meta: ['已寫入 inventory_logs', `出貨筆數：${allocations.length}`, `商品：${order.items.map((item) => `${item.code}*${item.qty}`).join(' / ')}`] }]);
-  };
-
-  const handleWarehouseInbound = () => {
-    if (!selectedStockItem) {
-      setWarehouseNotice({ text: '❌ 請先選擇商品再入庫', tone: 'danger' });
-      return;
-    }
-    if (!warehouseInboundQr.trim()) {
-      setWarehouseNotice({ text: '❌ 入庫必須填寫 QR 身分識別', tone: 'danger' });
-      return;
-    }
-    if (warehouseInboundQty <= 0) {
-      setWarehouseNotice({ text: '❌ 入庫數量必須大於 0', tone: 'danger' });
-      return;
-    }
-
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const cleanQr = warehouseInboundQr.trim().toUpperCase();
-    const newLog: InventoryLog = {
-      id: `in-${selectedStockItem.code}-${Date.now()}`,
-      createdAt: timestamp,
-      type: '入庫',
-      code: selectedStockItem.code,
-      name: selectedStockItem.name,
-      qty: warehouseInboundQty,
-      qr: cleanQr,
-      operator: user.loginId,
-      note: `${selectedStockItem.code} ${selectedStockItem.name} 入庫 ${warehouseInboundQty} 件（${cleanQr}）`,
-    };
-
-    setInventoryLogs((prev) => [...prev, newLog]);
-    setWarehouseNotice({ text: `✅ 已寫入入庫紀錄：${selectedStockItem.code} +${warehouseInboundQty}`, tone: 'success' });
-    setWarehouseQueryResult([{ title: cleanQr, desc: `${selectedStockItem.name} / 已入庫 ${warehouseInboundQty} 件`, meta: [`商品條碼：${selectedStockItem.code}`, `操作人員：${user.loginId}`, '已寫入 inventory_logs'] }]);
-    setWarehouseInboundQty(1);
-    setWarehouseInboundQr('');
-  };
-
-  const handleWarehousePrint = () => {
-    if (!selectedWarehouseOrder) return;
-    setWarehouseNotice({ text: `✅ 已開啟出貨單：${selectedWarehouseOrder.orderNo}`, tone: 'neutral' });
-  };
-
-  const handleWarehouseScanFill = () => {
-    const next = warehouseQueryMode === 'barcode'
-      ? (selectedStockItem?.code || 'P301')
-      : warehouseQueryMode === 'qr'
-        ? (findAvailableQrBuckets(inventoryLogs, selectedStockItem?.code || 'E401')[0]?.qr || 'QR(P1)')
-        : (selectedWarehouseOrder?.orderNo || 'VP20260331-002');
-    setWarehouseQueryInput(next);
-    setWarehouseNotice({ text: `✅ 已帶入 ${next}`, tone: 'neutral' });
-  };
-
-  useEffect(() => {
-    const stockMap = new Map(stockSnapshot.map((item) => [item.code, item.stock]));
-    setProducts((prev) => prev.map((item) => {
-      const nextStock = stockMap.get(item.code);
-      return typeof nextStock === 'number' && item.stock !== nextStock ? { ...item, stock: nextStock } : item;
-    }));
-  }, [stockSnapshot]);
-
-  const selectedOrderRecord = useMemo(() => orderRecords.find((item) => item.orderNo === selectedOrderNo) || orderRecords[0] || null, [orderRecords, selectedOrderNo]);
-
-  useEffect(() => {
-    if (!shippingQueue.length) return;
-    if (!shippingQueue.some((item) => item.orderNo === selectedWarehouseOrderNo)) {
-      setSelectedWarehouseOrderNo(shippingQueue[0].orderNo);
-    }
-  }, [shippingQueue, selectedWarehouseOrderNo]);
-
-  const filteredAccountingQueue = useMemo(() => {
-    const q = accountingKeyword.trim().toLowerCase();
-    return paymentQueue.filter((item) => {
-      const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
-      const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
-      const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
-      const itemDateKey = item.date.replace(/\//g, '-');
-      const matchDateStart = !accountingDateStart || itemDateKey >= accountingDateStart;
-      const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
-      return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
-    });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
-
-  useEffect(() => {
-    if (!filteredAccountingQueue.length) return;
-    if (!filteredAccountingQueue.some((item) => item.orderNo === selectedAccountingOrderNo)) {
-      setSelectedAccountingOrderNo(filteredAccountingQueue[0].orderNo);
-    }
-  }, [filteredAccountingQueue, selectedAccountingOrderNo]);
-
-  const selectedAccountingRecord = useMemo(
-    () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
-    [filteredAccountingQueue, selectedAccountingOrderNo],
+  const selectedWarehouseOrder = useMemo(
+    () => shippingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || shippingQueue[0] || null,
+    [selectedAccountingOrderNo, shippingQueue],
   );
 
-  const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
+  const warehouseSummary = useMemo(() => {
+    const pendingShipping = shippingQueue.filter((item) => item.shippingStatus.includes('待') || item.shippingStatus.includes('理貨') || item.shippingStatus.includes('換貨')).length;
+    const releasable = accountingOrders.filter((item) => canReleaseShipping(item) && item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款').length;
+    const refundRestock = accountingOrders.filter((item) => item.paymentStatus === '已退款').length;
+    return [
+      { title: '待出貨', value: String(pendingShipping), sub: `已收款可放行 ${releasable} / 已退款待回補 ${refundRestock}` },
+      { title: '低庫存', value: String(products.filter((p) => p.stock <= 10).length), sub: '安全值以下需先補貨' },
+      { title: '今日入出庫', value: String(operationLogs.length + shippingQueue.length), sub: '含入庫 / 出貨 / 退貨 / 換貨' },
+      { title: '待查異常', value: String(accountingOrders.filter((item) => !canReleaseShipping(item) && item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款').length), sub: '未收款禁止放行 / 需人工覆核' },
+    ];
+  }, [shippingQueue, accountingOrders, products, operationLogs.length]);
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -1255,26 +656,10 @@ export default function App() {
   const discountAmount = discountMode === '固定金額' ? discountValue : 0;
   const grandTotal = Math.max(0, subtotal + shippingFee - discountAmount);
 
-  const lowStockCount = stockSnapshot.filter((p) => p.stock <= p.safe).length;
+  const lowStockCount = products.filter((p) => p.stock <= 10).length;
   const enabledProducts = products.filter((p) => p.enabled).length;
-  const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
+  const vipCustomers = customers.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
-
-  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
-  const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
-  const customerScopeLabel = permissionProfile.canViewAllCustomers
-    ? '全部客戶完整資料'
-    : permissionProfile.canViewAssignedOrderCustomers
-      ? '僅訂單必要客戶資訊'
-      : permissionProfile.canViewOwnCustomers
-        ? '僅自己推銷客戶'
-        : '無客戶權限';
-
-  useEffect(() => {
-    if (!canAccessNav(user.role, active)) {
-      setActive(ROLE_NAV_ACCESS[user.role][0]);
-    }
-  }, [user.role, active]);
 
   function addToCart(item: Product) {
     if (!item.enabled || item.stock <= 0) return;
@@ -1297,8 +682,69 @@ export default function App() {
     );
   }
 
+
   function removeFromCart(id: string) {
     setCart((prev) => prev.filter((entry) => entry.id !== id));
+  }
+
+  function selectAccountingOrder(orderNo: string) {
+    setSelectedAccountingOrderNo(orderNo);
+  }
+
+  function updateAccountingOrder(patch: Partial<AccountingOrder>) {
+    if (!selectedAccountingOrder) return;
+    setAccountingOrders((prev) => prev.map((item) => item.orderNo === selectedAccountingOrder.orderNo ? { ...item, ...patch } : item));
+  }
+
+  function handleCollectPayment() {
+    if (!selectedAccountingOrder || !canCollectPayment(selectedAccountingOrder)) return;
+    updateAccountingOrder({
+      paymentStatus: '已收款',
+      amount: selectedActualAmount,
+      taxRate: selectedTaxRate,
+      shippingFee: selectedShippingFee,
+      invoiceNo: selectedInvoiceNo,
+      proof: selectedProof || '已補上',
+      note: selectedNote || '已完成收款，可往出貨流程進行',
+    });
+    setOperationLogs((prev) => [
+      createOperationLog('收款', `${selectedAccountingOrder.orderNo} 已確認收款，可放行出貨`),
+      ...prev,
+    ]);
+  }
+
+  function handleRefundPayment() {
+    if (!selectedAccountingOrder || !canRefundPayment(selectedAccountingOrder)) return;
+    updateAccountingOrder({
+      paymentStatus: '已退款',
+      amount: selectedActualAmount,
+      taxRate: selectedTaxRate,
+      shippingFee: selectedShippingFee,
+      invoiceNo: selectedInvoiceNo,
+      proof: selectedProof || '退款佐證已補上',
+      shippingStatus: selectedAccountingOrder.shippingStatus === '待出貨' || selectedAccountingOrder.shippingStatus === '未出貨' ? '已退款' : '退貨回補中',
+      returnStatus: '已退貨',
+      note: selectedNote || '已退款，後續需同步回補庫存與績效',
+    });
+    setOperationLogs((prev) => [
+      createOperationLog('退款', `${selectedAccountingOrder.orderNo} 已退款，待同步回補庫存與績效`),
+      ...prev,
+    ]);
+  }
+
+  function handleCompleteShipping() {
+    if (!selectedWarehouseOrder) return;
+    const target = accountingOrders.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!target || !canReleaseShipping(target)) return;
+    setAccountingOrders((prev) => prev.map((item) => item.orderNo === target.orderNo ? {
+      ...item,
+      shippingStatus: '已出貨',
+      note: item.note || '已完成出貨，等待簽收',
+    } : item));
+    setOperationLogs((prev) => [
+      createOperationLog('出貨', `${target.orderNo} 完成出貨，inventory / inventory_logs 已留待同步`),
+      ...prev,
+    ]);
   }
 
   function applyQuickCustomer(name: string, phone: string, address: string, method: ShippingMethod) {
@@ -1306,198 +752,6 @@ export default function App() {
     setCustomerPhone(phone);
     setCustomerAddress(address);
     setShippingMethod(method);
-  }
-
-  function getNextProductCode() {
-    const next = products.length + 1;
-    return `VPP${String(next).padStart(3, '0')}`;
-  }
-
-  function openCreateProduct() {
-    setProductEditorMode('create');
-    setSelectedProductId('');
-    setProductDraft(makeEmptyProductDraft(getNextProductCode()));
-    setProductNotice({ text: '✅ 新增模式', tone: 'neutral' });
-  }
-
-  function openEditProduct(item: Product) {
-    setProductEditorMode('edit');
-    setSelectedProductId(item.id);
-    setProductDraft(toProductDraft(item));
-    setProductNotice({ text: '✅ 已載入商品', tone: 'neutral' });
-  }
-
-  function openViewProduct(item: Product) {
-    setProductEditorMode('view');
-    setSelectedProductId(item.id);
-    setProductDraft(toProductDraft(item));
-    setProductNotice({ text: '✅ 已顯示詳情', tone: 'neutral' });
-  }
-
-  function saveProductDraft() {
-    if (!productDraft.code.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
-      setProductNotice({ text: '❌ 欄位未完成', tone: 'danger' });
-      return;
-    }
-
-    const price = Number(productDraft.price || 0);
-    const stock = Number(productDraft.stock || 0);
-
-    if (price < 0 || stock < 0) {
-      setProductNotice({ text: '❌ 數值錯誤', tone: 'danger' });
-      return;
-    }
-
-    if (productEditorMode === 'create') {
-      const nextProduct: Product = {
-        id: `product-${Date.now()}`,
-        code: productDraft.code.trim(),
-        name: productDraft.name.trim(),
-        category: productDraft.category.trim(),
-        price,
-        stock,
-        enabled: productDraft.enabled,
-      };
-      setProducts((prev) => [nextProduct, ...prev]);
-      setSelectedProductId(nextProduct.id);
-      setProductDraft(toProductDraft(nextProduct));
-      setProductEditorMode('edit');
-      setProductNotice({ text: '✅ 已新增', tone: 'success' });
-      return;
-    }
-
-    if (!productDraft.id) {
-      setProductNotice({ text: '❌ 未選商品', tone: 'danger' });
-      return;
-    }
-
-    setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
-      ...item,
-      code: productDraft.code.trim(),
-      name: productDraft.name.trim(),
-      category: productDraft.category.trim(),
-      price,
-      stock,
-      enabled: productDraft.enabled,
-    } : item));
-    setProductEditorMode('edit');
-    setProductNotice({ text: '✅ 已更新', tone: 'success' });
-  }
-
-  function toggleProductEnabled(item: Product) {
-    const nextEnabled = !item.enabled;
-    setProducts((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, enabled: nextEnabled } : entry));
-    setSelectedProductId(item.id);
-    setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
-    setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
-  }
-
-  function makeNextOrderNo() {
-    const next = orderRecords.length + 1;
-    return `VP${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(next).padStart(3, '0')}`;
-  }
-
-  function createOrderRecord() {
-    if (!cart.length) {
-      setOrderNotice({ text: '❌ 購物車沒有商品', tone: 'danger' });
-      return;
-    }
-    if (!customerName.trim() || !customerPhone.trim()) {
-      setOrderNotice({ text: '❌ 客戶資料未完成', tone: 'danger' });
-      return;
-    }
-
-    const orderNo = makeNextOrderNo();
-    const now = new Date();
-    const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const nextRecord: OrderRecord = {
-      orderNo,
-      customer: customerName.trim(),
-      phone: customerPhone.trim(),
-      shippingMethod,
-      address: customerAddress.trim() || (shippingMethod === '自取' ? '自取免填地址' : '-'),
-      amount: grandTotal,
-      itemCount,
-      paymentStatus: '待收款',
-      shippingStatus: '待出貨',
-      mainStatus: '處理中',
-      date,
-      remark: remark.trim() || '—',
-      items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
-    };
-    setOrderRecords((prev) => [nextRecord, ...prev]);
-    setSelectedOrderNo(orderNo);
-    setOrderNotice({ text: `✅ 已建立訂單：${orderNo}`, tone: 'success' });
-    setCart([]);
-    setRemark('');
-    setDiscountMode('無');
-    setDiscountValue(0);
-  }
-
-  function selectOrderRecord(orderNo: string) {
-    setSelectedOrderNo(orderNo);
-    setOrderNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
-  }
-
-  function markOrderPaid(orderNo: string) {
-    const target = orderRecords.find((item) => item.orderNo === orderNo);
-    if (!target) return;
-    if (target.paymentStatus === '已收款') {
-      setOrderNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
-      return;
-    }
-    if (target.paymentStatus.includes('退款')) {
-      setOrderNotice({ text: '❌ 此訂單處於退款流程', tone: 'danger' });
-      return;
-    }
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
-    setOrderNotice({ text: `✅ 已收款：${orderNo}`, tone: 'success' });
-    setAccountingNotice({ text: `✅ Orders 已同步收款：${orderNo}`, tone: 'success' });
-  }
-
-  function markOrderShippingReady(orderNo: string) {
-    const target = orderRecords.find((item) => item.orderNo === orderNo);
-    if (!target) return;
-    if (target.paymentStatus !== '已收款') {
-      setOrderNotice({ text: '❌ 需先確認收款', tone: 'danger' });
-      return;
-    }
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, shippingStatus: '待出貨', mainStatus: '待出貨' } : item));
-    setOrderNotice({ text: `✅ 已更新待出貨：${orderNo}`, tone: 'success' });
-    setWarehouseNotice({ text: `✅ Orders 已同步待出貨：${orderNo}`, tone: 'success' });
-    setSelectedWarehouseOrderNo(orderNo);
-  }
-
-  function selectAccountingOrder(orderNo: string) {
-    setSelectedAccountingOrderNo(orderNo);
-    setAccountingNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
-  }
-
-  function triggerAccountingAction(action: 'pay' | 'refund') {
-    if (!selectedAccountingRecord) return;
-    if (action === 'pay') {
-      if (selectedAccountingRecord.paymentStatus === '已收款') {
-        setAccountingNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
-        return;
-      }
-      if (selectedAccountingRecord.paymentStatus.includes('退款')) {
-        setAccountingNotice({ text: '❌ 此訂單處於退款流程，請先確認退款結果', tone: 'danger' });
-        return;
-      }
-      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
-      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，倉儲端將依狀態判定可出貨`, tone: 'success' });
-      setWarehouseNotice({ text: `✅ 收款狀態已更新：${selectedAccountingRecord.orderNo}`, tone: 'success' });
-      setOrderNotice({ text: `✅ 會計已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
-      return;
-    }
-
-    if (selectedAccountingRecord.paymentStatus.includes('退款')) {
-      setAccountingNotice({ text: '❌ 此訂單已進入退款流程', tone: 'danger' });
-      return;
-    }
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '退款處理中', shippingStatus: item.shippingStatus === '已出貨' ? item.shippingStatus : '已退款', mainStatus: '退款處理' } : item));
-    setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
-    setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
   return (
@@ -1514,8 +768,8 @@ export default function App() {
           <div className="user-name">{user.name}</div>
           <div className="user-id">ID：{user.loginId}</div>
           <div className="badge-row">
-            <span className="badge badge-role">身分 / {ROLE_LABEL[user.role]}</span>
-            <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
+            <span className="badge badge-role">身分 / 管理員</span>
+            <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
           </div>
         </div>
 
@@ -1527,50 +781,9 @@ export default function App() {
           {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
         </div>
 
-        <div className="card role-preview-card">
-          <div className="muted-label">權限預覽</div>
-          <div className="role-preview-title">目前視角：{ROLE_LABEL[user.role]}</div>
-          <div className="role-switch-group">
-            <div className="role-switch-label">身分</div>
-            <div className="role-switch-row">
-              {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
-                  onClick={() => setUserRoleView(role)}
-                >
-                  {ROLE_LABEL[role]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="role-switch-group">
-            <div className="role-switch-label">階級</div>
-            <div className="rank-switch-row">
-              {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
-                <button
-                  key={rank}
-                  type="button"
-                  className={`rank-switch-btn ${rank} ${user.rankKey === rank ? 'active' : ''}`}
-                  onClick={() => setUserRankView(rank)}
-                >
-                  {RANK_DISPLAY[rank]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="permission-chip-row">
-            <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
-            <span className="badge badge-neutral">退費 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
-          </div>
-          <div className="role-preview-desc">這版先做 UI + 權限套用：模組可見性看身分，客戶可見範圍與進階操作看階級與客製化授權。</div>
-        </div>
-
         <div className="nav-group-title">主功能選單</div>
         <div className="nav-list">
-          {visibleNavItems.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -1586,7 +799,6 @@ export default function App() {
           })}
         </div>
 
-        {canAccessNav(user.role, 'accounting') && (
         <div className="card accounting-shortcut">
           <div className="shortcut-title">本版修正</div>
           <button
@@ -1597,11 +809,10 @@ export default function App() {
             <CreditCard className="small-icon" />會計中心
           </button>
         </div>
-        )}
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">目前策略</div>
-          <div className="sidebar-tip-desc">先把倉儲 SOP 第二包測穩，再決定是否進會計 ↔ 倉儲串接。</div>
+          <div className="sidebar-tip-desc">先穩定承接 GAS 功能邏輯，再往訂購、會計、倉儲三大主模組擴充。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -1624,12 +835,24 @@ export default function App() {
               <span className="badge badge-soft">對齊 GAS 功能邏輯</span>
             </div>
           </div>
-
+          <div className="hero-side">
+            <div className="hero-status card">
+              <div className="hero-status-head">
+                {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
+                <span>{bootMessage}</span>
+              </div>
+              <div className="hero-status-list">
+                <div><span>商品資料</span><strong>{products.length}</strong></div>
+                <div><span>客戶資料</span><strong>{customers.length}</strong></div>
+                <div><span>人員資料</span><strong>{staff.length}</strong></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="topbar">
           <div>
-            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
+            <div className="section-tag">{navItems.find((item) => item.key === active)?.label}</div>
             <div className="topbar-title">模組操作區</div>
           </div>
           <div className="toolbar">
@@ -1663,37 +886,996 @@ export default function App() {
               </div>
             </div>
 
-
-            {!canAccessNav(user.role, active) && (
-              <div className="card access-denied-card">
-                <div className="access-denied-title">此角色不可進入目前模組</div>
-                <div className="access-denied-desc">目前視角是「{ROLE_LABEL[user.role]}」。這版已改成權限隔離流程：會計只改收款狀態，倉儲只依狀態解鎖出貨，不互看對方模組。</div>
-              </div>
-            )}
+            <section className="summary-grid">
+              <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
+              <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
+              <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
+              <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
+            </section>
 
             {active === 'dashboard' && (
-              <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
+              <>
+                <section className="workflow-grid">
+                  {workflowCards.map((card) => <WorkflowModule key={card.title} card={card} />)}
+                </section>
+
+                <section className="two-column-grid">
+                  <div className="card content-card">
+                    <h2>這版 UI 做了什麼</h2>
+                    <div className="stack-list">
+                      <div>1. 沿用你現有前端版本，不重寫資料架構</div>
+                      <div>2. 把資訊密度整理成可閱讀、可延伸的模組版位</div>
+                      <div>3. 商品 / 客戶 / 人員 三個主資料頁統一視覺規格</div>
+                      <div>4. 手機版改成單欄式閱讀，保留後續做底部導覽空間</div>
+                      <div>5. 為訂單、會計、倉儲預留符合你 GAS 邏輯的UI骨架</div>
+                    </div>
+                  </div>
+                  <div className="card content-card">
+                    <h2>接下來可直接往下做</h2>
+                    <div className="stack-list compact">
+                      <div>商品前台購物車</div>
+                      <div>訂單主檔 / 明細寫入</div>
+                      <div>收款 / 退款 / 銷售統計</div>
+                      <div>庫存查詢 / QR / 出貨流程</div>
+                      <div>個人歷史訂單 / 累積業績</div>
+                    </div>
+                  </div>
+                </section>
+
+                <div className="mobile-order-bar card">
+                  <div>
+                    <div className="mobile-order-title">訂單摘要</div>
+                    <div className="mobile-order-sub">{itemCount} 件商品 / {shippingMethod}</div>
+                  </div>
+                  <div className="mobile-order-total">${grandTotal}</div>
+                </div>
+              </>
             )}
+
             {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <>
+                <SectionIntro
+                  title="商品主資料"
+                  desc="這區先承接你原本產品資料庫邏輯，重點放在編號、名稱、分類、價格與庫存狀態的閱讀效率。"
+                  stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `低庫存 ${lowStockCount}`]}
+                />
+                <section className="record-grid">
+                  {filteredProducts.map((item) => (
+                    <div key={item.id} className="card data-card product-card">
+                      <div className="data-card-top">
+                        <span className="data-code">{item.code}</span>
+                        <StatusBadge enabled={item.enabled} />
+                      </div>
+                      <div className="data-card-title">{item.name}</div>
+                      <div className="data-card-subtitle">{item.category}</div>
+                      <div className="metric-row three">
+                        <div className="metric-box">
+                          <span>價格</span>
+                          <strong>${item.price}</strong>
+                        </div>
+                        <div className="metric-box">
+                          <span>庫存</span>
+                          <strong>{item.stock}</strong>
+                        </div>
+                        <div className="metric-box">
+                          <span>狀態</span>
+                          <strong>{item.enabled ? '上架' : '停用'}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              </>
             )}
+
             {active === 'customers' && (
-              <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
+              <>
+                <SectionIntro
+                  title="客戶主資料"
+                  desc="先把客戶姓名、電話與客戶層級整理成較易閱讀的卡片模式，後續可直接接地址、收件方式、歷史訂單。"
+                  stats={[`總數 ${customers.length}`, `VIP / 代理 ${vipCustomers}`, '可延伸地址 / 配送資訊']}
+                />
+                <section className="record-grid customer-grid">
+                  {filteredCustomers.map((item) => (
+                    <div key={item.id} className="card data-card">
+                      <div className="data-card-top">
+                        <span className="badge badge-neutral">客戶資料</span>
+                        <span className="badge badge-soft">{item.level}</span>
+                      </div>
+                      <div className="data-card-title">{item.name}</div>
+                      <div className="data-card-subtitle">電話：{item.phone}</div>
+                      <div className="data-chip-row">
+                        <span className="badge badge-neutral">地址欄位待接</span>
+                        <span className="badge badge-neutral">歷史訂單待接</span>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              </>
             )}
+
             {active === 'staff' && (
-              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <>
+                <SectionIntro
+                  title="人員管理"
+                  desc="承接你原本人員管理表的邏輯，這版先整理登入 ID、角色、階級與啟用狀態的視覺層級。"
+                  stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限骨架']}
+                />
+                <section className="record-grid staff-grid">
+                  {filteredStaff.map((item) => (
+                    <div key={item.id} className="card data-card">
+                      <div className="data-card-top">
+                        <span className="badge badge-role">{item.role}</span>
+                        <StatusBadge enabled={item.enabled} />
+                      </div>
+                      <div className="data-card-title">{item.name}</div>
+                      <div className="data-card-subtitle">登入 ID：{item.loginId}</div>
+                      <div className="data-chip-row">
+                        <span className={getRankClass(item.rank)}>階級 / {item.rank}</span>
+                        <span className="badge badge-neutral">權限模組待接</span>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              </>
             )}
+
             {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+              <>
+                <SectionIntro
+                  title="訂購介面骨架"
+                  desc="這版先把前台購物、客戶資料、配送方式、訂單摘要放進同一個工作流裡，版型直接對齊你之後要接的 GAS 下單邏輯。"
+                  stats={[`購物車 ${itemCount} 件`, `配送 ${shippingMethod}`, `合計 $${grandTotal}`]}
+                />
+
+                <section className="order-layout">
+                  <div className="order-main">
+                    <div className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">商品列表</div>
+                          <div className="panel-desc">保留商品分類 / 搜尋 / 加入購物車節奏，後續可直接接前台正式下單流程。</div>
+                        </div>
+                        <span className="badge badge-soft">價格層級 / {user.rank === '核心人員' ? '總代理價格' : 'VIP價格'}</span>
+                      </div>
+
+                      <div className="order-toolbar-row">
+                        <div className="chip-filter-row">
+                          {orderCategoryChips.map((chip) => (
+                            <button
+                              key={chip}
+                              type="button"
+                              className={`filter-chip ${orderCategory === chip ? 'active' : ''}`}
+                              onClick={() => setOrderCategory(chip)}
+                            >
+                              {chip}
+                            </button>
+                          ))}
+                        </div>
+                        <button type="button" className="ghost-button compact-btn">輸入</button>
+                      </div>
+
+                      <div className="catalog-grid">
+                        {filteredOrderProducts.map((item) => (
+                          <div key={item.id} className="catalog-card">
+                            <div className="catalog-meta-row">
+                              <span className="data-code">{item.code}</span>
+                              <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>
+                                {item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}
+                              </span>
+                            </div>
+                            <div className="catalog-name">{item.name}</div>
+                            <div className="catalog-desc">{item.category} / 依身分與階級可切換價格顯示</div>
+                            <div className="catalog-footer">
+                              <div>
+                                <div className="mini-label">目前價格</div>
+                                <div className="catalog-price">${item.price}</div>
+                              </div>
+                              <button type="button" className="mini-add-btn" onClick={() => addToCart(item)} disabled={!item.enabled || item.stock <= 0}>
+                                加入
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">客戶與配送資料</div>
+                          <div className="panel-desc">欄位命名依你後續 GAS 邏輯保留：客戶姓名、電話、地址、配送方式、備註。</div>
+                        </div>
+                        <span className="badge badge-neutral">訂單主檔欄位</span>
+                      </div>
+
+                      <div className="quick-customer-grid">
+                        {quickCustomerCards.map((item) => (
+                          <button
+                            key={item.name}
+                            type="button"
+                            className="quick-customer-card"
+                            onClick={() => applyQuickCustomer(item.name, item.phone, item.address, item.method)}
+                          >
+                            <div className="quick-customer-name">{item.name}</div>
+                            <div className="quick-customer-meta">{item.phone} / {item.method}</div>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="form-grid two-col">
+                        <label className="field-card">
+                          <span className="field-label"><User className="small-icon" />客戶姓名</span>
+                          <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="請輸入客戶姓名" />
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Phone className="small-icon" />客戶電話</span>
+                          <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="請輸入電話" />
+                        </label>
+                        <label className="field-card field-span-2">
+                          <span className="field-label"><MapPin className="small-icon" />收件地址 / 店名</span>
+                          <input value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="宅配填地址，店到店填店名，自取可留空" />
+                        </label>
+                      </div>
+
+                      <div className="shipping-method-row">
+                        {(['宅配', '店到店', '自取'] as ShippingMethod[]).map((method) => (
+                          <button
+                            key={method}
+                            type="button"
+                            className={`shipping-chip ${shippingMethod === method ? 'active' : ''}`}
+                            onClick={() => setShippingMethod(method)}
+                          >
+                            {method === '自取' ? <Store className="small-icon" /> : <Truck className="small-icon" />}
+                            <span>{method}</span>
+                            <strong>${getShippingFee(method)}</strong>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="form-grid two-col form-gap-top">
+                        <label className="field-card">
+                          <span className="field-label"><BadgePercent className="small-icon" />折扣模式</span>
+                          <select value={discountMode} onChange={(e) => setDiscountMode(e.target.value as '無' | '固定金額')}>
+                            <option value="無">無</option>
+                            <option value="固定金額">固定金額</option>
+                          </select>
+                        </label>
+                        <label className="field-card">
+                          <span className="field-label"><Wallet className="small-icon" />折扣金額</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={discountValue}
+                            onChange={(e) => setDiscountValue(Number(e.target.value || 0))}
+                            placeholder="0"
+                            disabled={discountMode === '無'}
+                          />
+                        </label>
+                        <label className="field-card field-span-2">
+                          <span className="field-label"><FileText className="small-icon" />訂單備註</span>
+                          <textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={4} placeholder="例：收款提醒、配送備註、時間要求" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="order-side">
+                    <div className="card order-panel sticky-panel">
+                      <div className="panel-head compact-head">
+                        <div>
+                          <div className="panel-title">購物車摘要</div>
+                          <div className="panel-desc">之後可直接對接 order_items、shipping、payments。</div>
+                        </div>
+                        <span className="badge badge-role">{itemCount} 件</span>
+                      </div>
+
+                      <div className="cart-list">
+                        {cart.map((item) => (
+                          <div key={item.id} className="cart-item">
+                            <div className="cart-item-top">
+                              <div>
+                                <div className="cart-name">{item.name}</div>
+                                <div className="cart-meta">{item.code} / 單價 ${item.price}</div>
+                              </div>
+                              <button type="button" className="text-button" onClick={() => removeFromCart(item.id)}>移除</button>
+                            </div>
+                            <div className="cart-item-bottom">
+                              <div className="qty-box">
+                                <button type="button" onClick={() => updateQty(item.id, item.qty - 1)}>-</button>
+                                <span>{item.qty}</span>
+                                <button type="button" onClick={() => updateQty(item.id, item.qty + 1)}>+</button>
+                              </div>
+                              <strong>${item.price * item.qty}</strong>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="summary-lines">
+                        <div><span>商品小計</span><strong>${subtotal}</strong></div>
+                        <div><span>運費</span><strong>${shippingFee}</strong></div>
+                        <div><span>折扣</span><strong>-${discountAmount}</strong></div>
+                        <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
+                      </div>
+
+                      <button type="button" className="primary-button full-width">
+                        <Receipt className="small-icon" />送出訂單（UI示意）
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </>
             )}
+
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+              <>
+                <SectionIntro
+                  title="倉儲中心細化版"
+                  desc="這版開始把出貨、庫存、查詢三區做得更接近實際操作畫面，仍然只動 UI，不去破壞你原本 GAS 倉儲邏輯。"
+                  stats={[`待出貨 ${shippingQueue.length}`, `可放行 ${accountingOrders.filter((item) => canReleaseShipping(item) && item.shippingStatus !== '已完成' && item.paymentStatus !== '已退款').length}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
+                />
+
+                <section className="summary-grid">
+                  {warehouseSummary.map((item) => (
+                    <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />
+                  ))}
+                </section>
+
+                <div className="warehouse-tab-row">
+                  <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}>
+                    <Truck className="small-icon" />出貨區
+                  </button>
+                  <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}>
+                    <Boxes className="small-icon" />庫存區
+                  </button>
+                  <button type="button" className={`warehouse-tab ${warehouseTab === 'query' ? 'active' : ''}`} onClick={() => setWarehouseTab('query')}>
+                    <Search className="small-icon" />查詢區
+                  </button>
+                </div>
+
+                {warehouseTab === 'shipping' && (
+                  <section className="warehouse-layout">
+                    <div className="warehouse-main warehouse-stack">
+                      <div className="card order-panel">
+                        <div className="panel-head">
+                          <div>
+                            <div className="panel-title">待出貨訂單</div>
+                            <div className="panel-desc">先把待出貨、已收款、換貨待出庫集中在同一個作業面板。</div>
+                          </div>
+                          <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
+                        </div>
+
+                        <div className="shipping-queue">
+                          {shippingQueue.map((item) => (
+                            <div key={item.orderNo} className={`shipping-row ${selectedWarehouseOrder?.orderNo === item.orderNo ? 'selected-accounting-row' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)} role="button" tabIndex={0}>
+                              <div>
+                                <div className="shipping-order">{item.orderNo}</div>
+                                <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
+                              </div>
+                              <div className="shipping-actions">
+                                <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
+                                <button type="button" className="ghost-button compact-btn" disabled={!canReleaseShipping(accountingOrders.find((order) => order.orderNo === item.orderNo) || paymentQueueSeed[0])}>掃碼出貨</button>
+                                <button type="button" className="ghost-button compact-btn">查看出貨單</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="warehouse-detail-grid">
+                        <div className="card warehouse-detail-card">
+                          <div className="warehouse-card-head">
+                            <div>
+                              <div className="flow-title">出貨作業流程</div>
+                              <div className="flow-desc">用 UI 先把你原本掃碼與出貨節奏排出來。</div>
+                            </div>
+                            <QrCode className="small-icon" />
+                          </div>
+                          <div className="warehouse-checklist">
+                            {shippingChecklist.map((item) => (
+                              <div key={item.title} className="warehouse-check-item">
+                                <div className="warehouse-check-title">{item.title}</div>
+                                <div className="warehouse-check-desc">{item.desc}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="card warehouse-detail-card">
+                          <div className="warehouse-card-head">
+                            <div>
+                              <div className="flow-title">出貨資訊面板</div>
+                              <div className="flow-desc">保留你後面要接的欄位位置，不改作業邏輯。</div>
+                            </div>
+                            <FileText className="small-icon" />
+                          </div>
+                          <div className="warehouse-form-grid">
+                            <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '目前無待出貨單'}</strong></div>
+                            <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '—'}</strong></div>
+                            <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '—'}</strong></div>
+                            <div className="fake-field"><span>追蹤編號</span><strong>{selectedWarehouseOrder ? '待填入' : '—'}</strong></div>
+                            <div className="fake-field wide"><span>掃碼結果</span><strong>{selectedWarehouseOrder ? (canReleaseShipping(accountingOrders.find((order) => order.orderNo === selectedWarehouseOrder.orderNo) || paymentQueueSeed[0]) ? '收款已確認，可進入商品條碼 + QR 身分識別放行流程' : '尚未收款，系統鎖定出貨') : '目前沒有可操作訂單'}</strong></div>
+                          </div>
+                          <div className="accounting-action-row">
+                            <button type="button" className="primary-button" onClick={handleCompleteShipping} disabled={!selectedWarehouseOrder || !canReleaseShipping(accountingOrders.find((order) => order.orderNo === selectedWarehouseOrder.orderNo) || paymentQueueSeed[0])}><Truck className="small-icon" />完成出貨</button>
+                            <button type="button" className="ghost-button"><Receipt className="small-icon" />列印出貨單</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="warehouse-side warehouse-stack">
+                      <div className="card order-panel sticky-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">出貨區提醒</div>
+                            <div className="panel-desc">這裡先放你最在意的防呆規則。</div>
+                          </div>
+                        </div>
+                        <div className="stack-list compact">
+                          <div>未收款不可出貨</div>
+                          <div>收款後會自動放行出貨按鈕</div>
+                          <div>退款後需回補庫存與績效</div>
+                          <div>舊資料也要留下 shipping 痕跡</div>
+                        </div>
+                      </div>
+
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">最近異動紀錄</div>
+                            <div className="panel-desc">把 inventory_logs 的閱讀感先做出來。</div>
+                          </div>
+                        </div>
+                        <div className="warehouse-log-list">
+                          {operationLogs.map((item) => (
+                            <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
+                              <div className="warehouse-log-time">{item.time}</div>
+                              <div>
+                                <div className="warehouse-log-type">{item.type}</div>
+                                <div className="warehouse-log-note">{item.note}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {warehouseTab === 'stock' && (
+                  <section className="warehouse-stack-section">
+                    <div className="warehouse-flow-grid">
+                      {inventoryFlow.map((item) => (
+                        <div key={item.title} className="card flow-card">
+                          <div className="flow-title">{item.title}</div>
+                          <div className="flow-desc">{item.desc}</div>
+                          <div className="data-chip-row">
+                            {item.tags.map((tag) => <span key={tag} className="badge badge-neutral">{tag}</span>)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="warehouse-stock-grid">
+                      {stockSnapshot.map((item) => (
+                        <div key={item.code} className="card stock-snapshot-card">
+                          <div className="stock-card-top">
+                            <div>
+                              <div className="shipping-order">{item.name}</div>
+                              <div className="shipping-meta">{item.code} / 安全庫存 {item.safe}</div>
+                            </div>
+                            <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
+                          </div>
+                          <div className="stock-big-number">{item.stock}</div>
+                          <div className="stock-sub">目前庫存</div>
+                          <div className="fake-field wide"><span>QR 身分識別</span><strong>{item.qr}</strong></div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {warehouseTab === 'query' && (
+                  <section className="warehouse-stack-section">
+                    <div className="warehouse-query-grid">
+                      {queryExamples.map((item) => (
+                        <div key={item.label} className="card query-card">
+                          <div className="query-label">{item.label}</div>
+                          <div className="query-value">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="warehouse-tool-grid">
+                      <div className="card warehouse-tool-card">
+                        <div className="warehouse-card-head">
+                          <div>
+                            <div className="flow-title">條碼 / QR 快速查詢</div>
+                            <div className="flow-desc">後面接掃碼器時，就直接沿用這個位置。</div>
+                          </div>
+                          <Search className="small-icon" />
+                        </div>
+                        <div className="warehouse-form-grid">
+                          <div className="fake-field wide"><span>查詢條件</span><strong>輸入商品條碼 / QR 身分識別 / 訂單編號</strong></div>
+                          <div className="fake-field"><span>查詢模式</span><strong>精準查詢</strong></div>
+                          <div className="fake-field"><span>最近紀錄</span><strong>保留 20 筆</strong></div>
+                        </div>
+                        <div className="accounting-action-row">
+                          <button type="button" className="primary-button"><Search className="small-icon" />立即查詢</button>
+                          <button type="button" className="ghost-button"><QrCode className="small-icon" />掃碼帶入</button>
+                        </div>
+                      </div>
+
+                      <div className="card warehouse-tool-card">
+                        <div className="warehouse-card-head">
+                          <div>
+                            <div className="flow-title">查詢結果展示位</div>
+                            <div className="flow-desc">依你之前定義的顯示規則先排版。</div>
+                          </div>
+                          <History className="small-icon" />
+                        </div>
+                        <div className="warehouse-result-list">
+                          <div className="warehouse-result-item">
+                            <div className="warehouse-result-title">商品條碼模式</div>
+                            <div className="warehouse-result-desc">商品名稱、商品條碼、總庫存、最近入庫時間、QR(A)*2 / QR(B)*1</div>
+                          </div>
+                          <div className="warehouse-result-item">
+                            <div className="warehouse-result-title">QR 模式</div>
+                            <div className="warehouse-result-desc">只顯示該 QR 的數量、入庫時間、入庫人員、商品名稱、商品條碼</div>
+                          </div>
+                          <div className="warehouse-result-item">
+                            <div className="warehouse-result-title">訂單模式</div>
+                            <div className="warehouse-result-desc">顯示未出貨 / 待出貨 / 已退款 / 已換貨，提供出貨與回補判讀</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </>
             )}
+
+
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <>
+                <SectionIntro
+                  title="會計中心骨架"
+                  desc="這一步改成更接近實際後台的三分頁：收款 / 退款作業、銷售統計、排行榜 / 熱銷。版位命名直接對齊你後面要接的 GAS 會計邏輯。"
+                  stats={[`待收款 ${accountingOrders.filter((item) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
+                />
+
+                <section className="summary-grid">
+                  <SummaryCard title="今日實收" value={`$${accountingPaidTotal.toLocaleString()}`} sub="依已收款訂單統計" />
+                  <SummaryCard title="待收款" value={`$${accountingPendingTotal.toLocaleString()}`} sub={`待確認收款 ${accountingOrders.filter((item) => item.paymentStatus === '待收款').length} 筆`} />
+                  <SummaryCard title="退款處理" value={`$${accountingRefundTotal.toLocaleString()}`} sub="含退款處理中與已退款" />
+                  <SummaryCard title="本月毛利" value="$18,420" sub="原價 - 稅額 - 運費 - 成本" />
+                </section>
+
+                <div className="accounting-tab-row">
+                  <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}>
+                    <CreditCard className="small-icon" />收款 / 退款作業
+                  </button>
+                  <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}>
+                    <BarChart3 className="small-icon" />銷售統計
+                  </button>
+                  <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}>
+                    <Trophy className="small-icon" />排行榜 / 熱銷
+                  </button>
+                </div>
+
+                {accountingTab === 'ops' && (
+                  <>
+                    <section className="two-column-grid accounting-top-grid">
+                      <div className="card order-panel">
+                        <div className="panel-head">
+                          <div>
+                            <div className="panel-title">收款 / 退款作業</div>
+                            <div className="panel-desc">先把會計最常用的查詢、狀態篩選、收款證明入口整理好，直接對齊你後面 GAS 的付款處理節奏。</div>
+                          </div>
+                          <span className="badge badge-role">作業入口</span>
+                        </div>
+
+                        <div className="accounting-filter-grid">
+                          <label className="field-card field-span-2">
+                            <span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶 / 發票</span>
+                            <input value={accountingKeyword} onChange={(e) => setAccountingKeyword(e.target.value)} placeholder="輸入訂單編號、客戶、收款方式、發票號碼" />
+                          </label>
+                          <label className="field-card">
+                            <span className="field-label"><CreditCard className="small-icon" />款項狀態</span>
+                            <select value={accountingPaymentFilter} onChange={(e) => setAccountingPaymentFilter(e.target.value)}>
+                              <option value="全部">全部</option>
+                              <option value="待收款">待收款</option>
+                              <option value="已收款">已收款</option>
+                              <option value="退款處理中">退款處理中</option>
+                            </select>
+                          </label>
+                          <label className="field-card">
+                            <span className="field-label"><Truck className="small-icon" />商品狀態</span>
+                            <select value={accountingShippingFilter} onChange={(e) => setAccountingShippingFilter(e.target.value)}>
+                              <option value="全部">全部</option>
+                              <option value="待出貨">待出貨</option>
+                              <option value="理貨中">理貨中</option>
+                              <option value="換貨待出庫">換貨待出庫</option>
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className="accounting-proof-grid">
+                          <div className="accounting-proof-card">
+                            <div className="accounting-proof-title">收據上傳</div>
+                            <div className="accounting-proof-desc">保留收據、轉帳證明與對帳附件位置</div>
+                          </div>
+                          <div className="accounting-proof-card">
+                            <div className="accounting-proof-title">匯款截圖</div>
+                            <div className="accounting-proof-desc">之後直接接照片上傳或檔案上傳</div>
+                          </div>
+                          <div className="accounting-proof-card">
+                            <div className="accounting-proof-title">AI 辨識位</div>
+                            <div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">本次選取單</div>
+                            <div className="panel-desc">改成依選取訂單動態帶入，先把你要的鎖定規則與金額計算補齊。</div>
+                          </div>
+                          <span className={`badge ${selectedAccountingOrder && canReleaseShipping(selectedAccountingOrder) ? 'badge-success' : selectedAccountingOrder && canRefundPayment(selectedAccountingOrder) ? 'badge-neutral' : 'badge-danger'}`}>
+                            {selectedAccountingOrder ? getAccountingFlowTag(selectedAccountingOrder) : '未選取'}
+                          </span>
+                        </div>
+
+                        {selectedAccountingOrder && (
+                          <>
+                            <div className="accounting-status-card">
+                              <div className="accounting-status-title">流程提示</div>
+                              <div className="accounting-status-desc">{getAccountingActionHint(selectedAccountingOrder)}</div>
+                              <div className="accounting-status-tags">
+                                <span className={`badge ${canCollectPayment(selectedAccountingOrder) ? 'badge-soft' : 'badge-neutral'}`}>收款 {canCollectPayment(selectedAccountingOrder) ? '可執行' : '已鎖定'}</span>
+                                <span className={`badge ${canRefundPayment(selectedAccountingOrder) ? 'badge-soft' : 'badge-neutral'}`}>退款 {canRefundPayment(selectedAccountingOrder) ? '可執行' : '已鎖定'}</span>
+                                <span className={`badge ${canReleaseShipping(selectedAccountingOrder) ? 'badge-success' : 'badge-danger'}`}>出貨 {canReleaseShipping(selectedAccountingOrder) ? '可放行' : '禁止放行'}</span>
+                              </div>
+                            </div>
+
+                            <div className="form-grid two-col accounting-form-grid">
+                              <label className="field-card">
+                                <span className="field-label"><Receipt className="small-icon" />訂單編號</span>
+                                <input value={selectedAccountingOrder.orderNo} readOnly />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><User className="small-icon" />客戶姓名</span>
+                                <input value={selectedAccountingOrder.customer} readOnly />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><Wallet className="small-icon" />未稅價</span>
+                                <input value={selectedUntaxedAmount} readOnly />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span>
+                                <input type="number" min={0} value={selectedTaxRate} onChange={(e) => setSelectedTaxRate(Number(e.target.value || 0))} />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><Truck className="small-icon" />運費</span>
+                                <input type="number" min={0} value={selectedShippingFee} onChange={(e) => setSelectedShippingFee(Number(e.target.value || 0))} />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><CreditCard className="small-icon" />實收總額</span>
+                                <input value={selectedActualAmount} readOnly />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><Receipt className="small-icon" />統一編號 / 發票</span>
+                                <input value={selectedInvoiceNo} onChange={(e) => setSelectedInvoiceNo(e.target.value)} placeholder="可填統一編號或發票號碼" />
+                              </label>
+                              <label className="field-card">
+                                <span className="field-label"><FileText className="small-icon" />收款證明</span>
+                                <input value={selectedProof} onChange={(e) => setSelectedProof(e.target.value)} placeholder="收據 / 匯款紀錄 / 截圖" />
+                              </label>
+                              <label className="field-card field-span-2">
+                                <span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span>
+                                <textarea rows={4} value={selectedNote} onChange={(e) => setSelectedNote(e.target.value)} placeholder="保留收據、匯款紀錄、轉帳截圖、AI辨識結果的位置。" />
+                              </label>
+                            </div>
+
+                            <div className="accounting-calc-strip">
+                              <div className="calc-chip"><span>未稅價</span><strong>${selectedUntaxedAmount}</strong></div>
+                              <div className="calc-chip"><span>稅額</span><strong>${selectedTaxAmount}</strong></div>
+                              <div className="calc-chip"><span>運費</span><strong>${selectedShippingFee}</strong></div>
+                              <div className="calc-chip emphasis"><span>實收</span><strong>${selectedActualAmount}</strong></div>
+                            </div>
+
+                            <div className="accounting-action-row">
+                              <button type="button" className="primary-button" onClick={handleCollectPayment} disabled={!canCollectPayment(selectedAccountingOrder)}><CreditCard className="small-icon" />確認收款</button>
+                              <button type="button" className="ghost-button compact-btn" onClick={handleRefundPayment} disabled={!canRefundPayment(selectedAccountingOrder)}><RefreshCw className="small-icon" />確認退款</button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </section>
+
+                    <section className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">訂單紀錄 / 收款狀態</div>
+                          <div className="panel-desc">這裡開始承接會計操作邏輯，已可用關鍵字與狀態做前端篩選。</div>
+                        </div>
+                        <span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span>
+                      </div>
+
+                      <div className="shipping-queue accounting-queue">
+                        {filteredAccountingQueue.map((item) => (
+                          <div key={item.orderNo} className={`shipping-row accounting-row ${selectedAccountingOrderNo === item.orderNo ? 'selected-accounting-row' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)} role="button" tabIndex={0}>
+                            <div>
+                              <div className="shipping-order">{item.orderNo}</div>
+                              <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
+                              <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                              <div className="accounting-row-tip">{item.note || getAccountingActionHint(item)}</div>
+                            </div>
+                            <div className="shipping-actions accounting-statuses">
+                              <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                              <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : 'badge-neutral'}`}>{item.shippingStatus}</span>
+                              <span className={`badge ${canReleaseShipping(item) ? 'badge-success' : canRefundPayment(item) ? 'badge-soft' : 'badge-danger'}`}>{getAccountingFlowTag(item)}</span>
+                              <strong className="accounting-amount">${item.amount}</strong>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </>
+                )}
+
+                {accountingTab === 'stats' && (
+                  <section className="accounting-stats-grid">
+                    <div className="card order-panel">
+                      <div className="panel-head">
+                        <div>
+                          <div className="panel-title">銷售統計</div>
+                          <div className="panel-desc">把會議會看到的摘要放在同一區，後面直接承接 sales_report。</div>
+                        </div>
+                        <span className="badge badge-role">報表摘要</span>
+                      </div>
+
+                      <div className="accounting-stat-cards">
+                        {accountingBoards[1].bullets.map((item) => (
+                          <div key={item} className="accounting-mini-card">
+                            <div className="accounting-mini-title">{item}</div>
+                            <div className="accounting-mini-value">{item === '區間營收' ? '$128,600' : item === '稅金總額' ? '$6,430' : '$3,120'}</div>
+                          </div>
+                        ))}
+                        <div className="accounting-mini-card accent">
+                          <div className="accounting-mini-title">毛利</div>
+                          <div className="accounting-mini-value">$18,420</div>
+                        </div>
+                      </div>
+
+                      <div className="accounting-breakdown-list">
+                        <div className="accounting-breakdown-item"><span>已收款占比</span><strong>74%</strong></div>
+                        <div className="accounting-breakdown-item"><span>待收款占比</span><strong>22%</strong></div>
+                        <div className="accounting-breakdown-item"><span>退款占比</span><strong>4%</strong></div>
+                      </div>
+                    </div>
+
+                    <div className="accounting-stats-side">
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">營收趨勢</div>
+                            <div className="panel-desc">先把圖表區的閱讀節奏定好，後面直接接真資料。</div>
+                          </div>
+                        </div>
+                        <div className="trend-chart">
+                          {accountingTrendBars.map((item) => (
+                            <div key={item.label} className="trend-bar-col">
+                              <div className="trend-bar-wrap">
+                                <div className="trend-bar" style={{ height: `${item.value}%` }} />
+                              </div>
+                              <span>{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="card order-panel">
+                        <div className="panel-head compact-head">
+                          <div>
+                            <div className="panel-title">報表提醒</div>
+                            <div className="panel-desc">延續你現在的 GAS 規則。</div>
+                          </div>
+                        </div>
+                        <div className="stack-list compact">
+                          <div>退款與退貨都要同步反扣毛利</div>
+                          <div>運費要獨立統計，不與商品銷售額混算</div>
+                          <div>已收款才納入正式營收統計</div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {accountingTab === 'ranking' && (
+                  <section className="three-column-grid accounting-ranking-grid">
+                    <div className="card order-panel">
+                      <div className="panel-head compact-head">
+                        <div>
+                          <div className="panel-title">銷售排行</div>
+                          <div className="panel-desc">後面可直接接你的人員業績與退款扣回邏輯。</div>
+                        </div>
+                      </div>
+                      <div className="ranking-list">
+                        {salesRanking.map((item, idx) => (
+                          <div key={item.name} className="ranking-item">
+                            <div className="ranking-badge">#{idx + 1}</div>
+                            <div className="ranking-main">
+                              <div className="ranking-name">{item.name}</div>
+                              <div className="ranking-meta">{item.meta}</div>
+                            </div>
+                            <div className="ranking-value">{item.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card order-panel">
+                      <div className="panel-head compact-head">
+                        <div>
+                          <div className="panel-title">熱銷商品</div>
+                          <div className="panel-desc">之後直接接商品統計與銷售件數。</div>
+                        </div>
+                      </div>
+                      <div className="ranking-list">
+                        {hotProductsBoard.map((item, idx) => (
+                          <div key={item.name} className="ranking-item">
+                            <div className="ranking-badge">#{idx + 1}</div>
+                            <div className="ranking-main">
+                              <div className="ranking-name">{item.name}</div>
+                              <div className="ranking-meta">{item.meta}</div>
+                            </div>
+                            <div className="ranking-value">{item.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="card order-panel">
+                      <div className="panel-head compact-head">
+                        <div>
+                          <div className="panel-title">排行規則提醒</div>
+                          <div className="panel-desc">保留後續接真資料時的判讀規則。</div>
+                        </div>
+                      </div>
+                      <div className="stack-list compact">
+                        <div>排行榜要扣除退款 / 退貨影響</div>
+                        <div>熱銷商品可延伸到會計與倉儲共用</div>
+                        <div>報表區之後直接承接 sales_report</div>
+                        <div>會計中心維持獨立子頁結構</div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+              </>
             )}
+
             {active === 'profile' && (
-              <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <>
+                <SectionIntro
+                  title="個人資料 / 我的歷史訂單"
+                  desc="這版先把個人資料、累積業績、歷史訂單、掃碼與刷新整理按鈕的位置排好，後面直接沿用你原本 GAS 的個人流程去接。"
+                  stats={[`歷史訂單 ${personalOrders.length} 筆`, '個人資料 / 業績雙區塊', '掃碼 / 刷新整理 預留']}
+                />
+
+                <section className="summary-grid">
+                  {personalSummary.map((item) => (
+                    <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />
+                  ))}
+                </section>
+
+                <section className="profile-action-grid">
+                  {profileQuickActions.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.title} className="card profile-action-card">
+                        <div className="profile-action-icon"><Icon className="small-icon" /></div>
+                        <div className="profile-action-title">{item.title}</div>
+                        <div className="profile-action-desc">{item.desc}</div>
+                      </div>
+                    );
+                  })}
+                </section>
+
+                <section className="two-column-grid profile-top-grid">
+                  <div className="card order-panel">
+                    <div className="panel-head">
+                      <div>
+                        <div className="panel-title">個人資料</div>
+                        <div className="panel-desc">上半部先固定你的個人資訊卡位：姓名、員工編號、登入 ID、身分、階級、員編 QR。</div>
+                      </div>
+                      <span className="badge badge-role">個人中心</span>
+                    </div>
+
+                    <div className="profile-identity-card">
+                      <div className="profile-avatar">秉</div>
+                      <div className="profile-main">
+                        <div className="profile-name">{user.name}</div>
+                        <div className="profile-id-row">員工編號：VP001 / 登入 ID：{user.loginId}</div>
+                        <div className="data-chip-row">
+                          <span className="badge badge-role">身分 / 管理員</span>
+                          <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
+                          <span className="badge badge-neutral">價格層級 / 總代理價格</span>
+                        </div>
+                      </div>
+                      <div className="profile-qr-box">
+                        <QrCode className="profile-qr-icon" />
+                        <span>員編 QR 預留</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="card order-panel">
+                    <div className="panel-head compact-head">
+                      <div>
+                        <div className="panel-title">我的累積業績</div>
+                        <div className="panel-desc">下半部對齊你的個人業績與排名邏輯。</div>
+                      </div>
+                    </div>
+                    <div className="profile-performance-grid">
+                      <div className="metric-box large"><span>累積業績</span><strong>$128,600</strong></div>
+                      <div className="metric-box large"><span>完成訂單數</span><strong>86</strong></div>
+                      <div className="metric-box large"><span>目前排名</span><strong>#3</strong></div>
+                      <div className="metric-box large"><span>退款扣回影響</span><strong>-$1,240</strong></div>
+                    </div>
+                    <div className="profile-note-list">
+                      <div className="profile-note-item">本月主力商品：女神酵素液 / 美妍X關鍵賦活飲</div>
+                      <div className="profile-note-item">待追蹤：1 筆待收款、2 筆待出貨、1 筆換貨處理</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="card order-panel profile-history-panel">
+                  <div className="panel-head">
+                    <div>
+                      <div className="panel-title">我的歷史訂單</div>
+                      <div className="panel-desc">保留你指定的搜尋、掃碼、刷新整理三個操作節奏，後續可直接接歷史訂單完整查詢。</div>
+                    </div>
+                    <div className="history-toolbar">
+                      <button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button>
+                      <button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />刷新整理</button>
+                    </div>
+                  </div>
+
+                  <div className="history-filter-row">
+                    <div className="search-wrap inline-search">
+                      <Search className="search-icon" />
+                      <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" />
+                    </div>
+                    <button type="button" className="primary-button compact-primary">輸入</button>
+                  </div>
+
+                  <div className="history-list">
+                    {personalOrders
+                      .filter((item) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase()))
+                      .map((item) => (
+                      <div key={item.orderNo} className="history-row">
+                        <div className="history-main">
+                          <div className="history-order">{item.orderNo}</div>
+                          <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
+                          <div className="history-statuses">
+                            <span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                            <span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span>
+                            <span className="badge badge-soft">{item.mainStatus}</span>
+                          </div>
+                        </div>
+                        <div className="history-side">
+                          <div className="history-amount">${item.amount}</div>
+                          <button type="button" className="ghost-button compact-btn history-detail-btn">查看詳情</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
             )}
           </>
         )}
@@ -1705,7 +1887,7 @@ export default function App() {
             { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
             { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
             { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
-          ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
+          ].map((item) => {
             const Icon = item.icon;
             return (
               <button
