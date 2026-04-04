@@ -1,4 +1,6 @@
-import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ImageIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ImageIcon, ShoppingCart } from 'lucide-react';
+import CartDrawer from './CartDrawer';
 
 export default function OrdersModule(props: any) {
   const {
@@ -16,11 +18,23 @@ export default function OrdersModule(props: any) {
     SectionIntro,
   } = props;
 
+  const [cartOpen, setCartOpen] = useState(false);
+  const [flyItemId, setFlyItemId] = useState<string | null>(null);
+
+  const cartBadgeText = useMemo(() => (itemCount > 99 ? '99+' : String(itemCount)), [itemCount]);
+
+  const handleAddToCart = (item: any) => {
+    addToCart(item);
+    setFlyItemId(item.id);
+    window.clearTimeout((handleAddToCart as any)._timer);
+    (handleAddToCart as any)._timer = window.setTimeout(() => setFlyItemId(null), 520);
+  };
+
   return (
     <>
       <SectionIntro
-        title="訂購模組"
-        desc="訂購頁只保留商品、購物車與客戶配送資料，回到純下單介面。"
+        title="訂購模組｜UI 分離版"
+        desc="主畫面只保留商品瀏覽；購物車、客資、配送、折扣與送單全部收進 Drawer，桌機與手機版面分離。"
         stats={[`購物車 ${itemCount} 件`, `配送 ${shippingMethod}`, `總額 $${grandTotal}`]}
       />
 
@@ -30,29 +44,42 @@ export default function OrdersModule(props: any) {
         </div>
       )}
 
-      <section className="order-layout">
-        <div className="order-main">
-          <div className="card order-panel">
-            <div className="panel-head">
+      <section className="order-layout order-layout-clean split-order-layout">
+        <div className="order-main order-main-full">
+          <div className="card order-panel order-panel-clean">
+            <div className="panel-head order-page-head">
               <div>
                 <div className="panel-title">商品選購</div>
-                <div className="panel-desc">訂購頁只保留商品瀏覽、加入購物車與下單流程。</div>
+                <div className="panel-desc">訂購頁只顯示產品列，購物車與客戶資料改由右側 Drawer 承接。</div>
               </div>
-              <span className="badge badge-soft">價格層級 / {user.rank === '核心人員' ? '總代理價格' : 'VIP價格'}</span>
+              <div className="order-head-actions">
+                <span className="badge badge-soft">價格層級 / {user.rank === '核心人員' ? '總代理價格' : 'VIP價格'}</span>
+                <button type="button" className="cart-float desktop-cart-float" onClick={() => setCartOpen(true)} aria-label="開啟購物車">
+                  <ShoppingCart className="small-icon" />
+                  <span>購物車</span>
+                  <strong>{cartBadgeText}</strong>
+                </button>
+              </div>
             </div>
 
             <div className="order-toolbar-row">
               <div className="chip-filter-row">
                 {orderCategoryChips.map((chip: string) => (
-                  <button key={chip} type="button" className={`filter-chip ${orderCategory === chip ? 'active' : ''}`} onClick={() => setOrderCategory(chip)}>{chip}</button>
+                  <button
+                    key={chip}
+                    type="button"
+                    className={`filter-chip ${orderCategory === chip ? 'active' : ''}`}
+                    onClick={() => setOrderCategory(chip)}
+                  >
+                    {chip}
+                  </button>
                 ))}
               </div>
-              <button type="button" className="ghost-button compact-btn">輸入</button>
             </div>
 
-            <div className="catalog-grid">
+            <div className="catalog-grid catalog-grid-clean">
               {filteredOrderProducts.map((item: any) => (
-                <div key={item.id} className="catalog-card">
+                <div key={item.id} className={`catalog-card catalog-card-clean ${flyItemId === item.id ? 'fly-to-cart' : ''}`}>
                   <div className="catalog-image-slot">
                     {item.image
                       ? <img src={item.image} alt={item.name} className="catalog-image" />
@@ -69,94 +96,51 @@ export default function OrdersModule(props: any) {
                       <div className="mini-label">目前價格</div>
                       <div className="catalog-price">${item.price}</div>
                     </div>
-                    <button type="button" className="mini-add-btn" onClick={() => addToCart(item)} disabled={!item.enabled || item.stock <= 0}>加入</button>
+                    <button type="button" className="mini-add-btn" onClick={() => handleAddToCart(item)} disabled={!item.enabled || item.stock <= 0}>加入</button>
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="order-side">
-          <div className="card order-panel">
-            <div className="panel-head">
-              <div>
-                <div className="panel-title">客戶與配送資料</div>
-                <div className="panel-desc">先填客戶資料，再看右側固定的購物車摘要。</div>
-              </div>
-              <span className="badge badge-neutral">訂單主檔欄位</span>
-            </div>
-
-            <div className="quick-customer-grid">
-              {quickCustomerCards.map((item: any) => (
-                <button key={item.name} type="button" className="quick-customer-card" onClick={() => applyQuickCustomer(item.name, item.phone, item.address, item.method)}>
-                  <div className="quick-customer-name">{item.name}</div>
-                  <div className="quick-customer-meta">{item.phone} / {item.method}</div>
-                </button>
-              ))}
-            </div>
-
-            <div className="form-grid two-col">
-              <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="請輸入客戶姓名" /></label>
-              <label className="field-card"><span className="field-label"><Phone className="small-icon" />客戶電話</span><input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="請輸入電話" /></label>
-              <label className="field-card field-span-2"><span className="field-label"><MapPin className="small-icon" />收件地址 / 店名</span><input value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} placeholder="宅配填地址，店到店填店名，自取可留空" /></label>
-            </div>
-
-            <div className="shipping-method-row">
-              {(['宅配', '店到店', '自取'] as const).map((method) => (
-                <button key={method} type="button" className={`shipping-chip ${shippingMethod === method ? 'active' : ''}`} onClick={() => setShippingMethod(method)}>
-                  {method === '自取' ? <Store className="small-icon" /> : <Truck className="small-icon" />}<span>{method}</span><strong>${getShippingFee(method)}</strong>
-                </button>
-              ))}
-            </div>
-
-            <div className="form-grid two-col form-gap-top">
-              <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />折扣模式</span><select value={discountMode} onChange={(e) => setDiscountMode(e.target.value)}><option value="無">無</option><option value="固定金額">固定金額</option></select></label>
-              <label className="field-card"><span className="field-label"><Wallet className="small-icon" />折扣金額</span><input type="number" min={0} value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value || 0))} placeholder="0" disabled={discountMode === '無'} /></label>
-              <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />訂單備註</span><textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={4} placeholder="例：收款提醒、配送備註、時間要求" /></label>
-            </div>
-
-            <button type="button" className="primary-button full-width order-submit-btn" onClick={createOrderRecord}><Receipt className="small-icon" />建立訂單</button>
-          
-          </div>
-
-          <div className="card order-panel sticky-panel">
-            <div className="panel-head compact-head">
-              <div>
-                <div className="panel-title">購物車</div>
-                <div className="panel-desc">商品摘要固定在右側最上方，方便隨時確認。</div>
-              </div>
-              <span className="badge badge-role">{itemCount} 件</span>
-            </div>
-
-            <div className="cart-list">
-              {cart.map((item: any) => (
-                <div key={item.id} className="cart-item">
-                  <div className="cart-item-top">
-                    <div>
-                      <div className="cart-name">{item.name}</div>
-                      <div className="cart-meta">{item.code} / 單價 ${item.price}</div>
-                    </div>
-                    <button type="button" className="text-button" onClick={() => removeFromCart(item.id)}>移除</button>
-                  </div>
-                  <div className="cart-item-bottom">
-                    <div className="qty-box">
-                      <button type="button" onClick={() => updateQty(item.id, item.qty - 1)}>-</button>
-                      <span>{item.qty}</span>
-                      <button type="button" onClick={() => updateQty(item.id, item.qty + 1)}>+</button>
-                    </div>
-                    <strong>${item.price * item.qty}</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="summary-lines">
-              <div><span>商品小計</span><strong>${subtotal}</strong></div>
-              <div><span>運費</span><strong>${shippingFee}</strong></div>
-              <div><span>折扣</span><strong>-${discountAmount}</strong></div>
-              <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
             </div>
           </div>
         </div>
       </section>
+
+      <button type="button" className="cart-float mobile-cart-float" onClick={() => setCartOpen(true)} aria-label="開啟購物車">
+        <ShoppingCart className="small-icon" />
+        <span>購物車</span>
+        <strong>{cartBadgeText}</strong>
+      </button>
+
+      <CartDrawer
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        cart={cart}
+        updateQty={updateQty}
+        removeFromCart={removeFromCart}
+        customerName={customerName}
+        setCustomerName={setCustomerName}
+        customerPhone={customerPhone}
+        setCustomerPhone={setCustomerPhone}
+        customerAddress={customerAddress}
+        setCustomerAddress={setCustomerAddress}
+        shippingMethod={shippingMethod}
+        setShippingMethod={setShippingMethod}
+        getShippingFee={getShippingFee}
+        discountMode={discountMode}
+        setDiscountMode={setDiscountMode}
+        discountValue={discountValue}
+        setDiscountValue={setDiscountValue}
+        remark={remark}
+        setRemark={setRemark}
+        subtotal={subtotal}
+        shippingFee={shippingFee}
+        discountAmount={discountAmount}
+        grandTotal={grandTotal}
+        quickCustomerCards={quickCustomerCards}
+        applyQuickCustomer={applyQuickCustomer}
+        createOrderRecord={createOrderRecord}
+        itemCount={itemCount}
+      />
+    </>
+  );
+}
