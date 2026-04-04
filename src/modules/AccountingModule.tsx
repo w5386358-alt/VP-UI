@@ -1,5 +1,4 @@
 import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, User, Wallet, BadgePercent, FileText, RefreshCw } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -16,42 +15,6 @@ export default function AccountingModule(props: any) {
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
     SectionIntro, SummaryCard,
   } = props;
-
-
-  const [selectedForm, setSelectedForm] = useState<any>(null);
-
-  useEffect(() => {
-    if (!selectedAccountingRecord) {
-      setSelectedForm(null);
-      return;
-    }
-    setSelectedForm({
-      ...selectedAccountingRecord,
-      untaxedAmount: selectedAccountingRecord.untaxedAmount ?? 0,
-      taxRate: selectedAccountingRecord.taxRate ?? 0,
-      shippingFee: selectedAccountingRecord.shippingFee ?? 0,
-      paymentMethod: selectedAccountingRecord.paymentMethod || '',
-      invoiceNo: selectedAccountingRecord.invoiceNo || '',
-      proof: selectedAccountingRecord.proof || '',
-    });
-  }, [currentRecord?.orderNo]);
-
-  const currentRecord = selectedForm || selectedAccountingRecord;
-
-  function patchSelectedForm(patch: any) {
-    setSelectedForm((prev: any) => ({ ...(prev || selectedAccountingRecord || {}), ...patch }));
-    updateAccountingRecord(patch);
-  }
-
-  function patchAccountingAmountField(field: 'untaxedAmount' | 'shippingFee' | 'taxRate', rawValue: string) {
-    const value = Math.max(0, Number(rawValue || 0));
-    setSelectedForm((prev: any) => {
-      const base = { ...(prev || selectedAccountingRecord || {}) };
-      const next = { ...base, [field]: value };
-      return next;
-    });
-    updateAccountingAmountField(field, rawValue);
-  }
 
   return (
     <>
@@ -90,22 +53,22 @@ export default function AccountingModule(props: any) {
             <div className="card order-panel">
               <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">先固定你要的結算欄位，不碰原本邏輯。</div></div></div>
               <div className="form-grid two-col accounting-form-grid">
-                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={currentRecord?.orderNo || ''} readOnly /></label>
-                <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={currentRecord?.customer || ''} readOnly /></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input type="number" min={0} value={String(currentRecord?.untaxedAmount || 0)} onChange={(e) => patchAccountingAmountField('untaxedAmount', e.target.value)} /></label>
-                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input type="number" min={0} value={String(currentRecord?.taxRate || 0)} onChange={(e) => patchAccountingAmountField('taxRate', e.target.value)} /></label>
-                <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input type="number" min={0} value={String(currentRecord?.shippingFee || 0)} onChange={(e) => patchAccountingAmountField('shippingFee', e.target.value)} /></label>
-                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(currentRecord?.amount || 0)} readOnly /></label>
-                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />付款方式</span><input value={currentRecord?.paymentMethod || ''} onChange={(e) => patchSelectedForm({ paymentMethod: e.target.value })} placeholder="例如：銀行轉帳 / LINE Pay / 現金" /></label>
-                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />發票號碼</span><input value={currentRecord?.invoiceNo || ''} onChange={(e) => patchSelectedForm({ invoiceNo: e.target.value })} placeholder="請輸入發票號碼" /></label>
-                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={currentRecord?.proof || ''} onChange={(e) => patchSelectedForm({ proof: e.target.value })} placeholder="可輸入收款證明、退款備註、人工確認紀錄" /></label>
+                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={selectedAccountingRecord?.orderNo || ''} readOnly /></label>
+                <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={selectedAccountingRecord?.customer || ''} readOnly /></label>
+                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input type="number" min={0} value={String(selectedAccountingRecord?.untaxedAmount || 0)} onChange={(e) => updateAccountingAmountField('untaxedAmount', e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input type="number" min={0} value={String(selectedAccountingRecord?.taxRate || 0)} onChange={(e) => updateAccountingAmountField('taxRate', e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input type="number" min={0} value={String(selectedAccountingRecord?.shippingFee || 0)} onChange={(e) => updateAccountingAmountField('shippingFee', e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(selectedAccountingRecord?.amount || 0)} readOnly /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />付款方式</span><input value={selectedAccountingRecord?.paymentMethod || ''} onChange={(e) => updateAccountingRecord({ paymentMethod: e.target.value })} placeholder="例如：銀行轉帳 / LINE Pay / 現金" /></label>
+                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />發票號碼</span><input value={selectedAccountingRecord?.invoiceNo || ''} onChange={(e) => updateAccountingRecord({ invoiceNo: e.target.value })} placeholder="請輸入發票號碼" /></label>
+                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={selectedAccountingRecord?.proof || ''} onChange={(e) => updateAccountingRecord({ proof: e.target.value })} placeholder="可輸入收款證明、退款備註、人工確認紀錄" /></label>
               </div>
               <div className="accounting-sync-card">
                 <div className="accounting-sync-title">流程狀態提醒</div>
                 <div className="accounting-sync-desc">
-                  {currentRecord?.paymentStatus === '已收款'
+                  {selectedAccountingRecord?.paymentStatus === '已收款'
                     ? '此單已收款，倉儲端會依訂單狀態顯示可出貨。'
-                    : currentRecord?.paymentStatus?.includes('退款')
+                    : selectedAccountingRecord?.paymentStatus?.includes('退款')
                       ? '此單處於退款流程，倉儲端不可出貨。'
                       : '這筆訂單尚未收款，確認收款後只更新訂單狀態，不自動跳頁。'}
                 </div>
@@ -121,7 +84,7 @@ export default function AccountingModule(props: any) {
             <div className="panel-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">這裡開始承接會計操作邏輯，已可用關鍵字與狀態做前端篩選。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
             <div className="shipping-queue accounting-queue">
               {filteredAccountingQueue.map((item: any) => (
-                <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${currentRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
+                <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
                   <div>
                     <div className="shipping-order">{item.orderNo}</div>
                     <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
