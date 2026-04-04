@@ -14,8 +14,7 @@ export default function OrdersModule(props: any) {
     cart, removeFromCart, updateQty,
     subtotal, shippingFee, discountAmount,
     createOrderRecord, orderNotice,
-    priceTierLabel, orderHeroSlides,
-    SectionIntro,
+    priceTierLabel,
   } = props;
 
   const [cartOpen, setCartOpen] = useState(false);
@@ -61,22 +60,6 @@ export default function OrdersModule(props: any) {
 
   return (
     <>
-      <section className="card order-hero-banner">
-        <div className="order-hero-main">
-          <div className="order-hero-kicker">公告欄 / 輪播預留</div>
-          <div className="order-hero-title">訂購中心</div>
-          <div className="order-hero-desc">上方已改為公告與活動輪播區，後續可直接接 GAS 輪播圖與公告資料。</div>
-        </div>
-        <div className="order-hero-slides">
-          {orderHeroSlides.map((item: any, idx: number) => (
-            <div key={`${item.title}-${idx}`} className="order-hero-slide">
-              <div className="order-hero-slide-title">{item.title}</div>
-              <div className="order-hero-slide-desc">{item.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {orderNotice && (
         <div className={`card product-notice-banner ${orderNotice.tone} order-notice-banner`}>
           <strong>{orderNotice.text}</strong>
@@ -112,7 +95,6 @@ export default function OrdersModule(props: any) {
                   <button key={chip} type="button" className={`filter-chip ${orderCategory === chip ? 'active' : ''}`} onClick={() => setOrderCategory(chip)}>{chip}</button>
                 ))}
               </div>
-              <button type="button" className="ghost-button compact-btn">輸入</button>
             </div>
 
             <div className="catalog-grid">

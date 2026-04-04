@@ -16,6 +16,7 @@ export default function ProductsModule(props: any) {
     setProductDraft,
     saveProductDraft,
     selectedProduct,
+    productCategories,
     SectionIntro,
     StatusBadge,
   } = props;
@@ -118,9 +119,9 @@ export default function ProductsModule(props: any) {
               <label className="field-card">
                 <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
                 <select value={productDraft.category} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
-                  <option value="保健">保健</option>
-                  <option value="保養">保養</option>
-                  <option value="優惠組合">優惠組合</option>
+                  {productCategories.map((category: string) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
                 </select>
               </label>
               <label className="field-card field-span-2">

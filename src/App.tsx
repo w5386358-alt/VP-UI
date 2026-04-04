@@ -529,7 +529,6 @@ const personalOrders = [
 ];
 
 
-const orderCategoryChips = ['全部商品', '保健', '保養', '優惠組合'];
 
 const quickCustomerCards = [
   { name: '王小美', phone: '0912345678', address: '新竹市東區食品路 88 號', method: '宅配' as ShippingMethod },
@@ -817,15 +816,8 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro({ title, desc }: { title: string; desc: string; stats?: string[] }) {
-  return (
-    <div className="card section-intro-card">
-      <div>
-        <div className="section-intro-title">{title}</div>
-        <div className="section-intro-desc">{desc}</div>
-      </div>
-    </div>
-  );
+function SectionIntro(_: { title: string; desc: string; stats?: string[] }) {
+  return null;
 }
 
 function PlaceholderCard({ title, desc, bullets }: { title: string; desc: string; bullets: string[] }) {
@@ -905,6 +897,8 @@ export default function App() {
     tone: 'success',
   });
   const [orderCategory, setOrderCategory] = useState('全部商品');
+  const orderCategoryChips = useMemo(() => ['全部商品', ...Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean)))], [products]);
+
   const [productEditorMode, setProductEditorMode] = useState<ProductEditorMode>('view');
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
@@ -1004,6 +998,8 @@ export default function App() {
     if (!q) return staff;
     return staff.filter((s) => [s.name, s.loginId, s.role, s.rank].join(' ').toLowerCase().includes(q));
   }, [keyword, staff]);
+
+  const productCategories = useMemo(() => Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean))), [products]);
 
   const filteredOrderProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -1819,7 +1815,7 @@ export default function App() {
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
             {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'customers' && (
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
