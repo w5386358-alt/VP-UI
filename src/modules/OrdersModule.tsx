@@ -14,6 +14,7 @@ export default function OrdersModule(props: any) {
     cart, removeFromCart, updateQty,
     subtotal, shippingFee, discountAmount,
     createOrderRecord, orderNotice,
+    priceTierLabel, orderHeroSlides,
     SectionIntro,
   } = props;
 
@@ -60,11 +61,21 @@ export default function OrdersModule(props: any) {
 
   return (
     <>
-      <SectionIntro
-        title="訂單模組"
-        desc="訂購頁只保留商品與購物車流程，訂單列表與訂單詳情已移除，建立完成直接用提示回饋。"
-        stats={[`購物車 ${itemCount} 件`, `配送 ${shippingMethod}`, '建立訂單即時提示']}
-      />
+      <section className="card order-hero-banner">
+        <div className="order-hero-main">
+          <div className="order-hero-kicker">公告欄 / 輪播預留</div>
+          <div className="order-hero-title">訂購中心</div>
+          <div className="order-hero-desc">上方已改為公告與活動輪播區，後續可直接接 GAS 輪播圖與公告資料。</div>
+        </div>
+        <div className="order-hero-slides">
+          {orderHeroSlides.map((item: any, idx: number) => (
+            <div key={`${item.title}-${idx}`} className="order-hero-slide">
+              <div className="order-hero-slide-title">{item.title}</div>
+              <div className="order-hero-slide-desc">{item.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {orderNotice && (
         <div className={`card product-notice-banner ${orderNotice.tone} order-notice-banner`}>
@@ -92,7 +103,7 @@ export default function OrdersModule(props: any) {
                 <div className="panel-title">商品列表</div>
                 <div className="panel-desc">訂購頁只保留商品分類 / 搜尋 / 加入購物車節奏，客資與購物車統一收進彈射視窗。</div>
               </div>
-              <span className="badge badge-soft">價格層級 / {user.rank === '核心人員' ? '總代理價格' : 'VIP價格'}</span>
+              <span className="badge badge-soft">價格層級 / {priceTierLabel}</span>
             </div>
 
             <div className="order-toolbar-row">
@@ -107,6 +118,16 @@ export default function OrdersModule(props: any) {
             <div className="catalog-grid">
               {filteredOrderProducts.map((item: any) => (
                 <div key={item.id} className="catalog-card">
+                  <div className="catalog-image-slot">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="catalog-image" />
+                    ) : (
+                      <div className="catalog-image-placeholder">
+                        <Receipt className="small-icon" />
+                        <span>商品圖片預留</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="catalog-meta-row">
                     <span className="data-code">{item.code}</span>
                     <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>{item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}</span>
@@ -115,7 +136,7 @@ export default function OrdersModule(props: any) {
                   <div className="catalog-desc">{item.category} / 依身分與階級可切換價格顯示</div>
                   <div className="catalog-footer">
                     <div>
-                      <div className="mini-label">目前價格</div>
+                      <div className="mini-label">{priceTierLabel}</div>
                       <div className="catalog-price">${item.price}</div>
                     </div>
                     <button

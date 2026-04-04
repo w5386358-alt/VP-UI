@@ -52,7 +52,7 @@ type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
-type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number };
+type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
@@ -259,12 +259,12 @@ function buildRecentWarehouseLogs(logs: InventoryLog[]) {
 }
 
 const mockProducts: Product[] = [
-  { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
-  { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
-  { id: '3', code: 'P301', name: '瞬白激光精華4G', category: '保養', price: 1680, enabled: true, stock: 9 },
-  { id: '4', code: 'P304', name: '奇肌修復全能霜', category: '保養', price: 1980, enabled: false, stock: 0 },
-  { id: '5', code: 'P305', name: '超逆齡修復菁萃', category: '保養', price: 2280, enabled: true, stock: 14 },
-  { id: '6', code: 'E408', name: '魔力抹茶機能飲', category: '保健', price: 1380, enabled: true, stock: 22 },
+  { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, vipPrice: 899, agentPrice: 799, generalAgentPrice: 699, enabled: true, stock: 36 },
+  { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 18 },
+  { id: '3', code: 'P301', name: '瞬白激光精華4G', category: '保養', price: 1680, vipPrice: 1680, agentPrice: 1490, generalAgentPrice: 1350, enabled: true, stock: 9 },
+  { id: '4', code: 'P304', name: '奇肌修復全能霜', category: '保養', price: 1980, vipPrice: 1980, agentPrice: 1750, generalAgentPrice: 1590, enabled: false, stock: 0 },
+  { id: '5', code: 'P305', name: '超逆齡修復菁萃', category: '保養', price: 2280, vipPrice: 2280, agentPrice: 2050, generalAgentPrice: 1860, enabled: true, stock: 14 },
+  { id: '6', code: 'E408', name: '魔力抹茶機能飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 22 },
 ];
 
 const mockCustomers: Customer[] = [
@@ -325,6 +325,26 @@ const RANK_DISPLAY: Record<Rank, string> = {
   senior: '高級',
   normal: '普通',
 };
+
+
+function getPriceTierLabel(rankKey: Rank) {
+  if (rankKey === 'core') return '總代理價';
+  if (rankKey === 'elite' || rankKey === 'senior') return '代理價';
+  return 'VIP價';
+}
+
+function getPriceTierField(rankKey: Rank) {
+  if (rankKey === 'core') return 'generalAgentPrice';
+  if (rankKey === 'elite' || rankKey === 'senior') return 'agentPrice';
+  return 'vipPrice';
+}
+
+function getTierPrice(product: Product, rankKey: Rank) {
+  const field = getPriceTierField(rankKey);
+  const value = Number((product as any)[field]);
+  if (Number.isFinite(value) && value > 0) return value;
+  return Number(product.price || 0);
+}
 
 function canAccessNav(role: Role, key: NavKey) {
   return ROLE_NAV_ACCESS[role].includes(key);
@@ -633,6 +653,10 @@ function normalizeProduct(id: string, data: any): Product {
     name: data.name || data.productName || '未命名商品',
     category: data.category || data.productCategory || '未分類',
     price: Number(data.price || data.vipPrice || data.salePrice || 0),
+    vipPrice: Number(data.vipPrice || data.price || data.salePrice || 0),
+    agentPrice: Number(data.agentPrice || data.dealerPrice || data.vipPrice || data.price || 0),
+    generalAgentPrice: Number(data.generalAgentPrice || data.masterPrice || data.agentPrice || data.dealerPrice || data.vipPrice || data.price || 0),
+    image: data.image || data.imageUrl || data.photo || '',
     enabled: data.enabled ?? data.isActive ?? true,
     stock: Number(data.stock || data.currentStock || 0),
   };
@@ -983,10 +1007,13 @@ export default function App() {
 
   const filteredOrderProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    const source = products.filter((item) => item.enabled).filter((item) => orderCategory === '全部商品' || item.category === orderCategory);
+    const source = products
+      .filter((item) => item.enabled)
+      .filter((item) => orderCategory === '全部商品' || item.category === orderCategory)
+      .map((item) => ({ ...item, price: getTierPrice(item, user.rankKey) }));
     if (!q) return source;
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
-  }, [keyword, products, orderCategory]);
+  }, [keyword, products, orderCategory, user.rankKey]);
 
   const shippingQueue = useMemo(() => {
     return orderRecords
@@ -1678,6 +1705,7 @@ export default function App() {
           </div>
           <div className="permission-chip-row">
             <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
+            <span className="badge badge-neutral">價格 / {getPriceTierLabel(user.rankKey)}</span>
             <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
             <span className="badge badge-neutral">退費 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
           </div>
@@ -1800,7 +1828,7 @@ export default function App() {
               <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品 / 活動', desc: '這裡預留新品消息、主推活動或輪播圖片。' }, { title: '出貨提醒', desc: '可顯示付款提醒、出貨公告、節日配送異動。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
@@ -1809,7 +1837,7 @@ export default function App() {
               <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} accountingDraft={accountingDraft} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
-              <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
           </>
         )}
