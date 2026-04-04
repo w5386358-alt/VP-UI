@@ -11,6 +11,7 @@ export default function AccountingModule(props: any) {
     accountingDateEnd, setAccountingDateEnd,
     accountingNotice, selectedAccountingRecord,
     triggerAccountingAction, selectAccountingOrder,
+    updateAccountingRecord, updateAccountingAmountField,
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
     SectionIntro, SummaryCard,
   } = props;
@@ -54,11 +55,13 @@ export default function AccountingModule(props: any) {
               <div className="form-grid two-col accounting-form-grid">
                 <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={selectedAccountingRecord?.orderNo || ''} readOnly /></label>
                 <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={selectedAccountingRecord?.customer || ''} readOnly /></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={String(Math.max((selectedAccountingRecord?.amount || 0) - (selectedAccountingRecord?.shippingFee || 0), 0))} readOnly /></label>
-                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input value={String(selectedAccountingRecord?.taxRate || 0)} readOnly /></label>
-                <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={String(selectedAccountingRecord?.shippingFee || 0)} readOnly /></label>
+                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input type="number" min={0} value={String(selectedAccountingRecord?.untaxedAmount || 0)} onChange={(e) => updateAccountingAmountField('untaxedAmount', e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input type="number" min={0} value={String(selectedAccountingRecord?.taxRate || 0)} onChange={(e) => updateAccountingAmountField('taxRate', e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input type="number" min={0} value={String(selectedAccountingRecord?.shippingFee || 0)} onChange={(e) => updateAccountingAmountField('shippingFee', e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(selectedAccountingRecord?.amount || 0)} readOnly /></label>
-                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} readOnly value={`付款方式：${selectedAccountingRecord?.paymentMethod || '-'}\n發票：${selectedAccountingRecord?.invoiceNo || '-'}\n證明：${selectedAccountingRecord?.proof || '-'}`} /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />付款方式</span><input value={selectedAccountingRecord?.paymentMethod || ''} onChange={(e) => updateAccountingRecord({ paymentMethod: e.target.value })} placeholder="例如：銀行轉帳 / LINE Pay / 現金" /></label>
+                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />發票號碼</span><input value={selectedAccountingRecord?.invoiceNo || ''} onChange={(e) => updateAccountingRecord({ invoiceNo: e.target.value })} placeholder="請輸入發票號碼" /></label>
+                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={selectedAccountingRecord?.proof || ''} onChange={(e) => updateAccountingRecord({ proof: e.target.value })} placeholder="可輸入收款證明、退款備註、人工確認紀錄" /></label>
               </div>
               <div className="accounting-sync-card">
                 <div className="accounting-sync-title">流程狀態提醒</div>
