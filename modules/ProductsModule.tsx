@@ -1,0 +1,161 @@
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye } from 'lucide-react';
+
+export default function ProductsModule(props: any) {
+  const {
+    products,
+    enabledProducts,
+    productNotice,
+    selectedProductId,
+    filteredProducts,
+    openCreateProduct,
+    openViewProduct,
+    openEditProduct,
+    toggleProductEnabled,
+    productEditorMode,
+    productDraft,
+    setProductDraft,
+    saveProductDraft,
+    selectedProduct,
+    SectionIntro,
+    StatusBadge,
+  } = props;
+
+  return (
+    <>
+      <SectionIntro
+        title="商品後台編輯區"
+        desc="這區正式定義為內部商品管理，不對外開放。先完成新增、查看、編輯、啟用 / 停用的功能啟動。"
+        stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
+      />
+
+      {productNotice && (
+        <div className={`card product-notice-banner ${productNotice.tone}`}>
+          <strong>{productNotice.text}</strong>
+        </div>
+      )}
+
+      <section className="product-admin-layout">
+        <div className="product-admin-main">
+          <div className="card order-panel">
+            <div className="panel-head">
+              <div>
+                <div className="panel-title">商品卡片列表</div>
+                <div className="panel-desc">可即時搜尋、切換商品、查看目前狀態。這區是後台編輯區，不是前台展示頁。</div>
+              </div>
+              <button type="button" className="primary-button" onClick={openCreateProduct}>
+                <Package className="small-icon" />新增商品
+              </button>
+            </div>
+
+            <div className="product-editor-chip-row">
+              <span className="badge badge-neutral">內部管理</span>
+              <span className="badge badge-soft">卡片式</span>
+              <span className="badge badge-soft">右側編輯面板</span>
+            </div>
+
+            <div className="product-admin-grid">
+              {filteredProducts.map((item: any) => (
+                <div key={item.id} className={`card data-card product-admin-card ${selectedProductId === item.id ? 'selected' : ''}`}>
+                  <div className="data-card-top">
+                    <span className="data-code">{item.code}</span>
+                    <StatusBadge enabled={item.enabled} />
+                  </div>
+                  <div className="data-card-title">{item.name}</div>
+                  <div className="data-card-subtitle">{item.category}</div>
+                  <div className="metric-row three">
+                    <div className="metric-box"><span>價格</span><strong>${item.price}</strong></div>
+                    <div className="metric-box"><span>庫存</span><strong>{item.stock}</strong></div>
+                    <div className="metric-box"><span>狀態</span><strong>{item.enabled ? '啟用' : '停用'}</strong></div>
+                  </div>
+
+                  <div className="product-card-actions">
+                    <button type="button" className="ghost-button compact-btn" onClick={() => openViewProduct(item)}>
+                      <Eye className="small-icon" />查看
+                    </button>
+                    <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
+                      <PencilLine className="small-icon" />編輯
+                    </button>
+                    <button type="button" className={`ghost-button compact-btn ${item.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => toggleProductEnabled(item)}>
+                      {item.enabled ? '停用' : '啟用'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <aside className="product-admin-side">
+          <div className="card order-panel sticky-panel product-editor-panel">
+            <div className="panel-head compact-head">
+              <div>
+                <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
+                <div className="panel-desc">右側滑出編輯面板先做成功能啟動，後面再接真資料儲存。</div>
+              </div>
+              <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
+            </div>
+
+            <div className="form-grid two-col form-gap-top">
+              <label className="field-card">
+                <span className="field-label"><Package className="small-icon" />商品編號</span>
+                <input value={productDraft.code} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, code: e.target.value }))} readOnly={productEditorMode === 'view'} />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
+                <select value={productDraft.category} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
+                  <option value="保健">保健</option>
+                  <option value="保養">保養</option>
+                  <option value="優惠組合">優惠組合</option>
+                </select>
+              </label>
+              <label className="field-card field-span-2">
+                <span className="field-label"><FileText className="small-icon" />商品名稱</span>
+                <input value={productDraft.name} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, name: e.target.value }))} readOnly={productEditorMode === 'view'} />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Wallet className="small-icon" />價格</span>
+                <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Boxes className="small-icon" />庫存</span>
+                <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
+              </label>
+            </div>
+
+            <div className="product-editor-status">
+              <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '目前啟用' : '目前停用'}</span>
+              {productEditorMode !== 'view' && (
+                <button type="button" className={`ghost-button compact-btn ${productDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))}>
+                  {productDraft.enabled ? '切換停用' : '切換啟用'}
+                </button>
+              )}
+            </div>
+
+            <div className="stack-list compact product-editor-notes">
+              <div>這區是內部編輯區，不對外開放</div>
+              <div>先完成新增 / 編輯 / 啟用 / 停用 / 查看</div>
+              <div>圖片上傳與 Firebase 連動後續再接</div>
+            </div>
+
+            <div className="accounting-action-row">
+              {productEditorMode === 'view' ? (
+                <button type="button" className="primary-button full-width" onClick={() => selectedProduct && openEditProduct(selectedProduct)}>
+                  <PencilLine className="small-icon" />切換編輯
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="primary-button" onClick={saveProductDraft}>
+                    <Package className="small-icon" />{productEditorMode === 'create' ? '確認新增' : '確認更新'}
+                  </button>
+                  <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : null}>
+                    <Eye className="small-icon" />返回查看
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+      </section>
+    </>
+  );
+}
