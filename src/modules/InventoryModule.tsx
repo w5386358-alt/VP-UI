@@ -1,3 +1,4 @@
+
 import { Truck, Boxes, Search, QrCode, FileText, Receipt, History } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
