@@ -97,138 +97,6 @@ type OrderRecord = {
   items: Array<{ code: string; name: string; qty: number; price: number }>;
 };
 
-
-type InventoryLogType = '入庫' | '出庫';
-
-type InventoryLog = {
-  id: string;
-  createdAt: string;
-  type: InventoryLogType;
-  code: string;
-  name: string;
-  qty: number;
-  qr: string;
-  operator: string;
-  note: string;
-  orderNo?: string;
-};
-
-type StockSnapshotItem = {
-  code: string;
-  name: string;
-  stock: number;
-  safe: number;
-  qr: string;
-  status: string;
-  updated: string;
-};
-
-const SAFE_STOCK_MAP: Record<string, number> = {
-  E401: 12,
-  E402: 8,
-  E408: 8,
-  P301: 10,
-  P304: 6,
-  P305: 8,
-};
-
-const INITIAL_QR_SEED: Record<string, Array<{ qr: string; qty: number }>> = {
-  E401: [{ qr: 'QR(A)', qty: 18 }, { qr: 'QR(B)', qty: 18 }],
-  E402: [{ qr: 'QR(E402)', qty: 18 }],
-  E408: [{ qr: 'QR(M)', qty: 22 }],
-  P301: [{ qr: 'QR(P1)', qty: 6 }, { qr: 'QR(P2)', qty: 3 }],
-  P305: [{ qr: 'QR(P305)', qty: 14 }],
-};
-
-function parseDateValue(value: string) {
-  return new Date(value.replace(/-/g, '/')).getTime();
-}
-
-function formatClock(value: string) {
-  return new Date(value.replace(/-/g, '/')).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-function formatDateTime(value: string) {
-  return new Date(value.replace(/-/g, '/')).toLocaleString('zh-TW', { hour12: false });
-}
-
-function buildInitialInventoryLogs(source: Product[]): InventoryLog[] {
-  const logs: InventoryLog[] = [];
-  source.forEach((product, productIndex) => {
-    const buckets = INITIAL_QR_SEED[product.code] ?? [{ qr: `QR(${product.code})`, qty: Math.max(product.stock, 0) }];
-    buckets.forEach((bucket, bucketIndex) => {
-      if (bucket.qty <= 0) return;
-      logs.push({
-        id: `seed-${product.code}-${bucketIndex + 1}`,
-        createdAt: `2026-03-31 ${String(8 + productIndex).padStart(2, '0')}:${String(10 + bucketIndex * 8).padStart(2, '0')}:00`,
-        type: '入庫',
-        code: product.code,
-        name: product.name,
-        qty: bucket.qty,
-        qr: bucket.qr,
-        operator: 'SYSTEM',
-        note: `${product.code} 建立期初庫存 ${bucket.qty} 件（${bucket.qr}）`,
-      });
-    });
-  });
-  return logs;
-}
-
-function getQrBalanceMap(logs: InventoryLog[], code: string) {
-  const map = new Map<string, number>();
-  logs.filter((item) => item.code === code).forEach((item) => {
-    const current = map.get(item.qr) ?? 0;
-    map.set(item.qr, current + (item.type === '入庫' ? item.qty : -item.qty));
-  });
-  return map;
-}
-
-function findAvailableQrBuckets(logs: InventoryLog[], code: string) {
-  return Array.from(getQrBalanceMap(logs, code).entries())
-    .map(([qr, qty]) => ({ qr, qty }))
-    .filter((item) => item.qty > 0)
-    .sort((a, b) => b.qty - a.qty);
-}
-
-function deriveStockSnapshot(source: Product[], logs: InventoryLog[]): StockSnapshotItem[] {
-  const latestByCode = new Map<string, InventoryLog>();
-  logs.forEach((item) => {
-    const current = latestByCode.get(item.code);
-    if (!current || parseDateValue(item.createdAt) >= parseDateValue(current.createdAt)) {
-      latestByCode.set(item.code, item);
-    }
-  });
-
-  return source
-    .map((product) => {
-      const qrBalances = findAvailableQrBuckets(logs, product.code);
-      const stock = qrBalances.reduce((sum, item) => sum + item.qty, 0);
-      const latest = latestByCode.get(product.code);
-      const safe = SAFE_STOCK_MAP[product.code] ?? 10;
-      return {
-        code: product.code,
-        name: product.name,
-        stock,
-        safe,
-        qr: qrBalances.length ? qrBalances.map((item) => `${item.qr}*${item.qty}`).join(' / ') : '無可用庫存',
-        status: stock <= safe ? '低庫存' : '正常',
-        updated: latest ? `${formatDateTime(latest.createdAt)} / ${latest.type}` : '尚無異動',
-      };
-    })
-    .filter((item) => item.stock > 0 || source.find((product) => product.code === item.code)?.enabled);
-}
-
-function buildRecentWarehouseLogs(logs: InventoryLog[]) {
-  return [...logs]
-    .sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))
-    .slice(0, 12)
-    .map((item) => ({
-      time: formatClock(item.createdAt),
-      type: item.type,
-      note: item.note,
-    }));
-}
-
 const mockProducts: Product[] = [
   { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
   { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
@@ -293,7 +161,18 @@ const shippingChecklist = [
   { title: '完成連動', desc: 'shipping、orders、inventory、inventory_logs、sales_report 同步留痕跡。' },
 ];
 
-const initialInventoryLogs = buildInitialInventoryLogs(mockProducts);
+const stockSnapshot = [
+  { code: 'E401', name: '女神酵素液', stock: 36, safe: 12, qr: 'QR(A)*18 / QR(B)*18', status: '正常', updated: '今日 10:45 更新' },
+  { code: 'P301', name: '瞬白激光精華4G', stock: 9, safe: 10, qr: 'QR(P1)*6 / QR(P2)*3', status: '低庫存', updated: '今日 09:12 出貨後下降' },
+  { code: 'E408', name: '魔力抹茶機能飲', stock: 22, safe: 8, qr: 'QR(M)*22', status: '正常', updated: '今日 11:18 換貨預留' },
+];
+
+const warehouseRecentLogs = [
+  { time: '09:12', type: '出貨', note: 'VP20260331-001 完成出貨，扣減 E401*2 / P301*1' },
+  { time: '10:45', type: '入庫', note: 'E402 補貨 12 件，寫入 inventory_logs' },
+  { time: '11:18', type: '換貨', note: 'EX20260331-001 建立 B 商品待出貨單，金額 0、運費獨立' },
+  { time: '13:05', type: '退貨', note: 'QR(A-018) 驗退回庫，待 QC 判定是否可再販售' },
+];
 
 
 const paymentQueue = [
@@ -606,12 +485,17 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro({ title, desc }: { title: string; desc: string; stats?: string[] }) {
+function SectionIntro({ title, desc, stats }: { title: string; desc: string; stats: string[] }) {
   return (
     <div className="card section-intro-card">
       <div>
         <div className="section-intro-title">{title}</div>
         <div className="section-intro-desc">{desc}</div>
+      </div>
+      <div className="section-stat-row">
+        {stats.map((stat) => (
+          <span key={stat} className="badge badge-neutral">{stat}</span>
+        ))}
       </div>
     </div>
   );
@@ -660,7 +544,7 @@ export default function App() {
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 倉儲 SOP 第二包已裝入，可直接測防超賣與 QR 查詢',
+    text: '✅ 倉儲頁已進入可操作版，可切換訂單與查詢模式',
     tone: 'success',
   });
   const [warehouseQueryMode, setWarehouseQueryMode] = useState<WarehouseQueryMode>('barcode');
@@ -668,10 +552,7 @@ export default function App() {
   const [warehouseQueryResult, setWarehouseQueryResult] = useState<{ title: string; desc: string; meta: string[] }[]>([
     { title: '女神酵素液', desc: '商品條碼 E401 / 目前庫存 36 / 最近入庫 2026/03/31 10:45', meta: ['QR(A)*18', 'QR(B)*18', '狀態：正常'] },
   ]);
-  const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>(initialInventoryLogs);
-  const [warehouseInboundQty, setWarehouseInboundQty] = useState(1);
-  const [warehouseInboundQr, setWarehouseInboundQr] = useState('');
-  const [selectedStockCode, setSelectedStockCode] = useState(mockProducts[0]?.code ?? '');
+  const [selectedStockCode, setSelectedStockCode] = useState(stockSnapshot[0]?.code ?? '');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
@@ -814,23 +695,18 @@ export default function App() {
     }));
   }, [orderRecords]);
 
-  const stockSnapshot = useMemo(() => deriveStockSnapshot(products, inventoryLogs), [products, inventoryLogs]);
-
-  const warehouseRecentLogs = useMemo(() => buildRecentWarehouseLogs(inventoryLogs), [inventoryLogs]);
-
   const warehouseSummary = useMemo(() => {
     const pending = shippingQueue.length;
-    const lowStock = stockSnapshot.filter((item) => item.stock <= item.safe).length;
-    const todayKey = '2026-04-01';
-    const todayOps = inventoryLogs.filter((item) => item.createdAt.startsWith(todayKey)).reduce((sum, item) => sum + item.qty, 0);
+    const lowStock = products.filter((item) => item.stock <= 10).length;
+    const shippedToday = orderRecords.filter((item) => item.shippingStatus === '已出貨').length;
     const issueCount = orderRecords.filter((item) => item.paymentStatus === '待收款' && item.shippingStatus === '待出貨').length;
     return [
       { title: '待出貨', value: String(pending), sub: `待處理 ${pending} 筆` },
       { title: '低庫存', value: String(lowStock), sub: '安全值以下需先補貨' },
-      { title: '今日入出庫', value: String(todayOps), sub: '依 inventory_logs 累計數量' },
+      { title: '今日入出庫', value: String(shippedToday), sub: '含出貨完成筆數' },
       { title: '待查異常', value: String(issueCount), sub: '待收款但待出貨需覆核' },
     ];
-  }, [shippingQueue, stockSnapshot, inventoryLogs, orderRecords]);
+  }, [shippingQueue, products, orderRecords]);
 
   const accountingSummary = useMemo(() => {
     const paid = paymentQueue.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + item.amount, 0);
@@ -847,54 +723,7 @@ export default function App() {
 
   const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0] || null, [selectedWarehouseOrderNo, shippingQueue]);
 
-  const warehouseShipValidation = useMemo(() => {
-    if (!selectedWarehouseOrder) {
-      return {
-        canShip: false,
-        paymentOk: false,
-        issues: ['請先選擇待出貨訂單'],
-      };
-    }
-
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      return {
-        canShip: false,
-        paymentOk: false,
-        issues: ['找不到對應訂單資料'],
-      };
-    }
-
-    const paymentOk = selectedWarehouseOrder.paymentStatus === '已收款' || selectedWarehouseOrder.paymentStatus === '免收款';
-    const issues: string[] = [];
-
-    if (!paymentOk) {
-      issues.push('未收款，不可出貨');
-    }
-
-    order.items.forEach((entry) => {
-      const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
-      const totalAvailable = buckets.reduce((sum, item) => sum + item.qty, 0);
-      if (totalAvailable < entry.qty) {
-        issues.push(`${entry.code} 庫存不足：剩 ${totalAvailable}，需 ${entry.qty}`);
-      }
-    });
-
-    return {
-      canShip: issues.length === 0,
-      paymentOk,
-      issues,
-    };
-  }, [selectedWarehouseOrder, orderRecords, inventoryLogs]);
-
-  const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode, stockSnapshot]);
-
-  useEffect(() => {
-    if (!stockSnapshot.length) return;
-    if (!stockSnapshot.some((item) => item.code === selectedStockCode)) {
-      setSelectedStockCode(stockSnapshot[0].code);
-    }
-  }, [stockSnapshot, selectedStockCode]);
+  const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode]);
 
   const runWarehouseQuery = (input = warehouseQueryInput, mode = warehouseQueryMode) => {
     const value = input.trim();
@@ -923,24 +752,23 @@ export default function App() {
     }
 
     if (mode === 'qr') {
-      const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
-      if (!matchedLogs.length) {
+      const qrMap: Record<string, { title: string; desc: string; meta: string[] }> = {
+        'QR(A)': { title: 'QR(A)', desc: '女神酵素液 / 目前庫存 18 / 最近入庫 2026/03/31 10:45', meta: ['入庫人員：VP001', '商品條碼：E401', '狀態：可出貨'] },
+        'QR(P1)': { title: 'QR(P1)', desc: '瞬白激光精華4G / 目前庫存 6 / 最近入庫 2026/03/31 09:12', meta: ['入庫人員：VP002', '商品條碼：P301', '狀態：低庫存注意'] },
+        'QR(M)': { title: 'QR(M)', desc: '魔力抹茶機能飲 / 目前庫存 22 / 最近入庫 2026/03/31 11:18', meta: ['入庫人員：VP003', '商品條碼：E408', '狀態：正常'] },
+      };
+      const matched = qrMap[normalized] || qrMap[value];
+      if (!matched) {
         setWarehouseQueryResult([{ title: '查無 QR 身分識別', desc: `找不到 ${value} 的 QR 記錄`, meta: ['請確認是否已入庫'] }]);
         setWarehouseNotice({ text: '❌ QR 身分識別查無資料', tone: 'danger' });
         return;
       }
-      const latest = [...matchedLogs].sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))[0];
-      const balance = matchedLogs.reduce((sum, item) => sum + (item.type === '入庫' ? item.qty : -item.qty), 0);
-      setWarehouseQueryResult([{
-        title: latest.qr,
-        desc: `${latest.name} / 目前庫存 ${balance} / 最近異動 ${formatDateTime(latest.createdAt)}`,
-        meta: [`入庫人員：${latest.operator}`, `商品條碼：${latest.code}`, `狀態：${balance > 0 ? '可出貨' : '已出清'}`],
-      }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${latest.qr}`, tone: 'success' });
+      setWarehouseQueryResult([matched]);
+      setWarehouseNotice({ text: `✅ 已查到 ${matched.title}`, tone: 'success' });
       return;
     }
 
-    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
+    const matchedOrder = shippingQueue.find((item) => item.orderNo.toUpperCase().includes(normalized));
     if (!matchedOrder) {
       setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
       setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
@@ -950,7 +778,7 @@ export default function App() {
     setWarehouseQueryResult([{
       title: matchedOrder.orderNo,
       desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
-      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
+      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.qrSummary}`, `地址：${matchedOrder.address}`],
     }]);
     setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
   };
@@ -961,88 +789,14 @@ export default function App() {
       setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
       return;
     }
-
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
-      return;
-    }
-
-    const allocations: InventoryLog[] = [];
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
-    for (const entry of order.items) {
-      const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
-      const totalAvailable = buckets.reduce((sum, item) => sum + item.qty, 0);
-      if (totalAvailable < entry.qty) {
-        setWarehouseNotice({ text: `❌ ${entry.code} 可出貨數量不足，目前只剩 ${totalAvailable}`, tone: 'danger' });
-        return;
-      }
-
-      let remaining = entry.qty;
-      for (const bucket of buckets) {
-        if (remaining <= 0) break;
-        const picked = Math.min(bucket.qty, remaining);
-        allocations.push({
-          id: `out-${order.orderNo}-${entry.code}-${bucket.qr}-${remaining}`,
-          createdAt: timestamp,
-          type: '出庫',
-          code: entry.code,
-          name: entry.name,
-          qty: picked,
-          qr: bucket.qr,
-          operator: user.loginId,
-          orderNo: order.orderNo,
-          note: `${order.orderNo} 完成出貨，${entry.code} ${entry.name} 出庫 ${picked} 件（${bucket.qr}）`,
-        });
-        remaining -= picked;
-      }
-    }
-
-    setInventoryLogs((prev) => [...prev, ...allocations]);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedWarehouseOrder.orderNo ? {
       ...item,
       shippingStatus: '已出貨',
       mainStatus: '已完成',
+      paymentStatus: item.paymentStatus === '待收款' ? '已收款' : item.paymentStatus,
     } : item));
-    setWarehouseNotice({ text: `✅ 已依 inventory_logs 完成出貨：${order.orderNo}`, tone: 'success' });
-    setOrderNotice({ text: `✅ 訂單已同步出貨：${order.orderNo}`, tone: 'success' });
-    setWarehouseQueryResult([{ title: order.orderNo, desc: `${order.customer} / 已出貨 / ${order.shippingMethod}`, meta: ['已寫入 inventory_logs', `出貨筆數：${allocations.length}`, `商品：${order.items.map((item) => `${item.code}*${item.qty}`).join(' / ')}`] }]);
-  };
-
-  const handleWarehouseInbound = () => {
-    if (!selectedStockItem) {
-      setWarehouseNotice({ text: '❌ 請先選擇商品再入庫', tone: 'danger' });
-      return;
-    }
-    if (!warehouseInboundQr.trim()) {
-      setWarehouseNotice({ text: '❌ 入庫必須填寫 QR 身分識別', tone: 'danger' });
-      return;
-    }
-    if (warehouseInboundQty <= 0) {
-      setWarehouseNotice({ text: '❌ 入庫數量必須大於 0', tone: 'danger' });
-      return;
-    }
-
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const cleanQr = warehouseInboundQr.trim().toUpperCase();
-    const newLog: InventoryLog = {
-      id: `in-${selectedStockItem.code}-${Date.now()}`,
-      createdAt: timestamp,
-      type: '入庫',
-      code: selectedStockItem.code,
-      name: selectedStockItem.name,
-      qty: warehouseInboundQty,
-      qr: cleanQr,
-      operator: user.loginId,
-      note: `${selectedStockItem.code} ${selectedStockItem.name} 入庫 ${warehouseInboundQty} 件（${cleanQr}）`,
-    };
-
-    setInventoryLogs((prev) => [...prev, newLog]);
-    setWarehouseNotice({ text: `✅ 已寫入入庫紀錄：${selectedStockItem.code} +${warehouseInboundQty}`, tone: 'success' });
-    setWarehouseQueryResult([{ title: cleanQr, desc: `${selectedStockItem.name} / 已入庫 ${warehouseInboundQty} 件`, meta: [`商品條碼：${selectedStockItem.code}`, `操作人員：${user.loginId}`, '已寫入 inventory_logs'] }]);
-    setWarehouseInboundQty(1);
-    setWarehouseInboundQr('');
+    setWarehouseNotice({ text: `✅ 已出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 訂單已同步出貨：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
   };
 
   const handleWarehousePrint = () => {
@@ -1051,22 +805,10 @@ export default function App() {
   };
 
   const handleWarehouseScanFill = () => {
-    const next = warehouseQueryMode === 'barcode'
-      ? (selectedStockItem?.code || 'P301')
-      : warehouseQueryMode === 'qr'
-        ? (findAvailableQrBuckets(inventoryLogs, selectedStockItem?.code || 'E401')[0]?.qr || 'QR(P1)')
-        : (selectedWarehouseOrder?.orderNo || 'VP20260331-002');
+    const next = warehouseQueryMode === 'barcode' ? 'P301' : warehouseQueryMode === 'qr' ? 'QR(P1)' : 'VP20260331-002';
     setWarehouseQueryInput(next);
     setWarehouseNotice({ text: `✅ 已帶入 ${next}`, tone: 'neutral' });
   };
-
-  useEffect(() => {
-    const stockMap = new Map(stockSnapshot.map((item) => [item.code, item.stock]));
-    setProducts((prev) => prev.map((item) => {
-      const nextStock = stockMap.get(item.code);
-      return typeof nextStock === 'number' && item.stock !== nextStock ? { ...item, stock: nextStock } : item;
-    }));
-  }, [stockSnapshot]);
 
   const selectedOrderRecord = useMemo(() => orderRecords.find((item) => item.orderNo === selectedOrderNo) || orderRecords[0] || null, [orderRecords, selectedOrderNo]);
 
@@ -1110,7 +852,7 @@ export default function App() {
   const discountAmount = discountMode === '固定金額' ? discountValue : 0;
   const grandTotal = Math.max(0, subtotal + shippingFee - discountAmount);
 
-  const lowStockCount = stockSnapshot.filter((p) => p.stock <= p.safe).length;
+  const lowStockCount = products.filter((p) => p.stock <= 10).length;
   const enabledProducts = products.filter((p) => p.enabled).length;
   const vipCustomers = customers.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
@@ -1324,8 +1066,7 @@ export default function App() {
         return;
       }
       setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
-      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，倉儲端將依狀態判定可出貨`, tone: 'success' });
-      setWarehouseNotice({ text: `✅ 收款狀態已更新：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+      setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       setOrderNotice({ text: `✅ 會計已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       return;
     }
@@ -1397,7 +1138,7 @@ export default function App() {
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">目前策略</div>
-          <div className="sidebar-tip-desc">先把倉儲 SOP 第二包測穩，再決定是否進會計 ↔ 倉儲串接。</div>
+          <div className="sidebar-tip-desc">先穩定承接 GAS 功能邏輯，再往訂購、會計、倉儲三大主模組擴充。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -1420,7 +1161,19 @@ export default function App() {
               <span className="badge badge-soft">對齊 GAS 功能邏輯</span>
             </div>
           </div>
-
+          <div className="hero-side">
+            <div className="hero-status card">
+              <div className="hero-status-head">
+                {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
+                <span>{bootMessage}</span>
+              </div>
+              <div className="hero-status-list">
+                <div><span>商品資料</span><strong>{products.length}</strong></div>
+                <div><span>客戶資料</span><strong>{customers.length}</strong></div>
+                <div><span>人員資料</span><strong>{staff.length}</strong></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="topbar">
@@ -1459,6 +1212,12 @@ export default function App() {
               </div>
             </div>
 
+            <section className="summary-grid">
+              <SummaryCard title="商品總數" value={String(products.length)} sub={`啟用 ${enabledProducts} / 停用 ${products.length - enabledProducts}`} />
+              <SummaryCard title="客戶總數" value={String(customers.length)} sub={`VIP / 代理 ${vipCustomers}`} />
+              <SummaryCard title="人員總數" value={String(staff.length)} sub={`啟用中 ${activeStaff}`} />
+              <SummaryCard title="低庫存提醒" value={String(lowStockCount)} sub="stock <= 10" />
+            </section>
 
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
@@ -1476,7 +1235,7 @@ export default function App() {
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'accounting' && (
               <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />

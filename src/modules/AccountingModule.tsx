@@ -23,6 +23,10 @@ export default function AccountingModule(props: any) {
         stats={[`待收款 ${paymentQueue.filter((item: any) => item.paymentStatus === '待收款').length} 筆`, '已收款 / 已退款 防呆位', '報表 / 排行榜骨架']}
       />
 
+      <section className="summary-grid">
+        {accountingSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}
+      </section>
+
       <div className="accounting-tab-row">
         <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" />收款 / 退款作業</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />銷售統計</button>
@@ -59,16 +63,6 @@ export default function AccountingModule(props: any) {
                 <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={String(selectedAccountingRecord?.shippingFee || 0)} readOnly /></label>
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(selectedAccountingRecord?.amount || 0)} readOnly /></label>
                 <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} readOnly value={`付款方式：${selectedAccountingRecord?.paymentMethod || '-'}\n發票：${selectedAccountingRecord?.invoiceNo || '-'}\n證明：${selectedAccountingRecord?.proof || '-'}`} /></label>
-              </div>
-              <div className="accounting-sync-card">
-                <div className="accounting-sync-title">流程狀態提醒</div>
-                <div className="accounting-sync-desc">
-                  {selectedAccountingRecord?.paymentStatus === '已收款'
-                    ? '此單已收款，倉儲端會依訂單狀態顯示可出貨。'
-                    : selectedAccountingRecord?.paymentStatus?.includes('退款')
-                      ? '此單處於退款流程，倉儲端不可出貨。'
-                      : '這筆訂單尚未收款，確認收款後只更新訂單狀態，不自動跳頁。'}
-                </div>
               </div>
               <div className="accounting-action-row">
                 <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
