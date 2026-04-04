@@ -4,7 +4,6 @@ export default function InventoryModule(props: any) {
   const {
     lowStockCount,
     shippingQueue,
-    warehouseSummary,
     warehouseTab,
     setWarehouseTab,
     selectedWarehouseOrder,
@@ -13,6 +12,11 @@ export default function InventoryModule(props: any) {
     warehouseNotice,
     shippingChecklist,
     handleWarehouseShip,
+    handleWarehouseInbound,
+    warehouseInboundQty,
+    setWarehouseInboundQty,
+    warehouseInboundQr,
+    setWarehouseInboundQr,
     handleWarehousePrint,
     inventoryFlow,
     stockSnapshot,
@@ -28,21 +32,17 @@ export default function InventoryModule(props: any) {
     handleWarehouseScanFill,
     warehouseQueryResult,
     warehouseRecentLogs,
+    warehouseShipValidation,
     SectionIntro,
-    SummaryCard,
   } = props;
 
   return (
     <>
       <SectionIntro
-        title="倉儲中心細化版"
-        desc="這版開始把出貨、庫存、查詢三區做得更接近實際操作畫面，仍然只動 UI，不去破壞你原本 GAS 倉儲邏輯。"
-        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, 'QR / 條碼 / 出貨單 / 異動紀錄']}
+        title="倉儲中心｜GAS SOP 第二包"
+        desc="這版接續倉儲 GAS SOP 第二包，主軸是防超賣 + QR 邏輯測試。入庫、出貨、查詢都改由 inventory_logs 與 QR 餘量判讀。"
+        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
       />
-
-      <section className="summary-grid">
-        {warehouseSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}
-      </section>
 
       <div className="warehouse-tab-row">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
@@ -59,7 +59,7 @@ export default function InventoryModule(props: any) {
               <div className="panel-head">
                 <div>
                   <div className="panel-title">待出貨訂單</div>
-                  <div className="panel-desc">先把待出貨、已收款、換貨待出庫集中在同一個作業面板。</div>
+                  <div className="panel-desc">出貨前先檢查收款狀態，再依 inventory_logs 可用數量扣減。</div>
                 </div>
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
               </div>
@@ -72,6 +72,7 @@ export default function InventoryModule(props: any) {
                       <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
                     </div>
                     <div className="shipping-actions">
+                      <span className={`badge ${item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? 'badge-success' : 'badge-danger'}`}>{item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? '可出貨' : '待收款'}</span>
                       <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
                       <span className="badge badge-soft">切換</span>
                     </div>
@@ -84,8 +85,8 @@ export default function InventoryModule(props: any) {
               <div className="card warehouse-detail-card">
                 <div className="warehouse-card-head">
                   <div>
-                    <div className="flow-title">出貨作業流程</div>
-                    <div className="flow-desc">用 UI 先把你原本掃碼與出貨節奏排出來。</div>
+                    <div className="flow-title">出貨 SOP 檢查點</div>
+                    <div className="flow-desc">這裡保留你最在意的出貨防呆，現在真的會依可用庫存去扣。</div>
                   </div>
                   <QrCode className="small-icon" />
                 </div>
@@ -103,19 +104,42 @@ export default function InventoryModule(props: any) {
                 <div className="warehouse-card-head">
                   <div>
                     <div className="flow-title">出貨資訊面板</div>
-                    <div className="flow-desc">保留你後面要接的欄位位置，不改作業邏輯。</div>
+                    <div className="flow-desc">這版改為純狀態串接：倉儲只看訂單是否已收款，再驗證可出貨數量，通過後才真正寫入出庫 logs。</div>
                   </div>
                   <FileText className="small-icon" />
                 </div>
+
+                <div className="warehouse-check-summary-grid">
+                  <div className={`warehouse-check-summary-card ${warehouseShipValidation?.paymentOk ? 'ok' : 'bad'}`}>
+                    <span>收款驗證</span>
+                    <strong>{warehouseShipValidation?.paymentOk ? '已通過' : '未通過'}</strong>
+                  </div>
+                  <div className={`warehouse-check-summary-card ${warehouseShipValidation?.canShip ? 'ok' : 'bad'}`}>
+                    <span>庫存驗證</span>
+                    <strong>{warehouseShipValidation?.canShip ? '可出貨' : '不可出貨'}</strong>
+                  </div>
+                </div>
+
                 <div className="warehouse-form-grid">
                   <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '未選擇'}</strong></div>
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
                   <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
                   <div className="fake-field"><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
-                  <div className="fake-field wide"><span>掃碼結果</span><strong>{selectedWarehouseOrder ? `待驗證 ${selectedWarehouseOrder.itemCount} 件商品` : '請先切換訂單'}</strong></div>
+                  <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
                 </div>
+
+                {!!warehouseShipValidation?.issues?.length && (
+                  <div className="warehouse-issue-list">
+                    {warehouseShipValidation.issues.map((issue: string) => (
+                      <div key={issue} className="warehouse-issue-item">❌ {issue}</div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="accounting-action-row">
-                  <button type="button" className="primary-button" onClick={handleWarehouseShip}><Truck className="small-icon" />完成出貨</button>
+                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
+                    <Truck className="small-icon" />依 SOP 完成出貨
+                  </button>
                   <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單</button>
                 </div>
               </div>
@@ -127,26 +151,15 @@ export default function InventoryModule(props: any) {
               <div className="panel-head compact-head">
                 <div>
                   <div className="panel-title">出貨區提醒</div>
-                  <div className="panel-desc">這裡先放你最在意的防呆規則。</div>
+                  <div className="panel-desc">這裡已切成真正扣 log 的第一版。</div>
                 </div>
               </div>
               <div className="stack-list compact">
                 <div>未收款不可出貨</div>
-                <div>同 QR 多數量要看剩餘可出貨數量</div>
-                <div>換貨 B 要自動產生金額 0 出貨單</div>
-                <div>舊資料也要留下 shipping 痕跡</div>
-              </div>
-            </div>
-
-            <div className="card order-panel">
-              <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">把 inventory_logs 的閱讀感先做出來。</div></div></div>
-              <div className="warehouse-log-list">
-                {warehouseRecentLogs.map((item: any) => (
-                  <div key={`${item.time}-${item.type}`} className="warehouse-log-item">
-                    <div className="warehouse-log-time">{item.time}</div>
-                    <div><div className="warehouse-log-type">{item.type}</div><div className="warehouse-log-note">{item.note}</div></div>
-                  </div>
-                ))}
+                <div>倉儲只依訂單狀態判讀，不自動跳頁</div>
+                <div>依 QR 剩餘數量分配扣減</div>
+                <div>扣減來源改為 inventory_logs</div>
+                <div>訂單完成後同步改出貨狀態</div>
               </div>
             </div>
           </div>
@@ -173,20 +186,39 @@ export default function InventoryModule(props: any) {
                   <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
                 </div>
                 <div className="stock-big-number">{item.stock}</div>
-                <div className="stock-sub">目前庫存</div>
+                <div className="stock-sub">目前庫存（由 logs 計算）</div>
                 <div className="fake-field wide"><span>QR 身分識別</span><strong>{item.qr}</strong></div>
               </button>
             ))}
           </div>
 
           <div className="card warehouse-tool-card">
-            <div className="warehouse-card-head"><div><div className="flow-title">目前選取商品</div><div className="flow-desc">點選上方庫存卡，就只更新這一區。</div></div><Boxes className="small-icon" /></div>
+            <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div><div className="flow-desc">入庫會新增 inventory_logs，不再直接改庫存數字。</div></div><Boxes className="small-icon" /></div>
             <div className="warehouse-form-grid">
               <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
               <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
+              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="例如 QR(A-NEW)" /></strong></div>
+              <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
+              <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
+            </div>
+            <div className="accounting-action-row">
+              <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
+              <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+            </div>
+          </div>
+
+          <div className="card order-panel">
+            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">這裡直接反映 inventory_logs 最新 12 筆，方便測第二包 SOP 是否正常留痕。</div></div></div>
+            <div className="warehouse-log-list">
+              {warehouseRecentLogs.map((item: any) => (
+                <div key={`${item.time}-${item.type}-${item.note}`} className="warehouse-log-item">
+                  <div className="warehouse-log-time">{item.time}</div>
+                  <div><div className="warehouse-log-type">{item.type}</div><div className="warehouse-log-note">{item.note}</div></div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -200,7 +232,7 @@ export default function InventoryModule(props: any) {
 
           <div className="warehouse-tool-grid">
             <div className="card warehouse-tool-card">
-              <div className="warehouse-card-head"><div><div className="flow-title">條碼 / QR 快速查詢</div><div className="flow-desc">後面接掃碼器時，就直接沿用這個位置。</div></div><Search className="small-icon" /></div>
+              <div className="warehouse-card-head"><div><div className="flow-title">條碼 / QR 快速查詢</div><div className="flow-desc">查詢結果直接讀目前 logs 與訂單狀態。</div></div><Search className="small-icon" /></div>
               <div className="warehouse-tab-row warehouse-query-mode-row">
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'barcode' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('barcode')}>商品條碼</button>
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'qr' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('qr')}>QR 身分識別</button>
@@ -216,7 +248,7 @@ export default function InventoryModule(props: any) {
             </div>
 
             <div className="card warehouse-tool-card">
-              <div className="warehouse-card-head"><div><div className="flow-title">查詢結果展示位</div><div className="flow-desc">依你之前定義的顯示規則先排版。</div></div><History className="small-icon" /></div>
+              <div className="warehouse-card-head"><div><div className="flow-title">查詢結果展示位</div><div className="flow-desc">商品條碼看總庫存，QR 看個別數量，訂單看出貨狀態。</div></div><History className="small-icon" /></div>
               <div className="warehouse-result-list">
                 {warehouseQueryResult.map((item: any) => (
                   <div key={item.title} className="warehouse-result-item">
