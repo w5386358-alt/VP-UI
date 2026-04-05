@@ -41,14 +41,15 @@ export default function AccountingModule(props: any) {
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />款項狀態</span><select value={accountingPaymentFilter} onChange={(e) => setAccountingPaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
                 <label className="field-card"><span className="field-label"><Truck className="small-icon" />商品狀態</span><select value={accountingShippingFilter} onChange={(e) => setAccountingShippingFilter(e.target.value)}><option value="全部">全部</option><option value="待出貨">待出貨</option><option value="理貨中">理貨中</option><option value="換貨待出庫">換貨待出庫</option></select></label>
               </div>
-              <section className="accounting-record-panel-inline">
-                <div className="panel-head compact-head">
-                  <div>
-                    <div className="panel-title">訂單紀錄 / 收款狀態</div>
-                    <div className="panel-desc">新增訂單後會直接跟最新訂單資料同步顯示，並整合到上方作業區。</div>
-                  </div>
-                  <span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span>
-                </div>
+              <div className="accounting-proof-grid">
+                <div className="accounting-proof-card"><div className="accounting-proof-title">收據上傳</div><div className="accounting-proof-desc">保留收據、轉帳證明與對帳附件位置</div></div>
+                <div className="accounting-proof-card"><div className="accounting-proof-title">匯款截圖</div><div className="accounting-proof-desc">之後直接接照片上傳或檔案上傳</div></div>
+                <div className="accounting-proof-card"><div className="accounting-proof-title">AI 辨識位</div><div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div></div>
+              </div>
+              {accountingNotice && <div className={`card product-notice-banner ${accountingNotice.tone} accounting-notice-banner`}><strong>{accountingNotice.text}</strong></div>}
+
+              <section className="accounting-inline-records">
+                <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">這裡直接吃目前訂單資料，收款 / 退款後會即時同步顯示。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
                 <div className="shipping-queue accounting-queue">
                   {filteredAccountingQueue.map((item: any) => (
                     <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
@@ -66,12 +67,6 @@ export default function AccountingModule(props: any) {
                   ))}
                 </div>
               </section>
-              <div className="accounting-proof-grid">
-                <div className="accounting-proof-card"><div className="accounting-proof-title">收據上傳</div><div className="accounting-proof-desc">保留收據、轉帳證明與對帳附件位置</div></div>
-                <div className="accounting-proof-card"><div className="accounting-proof-title">匯款截圖</div><div className="accounting-proof-desc">之後直接接照片上傳或檔案上傳</div></div>
-                <div className="accounting-proof-card"><div className="accounting-proof-title">AI 辨識位</div><div className="accounting-proof-desc">預留辨識結果與人工覆核顯示區</div></div>
-              </div>
-              {accountingNotice && <div className={`card product-notice-banner ${accountingNotice.tone} accounting-notice-banner`}><strong>{accountingNotice.text}</strong></div>}
             </div>
 
             <div className="card order-panel">
@@ -112,25 +107,6 @@ export default function AccountingModule(props: any) {
             </div>
           </section>
 
-          <section className="card order-panel">
-            <div className="panel-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">這裡直接吃目前訂單資料，收款 / 退款後會即時同步顯示。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
-            <div className="shipping-queue accounting-queue">
-              {filteredAccountingQueue.map((item: any) => (
-                <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
-                  <div>
-                    <div className="shipping-order">{item.orderNo}</div>
-                    <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
-                    <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
-                  </div>
-                  <div className="shipping-actions accounting-statuses">
-                    <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                    <span className={`badge ${item.shippingStatus === '待出貨' || item.shippingStatus === '已退款' ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : item.shippingStatus === '已出貨' ? 'badge-success' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                    <strong className="accounting-amount">${item.amount}</strong>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
         </>
       )}
 

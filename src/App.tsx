@@ -1685,7 +1685,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
       return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
     });
-  }, [paymentQueue, accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
 
   useEffect(() => {
     if (!filteredAccountingQueue.length) return;
@@ -1696,7 +1696,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const selectedAccountingRecord = useMemo(
     () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
-    [filteredAccountingQueue, selectedAccountingOrderNo, paymentQueue],
+    [filteredAccountingQueue, selectedAccountingOrderNo],
   );
 
   useEffect(() => {

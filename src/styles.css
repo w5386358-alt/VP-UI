@@ -2489,14 +2489,11 @@ button:hover { transform: translateY(-1px); }
   margin-bottom: 0;
 }
 
-
-.accounting-record-panel-inline {
+.accounting-inline-records{
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--line);
 }
-
-.accounting-record-panel-inline .accounting-queue {
-  max-height: 420px;
-  padding-right: 4px;
+.accounting-inline-records-head{
+  margin-bottom: 12px;
 }
