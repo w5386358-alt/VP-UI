@@ -1,4 +1,4 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -16,6 +16,7 @@ export default function ProductsModule(props: any) {
     setProductDraft,
     saveProductDraft,
     selectedProduct,
+    productCategories,
     SectionIntro,
     StatusBadge,
   } = props;
@@ -60,10 +61,25 @@ export default function ProductsModule(props: any) {
                     <span className="data-code">{item.code}</span>
                     <StatusBadge enabled={item.enabled} />
                   </div>
+                  <div className="product-image-slot">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="product-image" />
+                    ) : (
+                      <div className="product-image-placeholder">
+                        <ImageIcon className="small-icon" />
+                        <span>商品圖片預留</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="data-card-title">{item.name}</div>
                   <div className="data-card-subtitle">{item.category}</div>
                   <div className="metric-row three">
-                    <div className="metric-box"><span>價格</span><strong>${item.price}</strong></div>
+                    <div className="metric-box"><span>VIP價</span><strong>${item.vipPrice ?? item.price}</strong></div>
+                    <div className="metric-box"><span>代理價</span><strong>${item.agentPrice ?? item.price}</strong></div>
+                    <div className="metric-box"><span>總代理</span><strong>${item.generalAgentPrice ?? item.price}</strong></div>
+                  </div>
+                  <div className="metric-row three product-stock-row">
+                    <div className="metric-box"><span>目前套用</span><strong>{item.enabled ? '可販售' : '停用'}</strong></div>
                     <div className="metric-box"><span>庫存</span><strong>{item.stock}</strong></div>
                     <div className="metric-box"><span>狀態</span><strong>{item.enabled ? '啟用' : '停用'}</strong></div>
                   </div>
@@ -103,9 +119,9 @@ export default function ProductsModule(props: any) {
               <label className="field-card">
                 <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
                 <select value={productDraft.category} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
-                  <option value="保健">保健</option>
-                  <option value="保養">保養</option>
-                  <option value="優惠組合">優惠組合</option>
+                  {productCategories.map((category: string) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
                 </select>
               </label>
               <label className="field-card field-span-2">
