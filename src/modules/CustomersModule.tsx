@@ -34,7 +34,7 @@ export default function CustomersModule(props: any) {
       </section>
       {!filteredCustomers.length && (
         <div className="card empty-order-state">
-          目前在「{user.name} / {customerScopeLabel}」視角下，沒有可顯示的客戶資料。
+          「{user.name} / {customerScopeLabel}」目前沒有可顯示的客戶資料。
         </div>
       )}
     </>

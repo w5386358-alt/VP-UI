@@ -19,37 +19,37 @@ export default function AccountingModule(props: any) {
     <>
       <SectionIntro
         title="會計中心"
-        desc="收款、退款、統計與排行集中在同一區，畫面與名稱統一整理。"
-        stats={[`待收款 ${paymentQueue.filter((item: any) => item.paymentStatus === '待收款').length} 筆`, '收款狀態同步', '統計與排行']}
+        desc="收款、退款與報表集中在同一區。"
+        stats={[`待收款 ${paymentQueue.filter((item: any) => item.paymentStatus === '待收款').length} 筆`, '收款狀態', '統計報表']}
       />
 
       <div className="accounting-tab-row">
         <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" />收款 / 退款作業</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />銷售統計</button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" />排行榜 / 熱銷</button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" />排名 / 熱銷</button>
       </div>
 
       {accountingTab === 'ops' && (
         <>
           <section className="two-column-grid accounting-top-grid">
             <div className="card order-panel">
-              <div className="panel-head"><div><div className="panel-title">收款 / 退款作業</div><div className="panel-desc">集中處理查詢、篩選、收款與退款。</div></div><span className="badge badge-role">收款作業</span></div>
+              <div className="panel-head"><div><div className="panel-title">收款 / 退款</div><div className="panel-desc">查詢、篩選、收款與退款。</div></div><span className="badge badge-role">收款</span></div>
               <div className="accounting-filter-grid">
                 <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶 / 發票</span><input value={accountingKeyword} onChange={(e) => setAccountingKeyword(e.target.value)} placeholder="輸入訂單編號、客戶、收款方式、發票號碼" /></label>
-                <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />起算日</span><input type="date" value={accountingDateStart} onChange={(e) => setAccountingDateStart(e.target.value)} /></label>
-                <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />結算日</span><input type="date" value={accountingDateEnd} onChange={(e) => setAccountingDateEnd(e.target.value)} /></label>
-                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />款項狀態</span><select value={accountingPaymentFilter} onChange={(e) => setAccountingPaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
-                <label className="field-card"><span className="field-label"><Truck className="small-icon" />商品狀態</span><select value={accountingShippingFilter} onChange={(e) => setAccountingShippingFilter(e.target.value)}><option value="全部">全部</option><option value="待出貨">待出貨</option><option value="理貨中">理貨中</option><option value="換貨待出庫">換貨待出庫</option></select></label>
+                <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />開始日期</span><input type="date" value={accountingDateStart} onChange={(e) => setAccountingDateStart(e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />結束日期</span><input type="date" value={accountingDateEnd} onChange={(e) => setAccountingDateEnd(e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />收款狀態</span><select value={accountingPaymentFilter} onChange={(e) => setAccountingPaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
+                <label className="field-card"><span className="field-label"><Truck className="small-icon" />出貨狀態</span><select value={accountingShippingFilter} onChange={(e) => setAccountingShippingFilter(e.target.value)}><option value="全部">全部</option><option value="待出貨">待出貨</option><option value="理貨中">理貨中</option><option value="換貨待出庫">換貨待出庫</option></select></label>
               </div>
               <div className="accounting-proof-grid">
-                <div className="accounting-proof-card"><div className="accounting-proof-title">收據上傳</div><div className="accounting-proof-desc">收據、轉帳證明與附件</div></div>
-                <div className="accounting-proof-card"><div className="accounting-proof-title">匯款截圖</div><div className="accounting-proof-desc">匯款附件</div></div>
-                <div className="accounting-proof-card"><div className="accounting-proof-title">AI 辨識</div><div className="accounting-proof-desc">辨識結果與人工覆核</div></div>
+                <div className="accounting-proof-card"><div className="accounting-proof-title">收款證明</div><div className="accounting-proof-desc">收據、轉帳與附件</div></div>
+                <div className="accounting-proof-card"><div className="accounting-proof-title">匯款附件</div><div className="accounting-proof-desc">上傳匯款截圖</div></div>
+                <div className="accounting-proof-card"><div className="accounting-proof-title">AI 辨識</div><div className="accounting-proof-desc">辨識結果</div></div>
               </div>
               {accountingNotice && <div className={`card product-notice-banner ${accountingNotice.tone} accounting-notice-banner`}><strong>{accountingNotice.text}</strong></div>}
 
               <section className="accounting-inline-records">
-                <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">依目前訂單資料即時顯示。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
+                <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">依訂單資料即時顯示。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
                 <div className="shipping-queue accounting-queue">
                   {filteredAccountingQueue.map((item: any) => (
                     <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
@@ -73,7 +73,7 @@ export default function AccountingModule(props: any) {
               <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">未稅價、稅額、運費與實收總額自動帶入。</div></div></div>
               <div className="form-grid two-col accounting-form-grid">
                 <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={accountingDraft?.orderNo || ''} readOnly /></label>
-                <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={accountingDraft?.customer || ''} onChange={(e) => updateAccountingDraftField('customer', e.target.value)} placeholder="可直接修正客戶姓名" /></label>
+                <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={accountingDraft?.customer || ''} onChange={(e) => updateAccountingDraftField('customer', e.target.value)} placeholder="客戶姓名" /></label>
                 <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={accountingDraft?.untaxedAmount || ''} readOnly /></label>
                 <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />稅率 %</span><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" /></label>
                 <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅金額</span><input value={String(accountingTaxAmount || 0)} readOnly /></label>
@@ -84,7 +84,7 @@ export default function AccountingModule(props: any) {
                 <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="可填收款證明、備註、人工確認資訊" /></label>
               </div>
               <div className="accounting-sync-card">
-                <div className="accounting-sync-title">狀態同步</div>
+                <div className="accounting-sync-title">狀態資訊</div>
                 <div className="accounting-sync-desc">
                   {selectedAccountingRecord?.paymentStatus === '已收款'
                     ? '此單已收款，倉儲端會依訂單狀態顯示可出貨。'
@@ -113,7 +113,7 @@ export default function AccountingModule(props: any) {
       {accountingTab === 'stats' && (
         <section className="accounting-stats-grid">
           <div className="card order-panel">
-            <div className="panel-head"><div><div className="panel-title">銷售統計</div><div className="panel-desc">營收、稅額、運費與毛利集中查看。</div></div><span className="badge badge-role">統計摘要</span></div>
+            <div className="panel-head"><div><div className="panel-title">銷售統計</div><div className="panel-desc">營收、稅額、運費與毛利。</div></div><span className="badge badge-role">統計</span></div>
             <div className="accounting-stat-cards">
               {accountingBoards[1].bullets.map((item: string) => <div key={item} className="accounting-mini-card"><div className="accounting-mini-title">{item}</div><div className="accounting-mini-value">{item === '區間營收' ? '$128,600' : item === '稅金總額' ? '$6,430' : '$3,120'}</div></div>)}
               <div className="accounting-mini-card accent"><div className="accounting-mini-title">毛利</div><div className="accounting-mini-value">$18,420</div></div>
@@ -127,7 +127,7 @@ export default function AccountingModule(props: any) {
 
           <div className="accounting-stats-side">
             <div className="card order-panel">
-              <div className="panel-head compact-head"><div><div className="panel-title">營收趨勢</div><div className="panel-desc">營收變化集中查看。</div></div></div>
+              <div className="panel-head compact-head"><div><div className="panel-title">營收趨勢</div><div className="panel-desc">查看營收變化。</div></div></div>
               <div className="trend-chart">
                 {accountingTrendBars.map((item: any) => <div key={item.label} className="trend-bar-col"><div className="trend-bar-wrap"><div className="trend-bar" style={{ height: `${item.value}%` }} /></div><span>{item.label}</span></div>)}
               </div>
@@ -139,9 +139,9 @@ export default function AccountingModule(props: any) {
 
       {accountingTab === 'ranking' && (
         <section className="three-column-grid accounting-ranking-grid">
-          <div className="card order-panel"><div className="panel-head compact-head"><div><div className="panel-title">銷售排行</div><div className="panel-desc">人員業績與退款扣回集中查看。</div></div></div><div className="ranking-list">{salesRanking.map((item: any, idx: number) => <div key={item.name} className="ranking-item"><div className="ranking-badge">#{idx + 1}</div><div className="ranking-main"><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.meta}</div></div><div className="ranking-value">{item.value}</div></div>)}</div></div>
-          <div className="card order-panel"><div className="panel-head compact-head"><div><div className="panel-title">熱銷商品</div><div className="panel-desc">商品銷售件數集中查看。</div></div></div><div className="ranking-list">{hotProductsBoard.map((item: any, idx: number) => <div key={item.name} className="ranking-item"><div className="ranking-badge">#{idx + 1}</div><div className="ranking-main"><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.meta}</div></div><div className="ranking-value">{item.value}</div></div>)}</div></div>
-          <div className="card order-panel"><div className="panel-head compact-head"><div><div className="panel-title">排行規則</div><div className="panel-desc">排行與統計規則一致。</div></div></div><div className="stack-list compact"><div>排行榜要扣除退款 / 退貨影響</div><div>熱銷商品可延伸到會計與倉儲共用</div><div>報表資料同步統計</div><div>會計頁維持獨立分頁</div></div></div>
+          <div className="card order-panel"><div className="panel-head compact-head"><div><div className="panel-title">銷售排名</div><div className="panel-desc">人員業績與退款扣回。</div></div></div><div className="ranking-list">{salesRanking.map((item: any, idx: number) => <div key={item.name} className="ranking-item"><div className="ranking-badge">#{idx + 1}</div><div className="ranking-main"><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.meta}</div></div><div className="ranking-value">{item.value}</div></div>)}</div></div>
+          <div className="card order-panel"><div className="panel-head compact-head"><div><div className="panel-title">熱銷商品</div><div className="panel-desc">商品銷售件數。</div></div></div><div className="ranking-list">{hotProductsBoard.map((item: any, idx: number) => <div key={item.name} className="ranking-item"><div className="ranking-badge">#{idx + 1}</div><div className="ranking-main"><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.meta}</div></div><div className="ranking-value">{item.value}</div></div>)}</div></div>
+          <div className="card order-panel"><div className="panel-head compact-head"><div><div className="panel-title">統計規則</div><div className="panel-desc">排行與統計規則一致。</div></div></div><div className="stack-list compact"><div>排行榜要扣除退款 / 退貨影響</div><div>熱銷商品可延伸到倉儲共用</div><div>報表資料同步統計</div><div>報表資料同步統計</div></div></div>
         </section>
       )}
     </>

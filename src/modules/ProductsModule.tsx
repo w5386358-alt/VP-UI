@@ -25,7 +25,7 @@ export default function ProductsModule(props: any) {
     <>
       <SectionIntro
         title="商品管理"
-        desc="商品資料、價格、庫存與狀態集中管理。"
+        desc="商品資料、價格、庫存與狀態。"
         stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
       />
 
@@ -41,7 +41,7 @@ export default function ProductsModule(props: any) {
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
-                <div className="panel-desc">可快速查看商品、價格、庫存與狀態。</div>
+                <div className="panel-desc">查看商品、價格、庫存與狀態。</div>
               </div>
               <button type="button" className="primary-button" onClick={openCreateProduct}>
                 <Package className="small-icon" />新增商品
@@ -49,9 +49,9 @@ export default function ProductsModule(props: any) {
             </div>
 
             <div className="product-editor-chip-row">
-              <span className="badge badge-neutral">商品管理</span>
-              <span className="badge badge-soft">卡片式</span>
-              <span className="badge badge-soft">右側編輯面板</span>
+              <span className="badge badge-neutral">商品列表</span>
+              <span className="badge badge-soft">卡片檢視</span>
+              <span className="badge badge-soft">編輯面板</span>
             </div>
 
             <div className="product-admin-grid">
@@ -79,7 +79,7 @@ export default function ProductsModule(props: any) {
                     <div className="metric-box"><span>總代理</span><strong>${item.generalAgentPrice ?? item.price}</strong></div>
                   </div>
                   <div className="metric-row three product-stock-row">
-                    <div className="metric-box"><span>目前套用</span><strong>{item.enabled ? '可販售' : '停用'}</strong></div>
+                    <div className="metric-box"><span>目前狀態</span><strong>{item.enabled ? '可販售' : '停用'}</strong></div>
                     <div className="metric-box"><span>庫存</span><strong>{item.stock}</strong></div>
                     <div className="metric-box"><span>狀態</span><strong>{item.enabled ? '啟用' : '停用'}</strong></div>
                   </div>
@@ -106,7 +106,7 @@ export default function ProductsModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                <div className="panel-desc">右側面板集中編輯商品資料。</div>
+                <div className="panel-desc">在這裡編輯商品資料。</div>
               </div>
               <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
             </div>
@@ -139,7 +139,7 @@ export default function ProductsModule(props: any) {
             </div>
 
             <div className="product-editor-status">
-              <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '目前啟用' : '目前停用'}</span>
+              <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
               {productEditorMode !== 'view' && (
                 <button type="button" className={`ghost-button compact-btn ${productDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))}>
                   {productDraft.enabled ? '切換停用' : '切換啟用'}
@@ -148,7 +148,7 @@ export default function ProductsModule(props: any) {
             </div>
 
             <div className="stack-list compact product-editor-notes">
-              <div>商品資料集中編輯</div>
+              <div>商品資料編輯</div>
               <div>支援新增、編輯、查看與狀態切換</div>
               <div>圖片與資料同步</div>
             </div>

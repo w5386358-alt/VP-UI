@@ -84,7 +84,7 @@ export default function OrdersModule(props: any) {
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
-                <div className="panel-desc">商品分類、搜尋與購物車集中整理。</div>
+                <div className="panel-desc">商品分類、搜尋與購物車。</div>
               </div>
               <span className="badge badge-soft">價格層級 / {priceTierLabel}</span>
             </div>
@@ -142,7 +142,7 @@ export default function OrdersModule(props: any) {
           <div className="cart-drawer-head">
             <div>
               <div className="panel-title">購物車</div>
-              <div className="panel-desc">商品、客戶與配送資料集中整理。</div>
+              <div className="panel-desc">商品、客戶與配送資料。</div>
             </div>
             <button type="button" className="drawer-close-button" onClick={() => setCartOpen(false)} aria-label="關閉購物車">
               <X className="small-icon" />
@@ -172,7 +172,7 @@ export default function OrdersModule(props: any) {
                   </div>
                 ))
               ) : (
-                <div className="empty-order-state drawer-empty-state">目前購物車沒有商品</div>
+                <div className="empty-order-state drawer-empty-state">購物車目前沒有商品</div>
               )}
             </div>
 
@@ -187,7 +187,7 @@ export default function OrdersModule(props: any) {
               <div className="panel-head compact-head">
                 <div>
                   <div className="panel-title drawer-inner-title">客戶與配送資料</div>
-                  <div className="panel-desc">可直接帶入或手動填寫。</div>
+                  <div className="panel-desc">可直接帶入或手動填寫</div>
                 </div>
               </div>
 

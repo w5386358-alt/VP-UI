@@ -4,8 +4,8 @@ export default function StaffModule(props: any) {
     <>
       <SectionIntro
         title="人員管理"
-        desc="登入 ID、角色、階級與啟用狀態集中管理。"
-        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限']}
+        desc="登入 ID、角色、階級與啟用狀態。"
+        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級']}
       />
       <section className="record-grid staff-grid">
         {filteredStaff.map((item: any) => (
@@ -18,7 +18,7 @@ export default function StaffModule(props: any) {
             <div className="data-card-subtitle">登入 ID：{item.loginId}</div>
             <div className="data-chip-row">
               <span className={getRankClass(item.rank)}>階級 / {item.rank}</span>
-              <span className="badge badge-neutral">權限設定</span>
+              <span className="badge badge-neutral">啟用管理</span>
             </div>
           </div>
         ))}

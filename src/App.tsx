@@ -596,31 +596,31 @@ const initialOrderRecords: OrderRecord[] = [
 const workflowCards: WorkflowCard[] = [
   {
     title: '訂購介面',
-    desc: '商品、客戶、價格與下單集中整理。',
+    desc: '商品、客戶與訂單。',
     accent: 'rose',
     icon: Sparkles,
     bullets: ['商品列表 / 分類 / 搜尋', '客戶資料 / 配送欄位', '訂單主檔 / 訂單明細'],
   },
   {
     title: '會計中心',
-    desc: '收款、退款、統計與排行集中整理。',
+    desc: '收款、退款與報表。',
     accent: 'gold',
     icon: CreditCard,
-    bullets: ['未稅價 / 稅額 / 實收', '已收款 / 已退款 狀態', '銷售統計 / 排行榜'],
+    bullets: ['未稅價 / 稅額 / 實收', '收款狀態 / 出貨狀態', '銷售統計 / 排名'],
   },
   {
     title: '倉儲中心',
-    desc: '對齊 inventory / inventory_logs / shipping，讓 QR、條碼、出貨與回補邏輯有對應 UI。',
+    desc: '出貨、庫存與查詢。',
     accent: 'pearl',
     icon: Boxes,
-    bullets: ['出貨區 / 庫存區 / 查詢區', '條碼 / QR 身分識別', '入庫 / 出貨 / 退貨 / 換貨'],
+    bullets: ['出貨 / 庫存 / 查詢', '商品條碼 / QR 身分識別', '入庫 / 出貨 / 退貨 / 換貨'],
   },
   {
     title: '個人資料',
-    desc: '個人資料、歷史訂單與業績集中整理。',
+    desc: '個人資料、訂單與業績。',
     accent: 'lavender',
     icon: ClipboardList,
-    bullets: ['我的歷史訂單', '累積業績 / 排名', '身分 / 階級 / 價格層級'],
+    bullets: ['歷史訂單', '累積業績 / 排名', '身分 / 階級 / 價格層級'],
   },
 ];
 
@@ -707,7 +707,7 @@ function getSearchPlaceholder(active: NavKey) {
     case 'profile':
       return '搜尋我的歷史訂單 / 訂單編號 / 狀態 / 日期';
     default:
-      return '搜尋系統資料與模組';
+      return '搜尋資料';
   }
 }
 
@@ -2031,16 +2031,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <aside className="sidebar">
         <div className="brand card">
           <div className="brand-kicker">VP SYSTEM</div>
-          <div className="brand-title">Vercel UI</div>
-          <div className="brand-subtitle">沿用目前版本，只整理 UI 與命名</div>
+          <div className="brand-title">VP UI</div>
+          <div className="brand-subtitle">營運後台</div>
         </div>
 
         <div className="card user-card">
-          <div className="muted-label">目前登入</div>
+          <div className="muted-label">登入帳號</div>
           <div className="user-name">{user.name}</div>
           <div className="user-id">ID：{user.loginId}</div>
           <div className="badge-row">
-            <span className="badge badge-role">身分 / {ROLE_LABEL[user.role]}</span>
+            <span className="badge badge-role">角色 / {ROLE_LABEL[user.role]}</span>
             <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
           </div>
         </div>
@@ -2054,10 +2054,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </div>
 
         <div className="card role-preview-card">
-          <div className="muted-label">權限預覽</div>
-          <div className="role-preview-title">目前視角：{ROLE_LABEL[user.role]}</div>
+          <div className="muted-label">權限切換</div>
+          <div className="role-preview-title">目前角色：{ROLE_LABEL[user.role]}</div>
           <div className="role-switch-group">
-            <div className="role-switch-label">身分</div>
+            <div className="role-switch-label">角色</div>
             <div className="role-switch-row">
               {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
                 <button
@@ -2088,11 +2088,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="permission-chip-row">
             <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            <span className="badge badge-neutral">價格 / {getPriceTierLabel(user.rankKey)}</span>
-            <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
-            <span className="badge badge-neutral">退費 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
+            <span className="badge badge-neutral">價格層級 / {getPriceTierLabel(user.rankKey)}</span>
+            <span className="badge badge-neutral">客戶範圍 / {customerScopeLabel}</span>
+            <span className="badge badge-neutral">退款 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
           </div>
-          <div className="role-preview-desc">依角色與階級顯示可用模組與資料範圍。</div>
+          <div className="role-preview-desc">切換角色與階級查看畫面。</div>
         </div>
 
         <div className="nav-group-title">主功能選單</div>
@@ -2115,7 +2115,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         {canAccessNav(user.role, 'accounting') && (
         <div className="card accounting-shortcut">
-          <div className="shortcut-title">快速切換</div>
+          <div className="shortcut-title">快捷入口</div>
           <button
             type="button"
             onClick={() => setActive('accounting')}
@@ -2127,8 +2127,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         )}
 
         <div className="sidebar-tip card">
-          <div className="sidebar-tip-title">目前進度</div>
-          <div className="sidebar-tip-desc">先完成 UI 整理，再補主流程串接。</div>
+          <div className="sidebar-tip-title">系統狀態</div>
+          <div className="sidebar-tip-desc">畫面整理完成，逐步補主流程。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -2141,7 +2141,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">作業區</div>
+            <div className="topbar-title">操作區</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
@@ -2149,7 +2149,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
             <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />刷新資料
+              <RefreshCw className="small-icon" />重新整理
             </button>
           </div>
         </div>
@@ -2168,8 +2168,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <div className="banner-title">{bootMessage}</div>
                 <div className="banner-desc">
                   {firebaseReady
-                    ? '目前已讀取商品、客戶與人員資料。'
-                    : '目前使用本地資料顯示。'}
+                    ? '已讀取商品、客戶與人員資料。'
+                    : '目前使用本地資料。'}
                 </div>
               </div>
             </div>
@@ -2177,8 +2177,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
             {!canAccessNav(user.role, active) && (
               <div className="card access-denied-card">
-                <div className="access-denied-title">此角色不可進入目前模組</div>
-                <div className="access-denied-desc">目前視角是「{ROLE_LABEL[user.role]}」，此模組未開放。</div>
+                <div className="access-denied-title">此角色不可進入此頁</div>
+                <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
               </div>
             )}
 
