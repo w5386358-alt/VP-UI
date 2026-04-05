@@ -172,6 +172,17 @@ export default function InventoryModule(props: any) {
                 </div>
                 <div className="warehouse-reminder-footer">目前提醒僅作 UI 判讀展示，後續再接真正連動。</div>
               </div>
+
+              <div className="warehouse-side-section warehouse-action-only">
+                <div className="accounting-action-row warehouse-action-row">
+                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
+                    <Truck className="small-icon" />依 SOP 完成出貨
+                  </button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
+                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
