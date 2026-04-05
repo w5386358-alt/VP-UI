@@ -111,15 +111,23 @@ export default function InventoryModule(props: any) {
               </div>
             </div>
 
-            <div className="warehouse-detail-grid">
-              <div className="card warehouse-detail-card">
-                <div className="warehouse-card-head">
-                  <div>
-                    <div className="flow-title">出貨 SOP 檢查點</div>
-                    <div className="flow-desc">已導入 SOP 作業邏輯展示，這版先讓流程與提醒先就位，實際自動連動暫停。</div>
-                  </div>
-                  <ClipboardCheck className="small-icon" />
+          </div>
+
+          <div className="warehouse-side warehouse-stack">
+            <div className="card warehouse-detail-card warehouse-ship-side-card sticky-panel">
+              <div className="warehouse-card-head">
+                <div>
+                  <div className="flow-title">出貨 SOP 檢查點 / 出貨資訊面板</div>
+                  <div className="flow-desc">出貨 SOP 檢查點與出貨資訊面板已整合，右側集中查看驗證狀態、掃碼資訊與列印操作。</div>
                 </div>
+                <div className="warehouse-ship-side-icons">
+                  <ClipboardCheck className="small-icon" />
+                  <FileText className="small-icon" />
+                </div>
+              </div>
+
+              <div className="warehouse-ship-side-section">
+                <div className="warehouse-side-section-title">SOP 檢查點</div>
                 <div className="warehouse-checklist">
                   {warehouseSopPoints.map((item: any) => (
                     <div key={item.title} className={`warehouse-check-item sop-status-${item.status}`}>
@@ -142,15 +150,8 @@ export default function InventoryModule(props: any) {
                 </div>
               </div>
 
-              <div className="card warehouse-detail-card">
-                <div className="warehouse-card-head">
-                  <div>
-                    <div className="flow-title">出貨資訊面板</div>
-                    <div className="flow-desc">這版改為純狀態串接：倉儲只看訂單是否已收款，再驗證可出貨數量，通過後才真正寫入出庫 logs。</div>
-                  </div>
-                  <FileText className="small-icon" />
-                </div>
-
+              <div className="warehouse-ship-side-section warehouse-ship-side-divider">
+                <div className="warehouse-side-section-title">出貨資訊</div>
                 <div className="warehouse-check-summary-grid">
                   <div className={`warehouse-check-summary-card ${warehouseShipValidation?.paymentOk ? 'ok' : 'bad'}`}>
                     <span>收款驗證</span>
@@ -195,26 +196,19 @@ export default function InventoryModule(props: any) {
                 </div>
                 <div className="warehouse-mini-note">列印會開啟可列印頁面，可直接使用瀏覽器另存為 PDF。</div>
               </div>
-            </div>
-          </div>
 
-          <div className="warehouse-side warehouse-stack">
-            <div className="card order-panel sticky-panel">
-              <div className="panel-head compact-head">
-                <div>
-                  <div className="panel-title">出貨區提醒</div>
-                  <div className="panel-desc">這裡已切成真正扣 log 的第一版。</div>
+              <div className="warehouse-ship-side-section warehouse-ship-side-divider">
+                <div className="warehouse-side-section-title">出貨區提醒</div>
+                <div className="stack-list compact warehouse-reminder-stack">
+                  {warehouseReminderItems.map((item: any, index: number) => (
+                    <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
+                      <BellRing className="small-icon" />
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
                 </div>
+                <div className="warehouse-reminder-footer">目前提醒僅作 UI 判讀展示，後續再接真正連動。</div>
               </div>
-              <div className="stack-list compact warehouse-reminder-stack">
-                {warehouseReminderItems.map((item: any, index: number) => (
-                  <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
-                    <BellRing className="small-icon" />
-                    <span>{item.text}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="warehouse-reminder-footer">目前提醒僅作 UI 判讀展示，後續再接真正連動。</div>
             </div>
           </div>
         </section>

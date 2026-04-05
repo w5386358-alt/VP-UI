@@ -2463,3 +2463,42 @@ button:hover { transform: translateY(-1px); }
   background: #fff8fb;
   color: #8a6b78;
 }
+
+.warehouse-ship-side-card {
+  padding: 20px;
+}
+
+.warehouse-ship-side-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #c53a67;
+}
+
+.warehouse-ship-side-section {
+  display: grid;
+  gap: 14px;
+}
+
+.warehouse-ship-side-divider {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed #ead5df;
+}
+
+.warehouse-side-section-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #c53a67;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1180px) {
+  .warehouse-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .warehouse-side {
+    order: -1;
+  }
+}
