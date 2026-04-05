@@ -52,7 +52,7 @@ type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
-type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number };
+type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
@@ -92,18 +92,6 @@ type ProductDraft = {
   enabled: boolean;
 };
 
-type AccountingDraft = {
-  orderNo: string;
-  customer: string;
-  untaxedAmount: string;
-  taxRate: string;
-  shippingFee: string;
-  actualReceived: string;
-  paymentMethod: string;
-  invoiceNo: string;
-  proof: string;
-};
-
 type OrderRecord = {
   orderNo: string;
   customer: string;
@@ -117,12 +105,6 @@ type OrderRecord = {
   mainStatus: string;
   date: string;
   remark: string;
-  taxRate?: number;
-  shippingFeeOverride?: number;
-  actualReceived?: number;
-  paymentMethod?: string;
-  invoiceNo?: string;
-  proof?: string;
   items: Array<{ code: string; name: string; qty: number; price: number }>;
 };
 
@@ -259,12 +241,12 @@ function buildRecentWarehouseLogs(logs: InventoryLog[]) {
 }
 
 const mockProducts: Product[] = [
-  { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, vipPrice: 899, agentPrice: 799, generalAgentPrice: 699, enabled: true, stock: 36 },
-  { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 18 },
-  { id: '3', code: 'P301', name: '瞬白激光精華4G', category: '保養', price: 1680, vipPrice: 1680, agentPrice: 1490, generalAgentPrice: 1350, enabled: true, stock: 9 },
-  { id: '4', code: 'P304', name: '奇肌修復全能霜', category: '保養', price: 1980, vipPrice: 1980, agentPrice: 1750, generalAgentPrice: 1590, enabled: false, stock: 0 },
-  { id: '5', code: 'P305', name: '超逆齡修復菁萃', category: '保養', price: 2280, vipPrice: 2280, agentPrice: 2050, generalAgentPrice: 1860, enabled: true, stock: 14 },
-  { id: '6', code: 'E408', name: '魔力抹茶機能飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 22 },
+  { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, enabled: true, stock: 36 },
+  { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, enabled: true, stock: 18 },
+  { id: '3', code: 'P301', name: '瞬白激光精華4G', category: '保養', price: 1680, enabled: true, stock: 9 },
+  { id: '4', code: 'P304', name: '奇肌修復全能霜', category: '保養', price: 1980, enabled: false, stock: 0 },
+  { id: '5', code: 'P305', name: '超逆齡修復菁萃', category: '保養', price: 2280, enabled: true, stock: 14 },
+  { id: '6', code: 'E408', name: '魔力抹茶機能飲', category: '保健', price: 1380, enabled: true, stock: 22 },
 ];
 
 const mockCustomers: Customer[] = [
@@ -325,26 +307,6 @@ const RANK_DISPLAY: Record<Rank, string> = {
   senior: '高級',
   normal: '普通',
 };
-
-
-function getPriceTierLabel(rankKey: Rank) {
-  if (rankKey === 'core') return '總代理價';
-  if (rankKey === 'elite' || rankKey === 'senior') return '代理價';
-  return 'VIP價';
-}
-
-function getPriceTierField(rankKey: Rank) {
-  if (rankKey === 'core') return 'generalAgentPrice';
-  if (rankKey === 'elite' || rankKey === 'senior') return 'agentPrice';
-  return 'vipPrice';
-}
-
-function getTierPrice(product: Product, rankKey: Rank) {
-  const field = getPriceTierField(rankKey);
-  const value = Number((product as any)[field]);
-  if (Number.isFinite(value) && value > 0) return value;
-  return Number(product.price || 0);
-}
 
 function canAccessNav(role: Role, key: NavKey) {
   return ROLE_NAV_ACCESS[role].includes(key);
@@ -529,6 +491,7 @@ const personalOrders = [
 ];
 
 
+const orderCategoryChips = ['全部商品', '保健', '保養', '優惠組合'];
 
 const quickCustomerCards = [
   { name: '王小美', phone: '0912345678', address: '新竹市東區食品路 88 號', method: '宅配' as ShippingMethod },
@@ -652,10 +615,6 @@ function normalizeProduct(id: string, data: any): Product {
     name: data.name || data.productName || '未命名商品',
     category: data.category || data.productCategory || '未分類',
     price: Number(data.price || data.vipPrice || data.salePrice || 0),
-    vipPrice: Number(data.vipPrice || data.price || data.salePrice || 0),
-    agentPrice: Number(data.agentPrice || data.dealerPrice || data.vipPrice || data.price || 0),
-    generalAgentPrice: Number(data.generalAgentPrice || data.masterPrice || data.agentPrice || data.dealerPrice || data.vipPrice || data.price || 0),
-    image: data.image || data.imageUrl || data.photo || '',
     enabled: data.enabled ?? data.isActive ?? true,
     stock: Number(data.stock || data.currentStock || 0),
   };
@@ -721,50 +680,6 @@ function makeEmptyProductDraft(nextCode = ''): ProductDraft {
   return { id: '', code: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
 }
 
-function getTodayDateInputValue() {
-  const now = new Date();
-  const taipei = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  return taipei.toISOString().slice(0, 10);
-}
-
-function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
-  if (!record) {
-    return {
-      orderNo: '',
-      customer: '',
-      untaxedAmount: '0',
-      taxRate: '0',
-      shippingFee: '0',
-      actualReceived: '0',
-      paymentMethod: '待確認',
-      invoiceNo: '待補',
-      proof: '待上傳',
-    };
-  }
-
-  const shippingFee = typeof record.shippingFeeOverride === 'number'
-    ? record.shippingFeeOverride
-    : record.shippingMethod === '宅配'
-      ? 100
-      : record.shippingMethod === '店到店'
-        ? 65
-        : 0;
-  const actualReceived = typeof record.actualReceived === 'number' ? record.actualReceived : record.amount;
-  const untaxedAmount = Math.max(actualReceived - shippingFee, 0);
-
-  return {
-    orderNo: record.orderNo,
-    customer: record.customer,
-    untaxedAmount: String(untaxedAmount),
-    taxRate: String(typeof record.taxRate === 'number' ? record.taxRate : 0),
-    shippingFee: String(shippingFee),
-    actualReceived: String(actualReceived),
-    paymentMethod: record.paymentMethod || (record.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
-    invoiceNo: record.invoiceNo || (record.paymentStatus.includes('退款') ? '退款單' : '待補'),
-    proof: record.proof || (record.paymentStatus === '已收款' ? '已上傳' : record.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
-  };
-}
-
 function toProductDraft(item: Product): ProductDraft {
   return {
     id: item.id,
@@ -816,8 +731,15 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro(_: { title: string; desc: string; stats?: string[] }) {
-  return null;
+function SectionIntro({ title, desc }: { title: string; desc: string; stats?: string[] }) {
+  return (
+    <div className="card section-intro-card">
+      <div>
+        <div className="section-intro-title">{title}</div>
+        <div className="section-intro-desc">{desc}</div>
+      </div>
+    </div>
+  );
 }
 
 function PlaceholderCard({ title, desc, bullets }: { title: string; desc: string; bullets: string[] }) {
@@ -875,11 +797,6 @@ export default function App() {
     text: '✅ 倉儲 SOP 第二包已裝入，可直接測防超賣與 QR 查詢',
     tone: 'success',
   });
-  const [warehouseKeyword, setWarehouseKeyword] = useState('');
-  const [warehousePaymentFilter, setWarehousePaymentFilter] = useState('全部');
-  const [warehouseShippingFilter, setWarehouseShippingFilter] = useState('全部');
-  const [warehouseDateStart, setWarehouseDateStart] = useState('2026-03-01');
-  const [warehouseDateEnd, setWarehouseDateEnd] = useState(getTodayDateInputValue());
   const [warehouseQueryMode, setWarehouseQueryMode] = useState<WarehouseQueryMode>('barcode');
   const [warehouseQueryInput, setWarehouseQueryInput] = useState('E401');
   const [warehouseQueryResult, setWarehouseQueryResult] = useState<{ title: string; desc: string; meta: string[] }[]>([
@@ -888,24 +805,19 @@ export default function App() {
   const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>(initialInventoryLogs);
   const [warehouseInboundQty, setWarehouseInboundQty] = useState(1);
   const [warehouseInboundQr, setWarehouseInboundQr] = useState('');
-  const [warehouseScanBarcode, setWarehouseScanBarcode] = useState('');
-  const [warehouseScanQr, setWarehouseScanQr] = useState('');
   const [selectedStockCode, setSelectedStockCode] = useState(mockProducts[0]?.code ?? '');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
-  const [accountingDateEnd, setAccountingDateEnd] = useState(getTodayDateInputValue());
+  const [accountingDateEnd, setAccountingDateEnd] = useState('2026-04-01');
   const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
-  const [accountingDraft, setAccountingDraft] = useState<AccountingDraft>(() => makeAccountingDraft(initialOrderRecords[0] || null));
   const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
     tone: 'success',
   });
   const [orderCategory, setOrderCategory] = useState('全部商品');
-  const orderCategoryChips = useMemo(() => ['全部商品', ...Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean)))], [products]);
-
   const [productEditorMode, setProductEditorMode] = useState<ProductEditorMode>('view');
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
@@ -1006,32 +918,25 @@ export default function App() {
     return staff.filter((s) => [s.name, s.loginId, s.role, s.rank].join(' ').toLowerCase().includes(q));
   }, [keyword, staff]);
 
-  const productCategories = useMemo(() => Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean))), [products]);
-
   const filteredOrderProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    const source = products
-      .filter((item) => item.enabled)
-      .filter((item) => orderCategory === '全部商品' || item.category === orderCategory)
-      .map((item) => ({ ...item, price: getTierPrice(item, user.rankKey) }));
+    const source = products.filter((item) => item.enabled).filter((item) => orderCategory === '全部商品' || item.category === orderCategory);
     if (!q) return source;
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
-  }, [keyword, products, orderCategory, user.rankKey]);
+  }, [keyword, products, orderCategory]);
 
   const shippingQueue = useMemo(() => {
     return orderRecords
-      .filter((item) => !item.paymentStatus.includes('已退款'))
+      .filter((item) => item.shippingStatus !== '已出貨' && item.mainStatus !== '已完成' && !item.paymentStatus.includes('退款'))
       .map((item) => ({
         orderNo: item.orderNo,
         customer: item.customer,
         paymentStatus: item.paymentStatus,
         shippingStatus: item.shippingStatus,
-        mainStatus: item.mainStatus,
         itemCount: item.itemCount,
-        urgency: item.paymentStatus === '待收款' ? 'high' : item.shippingStatus.includes('換貨') ? 'medium' : 'low',
+        urgency: item.paymentStatus === '待收款' ? 'high' : 'medium',
         shippingMethod: item.shippingMethod,
         address: item.address,
-        date: item.date,
         trackingNo: item.shippingStatus === '已出貨' ? `TRK-${item.orderNo.slice(-3)}` : '未建立',
         scanStatus: item.shippingStatus === '理貨中' ? '已完成商品掃描' : '待掃碼驗證',
         qrSummary: item.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / '),
@@ -1044,13 +949,13 @@ export default function App() {
       customer: item.customer,
       paymentStatus: item.paymentStatus,
       shippingStatus: item.shippingStatus,
-      amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
-      shippingFee: typeof item.shippingFeeOverride === 'number' ? item.shippingFeeOverride : item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
-      taxRate: typeof item.taxRate === 'number' ? item.taxRate : 0,
-      proof: item.proof || (item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
+      amount: item.amount,
+      shippingFee: item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
+      taxRate: 0,
+      proof: item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳',
       date: item.date.split(' ')[0],
-      paymentMethod: item.paymentMethod || (item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
-      invoiceNo: item.invoiceNo || (item.paymentStatus.includes('退款') ? '退款單' : '待補'),
+      paymentMethod: item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認',
+      invoiceNo: item.paymentStatus.includes('退款') ? '退款單' : '待補',
     }));
   }, [orderRecords]);
 
@@ -1085,110 +990,7 @@ export default function App() {
     ];
   }, [paymentQueue]);
 
-  const filteredWarehouseQueue = useMemo(() => {
-    const q = warehouseKeyword.trim().toLowerCase();
-    return shippingQueue.filter((item) => {
-      const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.mainStatus].join(' ').toLowerCase().includes(q);
-      const matchPayment = warehousePaymentFilter === '全部' || item.paymentStatus === warehousePaymentFilter;
-      const matchShipping = warehouseShippingFilter === '全部' || item.shippingStatus === warehouseShippingFilter;
-      const itemDateKey = item.date.split(' ')[0].replace(/\//g, '-');
-      const matchDateStart = !warehouseDateStart || itemDateKey >= warehouseDateStart;
-      const matchDateEnd = !warehouseDateEnd || itemDateKey <= warehouseDateEnd;
-      return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
-    });
-  }, [shippingQueue, warehouseKeyword, warehousePaymentFilter, warehouseShippingFilter, warehouseDateStart, warehouseDateEnd]);
-
-  const selectedWarehouseOrder = useMemo(() => filteredWarehouseQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || filteredWarehouseQueue[0] || null, [selectedWarehouseOrderNo, filteredWarehouseQueue]);
-
-  useEffect(() => {
-    setWarehouseScanBarcode('');
-    setWarehouseScanQr('');
-  }, [selectedWarehouseOrderNo]);
-
-  const warehouseExpectedScan = useMemo(() => {
-    if (!selectedWarehouseOrder) {
-      return {
-        barcodeOptions: [] as string[],
-        qrOptions: [] as string[],
-        qrByBarcode: {} as Record<string, string[]>,
-      };
-    }
-
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      return {
-        barcodeOptions: [] as string[],
-        qrOptions: [] as string[],
-        qrByBarcode: {} as Record<string, string[]>,
-      };
-    }
-
-    const qrByBarcode = order.items.reduce((acc, entry) => {
-      acc[entry.code] = findAvailableQrBuckets(inventoryLogs, entry.code).map((bucket) => bucket.qr.toUpperCase());
-      return acc;
-    }, {} as Record<string, string[]>);
-
-    const barcodeOptions = order.items.map((entry) => entry.code.toUpperCase());
-    const qrOptions = Array.from(new Set(Object.values(qrByBarcode).flat()));
-
-    return { barcodeOptions, qrOptions, qrByBarcode };
-  }, [selectedWarehouseOrder, orderRecords, inventoryLogs]);
-
-  const warehouseScanValidation = useMemo(() => {
-    if (!selectedWarehouseOrder) {
-      return {
-        barcodeOk: false,
-        qrOk: false,
-        allOk: false,
-        barcodeMessage: '請先選擇待出貨訂單',
-        qrMessage: '請先選擇待出貨訂單',
-      };
-    }
-
-    const barcode = warehouseScanBarcode.trim().toUpperCase();
-    const qr = warehouseScanQr.trim().toUpperCase();
-    const barcodeOptions = warehouseExpectedScan.barcodeOptions;
-
-    let barcodeOk = false;
-    let qrOk = false;
-    let barcodeMessage = barcodeOptions.length
-      ? `請掃描商品條碼（本單：${barcodeOptions.join(' / ')}）`
-      : '此訂單尚無可驗證商品條碼';
-    let qrMessage = '請掃描 QR 身分識別';
-
-    if (barcode) {
-      if (barcodeOptions.includes(barcode)) {
-        barcodeOk = true;
-        barcodeMessage = `✅ 商品條碼驗證通過：${barcode}`;
-        const allowedQr = warehouseExpectedScan.qrByBarcode[barcode] ?? [];
-        qrMessage = allowedQr.length
-          ? `請掃描 QR 身分識別（可用：${allowedQr.join(' / ')}）`
-          : `此商品目前查無可出貨 QR：${barcode}`;
-      } else {
-        barcodeMessage = `❌ 商品條碼不在本單內：${barcode}`;
-      }
-    }
-
-    if (qr) {
-      const allowedQr = barcodeOk
-        ? (warehouseExpectedScan.qrByBarcode[barcode] ?? [])
-        : warehouseExpectedScan.qrOptions;
-      if (allowedQr.includes(qr)) {
-        qrOk = true;
-        qrMessage = `✅ QR 身分識別驗證通過：${qr}`;
-      } else {
-        qrMessage = `❌ QR 身分識別不符：${qr}`;
-      }
-    }
-
-    return {
-      barcodeOk,
-      qrOk,
-      allOk: barcodeOk && qrOk,
-      barcodeMessage,
-      qrMessage,
-    };
-  }, [selectedWarehouseOrder, warehouseScanBarcode, warehouseScanQr, warehouseExpectedScan]);
+  const selectedWarehouseOrder = useMemo(() => shippingQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || shippingQueue[0] || null, [selectedWarehouseOrderNo, shippingQueue]);
 
   const warehouseShipValidation = useMemo(() => {
     if (!selectedWarehouseOrder) {
@@ -1208,16 +1010,11 @@ export default function App() {
       };
     }
 
-    const isExchangeOrder = selectedWarehouseOrder.orderNo.startsWith('EX') || selectedWarehouseOrder.shippingStatus.includes('換貨');
-    const paymentOk = selectedWarehouseOrder.paymentStatus === '已收款' || selectedWarehouseOrder.paymentStatus === '免收款' || isExchangeOrder;
+    const paymentOk = selectedWarehouseOrder.paymentStatus === '已收款' || selectedWarehouseOrder.paymentStatus === '免收款';
     const issues: string[] = [];
 
-    if (selectedWarehouseOrder.shippingStatus === '已出貨' || selectedWarehouseOrder.mainStatus === '已完成') {
-      issues.push('此訂單已完成出貨');
-    }
-
     if (!paymentOk) {
-      issues.push(isExchangeOrder ? '換貨單待確認，不可直接出貨' : '未收款，不可出貨');
+      issues.push('未收款，不可出貨');
     }
 
     order.items.forEach((entry) => {
@@ -1228,75 +1025,12 @@ export default function App() {
       }
     });
 
-    if (!warehouseScanBarcode.trim()) {
-      issues.push('待掃商品條碼驗證');
-    } else if (!warehouseScanValidation.barcodeOk) {
-      issues.push(warehouseScanValidation.barcodeMessage.replace('❌ ', ''));
-    }
-
-    if (!warehouseScanQr.trim()) {
-      issues.push('待掃 QR 身分識別驗證');
-    } else if (!warehouseScanValidation.qrOk) {
-      issues.push(warehouseScanValidation.qrMessage.replace('❌ ', ''));
-    }
-
     return {
       canShip: issues.length === 0,
       paymentOk,
       issues,
     };
-  }, [selectedWarehouseOrder, orderRecords, inventoryLogs, warehouseScanBarcode, warehouseScanQr, warehouseScanValidation]);
-
-
-  const warehouseSopPoints = useMemo(() => {
-    const order = selectedWarehouseOrder;
-    return [
-      {
-        title: '檢查收款狀態',
-        desc: order ? `目前款項狀態：${order.paymentStatus}` : '請先選擇訂單後檢查款項狀態。',
-        status: !order ? 'idle' : warehouseShipValidation.paymentOk ? 'done' : 'warning',
-      },
-      {
-        title: '檢查商品與數量',
-        desc: order ? `待處理商品：${order.qrSummary}` : '請先選擇訂單後檢查商品明細。',
-        status: !order ? 'idle' : warehouseShipValidation.issues.some((issue) => issue.includes('庫存不足')) ? 'warning' : 'done',
-      },
-      {
-        title: '檢查配送方式與地址',
-        desc: order ? `${order.shippingMethod} / ${order.address}` : '請先確認配送方式與地址。',
-        status: order ? 'done' : 'idle',
-      },
-      {
-        title: '確認出貨單與包裹標示',
-        desc: order ? `列印單號：${order.orderNo}，目前可先預覽列印內容。` : '請先選單後列印出貨單。',
-        status: order ? 'done' : 'idle',
-      },
-    ];
-  }, [selectedWarehouseOrder, warehouseShipValidation]);
-
-  const warehouseReminderItems = useMemo(() => {
-    const order = selectedWarehouseOrder;
-    if (!order) {
-      return [
-        { text: '請先從左側選擇待處理訂單，再進行倉儲作業。', tone: 'neutral' },
-        { text: '這版先導入提醒邏輯，實際自動連動暫停。', tone: 'neutral' },
-      ];
-    }
-
-    const items = [
-      { text: order.paymentStatus === '已收款' || order.paymentStatus === '免收款' ? '此訂單款項狀態正常，可進入下一步檢查。' : '此訂單尚未完成收款，請先人工覆核。', tone: order.paymentStatus === '已收款' || order.paymentStatus === '免收款' ? 'success' : 'danger' },
-      { text: order.shippingStatus === '待出貨' ? '目前為待出貨狀態，適合進行理貨與列印出貨單。' : `目前商品狀態：${order.shippingStatus}，請依流程續作。`, tone: order.shippingStatus === '待出貨' ? 'neutral' : 'warning' },
-      { text: warehouseShipValidation.issues.length ? `本單共有 ${warehouseShipValidation.issues.length} 個檢查提醒，請先處理再出貨。` : '目前未發現阻擋項，可進行人工確認。', tone: warehouseShipValidation.issues.length ? 'warning' : 'success' },
-    ];
-
-    if (order.shippingStatus.includes('換貨')) {
-      items.push({ text: '此單已進入換貨流程，需先確認換貨品項與新出貨單。', tone: 'warning' });
-    }
-    if (order.paymentStatus.includes('退款')) {
-      items.push({ text: '此單含退款狀態，請先確認會計與倉儲資料一致。', tone: 'danger' });
-    }
-    return items;
-  }, [selectedWarehouseOrder, warehouseShipValidation]);
+  }, [selectedWarehouseOrder, orderRecords, inventoryLogs]);
 
   const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode, stockSnapshot]);
 
@@ -1368,13 +1102,8 @@ export default function App() {
 
   const handleWarehouseShip = () => {
     if (!selectedWarehouseOrder) return;
-    const isExchangeOrder = selectedWarehouseOrder.orderNo.startsWith('EX') || selectedWarehouseOrder.shippingStatus.includes('換貨');
-    if (selectedWarehouseOrder.paymentStatus !== '已收款' && selectedWarehouseOrder.paymentStatus !== '免收款' && !isExchangeOrder) {
+    if (selectedWarehouseOrder.paymentStatus !== '已收款' && selectedWarehouseOrder.paymentStatus !== '免收款') {
       setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
-      return;
-    }
-    if (!warehouseScanValidation.allOk) {
-      setWarehouseNotice({ text: '❌ 請先完成商品條碼與 QR 身分識別驗證', tone: 'danger' });
       return;
     }
 
@@ -1424,71 +1153,6 @@ export default function App() {
     setWarehouseNotice({ text: `✅ 已依 inventory_logs 完成出貨：${order.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 訂單已同步出貨：${order.orderNo}`, tone: 'success' });
     setWarehouseQueryResult([{ title: order.orderNo, desc: `${order.customer} / 已出貨 / ${order.shippingMethod}`, meta: ['已寫入 inventory_logs', `出貨筆數：${allocations.length}`, `商品：${order.items.map((item) => `${item.code}*${item.qty}`).join(' / ')}`] }]);
-    setWarehouseScanBarcode('');
-    setWarehouseScanQr('');
-  };
-
-
-  const handleWarehouseReturn = () => {
-    if (!selectedWarehouseOrder) {
-      setWarehouseNotice({ text: '❌ 請先選擇訂單', tone: 'danger' });
-      return;
-    }
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
-      return;
-    }
-    if (order.shippingStatus === '已退貨') {
-      setWarehouseNotice({ text: '❌ 此訂單已退貨', tone: 'danger' });
-      return;
-    }
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const inboundLogs: InventoryLog[] = order.items.map((entry, index) => ({
-      id: `return-${order.orderNo}-${entry.code}-${index + 1}-${Date.now()}`,
-      createdAt: timestamp,
-      type: '入庫',
-      code: entry.code,
-      name: entry.name,
-      qty: entry.qty,
-      qr: `RET-${entry.code}`,
-      operator: user.loginId,
-      orderNo: order.orderNo,
-      note: `${order.orderNo} 退貨回補，${entry.code} ${entry.name} 回庫 ${entry.qty} 件`,
-    }));
-    setInventoryLogs((prev) => [...prev, ...inboundLogs]);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
-      ...item,
-      shippingStatus: '已退貨',
-      mainStatus: '退貨處理',
-      paymentStatus: item.paymentStatus === '已收款' ? '退款處理中' : item.paymentStatus,
-    } : item));
-    setWarehouseNotice({ text: `✅ 已完成退貨回補：${order.orderNo}`, tone: 'success' });
-    setAccountingNotice({ text: `✅ 倉儲已送回退貨狀態：${order.orderNo}`, tone: 'success' });
-  };
-
-  const handleWarehouseExchange = () => {
-    if (!selectedWarehouseOrder) {
-      setWarehouseNotice({ text: '❌ 請先選擇訂單', tone: 'danger' });
-      return;
-    }
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) {
-      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
-      return;
-    }
-    if (order.shippingStatus === '換貨待出庫') {
-      setWarehouseNotice({ text: '❌ 此訂單已在換貨流程', tone: 'danger' });
-      return;
-    }
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
-      ...item,
-      shippingStatus: '換貨待出庫',
-      mainStatus: '換貨處理',
-    } : item));
-    setSelectedWarehouseOrderNo(order.orderNo);
-    setWarehouseNotice({ text: `✅ 已切入換貨流程：${order.orderNo}`, tone: 'success' });
-    setOrderNotice({ text: `✅ 倉儲已標記換貨待出庫：${order.orderNo}`, tone: 'success' });
   };
 
   const handleWarehouseInbound = () => {
@@ -1528,108 +1192,7 @@ export default function App() {
 
   const handleWarehousePrint = () => {
     if (!selectedWarehouseOrder) return;
-    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
-    if (!order) return;
-
-    const shippingFeeValue = order.shippingFeeOverride ?? getShippingFee(order.shippingMethod);
-    const actualReceivedValue = order.actualReceived ?? order.amount;
-    const taxRateValue = order.taxRate ?? 0;
-    const untaxedBase = Math.max(actualReceivedValue - shippingFeeValue, 0);
-    const taxAmountValue = taxRateValue > 0 ? Math.round(untaxedBase * (taxRateValue / 100)) : 0;
-    const qrContent = order.orderNo;
-    const itemSummary = order.items.map((item) => `${item.code} × ${item.qty}`).join(' / ');
-    const lines = order.items.map((item) => `
-      <tr>
-        <td>${item.code}</td>
-        <td>${item.name}</td>
-        <td>${item.qty}</td>
-        <td>$${item.price.toLocaleString()}</td>
-        <td>$${(item.price * item.qty).toLocaleString()}</td>
-      </tr>`).join('');
-    const html = `<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8" />
-<title>${order.orderNo} 出貨單 PDF 預覽</title>
-<style>
-@page{size:A4;margin:14mm}
-body{font-family:Arial,"Microsoft JhengHei",sans-serif;padding:18px;color:#24324b;background:#f5f7fb}
-.sheet{max-width:920px;margin:0 auto;background:#fff;border:1px solid #e6d8df;border-radius:20px;padding:28px;box-shadow:0 10px 30px rgba(30,41,59,.08)}
-.head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px}
-.title{font-size:30px;font-weight:800;margin:0 0 6px}
-.sub{color:#6b7280;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
-.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
-.box{background:#faf7f8;border:1px solid #ecd9e1;border-radius:14px;padding:12px}
-.box span{display:block;font-size:12px;color:#8a6b78;margin-bottom:6px}
-.box strong{font-size:16px;word-break:break-word}
-.qr-box{border:1px dashed #d78ba8;border-radius:18px;padding:16px;background:#fff8fb;text-align:center;min-width:180px}
-.qr-code{font-size:20px;font-weight:800;letter-spacing:0.08em;margin-top:10px}
-.qr-note{margin-top:8px;font-size:12px;color:#8a6b78}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{border-bottom:1px solid #eee;padding:12px;text-align:left;font-size:14px;vertical-align:top}
-th{background:#fdf2f6;color:#874b61}
-.actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
-button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}
-.print{background:#ef5b96;color:#fff}
-.close{background:#eef2f7;color:#334155}
-.note{margin-top:18px;color:#64748b;font-size:13px;line-height:1.7}
-@media print{body{background:#fff;padding:0}.sheet{box-shadow:none;border:none;padding:0}.actions{display:none}}
-</style>
-</head>
-<body>
-  <div class="sheet">
-    <div class="head">
-      <div>
-        <div class="title">出貨單 / PDF 預覽</div>
-        <div class="sub">${order.orderNo} ・ 依 GAS 邏輯顯示可列印內容</div>
-        <div class="sub">建立時間：${order.date}</div>
-      </div>
-      <div class="qr-box">
-        <div><strong>QR 內容</strong></div>
-        <div class="qr-code">${qrContent}</div>
-        <div class="qr-note">列印時可作為出貨單辨識內容</div>
-      </div>
-    </div>
-    <div class="grid">
-      <div class="box"><span>訂單編號</span><strong>${order.orderNo}</strong></div>
-      <div class="box"><span>客戶姓名</span><strong>${order.customer}</strong></div>
-      <div class="box"><span>款項狀態</span><strong>${order.paymentStatus}</strong></div>
-      <div class="box"><span>商品狀態</span><strong>${order.shippingStatus}</strong></div>
-      <div class="box"><span>配送方式</span><strong>${order.shippingMethod}</strong></div>
-      <div class="box"><span>配送地址</span><strong>${order.address || '—'}</strong></div>
-      <div class="box"><span>商品摘要</span><strong>${itemSummary}</strong></div>
-      <div class="box"><span>備註</span><strong>${order.remark || '—'}</strong></div>
-    </div>
-    <table>
-      <thead><tr><th>商品編號</th><th>商品名稱</th><th>數量</th><th>單價</th><th>小計</th></tr></thead>
-      <tbody>${lines}</tbody>
-    </table>
-    <div class="grid-3">
-      <div class="box"><span>未稅價</span><strong>$${untaxedBase.toLocaleString()}</strong></div>
-      <div class="box"><span>稅率 / 稅額</span><strong>${taxRateValue}% / $${taxAmountValue.toLocaleString()}</strong></div>
-      <div class="box"><span>運費</span><strong>$${shippingFeeValue.toLocaleString()}</strong></div>
-      <div class="box"><span>實收總額</span><strong>$${actualReceivedValue.toLocaleString()}</strong></div>
-      <div class="box"><span>商品條碼</span><strong>${order.items.map((item) => item.code).join(' / ')}</strong></div>
-      <div class="box"><span>身分識別提示</span><strong>請依出貨區掃碼驗證後再列印</strong></div>
-    </div>
-    <div class="actions">
-      <button class="close" onclick="window.close()">關閉</button>
-      <button class="print" onclick="window.print()">列印 / 另存 PDF</button>
-    </div>
-    <div class="note">此頁可直接使用瀏覽器列印，或選擇另存為 PDF。若訂單含應稅條件，會同步顯示未稅、稅率、稅額與實收總額。</div>
-  </div>
-</body>
-</html>`;
-    const previewWindow = window.open('', '_blank', 'width=1024,height=920');
-    if (previewWindow) {
-      previewWindow.document.open();
-      previewWindow.document.write(html);
-      previewWindow.document.close();
-      setWarehouseNotice({ text: `✅ 已開啟出貨單 PDF 預覽：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
-      return;
-    }
-    setWarehouseNotice({ text: '❌ 無法開啟列印視窗，請確認瀏覽器是否阻擋彈窗', tone: 'danger' });
+    setWarehouseNotice({ text: `✅ 已開啟出貨單：${selectedWarehouseOrder.orderNo}`, tone: 'neutral' });
   };
 
   const handleWarehouseScanFill = () => {
@@ -1653,11 +1216,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const selectedOrderRecord = useMemo(() => orderRecords.find((item) => item.orderNo === selectedOrderNo) || orderRecords[0] || null, [orderRecords, selectedOrderNo]);
 
   useEffect(() => {
-    if (!filteredWarehouseQueue.length) return;
-    if (!filteredWarehouseQueue.some((item) => item.orderNo === selectedWarehouseOrderNo)) {
-      setSelectedWarehouseOrderNo(filteredWarehouseQueue[0].orderNo);
+    if (!shippingQueue.length) return;
+    if (!shippingQueue.some((item) => item.orderNo === selectedWarehouseOrderNo)) {
+      setSelectedWarehouseOrderNo(shippingQueue[0].orderNo);
     }
-  }, [filteredWarehouseQueue, selectedWarehouseOrderNo]);
+  }, [shippingQueue, selectedWarehouseOrderNo]);
 
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
@@ -1683,11 +1246,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
     [filteredAccountingQueue, selectedAccountingOrderNo],
   );
-
-  useEffect(() => {
-    const sourceRecord = orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null;
-    setAccountingDraft(makeAccountingDraft(sourceRecord));
-  }, [selectedAccountingRecord?.orderNo, orderRecords]);
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
@@ -1852,7 +1410,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const orderNo = makeNextOrderNo();
     const now = new Date();
     const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const defaultShippingFee = shippingMethod === '宅配' ? 100 : shippingMethod === '店到店' ? 65 : 0;
     const nextRecord: OrderRecord = {
       orderNo,
       customer: customerName.trim(),
@@ -1866,20 +1423,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       mainStatus: '處理中',
       date,
       remark: remark.trim() || '—',
-      taxRate: 0,
-      shippingFeeOverride: defaultShippingFee,
-      actualReceived: grandTotal,
-      paymentMethod: '待確認',
-      invoiceNo: '待補',
-      proof: '待上傳',
       items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
     };
     setOrderRecords((prev) => [nextRecord, ...prev]);
     setSelectedOrderNo(orderNo);
-    setSelectedAccountingOrderNo(orderNo);
-    setAccountingDraft(makeAccountingDraft(nextRecord));
-    setAccountingDateEnd(getTodayDateInputValue());
-    setAccountingNotice({ text: `✅ 訂單已串接會計：${orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 已建立訂單：${orderNo}`, tone: 'success' });
     setCart([]);
     setRemark('');
@@ -1921,42 +1468,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setSelectedWarehouseOrderNo(orderNo);
   }
 
-  function updateAccountingDraftField(field: keyof AccountingDraft, value: string) {
-    setAccountingDraft((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function saveAccountingDraft() {
-    if (!accountingDraft.orderNo) {
-      setAccountingNotice({ text: '❌ 尚未選擇訂單', tone: 'danger' });
-      return false;
-    }
-
-    const untaxedAmount = Number(accountingDraft.untaxedAmount || 0);
-    const taxRate = Number(accountingDraft.taxRate || 0);
-    const shippingFee = Number(accountingDraft.shippingFee || 0);
-    const actualReceived = Number(accountingDraft.actualReceived || 0);
-
-    if ([untaxedAmount, taxRate, shippingFee, actualReceived].some((value) => Number.isNaN(value) || value < 0)) {
-      setAccountingNotice({ text: '❌ 金額或稅率格式錯誤', tone: 'danger' });
-      return false;
-    }
-
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === accountingDraft.orderNo ? {
-      ...item,
-      customer: accountingDraft.customer.trim() || item.customer,
-      amount: actualReceived,
-      taxRate,
-      shippingFeeOverride: shippingFee,
-      actualReceived,
-      paymentMethod: accountingDraft.paymentMethod.trim() || '待確認',
-      invoiceNo: accountingDraft.invoiceNo.trim() || '待補',
-      proof: accountingDraft.proof.trim() || '待上傳',
-    } : item));
-    setAccountingNotice({ text: `✅ 已更新本次訂單：${accountingDraft.orderNo}`, tone: 'success' });
-    setOrderNotice({ text: `✅ 會計欄位已回寫：${accountingDraft.orderNo}`, tone: 'success' });
-    return true;
-  }
-
   function selectAccountingOrder(orderNo: string) {
     setSelectedAccountingOrderNo(orderNo);
     setAccountingNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
@@ -1964,7 +1475,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   function triggerAccountingAction(action: 'pay' | 'refund') {
     if (!selectedAccountingRecord) return;
-    if (!saveAccountingDraft()) return;
     if (action === 'pay') {
       if (selectedAccountingRecord.paymentStatus === '已收款') {
         setAccountingNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
@@ -2052,7 +1562,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="permission-chip-row">
             <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            <span className="badge badge-neutral">價格 / {getPriceTierLabel(user.rankKey)}</span>
             <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
             <span className="badge badge-neutral">退費 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
           </div>
@@ -2102,6 +1611,22 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
+        <div className="hero-card card">
+          <div className="hero-copy">
+            <div className="page-kicker">VP 訂購系統 / Vercel UI</div>
+            <h1>沿用既有版本，專做高質感 UI 升級</h1>
+            <p>
+              這版以你現在的作品為基底，不亂改功能結構，只先把畫面層級、閱讀節奏、手機體驗與模組布局整理到可繼續擴充的狀態。
+            </p>
+            <div className="hero-badges">
+              <span className="badge badge-soft">不破壞版本</span>
+              <span className="badge badge-soft">保留 Firebase 接法</span>
+              <span className="badge badge-soft">對齊 GAS 功能邏輯</span>
+            </div>
+          </div>
+
+        </div>
+
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
@@ -2150,7 +1675,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
             {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'customers' && (
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
@@ -2159,16 +1684,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品 / 活動', desc: '這裡預留新品消息、主推活動或輪播圖片。' }, { title: '出貨提醒', desc: '可顯示付款提醒、出貨公告、節日配送異動。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} accountingDraft={accountingDraft} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
-              <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
           </>
         )}

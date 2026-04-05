@@ -1,7 +1,7 @@
 import { QrCode, RefreshCw, Search, CalendarRange } from 'lucide-react';
 
 export default function ProfileModule(props: any) {
-  const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, priceTierLabel, SectionIntro, SummaryCard } = props;
+  const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, SectionIntro, SummaryCard } = props;
   return (
     <>
       <SectionIntro
@@ -29,7 +29,7 @@ export default function ProfileModule(props: any) {
             <div className="profile-main">
               <div className="profile-name">{user.name}</div>
               <div className="profile-id-row">員工編號：VP001 / 登入 ID：{user.loginId}</div>
-              <div className="data-chip-row"><span className="badge badge-role">身分 / 管理員</span><span className={getRankClass(user.rank)}>階級 / {user.rank}</span><span className="badge badge-neutral">價格層級 / {priceTierLabel}</span></div>
+              <div className="data-chip-row"><span className="badge badge-role">身分 / 管理員</span><span className={getRankClass(user.rank)}>階級 / {user.rank}</span><span className="badge badge-neutral">價格層級 / 總代理價格</span></div>
             </div>
             <div className="profile-qr-box"><QrCode className="profile-qr-icon" /><span>員編 QR 預留</span></div>
           </div>

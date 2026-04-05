@@ -9,7 +9,7 @@ export default function AccountingModule(props: any) {
     accountingShippingFilter, setAccountingShippingFilter,
     accountingDateStart, setAccountingDateStart,
     accountingDateEnd, setAccountingDateEnd,
-    accountingNotice, selectedAccountingRecord, accountingDraft, updateAccountingDraftField, saveAccountingDraft,
+    accountingNotice, selectedAccountingRecord,
     triggerAccountingAction, selectAccountingOrder,
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
     SectionIntro, SummaryCard,
@@ -52,15 +52,13 @@ export default function AccountingModule(props: any) {
             <div className="card order-panel">
               <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">先固定你要的結算欄位，不碰原本邏輯。</div></div></div>
               <div className="form-grid two-col accounting-form-grid">
-                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={accountingDraft?.orderNo || ''} readOnly /></label>
-                <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={accountingDraft?.customer || ''} onChange={(e) => updateAccountingDraftField('customer', e.target.value)} placeholder="可直接修正客戶姓名" /></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={accountingDraft?.untaxedAmount || ''} onChange={(e) => updateAccountingDraftField('untaxedAmount', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={accountingDraft?.shippingFee || ''} onChange={(e) => updateAccountingDraftField('shippingFee', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={accountingDraft?.actualReceived || ''} onChange={(e) => updateAccountingDraftField('actualReceived', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />付款方式</span><input value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)} placeholder="例如：銀行轉帳" /></label>
-                <label className="field-card"><span className="field-label"><FileText className="small-icon" />發票 / 單號</span><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="可填發票或退款單號" /></label>
-                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="可填收款證明、備註、人工確認資訊" /></label>
+                <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={selectedAccountingRecord?.orderNo || ''} readOnly /></label>
+                <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={selectedAccountingRecord?.customer || ''} readOnly /></label>
+                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={String(Math.max((selectedAccountingRecord?.amount || 0) - (selectedAccountingRecord?.shippingFee || 0), 0))} readOnly /></label>
+                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input value={String(selectedAccountingRecord?.taxRate || 0)} readOnly /></label>
+                <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={String(selectedAccountingRecord?.shippingFee || 0)} readOnly /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(selectedAccountingRecord?.amount || 0)} readOnly /></label>
+                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} readOnly value={`付款方式：${selectedAccountingRecord?.paymentMethod || '-'}\n發票：${selectedAccountingRecord?.invoiceNo || '-'}\n證明：${selectedAccountingRecord?.proof || '-'}`} /></label>
               </div>
               <div className="accounting-sync-card">
                 <div className="accounting-sync-title">流程狀態提醒</div>
@@ -73,7 +71,6 @@ export default function AccountingModule(props: any) {
                 </div>
               </div>
               <div className="accounting-action-row">
-                <button type="button" className="ghost-button compact-btn" onClick={saveAccountingDraft}><FileText className="small-icon" />儲存本次訂單</button>
                 <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
                 <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><RefreshCw className="small-icon" />確認退款</button>
               </div>
