@@ -2399,3 +2399,17 @@ button:hover { transform: translateY(-1px); }
   .catalog-grid{grid-template-columns:1fr;}
 }
 .section-intro-card{display:none;}
+
+
+.warehouse-filter-grid { margin-bottom: 16px; }
+.warehouse-order-statuses { flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.warehouse-action-row { flex-wrap: wrap; }
+.warehouse-mini-note { margin-top: 10px; color: #7b7280; font-size: 13px; }
+.warehouse-empty-state {
+  padding: 18px;
+  border: 1px dashed #e4cfd7;
+  border-radius: 16px;
+  text-align: center;
+  color: #8a7180;
+  background: #fff8fb;
+}

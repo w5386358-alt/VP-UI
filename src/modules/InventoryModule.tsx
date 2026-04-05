@@ -1,17 +1,30 @@
-import { Truck, Boxes, Search, QrCode, FileText, Receipt, History } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
     lowStockCount,
     shippingQueue,
+    filteredWarehouseQueue,
     warehouseTab,
     setWarehouseTab,
     selectedWarehouseOrder,
     selectedWarehouseOrderNo,
     setSelectedWarehouseOrderNo,
     warehouseNotice,
+    warehouseKeyword,
+    setWarehouseKeyword,
+    warehousePaymentFilter,
+    setWarehousePaymentFilter,
+    warehouseShippingFilter,
+    setWarehouseShippingFilter,
+    warehouseDateStart,
+    setWarehouseDateStart,
+    warehouseDateEnd,
+    setWarehouseDateEnd,
     shippingChecklist,
     handleWarehouseShip,
+    handleWarehouseReturn,
+    handleWarehouseExchange,
     handleWarehouseInbound,
     warehouseInboundQty,
     setWarehouseInboundQty,
@@ -64,20 +77,29 @@ export default function InventoryModule(props: any) {
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
               </div>
 
+              <div className="accounting-filter-grid warehouse-filter-grid">
+                <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶輸入</span><input value={warehouseKeyword} onChange={(e) => setWarehouseKeyword(e.target.value)} placeholder="輸入訂單編號、客戶姓名、款項狀態、商品狀態" /></label>
+                <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />起算日</span><input type="date" value={warehouseDateStart} onChange={(e) => setWarehouseDateStart(e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />結算日</span><input type="date" value={warehouseDateEnd} onChange={(e) => setWarehouseDateEnd(e.target.value)} /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />款項狀態</span><select value={warehousePaymentFilter} onChange={(e) => setWarehousePaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
+                <label className="field-card"><span className="field-label"><Truck className="small-icon" />商品狀態</span><select value={warehouseShippingFilter} onChange={(e) => setWarehouseShippingFilter(e.target.value)}><option value="全部">全部</option><option value="待出貨">待出貨</option><option value="理貨中">理貨中</option><option value="已出貨">已出貨</option><option value="換貨待出庫">換貨待出庫</option><option value="已退貨">已退貨</option></select></label>
+              </div>
+
               <div className="shipping-queue">
-                {shippingQueue.map((item: any) => (
+                {filteredWarehouseQueue.map((item: any) => (
                   <button key={item.orderNo} type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
                     <div>
                       <div className="shipping-order">{item.orderNo}</div>
-                      <div className="shipping-meta">{item.customer} / {item.itemCount} 件 / {item.paymentStatus}</div>
+                      <div className="shipping-meta">{item.customer} / {item.date} / {item.itemCount} 件 / {item.paymentStatus}</div>
                     </div>
-                    <div className="shipping-actions">
-                      <span className={`badge ${item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? 'badge-success' : 'badge-danger'}`}>{item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? '可出貨' : '待收款'}</span>
-                      <span className={`badge ${item.urgency === 'high' ? 'badge-danger' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                      <span className="badge badge-soft">切換</span>
+                    <div className="shipping-actions warehouse-order-statuses">
+                      <span className={`badge ${item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                      <span className={`badge ${item.shippingStatus === '已出貨' ? 'badge-success' : item.shippingStatus === '已退貨' ? 'badge-neutral' : item.shippingStatus.includes('換貨') ? 'badge-soft' : 'badge-danger'}`}>{item.shippingStatus}</span>
+                      <span className="badge badge-soft">{item.mainStatus}</span>
                     </div>
                   </button>
                 ))}
+                {!filteredWarehouseQueue.length && <div className="warehouse-empty-state">目前查無符合條件的訂單</div>}
               </div>
             </div>
 
@@ -136,12 +158,15 @@ export default function InventoryModule(props: any) {
                   </div>
                 )}
 
-                <div className="accounting-action-row">
+                <div className="accounting-action-row warehouse-action-row">
                   <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
                     <Truck className="small-icon" />依 SOP 完成出貨
                   </button>
-                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
+                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
                 </div>
+                <div className="warehouse-mini-note">列印會開啟可列印頁面，可直接使用瀏覽器另存為 PDF。</div>
               </div>
             </div>
           </div>
@@ -160,6 +185,9 @@ export default function InventoryModule(props: any) {
                 <div>依 QR 剩餘數量分配扣減</div>
                 <div>扣減來源改為 inventory_logs</div>
                 <div>訂單完成後同步改出貨狀態</div>
+                <div>退貨回補會直接寫入 inventory_logs</div>
+                <div>換貨會先轉成換貨待出庫再出貨</div>
+                <div>列印出貨單可直接另存 PDF</div>
               </div>
             </div>
           </div>
