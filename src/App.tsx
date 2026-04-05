@@ -1696,7 +1696,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const selectedAccountingRecord = useMemo(
     () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
-    [filteredAccountingQueue, selectedAccountingOrderNo],
+    [filteredAccountingQueue, selectedAccountingOrderNo, paymentQueue],
   );
 
   useEffect(() => {

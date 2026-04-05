@@ -2490,35 +2490,13 @@ button:hover { transform: translateY(-1px); }
 }
 
 
-.accounting-record-head {
-  align-items: flex-start;
-  gap: 12px;
+.accounting-record-panel-inline {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
 }
 
-.accounting-record-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: stretch;
-  justify-content: flex-end;
-}
-
-.accounting-date-card {
-  min-width: 150px;
-}
-
-.accounting-date-card input {
-  min-height: 40px;
-}
-
-@media (max-width: 900px) {
-  .accounting-record-tools {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .accounting-date-card {
-    flex: 1 1 0;
-    min-width: 0;
-  }
+.accounting-record-panel-inline .accounting-queue {
+  max-height: 420px;
+  padding-right: 4px;
 }
