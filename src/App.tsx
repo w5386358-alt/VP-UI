@@ -1685,7 +1685,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
       return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
     });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+  }, [paymentQueue, accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
 
   useEffect(() => {
     if (!filteredAccountingQueue.length) return;
