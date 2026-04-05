@@ -1,4 +1,4 @@
-import { Truck, Boxes, Search, History, CalendarRange, CreditCard, BellRing, ClipboardCheck } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -21,7 +21,12 @@ export default function InventoryModule(props: any) {
     setWarehouseDateStart,
     warehouseDateEnd,
     setWarehouseDateEnd,
+    shippingChecklist,
+    warehouseSopPoints,
     warehouseReminderItems,
+    handleWarehouseShip,
+    handleWarehouseReturn,
+    handleWarehouseExchange,
     handleWarehouseInbound,
     warehouseInboundQty,
     setWarehouseInboundQty,
@@ -33,6 +38,7 @@ export default function InventoryModule(props: any) {
     setWarehouseScanQr,
     warehouseExpectedScan,
     warehouseScanValidation,
+    handleWarehousePrint,
     inventoryFlow,
     stockSnapshot,
     selectedStockCode,
@@ -153,6 +159,16 @@ export default function InventoryModule(props: any) {
                 )}
               </div>
 
+              <div className="warehouse-side-section">
+                <div className="accounting-action-row warehouse-action-row">
+                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
+                    <Truck className="small-icon" />依 SOP 完成出貨
+                  </button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
+                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
+                </div>
+              </div>
 
               <div className="warehouse-side-section warehouse-reminder-panel">
                 <div className="panel-head compact-head">
@@ -171,17 +187,6 @@ export default function InventoryModule(props: any) {
                   ))}
                 </div>
                 <div className="warehouse-reminder-footer">目前提醒僅作 UI 判讀展示，後續再接真正連動。</div>
-              </div>
-
-              <div className="warehouse-side-section warehouse-action-only">
-                <div className="accounting-action-row warehouse-action-row">
-                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
-                    <Truck className="small-icon" />依 SOP 完成出貨
-                  </button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
-                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
-                </div>
               </div>
             </div>
           </div>
