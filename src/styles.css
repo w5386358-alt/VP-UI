@@ -2464,41 +2464,27 @@ button:hover { transform: translateY(-1px); }
   color: #8a6b78;
 }
 
-.warehouse-ship-side-card {
-  padding: 20px;
+.warehouse-side-panel {
+  display: grid;
+  gap: 18px;
 }
 
-.warehouse-ship-side-icons {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #c53a67;
-}
-
-.warehouse-ship-side-section {
+.warehouse-side-section {
   display: grid;
   gap: 14px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(239, 198, 213, 0.7);
 }
 
-.warehouse-ship-side-divider {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px dashed #ead5df;
+.warehouse-side-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
-.warehouse-side-section-title {
-  font-size: 14px;
-  font-weight: 900;
-  color: #c53a67;
-  letter-spacing: 0.04em;
+.warehouse-side-checklist .warehouse-checklist {
+  margin-top: 0;
 }
 
-@media (max-width: 1180px) {
-  .warehouse-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .warehouse-side {
-    order: -1;
-  }
+.warehouse-reminder-panel .panel-head {
+  margin-bottom: 0;
 }
