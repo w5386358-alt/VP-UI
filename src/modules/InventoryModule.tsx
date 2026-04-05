@@ -1,4 +1,4 @@
-import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck } from 'lucide-react';
+import { Truck, Boxes, Search, History, CalendarRange, CreditCard, BellRing, ClipboardCheck } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -21,12 +21,7 @@ export default function InventoryModule(props: any) {
     setWarehouseDateStart,
     warehouseDateEnd,
     setWarehouseDateEnd,
-    shippingChecklist,
-    warehouseSopPoints,
     warehouseReminderItems,
-    handleWarehouseShip,
-    handleWarehouseReturn,
-    handleWarehouseExchange,
     handleWarehouseInbound,
     warehouseInboundQty,
     setWarehouseInboundQty,
@@ -38,7 +33,6 @@ export default function InventoryModule(props: any) {
     setWarehouseScanQr,
     warehouseExpectedScan,
     warehouseScanValidation,
-    handleWarehousePrint,
     inventoryFlow,
     stockSnapshot,
     selectedStockCode,
@@ -159,75 +153,6 @@ export default function InventoryModule(props: any) {
                 )}
               </div>
 
-              <div className="warehouse-side-section warehouse-side-checklist">
-                <div className="warehouse-card-head compact-head">
-                  <div>
-                    <div className="flow-title">SOP 檢查點</div>
-                    <div className="flow-desc">先確認收款、商品、QR 與提醒，再進入出貨動作。</div>
-                  </div>
-                  <FileText className="small-icon" />
-                </div>
-
-                <div className="warehouse-checklist">
-                  {warehouseSopPoints.map((item: any) => (
-                    <div key={item.title} className={`warehouse-check-item sop-status-${item.status}`}>
-                      <div className="warehouse-check-title-row">
-                        <div className="warehouse-check-title">{item.title}</div>
-                        <span className={`badge ${item.status === 'done' ? 'badge-success' : item.status === 'warning' ? 'badge-danger' : 'badge-neutral'}`}>{item.status === 'done' ? '已帶入' : item.status === 'warning' ? '待覆核' : '待選單'}</span>
-                      </div>
-                      <div className="warehouse-check-desc">{item.desc}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="warehouse-mini-sop-list">
-                  {shippingChecklist.map((item: any) => (
-                    <div key={item.title} className="warehouse-mini-sop-item">
-                      <strong>{item.title}</strong>
-                      <span>{item.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="warehouse-side-section">
-                <div className="warehouse-card-head compact-head">
-                  <div>
-                    <div className="flow-title">出貨單預覽 / PDF</div>
-                    <div className="flow-desc">顯示邏輯比照 GAS 出貨單方向，可直接列印或另存 PDF。</div>
-                  </div>
-                  <Receipt className="small-icon" />
-                </div>
-
-                <div className="warehouse-print-box">
-                  <div className="warehouse-print-sheet">
-                    <div className="warehouse-print-header">
-                      <div>
-                        <div className="warehouse-print-brand">VP 出貨單</div>
-                        <div className="warehouse-print-order">{selectedWarehouseOrder?.orderNo || '未選擇訂單'}</div>
-                      </div>
-                      <QrCode className="warehouse-print-qr" />
-                    </div>
-                    <div className="warehouse-print-grid">
-                      <div><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
-                      <div><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
-                      <div><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
-                      <div><span>件數</span><strong>{selectedWarehouseOrder?.itemCount || '-'}</strong></div>
-                    </div>
-                    <div className="warehouse-print-note">列印前預覽：可直接開啟列印視窗或另存為 PDF。</div>
-                  </div>
-                </div>
-
-                <div className="accounting-action-row warehouse-action-row">
-                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
-                    <Truck className="small-icon" />依 SOP 完成出貨
-                  </button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
-                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
-                </div>
-                <div className="warehouse-mini-note">列印會開啟可列印頁面，可直接使用瀏覽器另存為 PDF。</div>
-              </div>
 
               <div className="warehouse-side-section warehouse-reminder-panel">
                 <div className="panel-head compact-head">
