@@ -54,7 +54,7 @@ type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' |
 
 type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
-type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; initialPassword?: string; permissionNote?: string };
+type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[] };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
 
 type PermissionProfile = {
@@ -93,6 +93,18 @@ type ProductDraft = {
   enabled: boolean;
 };
 
+type StaffEditorMode = 'create' | 'edit' | 'view';
+
+type StaffDraft = {
+  id: string;
+  name: string;
+  loginId: string;
+  role: string;
+  rank: string;
+  enabled: boolean;
+  password: string;
+};
+
 type AccountingDraft = {
   orderNo: string;
   customer: string;
@@ -103,16 +115,6 @@ type AccountingDraft = {
   paymentMethod: string;
   invoiceNo: string;
   proof: string;
-};
-
-type StaffDraft = {
-  id: string;
-  name: string;
-  loginId: string;
-  role: string;
-  rank: string;
-  enabled: boolean;
-  initialPassword: string;
 };
 
 type OrderRecord = {
@@ -285,9 +287,9 @@ const mockCustomers: Customer[] = [
 ];
 
 const mockStaff: Staff[] = [
-  { id: 's1', name: '吳秉宸', loginId: 'vp001', role: '系統', rank: '核心人員', enabled: true, initialPassword: 'vp001@123', permissionNote: '全模組管理 / 最高權限' },
-  { id: 's2', name: '王小婷', loginId: 'vp002', role: '銷售', rank: '普通銷售', enabled: true, initialPassword: 'vp002@123', permissionNote: '可看自己的客戶與訂單 / 基礎權限' },
-  { id: 's3', name: '陳小安', loginId: 'vp003', role: '會計', rank: '高級銷售', enabled: true, initialPassword: 'vp003@123', permissionNote: '可看收退款 / 可用代理價' },
+  { id: 's1', name: '吳秉宸', loginId: 'vp001', role: '系統組', rank: '核心人員', enabled: true, password: 'vp001', permissions: ['全模組管理', '價格調整', '退款審核', '庫存覆核'] },
+  { id: 's2', name: '王小婷', loginId: 'vp002', role: '銷售組', rank: '普通銷售', enabled: true, password: 'vp002', permissions: ['訂購操作', '個人客戶查看'] },
+  { id: 's3', name: '陳小安', loginId: 'vp003', role: '行政組', rank: '高級銷售', enabled: true, password: 'vp003', permissions: ['收退款作業', '會計資料查看'] },
 ];
 
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -661,7 +663,6 @@ function normalizeProduct(id: string, data: any): Product {
     id,
     code: data.code || data.productCode || data.productId || '-',
     name: data.name || data.productName || '未命名商品',
-    barcode: data.barcode || data.productBarcode || data.sku || data.code || data.productCode || data.productId || '-',
     category: data.category || data.productCategory || '未分類',
     price: Number(data.price || data.vipPrice || data.salePrice || 0),
     vipPrice: Number(data.vipPrice || data.price || data.salePrice || 0),
@@ -692,8 +693,8 @@ function normalizeStaff(id: string, data: any): Staff {
     role: data.role || '未設定',
     rank: data.rank || '普通銷售',
     enabled: data.enabled ?? data.isActive ?? true,
-    initialPassword: data.initialPassword || data.password || '123456',
-    permissionNote: data.permissionNote || '',
+    password: data.password || data.loginId || data.staffId || id,
+    permissions: Array.isArray(data.permissions) ? data.permissions : undefined,
   };
 }
 
@@ -732,25 +733,7 @@ function getShippingFee(method: ShippingMethod) {
 }
 
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
-  return { id: '', code: nextCode, barcode: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
-}
-
-function makeInitialPassword(loginId: string) {
-  const seed = loginId.trim() || 'vp000';
-  return `${seed}@123`;
-}
-
-function getPermissionNote(role: string, rank: string) {
-  const parts: string[] = [];
-  if (role === '系統' || role === '管理員') parts.push('全模組管理');
-  if (role === '會計') parts.push('可看收退款');
-  if (role === '倉儲') parts.push('可看出入庫');
-  if (role === '銷售') parts.push('可看自己的客戶與訂單');
-  if (rank.includes('核心')) parts.push('最高權限');
-  else if (rank.includes('菁英')) parts.push('可參與管理');
-  else if (rank.includes('高級')) parts.push('可用代理價');
-  else parts.push('基礎權限');
-  return parts.join(' / ');
+  return { id: '', code: nextCode, barcode: '', name: '', category: '保健', price: '', stock: '', enabled: true };
 }
 
 function getTodayDateInputValue() {
@@ -816,12 +799,52 @@ function toProductDraft(item: Product): ProductDraft {
   return {
     id: item.id,
     code: item.code,
+    barcode: item.barcode || '',
     name: item.name,
-    barcode: item.barcode || item.code,
     category: item.category,
     price: String(item.price),
     stock: String(item.stock),
     enabled: item.enabled,
+  };
+}
+
+
+function getPermissionsByRole(role: string, rank: string) {
+  const base: Record<string, string[]> = {
+    '系統組': ['全模組管理', '價格調整', '退款審核', '庫存覆核'],
+    '銷售組': ['訂購操作', '個人客戶查看'],
+    '行政組': ['收退款作業', '會計資料查看'],
+    '倉儲組': ['出入庫作業', '庫存查詢'],
+    '市場組': ['客戶資料查看', '活動資料查看'],
+  };
+  const permissions = [...(base[role] || ['基本查看'])];
+  if (rank.includes('核心')) permissions.push('最終決定權');
+  if (rank.includes('菁英')) permissions.push('參與討論');
+  if (rank.includes('高級')) permissions.push('代理價格權限');
+  return Array.from(new Set(permissions));
+}
+
+function makeEmptyStaffDraft() {
+  return {
+    id: '',
+    name: '',
+    loginId: '',
+    role: '銷售組',
+    rank: '普通銷售',
+    enabled: true,
+    password: '',
+  };
+}
+
+function toStaffDraft(item: Staff): StaffDraft {
+  return {
+    id: item.id,
+    name: item.name,
+    loginId: item.loginId,
+    role: item.role,
+    rank: item.rank,
+    enabled: item.enabled,
+    password: item.password || item.loginId,
   };
 }
 
@@ -958,6 +981,10 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
   const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
   const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
+  const [staffEditorMode, setStaffEditorMode] = useState<StaffEditorMode>('view');
+  const [selectedStaffId, setSelectedStaffId] = useState(staff[0]?.id ?? '');
+  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft(mockStaff[0]));
+  const [staffNotice, setStaffNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [orderRecords, setOrderRecords] = useState<OrderRecord[]>(initialOrderRecords);
   const [selectedOrderNo, setSelectedOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
@@ -1055,6 +1082,10 @@ export default function App() {
   }, [keyword, staff]);
 
   const productCategories = useMemo(() => Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean))), [products]);
+  const staffRoles = ['系統組', '銷售組', '行政組', '倉儲組', '市場組'];
+  const staffRanks = ['核心人員', '菁英成員', '高級銷售', '普通銷售'];
+  const selectedStaff = useMemo(() => staff.find((item) => item.id === selectedStaffId) || staff[0] || null, [staff, selectedStaffId]);
+  const staffPermissionPreview = useMemo(() => getPermissionsByRole(staffDraft.role, staffDraft.rank), [staffDraft.role, staffDraft.rank]);
 
   const filteredOrderProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -1087,19 +1118,21 @@ export default function App() {
   }, [orderRecords]);
 
   const paymentQueue = useMemo(() => {
-    return orderRecords.map((item) => ({
-      orderNo: item.orderNo,
-      customer: item.customer,
-      paymentStatus: item.paymentStatus,
-      shippingStatus: item.shippingStatus,
-      amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
-      shippingFee: typeof item.shippingFeeOverride === 'number' ? item.shippingFeeOverride : item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
-      taxRate: typeof item.taxRate === 'number' ? item.taxRate : 0,
-      proof: item.proof || (item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
-      date: item.date.split(' ')[0],
-      paymentMethod: item.paymentMethod || (item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
-      invoiceNo: item.invoiceNo || (item.paymentStatus.includes('退款') ? '退款單' : '待補'),
-    }));
+    return orderRecords
+      .map((item) => ({
+        orderNo: item.orderNo,
+        customer: item.customer,
+        paymentStatus: item.paymentStatus,
+        shippingStatus: item.shippingStatus,
+        amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
+        shippingFee: typeof item.shippingFeeOverride === 'number' ? item.shippingFeeOverride : item.shippingMethod === '宅配' ? 100 : item.shippingMethod === '店到店' ? 65 : 0,
+        taxRate: typeof item.taxRate === 'number' ? item.taxRate : 0,
+        proof: item.proof || (item.paymentStatus === '已收款' ? '已上傳' : item.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
+        date: item.date.split(' ')[0],
+        paymentMethod: item.paymentMethod || (item.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
+        invoiceNo: item.invoiceNo || (item.paymentStatus.includes('退款') ? '退款單' : '待補'),
+      }))
+      .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date) || b.orderNo.localeCompare(a.orderNo));
   }, [orderRecords]);
 
   const stockSnapshot = useMemo(() => deriveStockSnapshot(products, inventoryLogs), [products, inventoryLogs]);
@@ -1717,12 +1750,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const matchDateStart = !accountingDateStart || itemDateKey >= accountingDateStart;
       const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
       return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
-    }).sort((a, b) => {
-      const dateCompare = parseDateValue(b.date) - parseDateValue(a.date);
-      if (dateCompare !== 0) return dateCompare;
-      return b.orderNo.localeCompare(a.orderNo, 'zh-Hant');
     });
-  }, [paymentQueue, accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
 
   useEffect(() => {
     if (!filteredAccountingQueue.length) return;
@@ -1740,6 +1769,20 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const sourceRecord = orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null;
     setAccountingDraft(makeAccountingDraft(sourceRecord));
   }, [selectedAccountingRecord?.orderNo, orderRecords]);
+
+  useEffect(() => {
+    if (!staff.length) return;
+    if (!staff.some((item) => item.id === selectedStaffId)) {
+      setSelectedStaffId(staff[0].id);
+    }
+  }, [staff, selectedStaffId]);
+
+  useEffect(() => {
+    if (!selectedStaff) return;
+    if (staffEditorMode === 'view') {
+      setStaffDraft(toStaffDraft(selectedStaff));
+    }
+  }, [selectedStaff, staffEditorMode]);
 
   const selectedAccountingSourceRecord = useMemo(
     () => orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null,
@@ -1764,17 +1807,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const enabledProducts = products.filter((p) => p.enabled).length;
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
-  const selectedStaff = filteredStaff.find((item) => item.id === selectedStaffId) || staff.find((item) => item.id === selectedStaffId) || filteredStaff[0] || staff[0] || null;
-
-  useEffect(() => {
-    if (!selectedStaff) return;
-    if (!selectedStaffId) setSelectedStaffId(selectedStaff.id);
-    setStaffDraft((prev) => {
-      if (staffEditorMode === 'create') return prev;
-      if (prev.id && prev.id !== selectedStaff.id && staffEditorMode === 'edit') return prev;
-      return toStaffDraft(selectedStaff);
-    });
-  }, [selectedStaff, selectedStaffId, staffEditorMode]);
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
@@ -1851,7 +1883,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   function saveProductDraft() {
-    if (!productDraft.code.trim() || !productDraft.barcode.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
+    if (!productDraft.code.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
       setProductNotice({ text: '❌ 欄位未完成', tone: 'danger' });
       return;
     }
@@ -1910,23 +1942,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
   }
 
-  function toStaffDraft(item: Staff): StaffDraft {
-    return {
-      id: item.id,
-      name: item.name,
-      loginId: item.loginId,
-      role: item.role,
-      rank: item.rank,
-      enabled: item.enabled,
-      initialPassword: item.initialPassword || makeInitialPassword(item.loginId),
-    };
-  }
 
   function openCreateStaff() {
-    const nextLoginId = `vp${String(staff.length + 1).padStart(3, '0')}`;
     setStaffEditorMode('create');
     setSelectedStaffId('');
-    setStaffDraft({ id: '', name: '', loginId: nextLoginId, role: '銷售', rank: '普通銷售', enabled: true, initialPassword: makeInitialPassword(nextLoginId) });
+    setStaffDraft(makeEmptyStaffDraft());
     setStaffNotice({ text: '✅ 新增模式', tone: 'neutral' });
   }
 
@@ -1944,45 +1964,50 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setStaffNotice({ text: '✅ 已顯示人員', tone: 'neutral' });
   }
 
-  function updateStaffDraftField(field: keyof StaffDraft, value: any) {
+  function updateStaffDraftField(field: keyof StaffDraft, value: string | boolean) {
     setStaffDraft((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === 'loginId') next.initialPassword = makeInitialPassword(String(value));
-      if (field === 'role' && !next.rank) next.rank = '普通銷售';
+      if (field === 'loginId') {
+        next.password = String(value || '').trim();
+      }
       return next;
     });
   }
 
+  function resetStaffPassword() {
+    setStaffDraft((prev) => ({ ...prev, password: prev.loginId.trim() || '' }));
+    setStaffNotice({ text: '✅ 已初始化密碼', tone: 'success' });
+  }
+
   function saveStaffDraft() {
-    if (!staffDraft.name.trim() || !staffDraft.loginId.trim() || !staffDraft.role.trim() || !staffDraft.rank.trim()) {
+    if (!staffDraft.name.trim() || !staffDraft.loginId.trim()) {
       setStaffNotice({ text: '❌ 欄位未完成', tone: 'danger' });
       return;
     }
-
-    const payload: Staff = {
-      id: staffDraft.id || `staff-${Date.now()}`,
+    const nextPayload = {
       name: staffDraft.name.trim(),
       loginId: staffDraft.loginId.trim(),
-      role: staffDraft.role.trim(),
-      rank: staffDraft.rank.trim(),
+      role: staffDraft.role,
+      rank: staffDraft.rank,
       enabled: staffDraft.enabled,
-      initialPassword: staffDraft.initialPassword || makeInitialPassword(staffDraft.loginId),
-      permissionNote: getPermissionNote(staffDraft.role, staffDraft.rank),
+      password: staffDraft.password.trim() || staffDraft.loginId.trim(),
+      permissions: getPermissionsByRole(staffDraft.role, staffDraft.rank),
     };
-
     if (staffEditorMode === 'create') {
-      setStaff((prev) => [payload, ...prev]);
-      setSelectedStaffId(payload.id);
+      const nextStaff = { id: `staff-${Date.now()}`, ...nextPayload };
+      setStaff((prev) => [nextStaff, ...prev]);
+      setSelectedStaffId(nextStaff.id);
       setStaffEditorMode('edit');
-      setStaffDraft(toStaffDraft(payload));
+      setStaffDraft(toStaffDraft(nextStaff));
       setStaffNotice({ text: '✅ 已新增', tone: 'success' });
       return;
     }
-
-    setStaff((prev) => prev.map((item) => item.id === payload.id ? payload : item));
-    setSelectedStaffId(payload.id);
+    if (!staffDraft.id) {
+      setStaffNotice({ text: '❌ 未選人員', tone: 'danger' });
+      return;
+    }
+    setStaff((prev) => prev.map((item) => item.id === staffDraft.id ? { ...item, ...nextPayload } : item));
     setStaffEditorMode('edit');
-    setStaffDraft(toStaffDraft(payload));
     setStaffNotice({ text: '✅ 已更新', tone: 'success' });
   }
 
@@ -2318,7 +2343,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
             )}
             {active === 'staff' && (
-              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} staffNotice={staffNotice} selectedStaffId={selectedStaffId} openCreateStaff={openCreateStaff} openViewStaff={openViewStaff} openEditStaff={openEditStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} updateStaffDraftField={updateStaffDraftField} saveStaffDraft={saveStaffDraft} selectedStaff={selectedStaff} />
+              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
             )}
             {active === 'orders' && (
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />

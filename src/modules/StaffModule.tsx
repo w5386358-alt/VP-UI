@@ -1,7 +1,4 @@
-import { UserCog, Plus, Eye, PencilLine, KeyRound, ShieldCheck, UserRound } from 'lucide-react';
-
-const ROLE_OPTIONS = ['系統', '銷售', '會計', '倉儲'];
-const RANK_OPTIONS = ['核心人員', '菁英成員', '高級銷售', '普通銷售'];
+import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye } from 'lucide-react';
 
 export default function StaffModule(props: any) {
   const {
@@ -11,32 +8,28 @@ export default function StaffModule(props: any) {
     getRankClass,
     SectionIntro,
     StatusBadge,
-    staffNotice,
     selectedStaffId,
-    openCreateStaff,
-    openViewStaff,
-    openEditStaff,
+    selectedStaff,
     staffEditorMode,
     staffDraft,
+    staffNotice,
+    staffRoles,
+    staffRanks,
+    staffPermissionPreview,
+    openCreateStaff,
+    openEditStaff,
+    openViewStaff,
     updateStaffDraftField,
+    resetStaffPassword,
     saveStaffDraft,
-    selectedStaff,
   } = props;
-
-  const permissionNote = staffDraft?.role === '系統'
-    ? '全模組管理 / 最高權限'
-    : staffDraft?.role === '會計'
-      ? '可看收退款 / 依階級套用權限'
-      : staffDraft?.role === '倉儲'
-        ? '可看出入庫 / 依階級套用權限'
-        : '可看自己的客戶與訂單 / 依階級套用權限';
 
   return (
     <>
       <SectionIntro
         title="人員管理"
-        desc="新增、編輯、階級、身分與初始化密碼。"
-        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限']}
+        desc="登入 ID、身分、階級與權限。"
+        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '新增 / 編輯 / 啟用']}
       />
 
       {staffNotice && (
@@ -51,10 +44,10 @@ export default function StaffModule(props: any) {
             <div className="panel-head">
               <div>
                 <div className="panel-title">人員列表</div>
-                <div className="panel-desc">查看登入 ID、身分、階級、啟用與權限資訊。</div>
+                <div className="panel-desc">查看人員、身分、階級與啟用狀態。</div>
               </div>
               <button type="button" className="primary-button" onClick={openCreateStaff}>
-                <Plus className="small-icon" />新增人員
+                <UserCog className="small-icon" />新增人員
               </button>
             </div>
 
@@ -67,12 +60,9 @@ export default function StaffModule(props: any) {
                   </div>
                   <div className="data-card-title">{item.name}</div>
                   <div className="data-card-subtitle">登入 ID：{item.loginId}</div>
-                  <div className="data-chip-row compact-wrap">
+                  <div className="data-chip-row">
                     <span className={getRankClass(item.rank)}>階級 / {item.rank}</span>
-                    <span className="badge badge-neutral">{item.permissionNote || '依角色套用權限'}</span>
-                  </div>
-                  <div className="data-chip-row compact-wrap">
-                    <span className="badge badge-soft">初始化密碼 {item.initialPassword || `${item.loginId}@123`}</span>
+                    <span className="badge badge-neutral">{(item.permissions || []).length} 項權限</span>
                   </div>
                   <div className="product-card-actions">
                     <button type="button" className="ghost-button compact-btn" onClick={() => openViewStaff(item)}>
@@ -92,58 +82,63 @@ export default function StaffModule(props: any) {
           <div className="card order-panel sticky-panel product-editor-panel">
             <div className="panel-head compact-head">
               <div>
-                <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '人員編輯' : '人員詳情'}</div>
-                <div className="panel-desc">身分、階級、權限與初始化密碼一起管理。</div>
+                <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '編輯人員' : '人員詳情'}</div>
+                <div className="panel-desc">階級、身分、初始化密碼與權限邏輯。</div>
               </div>
               <span className="badge badge-role">{staffEditorMode === 'create' ? '新增' : staffEditorMode === 'edit' ? '編輯' : '查看'}</span>
             </div>
 
             <div className="form-grid two-col form-gap-top">
-              <label className="field-card field-span-2">
-                <span className="field-label"><UserRound className="small-icon" />姓名</span>
-                <input value={staffDraft.name} onChange={(e) => updateStaffDraftField('name', e.target.value)} readOnly={staffEditorMode === 'view'} placeholder="輸入姓名" />
+              <label className="field-card">
+                <span className="field-label"><User className="small-icon" />姓名</span>
+                <input value={staffDraft.name} onChange={(e) => updateStaffDraftField('name', e.target.value)} readOnly={staffEditorMode === 'view'} />
               </label>
               <label className="field-card">
                 <span className="field-label"><UserCog className="small-icon" />登入 ID</span>
-                <input value={staffDraft.loginId} onChange={(e) => updateStaffDraftField('loginId', e.target.value)} readOnly={staffEditorMode === 'view'} placeholder="例如 vp001" />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><KeyRound className="small-icon" />初始化密碼</span>
-                <input value={staffDraft.initialPassword} readOnly />
+                <input value={staffDraft.loginId} onChange={(e) => updateStaffDraftField('loginId', e.target.value)} readOnly={staffEditorMode === 'view'} />
               </label>
               <label className="field-card">
                 <span className="field-label"><ShieldCheck className="small-icon" />身分</span>
                 <select value={staffDraft.role} onChange={(e) => updateStaffDraftField('role', e.target.value)} disabled={staffEditorMode === 'view'}>
-                  {ROLE_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {staffRoles.map((role: string) => <option key={role} value={role}>{role}</option>)}
                 </select>
               </label>
               <label className="field-card">
                 <span className="field-label"><ShieldCheck className="small-icon" />階級</span>
                 <select value={staffDraft.rank} onChange={(e) => updateStaffDraftField('rank', e.target.value)} disabled={staffEditorMode === 'view'}>
-                  {RANK_OPTIONS.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {staffRanks.map((rank: string) => <option key={rank} value={rank}>{rank}</option>)}
                 </select>
+              </label>
+              <label className="field-card field-span-2">
+                <span className="field-label"><KeyRound className="small-icon" />初始化密碼</span>
+                <input value={staffDraft.password} readOnly />
               </label>
             </div>
 
             <div className="product-editor-status">
               <span className={`badge ${staffDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{staffDraft.enabled ? '啟用中' : '已停用'}</span>
               {staffEditorMode !== 'view' && (
-                <button type="button" className={`ghost-button compact-btn ${staffDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => updateStaffDraftField('enabled', !staffDraft.enabled)}>
-                  {staffDraft.enabled ? '切換停用' : '切換啟用'}
-                </button>
+                <>
+                  <button type="button" className="ghost-button compact-btn" onClick={resetStaffPassword}>
+                    <KeyRound className="small-icon" />初始化密碼
+                  </button>
+                  <button type="button" className={`ghost-button compact-btn ${staffDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => updateStaffDraftField('enabled', !staffDraft.enabled)}>
+                    {staffDraft.enabled ? '切換停用' : '切換啟用'}
+                  </button>
+                </>
               )}
             </div>
 
             <div className="stack-list compact product-editor-notes">
-              <div>身分與階級都採下拉選單</div>
-              <div>初始化密碼會依登入 ID 自動產生</div>
-              <div>{permissionNote}</div>
+              <div>權限邏輯</div>
+              {staffPermissionPreview.map((item: string) => <div key={item}>{item}</div>)}
             </div>
 
-            <div className="accounting-sync-card">
-              <div className="accounting-sync-title">權限邏輯</div>
-              <div className="accounting-sync-desc">{selectedStaff?.permissionNote || permissionNote}</div>
-            </div>
+            {selectedStaff && staffEditorMode === 'view' && selectedStaff.permissions?.length ? (
+              <div className="data-chip-row">
+                {selectedStaff.permissions.map((item: string) => <span key={item} className="badge badge-soft">{item}</span>)}
+              </div>
+            ) : null}
 
             <div className="accounting-action-row">
               {staffEditorMode === 'view' ? (

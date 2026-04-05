@@ -1,4 +1,4 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -41,7 +41,7 @@ export default function ProductsModule(props: any) {
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
-                <div className="panel-desc">查看商品、價格、庫存、條碼與狀態。</div>
+                <div className="panel-desc">查看商品、價格、庫存與狀態。</div>
               </div>
               <button type="button" className="primary-button" onClick={openCreateProduct}>
                 <Package className="small-icon" />新增商品
@@ -72,11 +72,7 @@ export default function ProductsModule(props: any) {
                     )}
                   </div>
                   <div className="data-card-title">{item.name}</div>
-                  <div className="data-card-subtitle">{item.category}</div>
-                  <div className="data-chip-row compact-wrap">
-                    <span className="badge badge-soft">商品編號 {item.code}</span>
-                    <span className="badge badge-neutral">商品條碼 {item.barcode || item.code}</span>
-                  </div>
+                  <div className="data-card-subtitle">{item.category} / 條碼 {item.barcode || '未設定'}</div>
                   <div className="metric-row three">
                     <div className="metric-box"><span>VIP價</span><strong>${item.vipPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>代理價</span><strong>${item.agentPrice ?? item.price}</strong></div>
@@ -121,10 +117,6 @@ export default function ProductsModule(props: any) {
                 <input value={productDraft.code} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, code: e.target.value }))} readOnly={productEditorMode === 'view'} />
               </label>
               <label className="field-card">
-                <span className="field-label"><ScanLine className="small-icon" />商品條碼</span>
-                <input value={productDraft.barcode} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="輸入商品條碼" />
-              </label>
-              <label className="field-card">
                 <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
                 <select value={productDraft.category} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
                   {productCategories.map((category: string) => (
@@ -133,16 +125,20 @@ export default function ProductsModule(props: any) {
                 </select>
               </label>
               <label className="field-card">
-                <span className="field-label"><Boxes className="small-icon" />庫存</span>
-                <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
+                <span className="field-label"><FileText className="small-icon" />商品條碼</span>
+                <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
               </label>
               <label className="field-card field-span-2">
                 <span className="field-label"><FileText className="small-icon" />商品名稱</span>
                 <input value={productDraft.name} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, name: e.target.value }))} readOnly={productEditorMode === 'view'} />
               </label>
-              <label className="field-card field-span-2">
+              <label className="field-card">
                 <span className="field-label"><Wallet className="small-icon" />價格</span>
                 <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Boxes className="small-icon" />庫存</span>
+                <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
               </label>
             </div>
 
@@ -158,7 +154,7 @@ export default function ProductsModule(props: any) {
             <div className="stack-list compact product-editor-notes">
               <div>商品資料編輯</div>
               <div>支援新增、編輯、查看與狀態切換</div>
-              <div>條碼欄位已納入商品資料</div>
+              <div>圖片與資料同步</div>
             </div>
 
             <div className="accounting-action-row">
