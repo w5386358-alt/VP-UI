@@ -419,6 +419,11 @@ button:hover { transform: translateY(-1px); }
 .workflow-pearl { background: linear-gradient(135deg, #f4fbff 0%, #fcfeff 100%); }
 .workflow-lavender { background: linear-gradient(135deg, #f6f4ff 0%, #fdfdff 100%); }
 
+.workflow-card.workflow-rose { background: linear-gradient(135deg, #fff2f6 0%, #fffafc 100%) !important; border-color: #f3d7e1; }
+.workflow-card.workflow-gold { background: linear-gradient(135deg, #fff8ea 0%, #fffdf7 100%) !important; border-color: #efe1be; }
+.workflow-card.workflow-pearl { background: linear-gradient(135deg, #f4fbff 0%, #fcfeff 100%) !important; border-color: #dbe9f1; }
+.workflow-card.workflow-lavender { background: linear-gradient(135deg, #f6f4ff 0%, #fdfdff 100%) !important; border-color: #e4def6; }
+
 .two-column-grid {
   margin-top: 18px;
   display: grid;
@@ -2567,7 +2572,6 @@ button:hover { transform: translateY(-1px); }
 .hero-card,
 .accounting-shortcut,
 .banner-card,
-.workflow-card,
 .content-card,
 .profile-action-card,
 .accounting-proof-card,
