@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -645,163 +645,6 @@ function getDb() {
   return getFirestore(app);
 }
 
-function normalizeDocId(value: string) {
-  return (value || '')
-    .trim()
-    .replace(/[^a-zA-Z0-9_-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || `doc-${Date.now()}`;
-}
-
-function toIsoTimestamp() {
-  return new Date().toISOString();
-}
-
-function buildOrderDoc(order: OrderRecord, source = 'VERCEL_UI') {
-  return {
-    id: order.orderNo,
-    orderNo: order.orderNo,
-    customerName: order.customer,
-    customerPhone: order.phone,
-    shippingMethod: order.shippingMethod,
-    address: order.address,
-    amount: order.amount,
-    itemCount: order.itemCount,
-    paymentStatus: order.paymentStatus,
-    shippingStatus: order.shippingStatus,
-    orderStatus: order.mainStatus,
-    remark: order.remark,
-    taxRate: order.taxRate ?? 0,
-    shippingFee: order.shippingFeeOverride ?? getShippingFeeByMethod(order.shippingMethod),
-    actualReceived: order.actualReceived ?? order.amount,
-    paymentMethod: order.paymentMethod || '待確認',
-    invoiceNo: order.invoiceNo || '待補',
-    proof: order.proof || '待上傳',
-    items: JSON.stringify(order.items),
-    history: JSON.stringify([]),
-    source,
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-    syncVersion: 1,
-  };
-}
-
-function buildOrderItemDocs(order: OrderRecord) {
-  return order.items.map((item, index) => ({
-    id: `${order.orderNo}-${String(index + 1).padStart(3, '0')}`,
-    orderNo: order.orderNo,
-    code: item.code,
-    name: item.name,
-    qty: item.qty,
-    price: item.price,
-    subtotal: item.qty * item.price,
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  }));
-}
-
-function buildSalesReportDoc(order: OrderRecord) {
-  const untaxedAmount = getUntaxedAmountFromRecord(order);
-  const taxRate = order.taxRate ?? 0;
-  const shippingFee = order.shippingFeeOverride ?? getShippingFeeByMethod(order.shippingMethod);
-  const taxAmount = getTaxAmount(untaxedAmount, taxRate);
-  return {
-    id: order.orderNo,
-    orderNo: order.orderNo,
-    customerName: order.customer,
-    salesOwner: order.customer,
-    itemCount: order.itemCount,
-    untaxedAmount,
-    taxRate,
-    taxAmount,
-    shippingFee,
-    actualReceived: order.actualReceived ?? order.amount,
-    paymentStatus: order.paymentStatus,
-    shippingStatus: order.shippingStatus,
-    orderStatus: order.mainStatus,
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  };
-}
-
-function buildPaymentDoc(order: OrderRecord) {
-  return {
-    id: order.orderNo,
-    orderNo: order.orderNo,
-    customerName: order.customer,
-    amount: order.actualReceived ?? order.amount,
-    paymentStatus: order.paymentStatus,
-    paymentMethod: order.paymentMethod || '待確認',
-    invoiceNo: order.invoiceNo || '待補',
-    proof: order.proof || '待上傳',
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  };
-}
-
-function buildRefundDoc(order: OrderRecord) {
-  return {
-    id: `refund-${order.orderNo}`,
-    orderNo: order.orderNo,
-    customerName: order.customer,
-    amount: order.actualReceived ?? order.amount,
-    refundStatus: order.paymentStatus,
-    shippingStatus: order.shippingStatus,
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  };
-}
-
-function buildShippingDoc(order: OrderRecord) {
-  return {
-    id: order.orderNo,
-    orderNo: order.orderNo,
-    customerName: order.customer,
-    shippingMethod: order.shippingMethod,
-    address: order.address,
-    shippingStatus: order.shippingStatus,
-    paymentStatus: order.paymentStatus,
-    itemSummary: order.items.map((item) => `${item.code}*${item.qty}`).join(' / '),
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  };
-}
-
-function buildInventorySnapshotDocs(source: Product[], logs: InventoryLog[]) {
-  return deriveStockSnapshot(source, logs).map((item) => ({
-    id: item.code,
-    code: item.code,
-    name: item.name,
-    stock: item.stock,
-    safe: item.safe,
-    qr: item.qr,
-    status: item.status,
-    updated: item.updated,
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  }));
-}
-
-function buildCustomerDoc(customer: Customer) {
-  return {
-    id: customer.id,
-    name: customer.name,
-    phone: customer.phone,
-    level: customer.level,
-    ownerLoginId: customer.ownerLoginId,
-    ownerName: customer.ownerName,
-    source: 'VERCEL_UI',
-    updatedAt: toIsoTimestamp(),
-    lastSyncedAt: toIsoTimestamp(),
-  };
-}
-
 function normalizeProduct(id: string, data: any): Product {
   return {
     id,
@@ -1088,83 +931,6 @@ export default function App() {
     text: '✅ 訂單已建立',
     tone: 'success',
   });
-
-  async function persistOrderFlow(order: OrderRecord, customerRecord?: Customer | null) {
-    const db = getDb();
-    if (!db) return;
-    const batch = writeBatch(db);
-    batch.set(doc(db, 'orders', order.orderNo), buildOrderDoc(order), { merge: true });
-    buildOrderItemDocs(order).forEach((item) => {
-      batch.set(doc(db, 'order_items', item.id), item, { merge: true });
-    });
-    batch.set(doc(db, 'sales_report', order.orderNo), buildSalesReportDoc(order), { merge: true });
-    if (customerRecord) {
-      batch.set(doc(db, 'customers', normalizeDocId(customerRecord.id || `${customerRecord.phone}-${customerRecord.name}`)), buildCustomerDoc(customerRecord), { merge: true });
-    }
-    await batch.commit();
-  }
-
-  async function persistAccountingFlow(order: OrderRecord, mode: 'pay' | 'refund' | 'draft') {
-    const db = getDb();
-    if (!db) return;
-    const batch = writeBatch(db);
-    batch.set(doc(db, 'orders', order.orderNo), buildOrderDoc(order), { merge: true });
-    batch.set(doc(db, 'sales_report', order.orderNo), buildSalesReportDoc(order), { merge: true });
-    if (mode === 'refund') {
-      batch.set(doc(db, 'refunds', `refund-${order.orderNo}`), buildRefundDoc(order), { merge: true });
-    } else {
-      batch.set(doc(db, 'payments', order.orderNo), buildPaymentDoc(order), { merge: true });
-    }
-    await batch.commit();
-  }
-
-  async function persistWarehouseFlow(order: OrderRecord, nextLogs: InventoryLog[], sourceProducts: Product[]) {
-    const db = getDb();
-    if (!db) return;
-    const batch = writeBatch(db);
-    batch.set(doc(db, 'orders', order.orderNo), buildOrderDoc(order), { merge: true });
-    batch.set(doc(db, 'shipping', order.orderNo), buildShippingDoc(order), { merge: true });
-    batch.set(doc(db, 'sales_report', order.orderNo), buildSalesReportDoc(order), { merge: true });
-    nextLogs.forEach((entry) => {
-      batch.set(doc(db, 'inventory_logs', normalizeDocId(entry.id)), {
-        id: entry.id,
-        createdAt: entry.createdAt,
-        type: entry.type,
-        code: entry.code,
-        name: entry.name,
-        qty: entry.qty,
-        qr: entry.qr,
-        operator: entry.operator,
-        orderNo: entry.orderNo || '',
-        note: entry.note,
-        source: 'VERCEL_UI',
-        updatedAt: toIsoTimestamp(),
-        lastSyncedAt: toIsoTimestamp(),
-      }, { merge: true });
-    });
-    buildInventorySnapshotDocs(sourceProducts, nextLogs).forEach((item) => {
-      batch.set(doc(db, 'inventory', item.id), item, { merge: true });
-    });
-    await batch.commit();
-  }
-
-  async function persistCustomerOnly(customerRecord: Customer) {
-    const db = getDb();
-    if (!db) return;
-    await setDoc(doc(db, 'customers', normalizeDocId(customerRecord.id || `${customerRecord.phone}-${customerRecord.name}`)), buildCustomerDoc(customerRecord), { merge: true });
-  }
-
-  async function persistOrderOnly(order: OrderRecord) {
-    const db = getDb();
-    if (!db) return;
-    await setDoc(doc(db, 'orders', order.orderNo), buildOrderDoc(order), { merge: true });
-  }
-
-  async function persistSalesOnly(order: OrderRecord) {
-    const db = getDb();
-    if (!db) return;
-    await setDoc(doc(db, 'sales_report', order.orderNo), buildSalesReportDoc(order), { merge: true });
-  }
 
   async function loadFirebaseData() {
     setBooting(true);
@@ -1664,11 +1430,12 @@ export default function App() {
       }
     }
 
-    const nextLogs = [...inventoryLogs, ...allocations];
-    const nextOrder = { ...order, shippingStatus: '已出貨', mainStatus: '已完成' };
-    setInventoryLogs(nextLogs);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? nextOrder : item));
-    void persistWarehouseFlow(nextOrder, nextLogs, products);
+    setInventoryLogs((prev) => [...prev, ...allocations]);
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
+      ...item,
+      shippingStatus: '已出貨',
+      mainStatus: '已完成',
+    } : item));
     setWarehouseNotice({ text: `✅ 已依 inventory_logs 完成出貨：${order.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 訂單已同步出貨：${order.orderNo}`, tone: 'success' });
     setWarehouseQueryResult([{ title: order.orderNo, desc: `${order.customer} / 已出貨 / ${order.shippingMethod}`, meta: ['已寫入 inventory_logs', `出貨筆數：${allocations.length}`, `商品：${order.items.map((item) => `${item.code}*${item.qty}`).join(' / ')}`] }]);
@@ -1704,17 +1471,13 @@ export default function App() {
       orderNo: order.orderNo,
       note: `${order.orderNo} 退貨回補，${entry.code} ${entry.name} 回庫 ${entry.qty} 件`,
     }));
-    const nextLogs = [...inventoryLogs, ...inboundLogs];
-    const nextOrder = {
-      ...order,
+    setInventoryLogs((prev) => [...prev, ...inboundLogs]);
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
+      ...item,
       shippingStatus: '已退貨',
       mainStatus: '退貨處理',
-      paymentStatus: order.paymentStatus === '已收款' ? '退款處理中' : order.paymentStatus,
-    };
-    setInventoryLogs(nextLogs);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? nextOrder : item));
-    void persistWarehouseFlow(nextOrder, nextLogs, products);
-    void persistAccountingFlow(nextOrder, 'refund');
+      paymentStatus: item.paymentStatus === '已收款' ? '退款處理中' : item.paymentStatus,
+    } : item));
     setWarehouseNotice({ text: `✅ 已完成退貨回補：${order.orderNo}`, tone: 'success' });
     setAccountingNotice({ text: `✅ 倉儲已送回退貨狀態：${order.orderNo}`, tone: 'success' });
   };
@@ -1733,10 +1496,11 @@ export default function App() {
       setWarehouseNotice({ text: '❌ 此訂單已在換貨流程', tone: 'danger' });
       return;
     }
-    const nextOrder = { ...order, shippingStatus: '換貨待出庫', mainStatus: '換貨處理' };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? nextOrder : item));
-    void persistOrderOnly(nextOrder);
-    void persistSalesOnly(nextOrder);
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? {
+      ...item,
+      shippingStatus: '換貨待出庫',
+      mainStatus: '換貨處理',
+    } : item));
     setSelectedWarehouseOrderNo(order.orderNo);
     setWarehouseNotice({ text: `✅ 已切入換貨流程：${order.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 倉儲已標記換貨待出庫：${order.orderNo}`, tone: 'success' });
@@ -1770,12 +1534,7 @@ export default function App() {
       note: `${selectedStockItem.code} ${selectedStockItem.name} 入庫 ${warehouseInboundQty} 件（${cleanQr}）`,
     };
 
-    const nextLogs = [...inventoryLogs, newLog];
-    setInventoryLogs(nextLogs);
-    const snapshotOrder = selectedWarehouseOrder || orderRecords[0];
-    if (snapshotOrder) {
-      void persistWarehouseFlow(snapshotOrder, nextLogs, products);
-    }
+    setInventoryLogs((prev) => [...prev, newLog]);
     setWarehouseNotice({ text: `✅ 已寫入入庫紀錄：${selectedStockItem.code} +${warehouseInboundQty}`, tone: 'success' });
     setWarehouseQueryResult([{ title: cleanQr, desc: `${selectedStockItem.name} / 已入庫 ${warehouseInboundQty} 件`, meta: [`商品條碼：${selectedStockItem.code}`, `操作人員：${user.loginId}`, '已寫入 inventory_logs'] }]);
     setWarehouseInboundQty(1);
@@ -2118,7 +1877,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
     const orderNo = makeNextOrderNo();
     const now = new Date();
-    const timePart = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const defaultShippingFee = shippingMethod === '宅配' ? 100 : shippingMethod === '店到店' ? 65 : 0;
     const nextRecord: OrderRecord = {
       orderNo,
@@ -2131,7 +1890,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       paymentStatus: '待收款',
       shippingStatus: '待出貨',
       mainStatus: '處理中',
-      date: `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${timePart}`,
+      date,
       remark: remark.trim() || '—',
       taxRate: 0,
       shippingFeeOverride: defaultShippingFee,
@@ -2141,31 +1900,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       proof: '待上傳',
       items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
     };
-    const existingCustomer = customers.find((item) => item.phone === nextRecord.phone || item.name === nextRecord.customer);
-    const nextCustomer: Customer | null = existingCustomer || {
-      id: normalizeDocId(`${nextRecord.phone}-${nextRecord.customer}`),
-      name: nextRecord.customer,
-      phone: nextRecord.phone,
-      level: '一般',
-      ownerLoginId: user.loginId,
-      ownerName: user.name,
-    };
-
-    if (!existingCustomer) {
-      setCustomers((prev) => [nextCustomer, ...prev]);
-      void persistCustomerOnly(nextCustomer);
-    }
-
     setOrderRecords((prev) => [nextRecord, ...prev]);
     setSelectedOrderNo(orderNo);
     setSelectedAccountingOrderNo(orderNo);
-    setSelectedWarehouseOrderNo(orderNo);
     setAccountingDraft(makeAccountingDraft(nextRecord));
     setAccountingDateEnd(getTodayDateInputValue());
     setAccountingNotice({ text: `✅ 訂單已串接會計：${orderNo}`, tone: 'success' });
-    setWarehouseNotice({ text: `✅ 新訂單已送到倉儲待出貨：${orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 已建立訂單：${orderNo}`, tone: 'success' });
-    void persistOrderFlow(nextRecord, nextCustomer);
     setCart([]);
     setRemark('');
     setDiscountMode('無');
@@ -2188,9 +1929,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setOrderNotice({ text: '❌ 此訂單處於退款流程', tone: 'danger' });
       return;
     }
-    const nextOrder = { ...target, paymentStatus: '已收款', mainStatus: target.shippingStatus === '待出貨' ? '待出貨' : target.mainStatus };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? nextOrder : item));
-    void persistAccountingFlow(nextOrder, 'pay');
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
     setOrderNotice({ text: `✅ 已收款：${orderNo}`, tone: 'success' });
     setAccountingNotice({ text: `✅ Orders 已同步收款：${orderNo}`, tone: 'success' });
   }
@@ -2202,10 +1941,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setOrderNotice({ text: '❌ 需先確認收款', tone: 'danger' });
       return;
     }
-    const nextOrder = { ...target, shippingStatus: '待出貨', mainStatus: '待出貨' };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? nextOrder : item));
-    void persistOrderOnly(nextOrder);
-    void persistSalesOnly(nextOrder);
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? { ...item, shippingStatus: '待出貨', mainStatus: '待出貨' } : item));
     setOrderNotice({ text: `✅ 已更新待出貨：${orderNo}`, tone: 'success' });
     setWarehouseNotice({ text: `✅ Orders 已同步待出貨：${orderNo}`, tone: 'success' });
     setSelectedWarehouseOrderNo(orderNo);
@@ -2251,21 +1987,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       invoiceNo: accountingDraft.invoiceNo.trim() || '待補',
       proof: accountingDraft.proof.trim() || '待上傳',
     } : item));
-    const draftOrder = orderRecords.find((item) => item.orderNo === accountingDraft.orderNo);
-    const nextOrder = draftOrder ? {
-      ...draftOrder,
-      customer: accountingDraft.customer.trim() || draftOrder.customer,
-      amount: actualReceived,
-      taxRate,
-      shippingFeeOverride: shippingFee,
-      actualReceived,
-      paymentMethod: accountingDraft.paymentMethod.trim() || '待確認',
-      invoiceNo: accountingDraft.invoiceNo.trim() || '待補',
-      proof: accountingDraft.proof.trim() || '待上傳',
-    } : null;
-    if (nextOrder) {
-      void persistAccountingFlow(nextOrder, 'draft');
-    }
     setAccountingDraft((prev) => ({ ...prev, actualReceived: String(actualReceived) }));
     setAccountingNotice({ text: `✅ 已更新本次訂單：${accountingDraft.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 會計欄位已回寫：${accountingDraft.orderNo}`, tone: 'success' });
@@ -2280,8 +2001,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   function triggerAccountingAction(action: 'pay' | 'refund') {
     if (!selectedAccountingRecord) return;
     if (!saveAccountingDraft()) return;
-    const current = orderRecords.find((item) => item.orderNo === selectedAccountingRecord.orderNo) || selectedAccountingSourceRecord;
-    if (!current) return;
     if (action === 'pay') {
       if (selectedAccountingRecord.paymentStatus === '已收款') {
         setAccountingNotice({ text: '❌ 此訂單已收款', tone: 'danger' });
@@ -2291,10 +2010,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         setAccountingNotice({ text: '❌ 此訂單處於退款流程，請先確認退款結果', tone: 'danger' });
         return;
       }
-      const nextOrder = { ...current, paymentStatus: '已收款', mainStatus: current.shippingStatus === '待出貨' ? '待出貨' : current.mainStatus };
-      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? nextOrder : item));
-      void persistAccountingFlow(nextOrder, 'pay');
-      setSelectedWarehouseOrderNo(nextOrder.orderNo);
+      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '已收款', mainStatus: item.shippingStatus === '待出貨' ? '待出貨' : item.mainStatus } : item));
       setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，倉儲端將依狀態判定可出貨`, tone: 'success' });
       setWarehouseNotice({ text: `✅ 收款狀態已更新：${selectedAccountingRecord.orderNo}`, tone: 'success' });
       setOrderNotice({ text: `✅ 會計已同步收款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
@@ -2305,9 +2021,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setAccountingNotice({ text: '❌ 此訂單已進入退款流程', tone: 'danger' });
       return;
     }
-    const nextOrder = { ...current, paymentStatus: '退款處理中', shippingStatus: current.shippingStatus === '已出貨' ? current.shippingStatus : '已退款', mainStatus: '退款處理' };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? nextOrder : item));
-    void persistAccountingFlow(nextOrder, 'refund');
+    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? { ...item, paymentStatus: '退款處理中', shippingStatus: item.shippingStatus === '已出貨' ? item.shippingStatus : '已退款', mainStatus: '退款處理' } : item));
     setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }

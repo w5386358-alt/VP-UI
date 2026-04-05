@@ -195,39 +195,49 @@ export default function InventoryModule(props: any) {
 
       {warehouseTab === 'stock' && (
         <section className="warehouse-stack-section">
-          <div className="warehouse-flow-grid">
-            {inventoryFlow.map((item: any) => (
-              <div key={item.title} className="card flow-card">
-                <div className="flow-title">{item.title}</div>
-                <div className="flow-desc">{item.desc}</div>
-                <div className="data-chip-row">{item.tags.map((tag: string) => <span key={tag} className="badge badge-neutral">{tag}</span>)}</div>
+          <div className="card order-panel warehouse-stock-overview-card">
+            <div className="panel-head compact-head">
+              <div>
+                <div className="panel-title">庫存商品清單</div>
               </div>
-            ))}
-          </div>
+              <span className="badge badge-soft">共 {stockSnapshot.length} 項</span>
+            </div>
 
-          <div className="warehouse-stock-grid">
-            {stockSnapshot.map((item: any) => (
-              <button key={item.code} type="button" className={`card stock-snapshot-card accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
-                <div className="stock-card-top">
-                  <div><div className="shipping-order">{item.name}</div><div className="shipping-meta">{item.code} / 安全庫存 {item.safe}</div></div>
-                  <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
-                </div>
-                <div className="stock-big-number">{item.stock}</div>
-                <div className="stock-sub">目前庫存</div>
-                <div className="fake-field wide"><span>QR 身分識別</span><strong>{item.qr}</strong></div>
-              </button>
-            ))}
+            <div className="warehouse-stock-grid compact">
+              {stockSnapshot.map((item: any) => (
+                <button key={item.code} type="button" className={`card stock-snapshot-card compact accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
+                  <div className="stock-card-top compact">
+                    <div className="stock-card-main">
+                      <div className="shipping-order">{item.name}</div>
+                      <div className="shipping-meta">{item.code}</div>
+                    </div>
+                    <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
+                  </div>
+                  <div className="stock-inline-row">
+                    <div className="stock-inline-block">
+                      <span>目前庫存</span>
+                      <strong>{item.stock}</strong>
+                    </div>
+                    <div className="stock-inline-block">
+                      <span>安全庫存</span>
+                      <strong>{item.safe}</strong>
+                    </div>
+                  </div>
+                  <div className="stock-qr-line">QR：{item.qr}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="card warehouse-tool-card">
-            <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div><div className="flow-desc">入庫資料同步寫入異動紀錄。</div></div><Boxes className="small-icon" /></div>
+            <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><Boxes className="small-icon" /></div>
             <div className="warehouse-form-grid">
               <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
               <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
-              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="例如 QR(A-NEW)" /></strong></div>
+              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /></strong></div>
               <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
               <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
             </div>
@@ -238,7 +248,7 @@ export default function InventoryModule(props: any) {
           </div>
 
           <div className="card order-panel">
-            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div><div className="panel-desc">顯示最新 12 筆庫存異動。</div></div></div>
+            <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div></div></div>
             <div className="warehouse-log-list">
               {warehouseRecentLogs.map((item: any) => (
                 <div key={`${item.time}-${item.type}-${item.note}`} className="warehouse-log-item">
@@ -259,14 +269,14 @@ export default function InventoryModule(props: any) {
 
           <div className="warehouse-tool-grid">
             <div className="card warehouse-tool-card">
-              <div className="warehouse-card-head"><div><div className="flow-title">條碼 / QR 查詢</div><div className="flow-desc">依庫存與訂單狀態顯示。</div></div><Search className="small-icon" /></div>
+              <div className="warehouse-card-head"><div><div className="flow-title">庫存查詢</div></div><Search className="small-icon" /></div>
               <div className="warehouse-tab-row warehouse-query-mode-row">
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'barcode' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('barcode')}>商品條碼</button>
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'qr' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('qr')}>QR 身分識別</button>
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'order' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('order')}>訂單編號</button>
               </div>
               <div className="warehouse-form-grid">
-                <div className="fake-field wide"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="請輸入商品條碼 / QR / 訂單編號" /></strong></div>
+                <div className="fake-field wide"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /></strong></div>
               </div>
               <div className="accounting-action-row">
                 <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>
@@ -275,7 +285,7 @@ export default function InventoryModule(props: any) {
             </div>
 
             <div className="card warehouse-tool-card">
-              <div className="warehouse-card-head"><div><div className="flow-title">查詢結果</div><div className="flow-desc">依查詢類型顯示對應結果。</div></div><History className="small-icon" /></div>
+              <div className="warehouse-card-head"><div><div className="flow-title">查詢結果</div></div><History className="small-icon" /></div>
               <div className="warehouse-result-list">
                 {warehouseQueryResult.map((item: any) => (
                   <div key={item.title} className="warehouse-result-item">
