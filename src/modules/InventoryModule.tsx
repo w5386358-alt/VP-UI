@@ -1,4 +1,4 @@
-import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -22,6 +22,8 @@ export default function InventoryModule(props: any) {
     warehouseDateEnd,
     setWarehouseDateEnd,
     shippingChecklist,
+    warehouseSopPoints,
+    warehouseReminderItems,
     handleWarehouseShip,
     handleWarehouseReturn,
     handleWarehouseExchange,
@@ -108,15 +110,27 @@ export default function InventoryModule(props: any) {
                 <div className="warehouse-card-head">
                   <div>
                     <div className="flow-title">出貨 SOP 檢查點</div>
-                    <div className="flow-desc">這裡保留你最在意的出貨防呆，現在真的會依可用庫存去扣。</div>
+                    <div className="flow-desc">已導入 SOP 作業邏輯展示，這版先讓流程與提醒先就位，實際自動連動暫停。</div>
                   </div>
-                  <QrCode className="small-icon" />
+                  <ClipboardCheck className="small-icon" />
                 </div>
                 <div className="warehouse-checklist">
-                  {shippingChecklist.map((item: any) => (
-                    <div key={item.title} className="warehouse-check-item">
-                      <div className="warehouse-check-title">{item.title}</div>
+                  {warehouseSopPoints.map((item: any) => (
+                    <div key={item.title} className={`warehouse-check-item sop-status-${item.status}`}>
+                      <div className="warehouse-check-title-row">
+                        <div className="warehouse-check-title">{item.title}</div>
+                        <span className={`badge ${item.status === 'done' ? 'badge-success' : item.status === 'warning' ? 'badge-danger' : 'badge-neutral'}`}>{item.status === 'done' ? '已帶入' : item.status === 'warning' ? '待覆核' : '待選單'}</span>
+                      </div>
                       <div className="warehouse-check-desc">{item.desc}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="warehouse-mini-sop-list">
+                  {shippingChecklist.map((item: any) => (
+                    <div key={item.title} className="warehouse-mini-sop-item">
+                      <strong>{item.title}</strong>
+                      <span>{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -179,16 +193,15 @@ export default function InventoryModule(props: any) {
                   <div className="panel-desc">這裡已切成真正扣 log 的第一版。</div>
                 </div>
               </div>
-              <div className="stack-list compact">
-                <div>未收款不可出貨</div>
-                <div>倉儲只依訂單狀態判讀，不自動跳頁</div>
-                <div>依 QR 剩餘數量分配扣減</div>
-                <div>扣減來源改為 inventory_logs</div>
-                <div>訂單完成後同步改出貨狀態</div>
-                <div>退貨回補會直接寫入 inventory_logs</div>
-                <div>換貨會先轉成換貨待出庫再出貨</div>
-                <div>列印出貨單可直接另存 PDF</div>
+              <div className="stack-list compact warehouse-reminder-stack">
+                {warehouseReminderItems.map((item: any, index: number) => (
+                  <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
+                    <BellRing className="small-icon" />
+                    <span>{item.text}</span>
+                  </div>
+                ))}
               </div>
+              <div className="warehouse-reminder-footer">目前提醒僅作 UI 判讀展示，後續再接真正連動。</div>
             </div>
           </div>
         </section>

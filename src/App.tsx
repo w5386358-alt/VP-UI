@@ -1143,6 +1143,57 @@ export default function App() {
     };
   }, [selectedWarehouseOrder, orderRecords, inventoryLogs]);
 
+
+  const warehouseSopPoints = useMemo(() => {
+    const order = selectedWarehouseOrder;
+    return [
+      {
+        title: '檢查收款狀態',
+        desc: order ? `目前款項狀態：${order.paymentStatus}` : '請先選擇訂單後檢查款項狀態。',
+        status: !order ? 'idle' : warehouseShipValidation.paymentOk ? 'done' : 'warning',
+      },
+      {
+        title: '檢查商品與數量',
+        desc: order ? `待處理商品：${order.qrSummary}` : '請先選擇訂單後檢查商品明細。',
+        status: !order ? 'idle' : warehouseShipValidation.issues.some((issue) => issue.includes('庫存不足')) ? 'warning' : 'done',
+      },
+      {
+        title: '檢查配送方式與地址',
+        desc: order ? `${order.shippingMethod} / ${order.address}` : '請先確認配送方式與地址。',
+        status: order ? 'done' : 'idle',
+      },
+      {
+        title: '確認出貨單與包裹標示',
+        desc: order ? `列印單號：${order.orderNo}，目前可先預覽列印內容。` : '請先選單後列印出貨單。',
+        status: order ? 'done' : 'idle',
+      },
+    ];
+  }, [selectedWarehouseOrder, warehouseShipValidation]);
+
+  const warehouseReminderItems = useMemo(() => {
+    const order = selectedWarehouseOrder;
+    if (!order) {
+      return [
+        { text: '請先從左側選擇待處理訂單，再進行倉儲作業。', tone: 'neutral' },
+        { text: '這版先導入提醒邏輯，實際自動連動暫停。', tone: 'neutral' },
+      ];
+    }
+
+    const items = [
+      { text: order.paymentStatus === '已收款' || order.paymentStatus === '免收款' ? '此訂單款項狀態正常，可進入下一步檢查。' : '此訂單尚未完成收款，請先人工覆核。', tone: order.paymentStatus === '已收款' || order.paymentStatus === '免收款' ? 'success' : 'danger' },
+      { text: order.shippingStatus === '待出貨' ? '目前為待出貨狀態，適合進行理貨與列印出貨單。' : `目前商品狀態：${order.shippingStatus}，請依流程續作。`, tone: order.shippingStatus === '待出貨' ? 'neutral' : 'warning' },
+      { text: warehouseShipValidation.issues.length ? `本單共有 ${warehouseShipValidation.issues.length} 個檢查提醒，請先處理再出貨。` : '目前未發現阻擋項，可進行人工確認。', tone: warehouseShipValidation.issues.length ? 'warning' : 'success' },
+    ];
+
+    if (order.shippingStatus.includes('換貨')) {
+      items.push({ text: '此單已進入換貨流程，需先確認換貨品項與新出貨單。', tone: 'warning' });
+    }
+    if (order.paymentStatus.includes('退款')) {
+      items.push({ text: '此單含退款狀態，請先確認會計與倉儲資料一致。', tone: 'danger' });
+    }
+    return items;
+  }, [selectedWarehouseOrder, warehouseShipValidation]);
+
   const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode, stockSnapshot]);
 
   useEffect(() => {
@@ -1915,22 +1966,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
-        <div className="hero-card card">
-          <div className="hero-copy">
-            <div className="page-kicker">VP 訂購系統 / Vercel UI</div>
-            <h1>沿用既有版本，專做高質感 UI 升級</h1>
-            <p>
-              這版以你現在的作品為基底，不亂改功能結構，只先把畫面層級、閱讀節奏、手機體驗與模組布局整理到可繼續擴充的狀態。
-            </p>
-            <div className="hero-badges">
-              <span className="badge badge-soft">不破壞版本</span>
-              <span className="badge badge-soft">保留 Firebase 接法</span>
-              <span className="badge badge-soft">對齊 GAS 功能邏輯</span>
-            </div>
-          </div>
-
-        </div>
-
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
@@ -1991,7 +2026,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品 / 活動', desc: '這裡預留新品消息、主推活動或輪播圖片。' }, { title: '出貨提醒', desc: '可顯示付款提醒、出貨公告、節日配送異動。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
               <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} accountingDraft={accountingDraft} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />

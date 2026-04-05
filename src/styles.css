@@ -2413,3 +2413,18 @@ button:hover { transform: translateY(-1px); }
   color: #8a7180;
   background: #fff8fb;
 }
+
+
+.warehouse-check-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.sop-status-done{border-left:4px solid #34d399;background:#f7fffb;}
+.sop-status-warning{border-left:4px solid #fb7185;background:#fff8fa;}
+.sop-status-idle{border-left:4px solid #cbd5e1;background:#fafbfd;}
+.warehouse-mini-sop-list{display:grid;gap:10px;margin-top:14px;}
+.warehouse-mini-sop-item{display:grid;gap:4px;padding:12px 14px;border:1px dashed #ead5df;border-radius:14px;background:#fff9fb;color:#6f6071;}
+.warehouse-reminder-stack{display:grid;gap:10px;}
+.warehouse-reminder-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid #ead5df;background:#fff8fb;color:#6f6071;}
+.warehouse-reminder-item.tone-success{background:#f4fff7;border-color:#c6f1d6;color:#1f6a43;}
+.warehouse-reminder-item.tone-warning{background:#fff9f2;border-color:#f5d8ad;color:#8a5a12;}
+.warehouse-reminder-item.tone-danger{background:#fff5f7;border-color:#f3c4cf;color:#a33b5d;}
+.warehouse-reminder-item.tone-neutral{background:#f8fafc;border-color:#d9e2ec;color:#526175;}
+.warehouse-reminder-footer{margin-top:10px;color:#8a7180;font-size:13px;line-height:1.6;}
