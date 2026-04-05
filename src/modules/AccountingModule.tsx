@@ -9,7 +9,7 @@ export default function AccountingModule(props: any) {
     accountingShippingFilter, setAccountingShippingFilter,
     accountingDateStart, setAccountingDateStart,
     accountingDateEnd, setAccountingDateEnd,
-    accountingNotice, selectedAccountingRecord, accountingDraft, updateAccountingDraftField, saveAccountingDraft,
+    accountingNotice, selectedAccountingRecord, selectedAccountingSourceRecord, accountingDraft, accountingTaxAmount, accountingActualReceived, updateAccountingDraftField, saveAccountingDraft,
     triggerAccountingAction, selectAccountingOrder,
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
     SectionIntro, SummaryCard,
@@ -50,15 +50,16 @@ export default function AccountingModule(props: any) {
             </div>
 
             <div className="card order-panel">
-              <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">先固定你要的結算欄位，不碰原本邏輯。</div></div></div>
+              <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">依 GAS 收款參數邏輯自動帶入：未稅價＋稅額＋運費＝實收總額。</div></div></div>
               <div className="form-grid two-col accounting-form-grid">
                 <label className="field-card"><span className="field-label"><Receipt className="small-icon" />訂單編號</span><input value={accountingDraft?.orderNo || ''} readOnly /></label>
                 <label className="field-card"><span className="field-label"><User className="small-icon" />客戶姓名</span><input value={accountingDraft?.customer || ''} onChange={(e) => updateAccountingDraftField('customer', e.target.value)} placeholder="可直接修正客戶姓名" /></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={accountingDraft?.untaxedAmount || ''} onChange={(e) => updateAccountingDraftField('untaxedAmount', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅價 %</span><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" /></label>
+                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={accountingDraft?.untaxedAmount || ''} readOnly /></label>
+                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />稅率 %</span><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" /></label>
+                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅金額</span><input value={String(accountingTaxAmount || 0)} readOnly /></label>
                 <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={accountingDraft?.shippingFee || ''} onChange={(e) => updateAccountingDraftField('shippingFee', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={accountingDraft?.actualReceived || ''} onChange={(e) => updateAccountingDraftField('actualReceived', e.target.value)} inputMode="decimal" /></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />付款方式</span><input value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)} placeholder="例如：銀行轉帳" /></label>
+                <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />實收總額</span><input value={String(accountingActualReceived || 0)} readOnly /></label>
+                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />付款方式</span><select value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)}><option value="待確認">待確認</option><option value="銀行轉帳">銀行轉帳</option><option value="LINE Pay">LINE Pay</option><option value="現金">現金</option><option value="信用卡">信用卡</option><option value="其他">其他</option></select></label>
                 <label className="field-card"><span className="field-label"><FileText className="small-icon" />發票 / 單號</span><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="可填發票或退款單號" /></label>
                 <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="可填收款證明、備註、人工確認資訊" /></label>
               </div>
@@ -72,6 +73,12 @@ export default function AccountingModule(props: any) {
                       : '這筆訂單尚未收款，確認收款後只更新訂單狀態，不自動跳頁。'}
                 </div>
               </div>
+              <div className="accounting-breakdown-list">
+                <div className="accounting-breakdown-item"><span>商品未稅價</span><strong>${accountingDraft?.untaxedAmount || '0'}</strong></div>
+                <div className="accounting-breakdown-item"><span>應稅金額</span><strong>${accountingTaxAmount}</strong></div>
+                <div className="accounting-breakdown-item"><span>運費</span><strong>${accountingDraft?.shippingFee || '0'}</strong></div>
+                <div className="accounting-breakdown-item"><span>配送方式</span><strong>{selectedAccountingSourceRecord?.shippingMethod || '—'}</strong></div>
+              </div>
               <div className="accounting-action-row">
                 <button type="button" className="ghost-button compact-btn" onClick={saveAccountingDraft}><FileText className="small-icon" />儲存本次訂單</button>
                 <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
@@ -81,7 +88,7 @@ export default function AccountingModule(props: any) {
           </section>
 
           <section className="card order-panel">
-            <div className="panel-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">這裡開始承接會計操作邏輯，已可用關鍵字與狀態做前端篩選。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
+            <div className="panel-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">這裡直接吃目前訂單資料，收款 / 退款後會即時同步顯示。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
             <div className="shipping-queue accounting-queue">
               {filteredAccountingQueue.map((item: any) => (
                 <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
@@ -92,7 +99,7 @@ export default function AccountingModule(props: any) {
                   </div>
                   <div className="shipping-actions accounting-statuses">
                     <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                    <span className={`badge ${item.shippingStatus.includes('待') ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : 'badge-neutral'}`}>{item.shippingStatus}</span>
+                    <span className={`badge ${item.shippingStatus === '待出貨' || item.shippingStatus === '已退款' ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : item.shippingStatus === '已出貨' ? 'badge-success' : 'badge-neutral'}`}>{item.shippingStatus}</span>
                     <strong className="accounting-amount">${item.amount}</strong>
                   </div>
                 </button>

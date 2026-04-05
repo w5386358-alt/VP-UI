@@ -727,6 +727,22 @@ function getTodayDateInputValue() {
   return taipei.toISOString().slice(0, 10);
 }
 
+function getShippingFeeByMethod(method: ShippingMethod) {
+  return method === '宅配' ? 100 : method === '店到店' ? 65 : 0;
+}
+
+function getUntaxedAmountFromRecord(record: OrderRecord) {
+  return record.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+}
+
+function getTaxAmount(untaxedAmount: number, taxRate: number) {
+  return Math.round(untaxedAmount * (taxRate / 100));
+}
+
+function getActualReceived(untaxedAmount: number, taxRate: number, shippingFee: number) {
+  return untaxedAmount + getTaxAmount(untaxedAmount, taxRate) + shippingFee;
+}
+
 function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
   if (!record) {
     return {
@@ -742,21 +758,20 @@ function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
     };
   }
 
+  const untaxedAmount = getUntaxedAmountFromRecord(record);
   const shippingFee = typeof record.shippingFeeOverride === 'number'
     ? record.shippingFeeOverride
-    : record.shippingMethod === '宅配'
-      ? 100
-      : record.shippingMethod === '店到店'
-        ? 65
-        : 0;
-  const actualReceived = typeof record.actualReceived === 'number' ? record.actualReceived : record.amount;
-  const untaxedAmount = Math.max(actualReceived - shippingFee, 0);
+    : getShippingFeeByMethod(record.shippingMethod);
+  const taxRate = typeof record.taxRate === 'number' ? record.taxRate : 0;
+  const actualReceived = typeof record.actualReceived === 'number'
+    ? record.actualReceived
+    : getActualReceived(untaxedAmount, taxRate, shippingFee);
 
   return {
     orderNo: record.orderNo,
     customer: record.customer,
     untaxedAmount: String(untaxedAmount),
-    taxRate: String(typeof record.taxRate === 'number' ? record.taxRate : 0),
+    taxRate: String(taxRate),
     shippingFee: String(shippingFee),
     actualReceived: String(actualReceived),
     paymentMethod: record.paymentMethod || (record.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
@@ -1689,6 +1704,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setAccountingDraft(makeAccountingDraft(sourceRecord));
   }, [selectedAccountingRecord?.orderNo, orderRecords]);
 
+  const selectedAccountingSourceRecord = useMemo(
+    () => orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null,
+    [orderRecords, selectedAccountingRecord?.orderNo],
+  );
+
+  const accountingUntaxedAmount = Number(accountingDraft?.untaxedAmount || 0);
+  const accountingTaxRateNumber = Number(accountingDraft?.taxRate || 0);
+  const accountingShippingFeeNumber = Number(accountingDraft?.shippingFee || 0);
+  const accountingTaxAmount = getTaxAmount(accountingUntaxedAmount, accountingTaxRateNumber);
+  const accountingActualReceived = getActualReceived(accountingUntaxedAmount, accountingTaxRateNumber, accountingShippingFeeNumber);
+
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
   const shippingFee = getShippingFee(shippingMethod);
@@ -1922,7 +1948,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   function updateAccountingDraftField(field: keyof AccountingDraft, value: string) {
-    setAccountingDraft((prev) => ({ ...prev, [field]: value }));
+    setAccountingDraft((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'taxRate' || field === 'shippingFee') {
+        const untaxedAmount = Number(next.untaxedAmount || 0);
+        const taxRate = Number(next.taxRate || 0);
+        const shippingFee = Number(next.shippingFee || 0);
+        next.actualReceived = String(getActualReceived(untaxedAmount, taxRate, shippingFee));
+      }
+      return next;
+    });
   }
 
   function saveAccountingDraft() {
@@ -1934,7 +1969,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const untaxedAmount = Number(accountingDraft.untaxedAmount || 0);
     const taxRate = Number(accountingDraft.taxRate || 0);
     const shippingFee = Number(accountingDraft.shippingFee || 0);
-    const actualReceived = Number(accountingDraft.actualReceived || 0);
+    const actualReceived = getActualReceived(untaxedAmount, taxRate, shippingFee);
 
     if ([untaxedAmount, taxRate, shippingFee, actualReceived].some((value) => Number.isNaN(value) || value < 0)) {
       setAccountingNotice({ text: '❌ 金額或稅率格式錯誤', tone: 'danger' });
@@ -1952,6 +1987,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       invoiceNo: accountingDraft.invoiceNo.trim() || '待補',
       proof: accountingDraft.proof.trim() || '待上傳',
     } : item));
+    setAccountingDraft((prev) => ({ ...prev, actualReceived: String(actualReceived) }));
     setAccountingNotice({ text: `✅ 已更新本次訂單：${accountingDraft.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 會計欄位已回寫：${accountingDraft.orderNo}`, tone: 'success' });
     return true;
@@ -2165,7 +2201,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} accountingDraft={accountingDraft} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
               <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
