@@ -2488,3 +2488,57 @@ button:hover { transform: translateY(-1px); }
 .warehouse-reminder-panel .panel-head {
   margin-bottom: 0;
 }
+
+
+.warehouse-reminder-top{
+  background: linear-gradient(180deg, #fffafc 0%, #fff 100%);
+}
+.warehouse-reminder-head{
+  align-items:flex-start;
+}
+.warehouse-reminder-top-grid{
+  grid-template-columns: 1fr;
+}
+.warehouse-side-checklist-compact{
+  padding-top: 18px;
+}
+.warehouse-sop-compact-head .flow-title{
+  font-size: 16px;
+}
+.warehouse-sop-compact-head .flow-desc{
+  font-size: 12px;
+  margin-top: 4px;
+}
+.warehouse-check-summary-grid-compact{
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.warehouse-checklist-compact{
+  gap: 8px;
+  max-height: none;
+}
+.warehouse-checklist-compact .warehouse-check-item{
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+.warehouse-checklist-compact .warehouse-check-title{
+  font-size: 14px;
+}
+.warehouse-checklist-compact .warehouse-check-desc{
+  font-size: 12px;
+  line-height: 1.5;
+}
+.warehouse-print-head{
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed #ead5df;
+}
+.warehouse-filter-grid .field-span-2{
+  display:none;
+}
+@media (max-width: 900px){
+  .warehouse-check-summary-grid-compact{
+    grid-template-columns: 1fr;
+  }
+}
