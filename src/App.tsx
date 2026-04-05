@@ -1751,22 +1751,6 @@ export default function App() {
       </aside>
 
       <main className="main-content">
-        <div className="hero-card card">
-          <div className="hero-copy">
-            <div className="page-kicker">VP 訂購系統 / Vercel UI</div>
-            <h1>沿用既有版本，專做高質感 UI 升級</h1>
-            <p>
-              這版以你現在的作品為基底，不亂改功能結構，只先把畫面層級、閱讀節奏、手機體驗與模組布局整理到可繼續擴充的狀態。
-            </p>
-            <div className="hero-badges">
-              <span className="badge badge-soft">不破壞版本</span>
-              <span className="badge badge-soft">保留 Firebase 接法</span>
-              <span className="badge badge-soft">對齊 GAS 功能邏輯</span>
-            </div>
-          </div>
-
-        </div>
-
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
