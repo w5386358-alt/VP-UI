@@ -2204,7 +2204,20 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
-              <ProfileModule personalOrders={personalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <ProfileModule
+                personalOrders={personalOrders}
+                personalSummary={personalSummary}
+                profileQuickActions={profileQuickActions}
+                user={user}
+                getRankClass={getRankClass}
+                keyword={keyword}
+                setKeyword={setKeyword}
+                priceTierLabel={getPriceTierLabel(user.rankKey)}
+                SectionIntro={SectionIntro}
+                SummaryCard={SummaryCard}
+                ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)}
+                allOrderRecords={orderRecords}
+              />
             )}
           </>
         )}

@@ -1,13 +1,25 @@
-import { QrCode, RefreshCw, Search, CalendarRange } from 'lucide-react';
+import { QrCode, RefreshCw, Search, CalendarRange, Phone, User2, ClipboardList } from 'lucide-react';
 
 export default function ProfileModule(props: any) {
-  const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, priceTierLabel, SectionIntro, SummaryCard } = props;
+  const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, priceTierLabel, SectionIntro, SummaryCard, ownCustomerRecords = [], allOrderRecords = [] } = props;
+
+  const myCustomerCards = ownCustomerRecords.map((customer: any) => {
+    const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
+    const latestOrder = relatedOrders[0];
+    return {
+      ...customer,
+      orderCount: relatedOrders.length,
+      latestOrderNo: latestOrder?.orderNo || '尚無訂單',
+      latestOrderStatus: latestOrder ? `${latestOrder.paymentStatus} / ${latestOrder.shippingStatus}` : '尚無訂單',
+    };
+  });
+
   return (
     <>
       <SectionIntro
         title="個人資料"
-        desc="個人資料、業績與歷史訂單集中整理。"
-        stats={[`歷史訂單 ${personalOrders.length} 筆`, '個人資料與業績', '掃碼與刷新']}
+        desc="個人資料、業績、歷史訂單與我的客戶集中整理。"
+        stats={[`歷史訂單 ${personalOrders.length} 筆`, `我的客戶 ${myCustomerCards.length} 位`, '掃碼與刷新']}
       />
 
       <section className="summary-grid">
@@ -44,6 +56,33 @@ export default function ProfileModule(props: any) {
             <div className="metric-box large"><span>退款扣回影響</span><strong>-$1,240</strong></div>
           </div>
           <div className="profile-note-list"><div className="profile-note-item">本月主力商品：女神酵素液 / 美妍X關鍵賦活飲</div><div className="profile-note-item">待追蹤：1 筆待收款、2 筆待出貨、1 筆換貨處理</div></div>
+        </div>
+      </section>
+
+      <section className="card order-panel profile-customer-panel">
+        <div className="panel-head">
+          <div>
+            <div className="panel-title">客戶資料</div>
+            <div className="panel-desc">只顯示自己負責的客戶資料。</div>
+          </div>
+          <span className="badge badge-neutral">姓名 / 電話 / 訂單資料</span>
+        </div>
+
+        <div className="profile-customer-grid">
+          {myCustomerCards.map((item: any) => (
+            <div key={item.id} className="profile-customer-card">
+              <div className="profile-customer-head">
+                <div className="profile-customer-name"><User2 className="small-icon" />{item.name}</div>
+                <span className="badge badge-soft">{item.orderCount} 筆</span>
+              </div>
+              <div className="profile-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
+              <div className="profile-customer-order">
+                <div className="profile-customer-order-no"><ClipboardList className="small-icon" />{item.latestOrderNo}</div>
+                <div className="profile-customer-order-status">{item.latestOrderStatus}</div>
+              </div>
+            </div>
+          ))}
+          {!myCustomerCards.length && <div className="warehouse-empty-state">目前沒有屬於你的客戶資料</div>}
         </div>
       </section>
 
