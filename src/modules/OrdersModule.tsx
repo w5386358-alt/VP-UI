@@ -84,7 +84,7 @@ export default function OrdersModule(props: any) {
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
-                <div className="panel-desc">訂購頁只保留商品分類 / 搜尋 / 加入購物車節奏，客資與購物車統一收進彈射視窗。</div>
+                <div className="panel-desc">商品分類、搜尋與購物車集中整理。</div>
               </div>
               <span className="badge badge-soft">價格層級 / {priceTierLabel}</span>
             </div>
@@ -106,7 +106,7 @@ export default function OrdersModule(props: any) {
                     ) : (
                       <div className="catalog-image-placeholder">
                         <Receipt className="small-icon" />
-                        <span>商品圖片預留</span>
+                        <span>商品圖片</span>
                       </div>
                     )}
                   </div>
@@ -115,7 +115,7 @@ export default function OrdersModule(props: any) {
                     <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>{item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}</span>
                   </div>
                   <div className="catalog-name">{item.name}</div>
-                  <div className="catalog-desc">{item.category} / 依身分與階級可切換價格顯示</div>
+                  <div className="catalog-desc">{item.category} / 依身分顯示對應價格</div>
                   <div className="catalog-footer">
                     <div>
                       <div className="mini-label">{priceTierLabel}</div>
@@ -142,7 +142,7 @@ export default function OrdersModule(props: any) {
           <div className="cart-drawer-head">
             <div>
               <div className="panel-title">購物車</div>
-              <div className="panel-desc">商品明細、客戶資料、配送設定都整合在這裡。</div>
+              <div className="panel-desc">商品、客戶與配送資料集中整理。</div>
             </div>
             <button type="button" className="drawer-close-button" onClick={() => setCartOpen(false)} aria-label="關閉購物車">
               <X className="small-icon" />
@@ -187,7 +187,7 @@ export default function OrdersModule(props: any) {
               <div className="panel-head compact-head">
                 <div>
                   <div className="panel-title drawer-inner-title">客戶與配送資料</div>
-                  <div className="panel-desc">點選快速客資或直接填寫。</div>
+                  <div className="panel-desc">可直接帶入或手動填寫。</div>
                 </div>
               </div>
 

@@ -4,8 +4,8 @@ export default function StaffModule(props: any) {
     <>
       <SectionIntro
         title="人員管理"
-        desc="承接你原本人員管理表的邏輯，這版先整理登入 ID、角色、階級與啟用狀態的視覺層級。"
-        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限骨架']}
+        desc="登入 ID、角色、階級與啟用狀態集中管理。"
+        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限']}
       />
       <section className="record-grid staff-grid">
         {filteredStaff.map((item: any) => (
@@ -18,7 +18,7 @@ export default function StaffModule(props: any) {
             <div className="data-card-subtitle">登入 ID：{item.loginId}</div>
             <div className="data-chip-row">
               <span className={getRankClass(item.rank)}>階級 / {item.rank}</span>
-              <span className="badge badge-neutral">權限模組待接</span>
+              <span className="badge badge-neutral">權限設定</span>
             </div>
           </div>
         ))}

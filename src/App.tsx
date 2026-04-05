@@ -482,7 +482,7 @@ const accountingBoards = [
   },
   {
     title: '排行榜 / 熱銷',
-    desc: '銷售冠軍、完成訂單數、熱門商品、退貨影響值都先預留位置。',
+    desc: '銷售排行、熱門商品與退款影響集中查看。',
     bullets: ['人員排行', '商品熱銷排行', '退款扣回績效'],
   },
 ];
@@ -516,9 +516,9 @@ const personalSummary = [
 ];
 
 const profileQuickActions = [
-  { title: '員編掃碼', desc: '保留手機掃碼入口，後續直接接你的個人條碼 / QR 查詢。', icon: QrCode },
-  { title: '歷史刷新', desc: '維持你原本的刷新整理節奏，不改操作習慣。', icon: RefreshCw },
-  { title: '業績查詢', desc: '之後直接承接個人排名、退款扣回與完成單數。', icon: Trophy },
+  { title: '員編掃碼', desc: '快速開啟掃碼。', icon: QrCode },
+  { title: '刷新資料', desc: '快速更新歷史資料。', icon: RefreshCw },
+  { title: '業績查詢', desc: '集中查看排名與業績。', icon: Trophy },
 ];
 
 const personalOrders = [
@@ -596,14 +596,14 @@ const initialOrderRecords: OrderRecord[] = [
 const workflowCards: WorkflowCard[] = [
   {
     title: '訂購介面',
-    desc: '依 GAS 既有邏輯承接商品、客戶、價格層級、購物車與下單流程，這版先把前台骨架與資料卡位整理好。',
+    desc: '商品、客戶、價格與下單集中整理。',
     accent: 'rose',
     icon: Sparkles,
     bullets: ['商品列表 / 分類 / 搜尋', '客戶資料 / 配送欄位', '訂單主檔 / 訂單明細'],
   },
   {
     title: '會計中心',
-    desc: '預留收款、退款、報表、排行榜版位，維持你原本 GAS 的金流與績效邏輯不變。',
+    desc: '收款、退款、統計與排行集中整理。',
     accent: 'gold',
     icon: CreditCard,
     bullets: ['未稅價 / 稅額 / 實收', '已收款 / 已退款 狀態', '銷售統計 / 排行榜'],
@@ -617,7 +617,7 @@ const workflowCards: WorkflowCard[] = [
   },
   {
     title: '個人資料',
-    desc: '保留歷史訂單、個人業績、員編與權限顯示，之後直接套進你的使用者流程。',
+    desc: '個人資料、歷史訂單與業績集中整理。',
     accent: 'lavender',
     icon: ClipboardList,
     bullets: ['我的歷史訂單', '累積業績 / 排名', '身分 / 階級 / 價格層級'],
@@ -701,7 +701,7 @@ function getSearchPlaceholder(active: NavKey) {
     case 'orders':
       return '搜尋商品 / 客戶 / 電話 / 配送方式';
     case 'inventory':
-      return '之後會接條碼 / QR / 商品 / 出貨狀態';
+      return '搜尋條碼 / QR / 商品 / 出貨狀態';
     case 'accounting':
       return '搜尋訂單編號 / 客戶 / 收款狀態 / 退款狀態 / 收款證明';
     case 'profile':
@@ -887,7 +887,7 @@ export default function App() {
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 倉儲 SOP 第二包已裝入，可直接測防超賣與 QR 查詢',
+    text: '✅ 倉儲資料已更新',
     tone: 'success',
   });
   const [warehouseKeyword, setWarehouseKeyword] = useState('');
@@ -928,7 +928,7 @@ export default function App() {
   const [orderRecords, setOrderRecords] = useState<OrderRecord[]>(initialOrderRecords);
   const [selectedOrderNo, setSelectedOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
   const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ Orders 模組已啟動，可建立訂單與切換訂單紀錄',
+    text: '✅ 訂單已建立',
     tone: 'success',
   });
 
@@ -1294,14 +1294,14 @@ export default function App() {
     if (!order) {
       return [
         { text: '請先從左側選擇待處理訂單，再進行倉儲作業。', tone: 'neutral' },
-        { text: '這版先導入提醒邏輯，實際自動連動暫停。', tone: 'neutral' },
+        { text: '目前依狀態顯示提醒。', tone: 'neutral' },
       ];
     }
 
     const items = [
       { text: order.paymentStatus === '已收款' || order.paymentStatus === '免收款' ? '此訂單款項狀態正常，可進入下一步檢查。' : '此訂單尚未完成收款，請先人工覆核。', tone: order.paymentStatus === '已收款' || order.paymentStatus === '免收款' ? 'success' : 'danger' },
-      { text: order.shippingStatus === '待出貨' ? '目前為待出貨狀態，適合進行理貨與列印出貨單。' : `目前商品狀態：${order.shippingStatus}，請依流程續作。`, tone: order.shippingStatus === '待出貨' ? 'neutral' : 'warning' },
-      { text: warehouseShipValidation.issues.length ? `本單共有 ${warehouseShipValidation.issues.length} 個檢查提醒，請先處理再出貨。` : '目前未發現阻擋項，可進行人工確認。', tone: warehouseShipValidation.issues.length ? 'warning' : 'success' },
+      { text: order.shippingStatus === '待出貨' ? '目前為待出貨狀態。' : `目前商品狀態：${order.shippingStatus}。`, tone: order.shippingStatus === '待出貨' ? 'neutral' : 'warning' },
+      { text: warehouseShipValidation.issues.length ? `本單共有 ${warehouseShipValidation.issues.length} 個檢查項目，請先處理。` : '目前可進行確認。', tone: warehouseShipValidation.issues.length ? 'warning' : 'success' },
     ];
 
     if (order.shippingStatus.includes('換貨')) {
@@ -2032,7 +2032,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="brand card">
           <div className="brand-kicker">VP SYSTEM</div>
           <div className="brand-title">Vercel UI</div>
-          <div className="brand-subtitle">沿用你目前版本，只做 UI 設計優化，不破壞既有架構</div>
+          <div className="brand-subtitle">沿用目前版本，只整理 UI 與命名</div>
         </div>
 
         <div className="card user-card">
@@ -2092,7 +2092,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
             <span className="badge badge-neutral">退費 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
           </div>
-          <div className="role-preview-desc">這版先做 UI + 權限套用：模組可見性看身分，客戶可見範圍與進階操作看階級與客製化授權。</div>
+          <div className="role-preview-desc">依角色與階級顯示可用模組與資料範圍。</div>
         </div>
 
         <div className="nav-group-title">主功能選單</div>
@@ -2115,7 +2115,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         {canAccessNav(user.role, 'accounting') && (
         <div className="card accounting-shortcut">
-          <div className="shortcut-title">本版修正</div>
+          <div className="shortcut-title">快速切換</div>
           <button
             type="button"
             onClick={() => setActive('accounting')}
@@ -2127,8 +2127,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         )}
 
         <div className="sidebar-tip card">
-          <div className="sidebar-tip-title">目前策略</div>
-          <div className="sidebar-tip-desc">先把倉儲 SOP 第二包測穩，再決定是否進會計 ↔ 倉儲串接。</div>
+          <div className="sidebar-tip-title">目前進度</div>
+          <div className="sidebar-tip-desc">先完成 UI 整理，再補主流程串接。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -2141,7 +2141,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">模組操作區</div>
+            <div className="topbar-title">作業區</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
@@ -2158,7 +2158,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <div className="card loading-card">
             <div className="spinner" />
             <div className="loading-title">{bootMessage}</div>
-            <div className="loading-desc">正在建立目前版本的 UI 介面層與資料介接層</div>
+            <div className="loading-desc">正在載入資料</div>
           </div>
         ) : (
           <>
@@ -2168,8 +2168,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <div className="banner-title">{bootMessage}</div>
                 <div className="banner-desc">
                   {firebaseReady
-                    ? '目前已直接讀取 Firebase 的 products / customers / staff，可繼續往訂單、倉儲、會計模組擴充。'
-                    : '目前先用 mock 畫面保底，不影響你後續接真資料。'}
+                    ? '目前已讀取商品、客戶與人員資料。'
+                    : '目前使用本地資料顯示。'}
                 </div>
               </div>
             </div>
@@ -2178,7 +2178,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             {!canAccessNav(user.role, active) && (
               <div className="card access-denied-card">
                 <div className="access-denied-title">此角色不可進入目前模組</div>
-                <div className="access-denied-desc">目前視角是「{ROLE_LABEL[user.role]}」。這版已改成權限隔離流程：會計只改收款狀態，倉儲只依狀態解鎖出貨，不互看對方模組。</div>
+                <div className="access-denied-desc">目前視角是「{ROLE_LABEL[user.role]}」，此模組未開放。</div>
               </div>
             )}
 
@@ -2195,7 +2195,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品 / 活動', desc: '這裡預留新品消息、主推活動或輪播圖片。' }, { title: '出貨提醒', desc: '可顯示付款提醒、出貨公告、節日配送異動。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
             )}
             {active === 'inventory' && (
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />

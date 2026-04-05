@@ -24,8 +24,8 @@ export default function ProductsModule(props: any) {
   return (
     <>
       <SectionIntro
-        title="商品後台編輯區"
-        desc="這區正式定義為內部商品管理，不對外開放。先完成新增、查看、編輯、啟用 / 停用的功能啟動。"
+        title="商品管理"
+        desc="商品資料、價格、庫存與狀態集中管理。"
         stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
       />
 
@@ -40,8 +40,8 @@ export default function ProductsModule(props: any) {
           <div className="card order-panel">
             <div className="panel-head">
               <div>
-                <div className="panel-title">商品卡片列表</div>
-                <div className="panel-desc">可即時搜尋、切換商品、查看目前狀態。這區是後台編輯區，不是前台展示頁。</div>
+                <div className="panel-title">商品列表</div>
+                <div className="panel-desc">可快速查看商品、價格、庫存與狀態。</div>
               </div>
               <button type="button" className="primary-button" onClick={openCreateProduct}>
                 <Package className="small-icon" />新增商品
@@ -49,7 +49,7 @@ export default function ProductsModule(props: any) {
             </div>
 
             <div className="product-editor-chip-row">
-              <span className="badge badge-neutral">內部管理</span>
+              <span className="badge badge-neutral">商品管理</span>
               <span className="badge badge-soft">卡片式</span>
               <span className="badge badge-soft">右側編輯面板</span>
             </div>
@@ -67,7 +67,7 @@ export default function ProductsModule(props: any) {
                     ) : (
                       <div className="product-image-placeholder">
                         <ImageIcon className="small-icon" />
-                        <span>商品圖片預留</span>
+                        <span>商品圖片</span>
                       </div>
                     )}
                   </div>
@@ -106,7 +106,7 @@ export default function ProductsModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                <div className="panel-desc">右側滑出編輯面板先做成功能啟動，後面再接真資料儲存。</div>
+                <div className="panel-desc">右側面板集中編輯商品資料。</div>
               </div>
               <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
             </div>
@@ -148,15 +148,15 @@ export default function ProductsModule(props: any) {
             </div>
 
             <div className="stack-list compact product-editor-notes">
-              <div>這區是內部編輯區，不對外開放</div>
-              <div>先完成新增 / 編輯 / 啟用 / 停用 / 查看</div>
-              <div>圖片上傳與 Firebase 連動後續再接</div>
+              <div>商品資料集中編輯</div>
+              <div>支援新增、編輯、查看與狀態切換</div>
+              <div>圖片與資料同步</div>
             </div>
 
             <div className="accounting-action-row">
               {productEditorMode === 'view' ? (
                 <button type="button" className="primary-button full-width" onClick={() => selectedProduct && openEditProduct(selectedProduct)}>
-                  <PencilLine className="small-icon" />切換編輯
+                  <PencilLine className="small-icon" />編輯商品
                 </button>
               ) : (
                 <>
@@ -164,7 +164,7 @@ export default function ProductsModule(props: any) {
                     <Package className="small-icon" />{productEditorMode === 'create' ? '確認新增' : '確認更新'}
                   </button>
                   <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : null}>
-                    <Eye className="small-icon" />返回查看
+                    <Eye className="small-icon" />返回明細
                   </button>
                 </>
               )}

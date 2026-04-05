@@ -2497,3 +2497,111 @@ button:hover { transform: translateY(-1px); }
 .accounting-inline-records-head{
   margin-bottom: 12px;
 }
+
+/* UI clean pass */
+:root {
+  --shadow: 0 10px 28px rgba(219, 166, 185, 0.10);
+  --radius-xl: 24px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+}
+
+.card,
+.hero-card,
+.hero-status,
+.workflow-card,
+.content-card,
+.order-panel,
+.data-card,
+.catalog-card,
+.product-admin-card,
+.profile-action-card,
+.field-card,
+.metric-box,
+.accounting-proof-card,
+.shipping-row,
+.history-row,
+.ranking-item,
+.stock-snapshot-card,
+.flow-card,
+.warehouse-result-item {
+  box-shadow: var(--shadow);
+}
+
+.brand,
+.hero-card,
+.accounting-shortcut,
+.banner-card,
+.workflow-card,
+.content-card,
+.profile-action-card,
+.accounting-proof-card,
+.metric-box,
+.flow-card,
+.warehouse-result-item {
+  background: rgba(255,255,255,0.96) !important;
+}
+
+.panel-title,
+.flow-title,
+.warehouse-result-title,
+.accounting-proof-title,
+.profile-action-title,
+.data-card-title,
+.catalog-name {
+  letter-spacing: 0;
+}
+
+.panel-desc,
+.flow-desc,
+.profile-action-desc,
+.accounting-proof-desc,
+.data-card-subtitle,
+.catalog-desc,
+.history-meta,
+.shipping-meta,
+.warehouse-reminder-footer,
+.role-preview-desc,
+.banner-desc,
+.sidebar-tip-desc {
+  line-height: 1.55;
+}
+
+.badge,
+.filter-chip,
+.shipping-chip,
+.accounting-tab,
+.warehouse-tab,
+.role-switch-btn,
+.rank-switch-btn,
+.nav-button,
+.mobile-nav-btn,
+.ghost-button,
+.primary-button {
+  border-radius: 14px;
+}
+
+.panel-head,
+.cart-drawer-head,
+.warehouse-card-head,
+.topbar,
+.history-filter-row,
+.order-toolbar-row,
+.product-editor-chip-row,
+.accounting-action-row {
+  gap: 12px;
+}
+
+.stack-list > div,
+.profile-note-item,
+.workflow-bullet,
+.placeholder-bullet {
+  border-radius: 14px;
+}
+
+.catalog-image-placeholder,
+.product-image-placeholder,
+.profile-qr-box {
+  background: #faf7f8;
+  border-style: solid;
+}
