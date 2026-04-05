@@ -52,9 +52,9 @@ type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
-type Product = { id: string; code: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number };
+type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
-type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean };
+type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; initialPassword?: string; permissionNote?: string };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
 
 type PermissionProfile = {
@@ -85,6 +85,7 @@ type ProductEditorMode = 'create' | 'edit' | 'view';
 type ProductDraft = {
   id: string;
   code: string;
+  barcode: string;
   name: string;
   category: string;
   price: string;
@@ -102,6 +103,16 @@ type AccountingDraft = {
   paymentMethod: string;
   invoiceNo: string;
   proof: string;
+};
+
+type StaffDraft = {
+  id: string;
+  name: string;
+  loginId: string;
+  role: string;
+  rank: string;
+  enabled: boolean;
+  initialPassword: string;
 };
 
 type OrderRecord = {
@@ -259,12 +270,12 @@ function buildRecentWarehouseLogs(logs: InventoryLog[]) {
 }
 
 const mockProducts: Product[] = [
-  { id: '1', code: 'E401', name: '女神酵素液', category: '保健', price: 899, vipPrice: 899, agentPrice: 799, generalAgentPrice: 699, enabled: true, stock: 36 },
-  { id: '2', code: 'E402', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 18 },
-  { id: '3', code: 'P301', name: '瞬白激光精華4G', category: '保養', price: 1680, vipPrice: 1680, agentPrice: 1490, generalAgentPrice: 1350, enabled: true, stock: 9 },
-  { id: '4', code: 'P304', name: '奇肌修復全能霜', category: '保養', price: 1980, vipPrice: 1980, agentPrice: 1750, generalAgentPrice: 1590, enabled: false, stock: 0 },
-  { id: '5', code: 'P305', name: '超逆齡修復菁萃', category: '保養', price: 2280, vipPrice: 2280, agentPrice: 2050, generalAgentPrice: 1860, enabled: true, stock: 14 },
-  { id: '6', code: 'E408', name: '魔力抹茶機能飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 22 },
+  { id: '1', code: 'E401', barcode: '4710000004011', name: '女神酵素液', category: '保健', price: 899, vipPrice: 899, agentPrice: 799, generalAgentPrice: 699, enabled: true, stock: 36 },
+  { id: '2', code: 'E402', barcode: '4710000004028', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 18 },
+  { id: '3', code: 'P301', barcode: '4710000003014', name: '瞬白激光精華4G', category: '保養', price: 1680, vipPrice: 1680, agentPrice: 1490, generalAgentPrice: 1350, enabled: true, stock: 9 },
+  { id: '4', code: 'P304', barcode: '4710000003045', name: '奇肌修復全能霜', category: '保養', price: 1980, vipPrice: 1980, agentPrice: 1750, generalAgentPrice: 1590, enabled: false, stock: 0 },
+  { id: '5', code: 'P305', barcode: '4710000003052', name: '超逆齡修復菁萃', category: '保養', price: 2280, vipPrice: 2280, agentPrice: 2050, generalAgentPrice: 1860, enabled: true, stock: 14 },
+  { id: '6', code: 'E408', barcode: '4710000004080', name: '魔力抹茶機能飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 22 },
 ];
 
 const mockCustomers: Customer[] = [
@@ -274,9 +285,9 @@ const mockCustomers: Customer[] = [
 ];
 
 const mockStaff: Staff[] = [
-  { id: 's1', name: '吳秉宸', loginId: 'vp001', role: '管理員', rank: '核心人員', enabled: true },
-  { id: 's2', name: '王小婷', loginId: 'vp002', role: '銷售', rank: '普通銷售', enabled: true },
-  { id: 's3', name: '陳小安', loginId: 'vp003', role: '會計', rank: '高級銷售', enabled: true },
+  { id: 's1', name: '吳秉宸', loginId: 'vp001', role: '系統', rank: '核心人員', enabled: true, initialPassword: 'vp001@123', permissionNote: '全模組管理 / 最高權限' },
+  { id: 's2', name: '王小婷', loginId: 'vp002', role: '銷售', rank: '普通銷售', enabled: true, initialPassword: 'vp002@123', permissionNote: '可看自己的客戶與訂單 / 基礎權限' },
+  { id: 's3', name: '陳小安', loginId: 'vp003', role: '會計', rank: '高級銷售', enabled: true, initialPassword: 'vp003@123', permissionNote: '可看收退款 / 可用代理價' },
 ];
 
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -650,6 +661,7 @@ function normalizeProduct(id: string, data: any): Product {
     id,
     code: data.code || data.productCode || data.productId || '-',
     name: data.name || data.productName || '未命名商品',
+    barcode: data.barcode || data.productBarcode || data.sku || data.code || data.productCode || data.productId || '-',
     category: data.category || data.productCategory || '未分類',
     price: Number(data.price || data.vipPrice || data.salePrice || 0),
     vipPrice: Number(data.vipPrice || data.price || data.salePrice || 0),
@@ -680,6 +692,8 @@ function normalizeStaff(id: string, data: any): Staff {
     role: data.role || '未設定',
     rank: data.rank || '普通銷售',
     enabled: data.enabled ?? data.isActive ?? true,
+    initialPassword: data.initialPassword || data.password || '123456',
+    permissionNote: data.permissionNote || '',
   };
 }
 
@@ -718,7 +732,25 @@ function getShippingFee(method: ShippingMethod) {
 }
 
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
-  return { id: '', code: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
+  return { id: '', code: nextCode, barcode: nextCode, name: '', category: '保健', price: '', stock: '', enabled: true };
+}
+
+function makeInitialPassword(loginId: string) {
+  const seed = loginId.trim() || 'vp000';
+  return `${seed}@123`;
+}
+
+function getPermissionNote(role: string, rank: string) {
+  const parts: string[] = [];
+  if (role === '系統' || role === '管理員') parts.push('全模組管理');
+  if (role === '會計') parts.push('可看收退款');
+  if (role === '倉儲') parts.push('可看出入庫');
+  if (role === '銷售') parts.push('可看自己的客戶與訂單');
+  if (rank.includes('核心')) parts.push('最高權限');
+  else if (rank.includes('菁英')) parts.push('可參與管理');
+  else if (rank.includes('高級')) parts.push('可用代理價');
+  else parts.push('基礎權限');
+  return parts.join(' / ');
 }
 
 function getTodayDateInputValue() {
@@ -785,6 +817,7 @@ function toProductDraft(item: Product): ProductDraft {
     id: item.id,
     code: item.code,
     name: item.name,
+    barcode: item.barcode || item.code,
     category: item.category,
     price: String(item.price),
     stock: String(item.stock),
@@ -1684,8 +1717,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const matchDateStart = !accountingDateStart || itemDateKey >= accountingDateStart;
       const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
       return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
+    }).sort((a, b) => {
+      const dateCompare = parseDateValue(b.date) - parseDateValue(a.date);
+      if (dateCompare !== 0) return dateCompare;
+      return b.orderNo.localeCompare(a.orderNo, 'zh-Hant');
     });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+  }, [paymentQueue, accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
 
   useEffect(() => {
     if (!filteredAccountingQueue.length) return;
@@ -1727,6 +1764,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const enabledProducts = products.filter((p) => p.enabled).length;
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
+  const selectedStaff = filteredStaff.find((item) => item.id === selectedStaffId) || staff.find((item) => item.id === selectedStaffId) || filteredStaff[0] || staff[0] || null;
+
+  useEffect(() => {
+    if (!selectedStaff) return;
+    if (!selectedStaffId) setSelectedStaffId(selectedStaff.id);
+    setStaffDraft((prev) => {
+      if (staffEditorMode === 'create') return prev;
+      if (prev.id && prev.id !== selectedStaff.id && staffEditorMode === 'edit') return prev;
+      return toStaffDraft(selectedStaff);
+    });
+  }, [selectedStaff, selectedStaffId, staffEditorMode]);
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
@@ -1803,7 +1851,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   function saveProductDraft() {
-    if (!productDraft.code.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
+    if (!productDraft.code.trim() || !productDraft.barcode.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
       setProductNotice({ text: '❌ 欄位未完成', tone: 'danger' });
       return;
     }
@@ -1820,6 +1868,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const nextProduct: Product = {
         id: `product-${Date.now()}`,
         code: productDraft.code.trim(),
+        barcode: productDraft.barcode.trim(),
         name: productDraft.name.trim(),
         category: productDraft.category.trim(),
         price,
@@ -1842,6 +1891,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
       ...item,
       code: productDraft.code.trim(),
+      barcode: productDraft.barcode.trim(),
       name: productDraft.name.trim(),
       category: productDraft.category.trim(),
       price,
@@ -1858,6 +1908,82 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setSelectedProductId(item.id);
     setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
     setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
+  }
+
+  function toStaffDraft(item: Staff): StaffDraft {
+    return {
+      id: item.id,
+      name: item.name,
+      loginId: item.loginId,
+      role: item.role,
+      rank: item.rank,
+      enabled: item.enabled,
+      initialPassword: item.initialPassword || makeInitialPassword(item.loginId),
+    };
+  }
+
+  function openCreateStaff() {
+    const nextLoginId = `vp${String(staff.length + 1).padStart(3, '0')}`;
+    setStaffEditorMode('create');
+    setSelectedStaffId('');
+    setStaffDraft({ id: '', name: '', loginId: nextLoginId, role: '銷售', rank: '普通銷售', enabled: true, initialPassword: makeInitialPassword(nextLoginId) });
+    setStaffNotice({ text: '✅ 新增模式', tone: 'neutral' });
+  }
+
+  function openEditStaff(item: Staff) {
+    setStaffEditorMode('edit');
+    setSelectedStaffId(item.id);
+    setStaffDraft(toStaffDraft(item));
+    setStaffNotice({ text: '✅ 已載入人員', tone: 'neutral' });
+  }
+
+  function openViewStaff(item: Staff) {
+    setStaffEditorMode('view');
+    setSelectedStaffId(item.id);
+    setStaffDraft(toStaffDraft(item));
+    setStaffNotice({ text: '✅ 已顯示人員', tone: 'neutral' });
+  }
+
+  function updateStaffDraftField(field: keyof StaffDraft, value: any) {
+    setStaffDraft((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'loginId') next.initialPassword = makeInitialPassword(String(value));
+      if (field === 'role' && !next.rank) next.rank = '普通銷售';
+      return next;
+    });
+  }
+
+  function saveStaffDraft() {
+    if (!staffDraft.name.trim() || !staffDraft.loginId.trim() || !staffDraft.role.trim() || !staffDraft.rank.trim()) {
+      setStaffNotice({ text: '❌ 欄位未完成', tone: 'danger' });
+      return;
+    }
+
+    const payload: Staff = {
+      id: staffDraft.id || `staff-${Date.now()}`,
+      name: staffDraft.name.trim(),
+      loginId: staffDraft.loginId.trim(),
+      role: staffDraft.role.trim(),
+      rank: staffDraft.rank.trim(),
+      enabled: staffDraft.enabled,
+      initialPassword: staffDraft.initialPassword || makeInitialPassword(staffDraft.loginId),
+      permissionNote: getPermissionNote(staffDraft.role, staffDraft.rank),
+    };
+
+    if (staffEditorMode === 'create') {
+      setStaff((prev) => [payload, ...prev]);
+      setSelectedStaffId(payload.id);
+      setStaffEditorMode('edit');
+      setStaffDraft(toStaffDraft(payload));
+      setStaffNotice({ text: '✅ 已新增', tone: 'success' });
+      return;
+    }
+
+    setStaff((prev) => prev.map((item) => item.id === payload.id ? payload : item));
+    setSelectedStaffId(payload.id);
+    setStaffEditorMode('edit');
+    setStaffDraft(toStaffDraft(payload));
+    setStaffNotice({ text: '✅ 已更新', tone: 'success' });
   }
 
   function makeNextOrderNo() {
@@ -2192,7 +2318,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
             )}
             {active === 'staff' && (
-              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} staffNotice={staffNotice} selectedStaffId={selectedStaffId} openCreateStaff={openCreateStaff} openViewStaff={openViewStaff} openEditStaff={openEditStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} updateStaffDraftField={updateStaffDraftField} saveStaffDraft={saveStaffDraft} selectedStaff={selectedStaff} />
             )}
             {active === 'orders' && (
               <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
