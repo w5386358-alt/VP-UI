@@ -32,6 +32,12 @@ export default function InventoryModule(props: any) {
     setWarehouseInboundQty,
     warehouseInboundQr,
     setWarehouseInboundQr,
+    warehouseScanBarcode,
+    setWarehouseScanBarcode,
+    warehouseScanQr,
+    setWarehouseScanQr,
+    warehouseExpectedScan,
+    warehouseScanValidation,
     handleWarehousePrint,
     inventoryFlow,
     stockSnapshot,
@@ -161,7 +167,14 @@ export default function InventoryModule(props: any) {
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
                   <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
                   <div className="fake-field"><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
+                  <div className="fake-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /></strong></div>
+                  <div className="fake-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /></strong></div>
                   <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
+                </div>
+
+                <div className="warehouse-scan-hint-grid">
+                  <div className={`warehouse-scan-hint ${warehouseScanValidation?.barcodeOk ? 'ok' : warehouseScanBarcode ? 'bad' : 'idle'}`}>{warehouseScanValidation?.barcodeMessage}</div>
+                  <div className={`warehouse-scan-hint ${warehouseScanValidation?.qrOk ? 'ok' : warehouseScanQr ? 'bad' : 'idle'}`}>{warehouseScanValidation?.qrMessage}</div>
                 </div>
 
                 {!!warehouseShipValidation?.issues?.length && (

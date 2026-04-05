@@ -2428,3 +2428,38 @@ button:hover { transform: translateY(-1px); }
 .warehouse-reminder-item.tone-danger{background:#fff5f7;border-color:#f3c4cf;color:#a33b5d;}
 .warehouse-reminder-item.tone-neutral{background:#f8fafc;border-color:#d9e2ec;color:#526175;}
 .warehouse-reminder-footer{margin-top:10px;color:#8a7180;font-size:13px;line-height:1.6;}
+
+
+.warehouse-scan-hint-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.warehouse-scan-hint {
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255,255,255,0.92);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.warehouse-scan-hint.ok {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-color: rgba(32,122,77,0.2);
+}
+
+.warehouse-scan-hint.bad {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: rgba(191,51,83,0.2);
+}
+
+.warehouse-scan-hint.idle {
+  background: #fff8fb;
+  color: #8a6b78;
+}
