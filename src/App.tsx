@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, setDoc, addDoc, writeBatch } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -701,6 +701,92 @@ function normalizeStaff(id: string, data: any): Staff {
   };
 }
 
+function normalizeInventoryDoc(id: string, data: any) {
+  return {
+    id,
+    productId: data.productId || data.id || id,
+    code: data.code || data.productCode || data.barcode || '-',
+    barcode: data.barcode || data.code || data.productCode || '-',
+    name: data.name || data.productName || '未命名商品',
+    category: data.category || data.productCategory || '未分類',
+    stock: Number(data.currentStock ?? data.stock ?? data.qty ?? 0),
+    enabled: data.enabled ?? data.isActive ?? true,
+    updatedAt: String(data.updatedAt || data.lastSyncedAt || ''),
+  };
+}
+
+function normalizeInventoryLog(id: string, data: any): InventoryLog {
+  return {
+    id,
+    createdAt: String(data.createdAt || data.created_at || data.updatedAt || '2026-04-01 00:00:00'),
+    type: data.type === '出庫' ? '出庫' : '入庫',
+    code: data.code || data.productCode || data.barcode || '-',
+    name: data.name || data.productName || '未命名商品',
+    qty: Number(data.qty || data.quantity || 0),
+    qr: String(data.qr || data.qrCode || data.identityCode || `QR(${data.code || data.productCode || 'ITEM'})`).toUpperCase(),
+    operator: String(data.operator || data.operatorLoginId || data.createdBy || 'SYSTEM'),
+    note: String(data.note || ''),
+    orderNo: data.orderNo || undefined,
+  };
+}
+
+function getIsoNow() {
+  return new Date().toISOString();
+}
+
+function getTaipeiTimestamp() {
+  const now = new Date();
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Taipei',
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(now).replace(' ', ' ');
+}
+
+function buildProductPayload(product: Product) {
+  const nowIso = getIsoNow();
+  return {
+    id: product.id,
+    code: product.code,
+    barcode: product.barcode || product.code,
+    name: product.name,
+    category: product.category,
+    price: product.price,
+    originalPrice: product.price,
+    vipPrice: product.vipPrice ?? product.price,
+    agentPrice: product.agentPrice ?? product.price,
+    generalAgentPrice: product.generalAgentPrice ?? product.price,
+    stock: product.stock,
+    enabled: product.enabled,
+    source: 'VERCEL_UI',
+    updatedAt: nowIso,
+    lastSyncedAt: nowIso,
+  };
+}
+
+function buildInventoryPayload(product: Product, stock: number) {
+  const nowIso = getIsoNow();
+  return {
+    id: product.id,
+    productId: product.id,
+    code: product.code,
+    barcode: product.barcode || product.code,
+    name: product.name,
+    category: product.category,
+    currentStock: stock,
+    stock,
+    enabled: product.enabled,
+    source: 'VERCEL_UI',
+    updatedAt: nowIso,
+    lastSyncedAt: nowIso,
+  };
+}
+
 function getRankClass(rank: string) {
   if (rank.includes('核心')) return 'badge badge-rank-core';
   if (rank.includes('菁英')) return 'badge badge-rank-elite';
@@ -1012,19 +1098,35 @@ export default function App() {
         return;
       }
 
-      const [productsSnap, customersSnap, staffSnap] = await Promise.all([
+      const [productsSnap, customersSnap, staffSnap, inventorySnap, inventoryLogsSnap] = await Promise.all([
         getDocs(collection(db, 'products')),
         getDocs(collection(db, 'customers')),
         getDocs(collection(db, 'staff')),
+        getDocs(collection(db, 'inventory')),
+        getDocs(collection(db, 'inventory_logs')),
       ]);
 
       const nextProducts = productsSnap.docs.map((doc) => normalizeProduct(doc.id, doc.data()));
       const nextCustomers = customersSnap.docs.map((doc) => normalizeCustomer(doc.id, doc.data()));
       const nextStaff = staffSnap.docs.map((doc) => normalizeStaff(doc.id, doc.data()));
+      const nextInventory = inventorySnap.docs.map((doc) => normalizeInventoryDoc(doc.id, doc.data()));
+      const nextInventoryLogs = inventoryLogsSnap.docs.map((doc) => normalizeInventoryLog(doc.id, doc.data()));
 
-      setProducts(nextProducts.length ? nextProducts : mockProducts);
+      const stockMap = new Map(nextInventory.map((item) => [item.productId || item.id || item.code, item.stock]));
+      const codeMap = new Map(nextInventory.map((item) => [item.code, item.stock]));
+      const mergedProducts = (nextProducts.length ? nextProducts : mockProducts).map((item) => {
+        const matchedStock = stockMap.get(item.id) ?? codeMap.get(item.code);
+        return typeof matchedStock === 'number' ? { ...item, stock: matchedStock } : item;
+      });
+
+      setProducts(mergedProducts);
       setCustomers(nextCustomers.length ? nextCustomers : mockCustomers);
       setStaff(nextStaff.length ? nextStaff : mockStaff);
+      setInventoryLogs(
+        nextInventoryLogs.length
+          ? nextInventoryLogs
+          : buildInitialInventoryLogs(mergedProducts)
+      );
       setFirebaseReady(true);
       setDataMode('firebase');
       setBootMessage('Firebase 真資料已接入，目前版本可直接延續');
@@ -1578,7 +1680,7 @@ export default function App() {
     setOrderNotice({ text: `✅ 倉儲已標記換貨待出庫：${order.orderNo}`, tone: 'success' });
   };
 
-  const handleWarehouseInbound = () => {
+  const handleWarehouseInbound = async () => {
     if (!selectedStockItem) {
       setWarehouseNotice({ text: '❌ 請先選擇商品再入庫', tone: 'danger' });
       return;
@@ -1592,7 +1694,13 @@ export default function App() {
       return;
     }
 
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const productRef = products.find((item) => item.code === selectedStockItem.code);
+    if (!productRef) {
+      setWarehouseNotice({ text: '❌ 找不到對應商品，無法同步入庫', tone: 'danger' });
+      return;
+    }
+
+    const timestamp = getTaipeiTimestamp();
     const cleanQr = warehouseInboundQr.trim().toUpperCase();
     const newLog: InventoryLog = {
       id: `in-${selectedStockItem.code}-${Date.now()}`,
@@ -1606,8 +1714,17 @@ export default function App() {
       note: `${selectedStockItem.code} ${selectedStockItem.name} 入庫 ${warehouseInboundQty} 件（${cleanQr}）`,
     };
 
+    const nextStock = selectedStockItem.stock + warehouseInboundQty;
     setInventoryLogs((prev) => [...prev, newLog]);
-    setWarehouseNotice({ text: `✅ 已寫入入庫紀錄：${selectedStockItem.code} +${warehouseInboundQty}`, tone: 'success' });
+    setProducts((prev) => prev.map((item) => item.id === productRef.id ? { ...item, stock: nextStock } : item));
+
+    try {
+      const synced = await appendInventoryInboundToFirebase(newLog, { ...productRef, stock: nextStock }, nextStock);
+      setWarehouseNotice({ text: synced ? `✅ 已入庫並同步 Firebase：${selectedStockItem.code} +${warehouseInboundQty}` : `✅ 已寫入入庫紀錄：${selectedStockItem.code} +${warehouseInboundQty}`, tone: 'success' });
+    } catch (error) {
+      console.error(error);
+      setWarehouseNotice({ text: '❌ 入庫已寫畫面，但 Firebase 同步失敗', tone: 'danger' });
+    }
     setWarehouseQueryResult([{ title: cleanQr, desc: `${selectedStockItem.name} / 已入庫 ${warehouseInboundQty} 件`, meta: [`商品條碼：${selectedStockItem.code}`, `操作人員：${user.loginId}`, '已寫入 inventory_logs'] }]);
     setWarehouseInboundQty(1);
     setWarehouseInboundQr('');
@@ -1867,6 +1984,46 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return `VPP${String(next).padStart(3, '0')}`;
   }
 
+  async function syncProductToFirebase(product: Product, stockValue?: number) {
+    const db = getDb();
+    if (!db) return false;
+    const stock = typeof stockValue === 'number' ? stockValue : product.stock;
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'products', product.id), buildProductPayload({ ...product, stock }));
+    batch.set(doc(db, 'inventory', product.id), buildInventoryPayload(product, stock));
+    await batch.commit();
+    setFirebaseReady(true);
+    setDataMode('firebase');
+    return true;
+  }
+
+  async function appendInventoryInboundToFirebase(log: InventoryLog, product: Product, nextStock: number) {
+    const db = getDb();
+    if (!db) return false;
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'inventory', product.id), buildInventoryPayload(product, nextStock), { merge: true });
+    batch.set(doc(db, 'inventory_logs', log.id), {
+      id: log.id,
+      createdAt: log.createdAt,
+      type: log.type,
+      code: log.code,
+      barcode: product.barcode || product.code,
+      name: log.name,
+      qty: log.qty,
+      qr: log.qr,
+      operator: log.operator,
+      note: log.note,
+      orderNo: log.orderNo || '',
+      source: 'VERCEL_UI',
+      updatedAt: getIsoNow(),
+      lastSyncedAt: getIsoNow(),
+    });
+    await batch.commit();
+    setFirebaseReady(true);
+    setDataMode('firebase');
+    return true;
+  }
+
   function openCreateProduct() {
     setProductEditorMode('create');
     setSelectedProductId('');
@@ -1888,7 +2045,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setProductNotice({ text: '✅ 已顯示詳情', tone: 'neutral' });
   }
 
-  function saveProductDraft() {
+  async function saveProductDraft() {
     if (!productDraft.code.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
       setProductNotice({ text: '❌ 欄位未完成', tone: 'danger' });
       return;
@@ -1905,9 +2062,37 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
 
-    if (productEditorMode === 'create') {
-      const nextProduct: Product = {
-        id: `product-${Date.now()}`,
+    try {
+      if (productEditorMode === 'create') {
+        const nextProduct: Product = {
+          id: `product-${Date.now()}`,
+          code: productDraft.code.trim(),
+          barcode: productDraft.barcode.trim(),
+          name: productDraft.name.trim(),
+          category: productDraft.category.trim(),
+          price,
+          vipPrice,
+          agentPrice,
+          generalAgentPrice,
+          stock,
+          enabled: productDraft.enabled,
+        };
+        setProducts((prev) => [nextProduct, ...prev]);
+        setSelectedProductId(nextProduct.id);
+        setProductDraft(toProductDraft(nextProduct));
+        setProductEditorMode('edit');
+        const synced = await syncProductToFirebase(nextProduct, stock);
+        setProductNotice({ text: synced ? '✅ 已新增並同步 Firebase / inventory' : '✅ 已新增（目前未接 Firebase）', tone: 'success' });
+        return;
+      }
+
+      if (!productDraft.id) {
+        setProductNotice({ text: '❌ 未選商品', tone: 'danger' });
+        return;
+      }
+
+      const updatedProduct: Product = {
+        id: productDraft.id,
         code: productDraft.code.trim(),
         barcode: productDraft.barcode.trim(),
         name: productDraft.name.trim(),
@@ -1919,42 +2104,30 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         stock,
         enabled: productDraft.enabled,
       };
-      setProducts((prev) => [nextProduct, ...prev]);
-      setSelectedProductId(nextProduct.id);
-      setProductDraft(toProductDraft(nextProduct));
+
+      setProducts((prev) => prev.map((item) => item.id === productDraft.id ? { ...item, ...updatedProduct } : item));
       setProductEditorMode('edit');
-      setProductNotice({ text: '✅ 已新增', tone: 'success' });
-      return;
+      const synced = await syncProductToFirebase(updatedProduct, stock);
+      setProductNotice({ text: synced ? '✅ 已更新並同步 Firebase / inventory' : '✅ 已更新（目前未接 Firebase）', tone: 'success' });
+    } catch (error) {
+      console.error(error);
+      setProductNotice({ text: '❌ 商品儲存失敗', tone: 'danger' });
     }
-
-    if (!productDraft.id) {
-      setProductNotice({ text: '❌ 未選商品', tone: 'danger' });
-      return;
-    }
-
-    setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
-      ...item,
-      code: productDraft.code.trim(),
-      barcode: productDraft.barcode.trim(),
-      name: productDraft.name.trim(),
-      category: productDraft.category.trim(),
-      price,
-      vipPrice,
-      agentPrice,
-      generalAgentPrice,
-      stock,
-      enabled: productDraft.enabled,
-    } : item));
-    setProductEditorMode('edit');
-    setProductNotice({ text: '✅ 已更新', tone: 'success' });
   }
 
-  function toggleProductEnabled(item: Product) {
+  async function toggleProductEnabled(item: Product) {
     const nextEnabled = !item.enabled;
+    const updatedProduct = { ...item, enabled: nextEnabled };
     setProducts((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, enabled: nextEnabled } : entry));
     setSelectedProductId(item.id);
     setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
-    setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
+    try {
+      const synced = await syncProductToFirebase(updatedProduct, item.stock);
+      setProductNotice({ text: synced ? (nextEnabled ? '✅ 已啟用並同步 Firebase' : '❌ 已停用並同步 Firebase') : (nextEnabled ? '✅ 已啟用' : '❌ 已停用'), tone: nextEnabled ? 'success' : 'danger' });
+    } catch (error) {
+      console.error(error);
+      setProductNotice({ text: '❌ 狀態更新失敗，Firebase 未同步成功', tone: 'danger' });
+    }
   }
 
 
