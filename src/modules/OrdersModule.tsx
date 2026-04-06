@@ -118,7 +118,7 @@ export default function OrdersModule(props: any) {
                   <div className="catalog-desc">{item.category} / 客顯原價，系統顯示 {priceTierLabel}</div>
                   <div className="catalog-footer">
                     <div>
-                      <div className="mini-label">原價 ${{item.originalPrice ?? item.price}}</div>
+                      <div className="mini-label">原價 ${item.originalPrice ?? item.price}</div>
                       <div className="catalog-price">${item.price}</div>
                       <div className="mini-label">{priceTierLabel}</div>
                     </div>
