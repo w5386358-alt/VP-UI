@@ -1,4 +1,4 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Trash2, Image as ImageIcon } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -11,6 +11,7 @@ export default function ProductsModule(props: any) {
     openViewProduct,
     openEditProduct,
     toggleProductEnabled,
+    deleteProduct,
     productEditorMode,
     productDraft,
     setProductDraft,
@@ -94,6 +95,9 @@ export default function ProductsModule(props: any) {
                     <button type="button" className={`ghost-button compact-btn ${item.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => toggleProductEnabled(item)}>
                       {item.enabled ? '停用' : '啟用'}
                     </button>
+                    <button type="button" className="ghost-button compact-btn danger-ghost" onClick={() => deleteProduct(item)}>
+                      <Trash2 className="small-icon" />刪除
+                    </button>
                   </div>
                 </div>
               ))}
@@ -170,6 +174,11 @@ export default function ProductsModule(props: any) {
                   <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : null}>
                     <Eye className="small-icon" />返回明細
                   </button>
+                  {productEditorMode === 'edit' && selectedProduct && (
+                    <button type="button" className="ghost-button danger-ghost" onClick={() => deleteProduct(selectedProduct)}>
+                      <Trash2 className="small-icon" />刪除商品
+                    </button>
+                  )}
                 </>
               )}
             </div>

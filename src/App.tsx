@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -38,6 +38,7 @@ import {
   Plus,
   PencilLine,
   Eye,
+  Trash2,
 } from 'lucide-react';
 import DashboardModule from './modules/DashboardModule';
 import ProductsModule from './modules/ProductsModule';
@@ -674,36 +675,6 @@ function normalizeProduct(id: string, data: any): Product {
   };
 }
 
-
-function normalizeInventoryItem(id: string, data: any) {
-  return {
-    id,
-    code: String(data.code || data.productCode || data.barcode || id || '').trim(),
-    barcode: String(data.barcode || data.productBarcode || data.code || '').trim(),
-    name: String(data.name || data.productName || '未命名商品').trim(),
-    category: String(data.category || data.productCategory || '未分類').trim(),
-    stock: Number(data.currentStock ?? data.stock ?? data.qty ?? 0),
-    enabled: data.enabled ?? data.isActive ?? true,
-    updatedAt: String(data.updatedAt || data.lastSyncedAt || data.createdAt || getTodayDateInputValue()),
-  };
-}
-
-function buildInventoryInitLogsFromCollection(items: Array<ReturnType<typeof normalizeInventoryItem>>): InventoryLog[] {
-  return items
-    .filter((item) => item.stock > 0)
-    .map((item, index) => ({
-      id: `inventory-${item.id || item.code || index}`,
-      createdAt: `${item.updatedAt}`.replace('T', ' ').replace('Z', ''),
-      type: '入庫' as InventoryLogType,
-      code: item.code || item.barcode || '-',
-      name: item.name || '未命名商品',
-      qty: item.stock,
-      qr: item.barcode || `QR(${item.code || item.id || index})`,
-      operator: 'FIREBASE',
-      note: 'inventory 初始化庫存',
-    }));
-}
-
 function normalizeCustomer(id: string, data: any): Customer {
   return {
     id,
@@ -1022,7 +993,6 @@ export default function App() {
     tone: 'success',
   });
 
-
   async function loadFirebaseData() {
     setBooting(true);
     try {
@@ -1033,42 +1003,23 @@ export default function App() {
         setProducts(mockProducts);
         setCustomers(mockCustomers);
         setStaff(mockStaff);
-        setInventoryLogs(initialInventoryLogs);
         setBootMessage('Firebase 未設定，先用目前版本畫面保底');
         return;
       }
 
-      const [productsSnap, customersSnap, staffSnap, inventorySnap] = await Promise.all([
+      const [productsSnap, customersSnap, staffSnap] = await Promise.all([
         getDocs(collection(db, 'products')),
         getDocs(collection(db, 'customers')),
         getDocs(collection(db, 'staff')),
-        getDocs(collection(db, 'inventory')),
       ]);
 
-      const rawProducts = productsSnap.docs.map((item) => normalizeProduct(item.id, item.data()));
-      const inventoryItems = inventorySnap.docs.map((item) => normalizeInventoryItem(item.id, item.data()));
-      const inventoryByCode = new Map(inventoryItems.map((item) => [item.code, item]));
-      const inventoryByBarcode = new Map(inventoryItems.filter((item) => item.barcode).map((item) => [item.barcode, item]));
-
-      const mergedProducts = (rawProducts.length ? rawProducts : mockProducts).map((product) => {
-        const matched = inventoryByCode.get(product.code) || (product.barcode ? inventoryByBarcode.get(product.barcode) : undefined);
-        return matched ? {
-          ...product,
-          barcode: product.barcode || matched.barcode,
-          stock: matched.stock,
-          name: product.name || matched.name,
-          category: product.category || matched.category,
-          enabled: matched.enabled ?? product.enabled,
-        } : product;
-      });
-
+      const nextProducts = productsSnap.docs.map((doc) => normalizeProduct(doc.id, doc.data()));
       const nextCustomers = customersSnap.docs.map((doc) => normalizeCustomer(doc.id, doc.data()));
       const nextStaff = staffSnap.docs.map((doc) => normalizeStaff(doc.id, doc.data()));
 
-      setProducts(mergedProducts.length ? mergedProducts : mockProducts);
+      setProducts(nextProducts.length ? nextProducts : mockProducts);
       setCustomers(nextCustomers.length ? nextCustomers : mockCustomers);
       setStaff(nextStaff.length ? nextStaff : mockStaff);
-      setInventoryLogs(inventoryItems.length ? buildInventoryInitLogsFromCollection(inventoryItems) : buildInitialInventoryLogs(mergedProducts.length ? mergedProducts : mockProducts));
       setFirebaseReady(true);
       setDataMode('firebase');
       setBootMessage('Firebase 真資料已接入，目前版本可直接延續');
@@ -1077,7 +1028,6 @@ export default function App() {
       setProducts(mockProducts);
       setCustomers(mockCustomers);
       setStaff(mockStaff);
-      setInventoryLogs(initialInventoryLogs);
       setFirebaseReady(false);
       setDataMode('mock');
       setBootMessage('Firebase 讀取失敗，已切回 mock 畫面保底');
@@ -1086,46 +1036,6 @@ export default function App() {
     }
   }
 
-  async function saveProductAndInventoryToFirebase(nextProduct: Product, previousProduct?: Product | null) {
-    const db = getDb();
-    if (!db) return false;
-
-    const productDocId = String(previousProduct?.id || nextProduct.id || nextProduct.code).trim();
-    const inventoryDocId = String(previousProduct?.id || nextProduct.id || nextProduct.code).trim();
-    const productPayload = {
-      id: productDocId,
-      code: nextProduct.code,
-      barcode: nextProduct.barcode || '',
-      name: nextProduct.name,
-      category: nextProduct.category,
-      price: nextProduct.price,
-      stock: nextProduct.stock,
-      currentStock: nextProduct.stock,
-      enabled: nextProduct.enabled,
-      updatedAt: new Date().toISOString(),
-      source: 'VERCEL_UI',
-    };
-    const inventoryPayload = {
-      id: inventoryDocId,
-      productId: productDocId,
-      code: nextProduct.code,
-      barcode: nextProduct.barcode || '',
-      name: nextProduct.name,
-      category: nextProduct.category,
-      currentStock: nextProduct.stock,
-      enabled: nextProduct.enabled,
-      updatedAt: new Date().toISOString(),
-      source: 'VERCEL_UI',
-    };
-
-    await setDoc(doc(db, 'products', productDocId), productPayload, { merge: true });
-    await setDoc(doc(db, 'inventory', inventoryDocId), inventoryPayload, { merge: true });
-
-    if (previousProduct && previousProduct.id && previousProduct.id !== productDocId) {
-      try { await deleteDoc(doc(db, 'inventory', previousProduct.id)); } catch {}
-    }
-    return true;
-  }
   useEffect(() => {
     void loadFirebaseData();
   }, []);
@@ -1973,8 +1883,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setProductNotice({ text: '✅ 已顯示詳情', tone: 'neutral' });
   }
 
-
-  async function saveProductDraft() {
+  function saveProductDraft() {
     if (!productDraft.code.trim() || !productDraft.name.trim() || !productDraft.category.trim()) {
       setProductNotice({ text: '❌ 欄位未完成', tone: 'danger' });
       return;
@@ -1988,103 +1897,42 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
 
-    const trimmedCode = productDraft.code.trim();
-    const trimmedBarcode = productDraft.barcode.trim();
-    const trimmedName = productDraft.name.trim();
-    const trimmedCategory = productDraft.category.trim();
-
-    try {
-      if (productEditorMode === 'create') {
-        const nextProduct: Product = {
-          id: trimmedCode,
-          code: trimmedCode,
-          barcode: trimmedBarcode,
-          name: trimmedName,
-          category: trimmedCategory,
-          price,
-          stock,
-          enabled: productDraft.enabled,
-        };
-
-        const saved = await saveProductAndInventoryToFirebase(nextProduct, null);
-        if (!saved && dataMode === 'firebase') {
-          setProductNotice({ text: '❌ Firebase 未連線', tone: 'danger' });
-          return;
-        }
-
-        setProducts((prev) => {
-          const withoutSame = prev.filter((item) => item.id !== nextProduct.id && item.code !== nextProduct.code && item.barcode !== nextProduct.barcode);
-          return [nextProduct, ...withoutSame];
-        });
-        setInventoryLogs((prev) => {
-          const withoutSameCode = prev.filter((item) => item.code !== nextProduct.code);
-          return [{
-            id: `inventory-init-${nextProduct.code}`,
-            createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-            type: '入庫',
-            code: nextProduct.code,
-            name: nextProduct.name,
-            qty: nextProduct.stock,
-            qr: nextProduct.barcode || `QR(${nextProduct.code})`,
-            operator: user.loginId,
-            note: '商品新增自動建立 inventory',
-          }, ...withoutSameCode];
-        });
-        setSelectedProductId(nextProduct.id);
-        setSelectedStockCode(nextProduct.code);
-        setProductDraft(toProductDraft(nextProduct));
-        setProductEditorMode('edit');
-        setProductNotice({ text: '✅ 商品與 inventory 已建立', tone: 'success' });
-        return;
-      }
-
-      if (!productDraft.id) {
-        setProductNotice({ text: '❌ 未選商品', tone: 'danger' });
-        return;
-      }
-
-      const previousProduct = products.find((item) => item.id === productDraft.id) || null;
+    if (productEditorMode === 'create') {
       const nextProduct: Product = {
-        id: previousProduct?.id || productDraft.id,
-        code: trimmedCode,
-        barcode: trimmedBarcode,
-        name: trimmedName,
-        category: trimmedCategory,
+        id: `product-${Date.now()}`,
+        code: productDraft.code.trim(),
+        barcode: productDraft.barcode.trim(),
+        name: productDraft.name.trim(),
+        category: productDraft.category.trim(),
         price,
         stock,
         enabled: productDraft.enabled,
       };
-
-      const saved = await saveProductAndInventoryToFirebase(nextProduct, previousProduct);
-      if (!saved && dataMode === 'firebase') {
-        setProductNotice({ text: '❌ Firebase 未連線', tone: 'danger' });
-        return;
-      }
-
-      setProducts((prev) => prev.map((item) => item.id === productDraft.id ? { ...item, ...nextProduct } : item));
-      setInventoryLogs((prev) => {
-        const remaining = prev.filter((item) => item.code !== (previousProduct?.code || nextProduct.code));
-        return [{
-          id: `inventory-sync-${nextProduct.id}`,
-          createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-          type: '入庫',
-          code: nextProduct.code,
-          name: nextProduct.name,
-          qty: nextProduct.stock,
-          qr: nextProduct.barcode || `QR(${nextProduct.code})`,
-          operator: user.loginId,
-          note: '商品編輯同步 inventory 基本資料',
-        }, ...remaining];
-      });
+      setProducts((prev) => [nextProduct, ...prev]);
       setSelectedProductId(nextProduct.id);
-      setSelectedStockCode(nextProduct.code);
-      setProductDraft({ ...toProductDraft(nextProduct), id: nextProduct.id });
+      setProductDraft(toProductDraft(nextProduct));
       setProductEditorMode('edit');
-      setProductNotice({ text: '✅ 商品與 inventory 已同步', tone: 'success' });
-    } catch (error) {
-      console.error(error);
-      setProductNotice({ text: '❌ 寫入失敗', tone: 'danger' });
+      setProductNotice({ text: '✅ 已新增', tone: 'success' });
+      return;
     }
+
+    if (!productDraft.id) {
+      setProductNotice({ text: '❌ 未選商品', tone: 'danger' });
+      return;
+    }
+
+    setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
+      ...item,
+      code: productDraft.code.trim(),
+      barcode: productDraft.barcode.trim(),
+      name: productDraft.name.trim(),
+      category: productDraft.category.trim(),
+      price,
+      stock,
+      enabled: productDraft.enabled,
+    } : item));
+    setProductEditorMode('edit');
+    setProductNotice({ text: '✅ 已更新', tone: 'success' });
   }
 
   function toggleProductEnabled(item: Product) {
@@ -2093,6 +1941,42 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setSelectedProductId(item.id);
     setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
     setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
+  }
+
+  async function deleteProduct(item: Product) {
+    const ok = window.confirm(`確定刪除商品「${item.name}」？`);
+    if (!ok) return;
+
+    try {
+      const db = getDb();
+      if (db && dataMode === 'firebase') {
+        await deleteDoc(doc(db, 'products', item.id));
+        try {
+          await deleteDoc(doc(db, 'inventory', item.id));
+        } catch (error) {
+          console.warn('inventory delete skipped', error);
+        }
+      }
+
+      setProducts((prev) => prev.filter((entry) => entry.id !== item.id));
+      setInventoryLogs((prev) => prev.filter((entry) => entry.code !== item.code));
+
+      const remaining = products.filter((entry) => entry.id !== item.id);
+      const fallback = remaining[0] || null;
+      setSelectedProductId(fallback?.id || '');
+      if (fallback) {
+        setProductDraft(toProductDraft(fallback));
+        setProductEditorMode('view');
+      } else {
+        setProductDraft(makeEmptyProductDraft(getNextProductCode()));
+        setProductEditorMode('create');
+      }
+
+      setProductNotice({ text: '✅ 商品已刪除', tone: 'success' });
+    } catch (error) {
+      console.error(error);
+      setProductNotice({ text: '❌ 刪除失敗', tone: 'danger' });
+    }
   }
 
 
@@ -2490,7 +2374,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
             {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} deleteProduct={deleteProduct} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'customers' && (
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
