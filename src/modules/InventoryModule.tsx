@@ -205,11 +205,11 @@ export default function InventoryModule(props: any) {
 
             <div className="warehouse-stock-grid compact">
               {stockSnapshot.map((item: any) => (
-                <button key={item.barcode || item.code} type="button" className={`card stock-snapshot-card compact accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
+                <button key={item.code} type="button" className={`card stock-snapshot-card compact accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
                   <div className="stock-card-top compact">
                     <div className="stock-card-main">
                       <div className="shipping-order">{item.name}</div>
-                      <div className="shipping-meta">{item.barcode || item.code}</div>
+                      <div className="shipping-meta">{item.code}</div>
                     </div>
                     <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
                   </div>
@@ -232,7 +232,7 @@ export default function InventoryModule(props: any) {
           <div className="card warehouse-tool-card">
             <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><Boxes className="small-icon" /></div>
             <div className="warehouse-form-grid">
-              <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.barcode || selectedStockItem?.code || '-'}</strong></div>
+              <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
               <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
