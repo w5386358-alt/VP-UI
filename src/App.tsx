@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -274,27 +274,6 @@ function buildRecentWarehouseLogs(logs: InventoryLog[]) {
     }));
 }
 
-const mockProducts: Product[] = [
-  { id: '1', code: 'E401', barcode: '4710000004011', name: '女神酵素液', category: '保健', price: 899, vipPrice: 899, agentPrice: 799, generalAgentPrice: 699, enabled: true, stock: 36 },
-  { id: '2', code: 'E402', barcode: '4710000004028', name: '美妍X關鍵賦活飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 18 },
-  { id: '3', code: 'P301', barcode: '4710000003014', name: '瞬白激光精華4G', category: '保養', price: 1680, vipPrice: 1680, agentPrice: 1490, generalAgentPrice: 1350, enabled: true, stock: 9 },
-  { id: '4', code: 'P304', barcode: '4710000003045', name: '奇肌修復全能霜', category: '保養', price: 1980, vipPrice: 1980, agentPrice: 1750, generalAgentPrice: 1590, enabled: false, stock: 0 },
-  { id: '5', code: 'P305', barcode: '4710000003052', name: '超逆齡修復菁萃', category: '保養', price: 2280, vipPrice: 2280, agentPrice: 2050, generalAgentPrice: 1860, enabled: true, stock: 14 },
-  { id: '6', code: 'E408', barcode: '4710000004080', name: '魔力抹茶機能飲', category: '保健', price: 1380, vipPrice: 1380, agentPrice: 1230, generalAgentPrice: 1120, enabled: true, stock: 22 },
-];
-
-const mockCustomers: Customer[] = [
-  { id: 'c1', name: '王小美', phone: '0912345678', level: 'VIP', ownerLoginId: 'vp001', ownerName: '吳秉宸' },
-  { id: 'c2', name: '林雅雯', phone: '0988777666', level: '一般', ownerLoginId: 'vp002', ownerName: '王小婷' },
-  { id: 'c3', name: '陳佳玲', phone: '0933555777', level: '代理', ownerLoginId: 'vp001', ownerName: '吳秉宸' },
-];
-
-const mockStaff: Staff[] = [
-  { id: 's1', name: '吳秉宸', loginId: 'vp001', role: '系統組', rank: '核心人員', enabled: true, password: 'vp001', permissions: ['全模組管理', '價格調整', '退款審核', '庫存覆核'] },
-  { id: 's2', name: '王小婷', loginId: 'vp002', role: '銷售組', rank: '普通銷售', enabled: true, password: 'vp002', permissions: ['訂購操作', '個人客戶查看'] },
-  { id: 's3', name: '陳小安', loginId: 'vp003', role: '行政組', rank: '高級銷售', enabled: true, password: 'vp003', permissions: ['收退款作業', '會計資料查看'] },
-];
-
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'dashboard', label: '總覽', icon: BarChart3 },
   { key: 'orders', label: '訂購', icon: ShoppingCart },
@@ -468,8 +447,6 @@ const shippingChecklist = [
   { title: '數量判讀', desc: '改看剩餘可出貨數量，不只看 QR 狀態字樣，避免同 QR 剩餘量被卡死。' },
   { title: '完成連動', desc: 'shipping、orders、inventory、inventory_logs、sales_report 同步留痕跡。' },
 ];
-
-const initialInventoryLogs = buildInitialInventoryLogs(mockProducts);
 
 
 const paymentQueue = [
@@ -735,6 +712,81 @@ function normalizeInventoryLog(id: string, data: any): InventoryLog {
   };
 }
 
+
+function normalizeOrderRecord(id: string, data: any): OrderRecord {
+  const orderNo = String(data.orderNo || data.id || id || '').trim();
+  const customer = String(data.customer || data.customerName || '').trim();
+  const phone = String(data.phone || data.customerPhone || '').trim();
+  const shippingMethodRaw = String(data.shippingMethod || '宅配').trim();
+  const shippingMethod: ShippingMethod = shippingMethodRaw === '店到店' || shippingMethodRaw === '自取' ? shippingMethodRaw : '宅配';
+  const address = String(data.address || data.shippingDetail || '').trim();
+  const paymentStatus = String(data.paymentStatus || '待收款').trim();
+  const shippingStatus = String(data.shippingStatus || '待出貨').trim();
+  const mainStatus = String(data.mainStatus || data.orderStatus || '處理中').trim();
+  const date = String(data.date || data.createdAt || data.updatedAt || getTaipeiTimestamp()).replace(/-/g, '/');
+  const remark = String(data.remark || data.note || '').trim();
+  const taxRate = Number(data.taxRate ?? 0);
+  const shippingFeeOverride = Number(data.shippingFeeOverride ?? data.shippingFee ?? getShippingFeeByMethod(shippingMethod));
+  const actualReceived = Number(data.actualReceived ?? data.total ?? data.amount ?? 0);
+  const paymentMethod = String(data.paymentMethod || '待確認').trim();
+  const invoiceNo = String(data.invoiceNo || '待補').trim();
+  const proof = String(data.proof || '待上傳').trim();
+  let items: Array<{ code: string; name: string; qty: number; price: number }> = [];
+  const rawItems = data.items;
+  try {
+    const parsed = typeof rawItems === 'string' ? JSON.parse(rawItems) : rawItems;
+    if (Array.isArray(parsed)) {
+      items = parsed.map((item: any) => ({
+        code: String(item.code || item.productCode || '').trim(),
+        name: String(item.name || item.productName || '').trim(),
+        qty: Number(item.qty || item.quantity || 0),
+        price: Number(item.price || item.originalPrice || 0),
+      })).filter((item) => item.code && item.qty > 0);
+    }
+  } catch {}
+  const amount = Number(data.amount ?? data.total ?? data.actualReceived ?? actualReceived ?? 0);
+  const itemCount = Number(data.itemCount ?? data.productCount ?? items.reduce((sum, item) => sum + item.qty, 0) ?? 0);
+  return {
+    orderNo,
+    customer,
+    phone,
+    shippingMethod,
+    address,
+    amount,
+    itemCount,
+    paymentStatus,
+    shippingStatus,
+    mainStatus,
+    date,
+    remark,
+    taxRate,
+    shippingFeeOverride,
+    actualReceived,
+    paymentMethod,
+    invoiceNo,
+    proof,
+    items,
+  };
+}
+
+function dedupeByLatest<T>(items: T[], getKey: (item: T) => string, getUpdatedAt?: (item: T) => string | number | undefined) {
+  const map = new Map<string, T>();
+  items.forEach((item) => {
+    const key = String(getKey(item) || '').trim();
+    if (!key) return;
+    const current = map.get(key);
+    if (!current) {
+      map.set(key, item);
+      return;
+    }
+    if (!getUpdatedAt) return;
+    const nextTime = new Date(String(getUpdatedAt(item) || '')).getTime() || 0;
+    const currentTime = new Date(String(getUpdatedAt(current) || '')).getTime() || 0;
+    if (nextTime >= currentTime) map.set(key, item);
+  });
+  return Array.from(map.values());
+}
+
 function getIsoNow() {
   return new Date().toISOString();
 }
@@ -769,6 +821,8 @@ function buildProductPayload(product: Product) {
     stock: product.stock,
     enabled: product.enabled,
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -787,6 +841,8 @@ function buildInventoryPayload(product: Product, stock: number) {
     stock,
     enabled: product.enabled,
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -816,6 +872,8 @@ function buildCustomerPayloadFromOrder(order: OrderRecord) {
     ownerLoginId: '',
     ownerName: '',
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -871,6 +929,8 @@ function buildOrderItemPayload(order: OrderRecord, item: { code: string; name: s
     price: originalPrice,
     subtotal: originalPrice * Number(item.qty || 0),
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -898,6 +958,8 @@ function buildSalesReportPayload(order: OrderRecord) {
     itemCount: Number(order.itemCount || 0),
     items: JSON.stringify(order.items),
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -919,6 +981,8 @@ function buildPaymentPayload(order: OrderRecord, mode: 'pay' | 'refund') {
     proof: order.proof || '待上傳',
     paymentStatus: mode === 'refund' ? '退款處理中' : '已收款',
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -942,6 +1006,8 @@ function buildRefundPayload(order: OrderRecord) {
     status: '退款處理中',
     note: order.remark || '',
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -972,6 +1038,8 @@ function buildShippingPayload(order: OrderRecord, actor: SessionUser, allocation
       qrcode: item.qr,
     }))),
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -1004,6 +1072,8 @@ function buildInventoryLogFirebasePayload(
     note: log.note || '',
     type: finalType,
     source: 'VERCEL_UI',
+    sourceSystem: 'VERCEL_UI',
+    syncVersion: 1,
     updatedAt: nowIso,
     lastSyncedAt: nowIso,
   };
@@ -1227,11 +1297,11 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [bootMessage, setBootMessage] = useState('初始化中...');
   const [keyword, setKeyword] = useState('');
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
-  const [staff, setStaff] = useState<Staff[]>(mockStaff);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [firebaseReady, setFirebaseReady] = useState(false);
-  const [dataMode, setDataMode] = useState<'firebase' | 'mock'>('mock');
+  const [dataMode, setDataMode] = useState<'firebase' | 'offline'>('offline');
   const [userRoleView, setUserRoleView] = useState<Role>('admin');
   const [userRankView, setUserRankView] = useState<Rank>('core');
   const user = useMemo<SessionUser>(() => ({
@@ -1243,10 +1313,7 @@ export default function App() {
   }), [userRoleView, userRankView]);
   const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
 
-  const [cart, setCart] = useState<CartItem[]>([
-    { ...mockProducts[0], qty: 1 },
-    { ...mockProducts[2], qty: 2 },
-  ]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('宅配');
   const [customerName, setCustomerName] = useState('王小美');
   const [customerPhone, setCustomerPhone] = useState('0912345678');
@@ -1255,7 +1322,7 @@ export default function App() {
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
-  const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
+  const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState('');
   const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 倉儲資料已更新',
     tone: 'success',
@@ -1270,20 +1337,20 @@ export default function App() {
   const [warehouseQueryResult, setWarehouseQueryResult] = useState<{ title: string; desc: string; meta: string[] }[]>([
     { title: '女神酵素液', desc: '商品條碼 E401 / 目前庫存 36 / 最近入庫 2026/03/31 10:45', meta: ['QR(A)*18', 'QR(B)*18', '狀態：正常'] },
   ]);
-  const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>(initialInventoryLogs);
+  const [inventoryLogs, setInventoryLogs] = useState<InventoryLog[]>([]);
   const [warehouseInboundQty, setWarehouseInboundQty] = useState(1);
   const [warehouseInboundQr, setWarehouseInboundQr] = useState('');
   const [warehouseScanBarcode, setWarehouseScanBarcode] = useState('');
   const [warehouseScanQr, setWarehouseScanQr] = useState('');
-  const [selectedStockCode, setSelectedStockCode] = useState(mockProducts[0]?.code ?? '');
+  const [selectedStockCode, setSelectedStockCode] = useState('');
   const [accountingTab, setAccountingTab] = useState<AccountingTab>('ops');
   const [accountingKeyword, setAccountingKeyword] = useState('');
   const [accountingPaymentFilter, setAccountingPaymentFilter] = useState('全部');
   const [accountingShippingFilter, setAccountingShippingFilter] = useState('全部');
   const [accountingDateStart, setAccountingDateStart] = useState('2026-03-01');
   const [accountingDateEnd, setAccountingDateEnd] = useState(getTodayDateInputValue());
-  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
-  const [accountingDraft, setAccountingDraft] = useState<AccountingDraft>(() => makeAccountingDraft(initialOrderRecords[0] || null));
+  const [selectedAccountingOrderNo, setSelectedAccountingOrderNo] = useState('');
+  const [accountingDraft, setAccountingDraft] = useState<AccountingDraft>(() => makeAccountingDraft(null));
   const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
     tone: 'success',
@@ -1293,14 +1360,14 @@ export default function App() {
 
   const [productEditorMode, setProductEditorMode] = useState<ProductEditorMode>('view');
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id ?? '');
-  const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(mockProducts[0]?.code ?? ''));
+  const [productDraft, setProductDraft] = useState<ProductDraft>(() => makeEmptyProductDraft(''));
   const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [staffEditorMode, setStaffEditorMode] = useState<StaffEditorMode>('view');
   const [selectedStaffId, setSelectedStaffId] = useState(staff[0]?.id ?? '');
-  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft(mockStaff[0]));
+  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft({ id: '', name: '', loginId: '', role: '銷售組', rank: '普通銷售', enabled: true, password: '', permissions: [] }));
   const [staffNotice, setStaffNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
-  const [orderRecords, setOrderRecords] = useState<OrderRecord[]>(initialOrderRecords);
-  const [selectedOrderNo, setSelectedOrderNo] = useState(initialOrderRecords[0]?.orderNo ?? '');
+  const [orderRecords, setOrderRecords] = useState<OrderRecord[]>([]);
+  const [selectedOrderNo, setSelectedOrderNo] = useState('');
   const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 訂單已建立',
     tone: 'success',
@@ -1311,55 +1378,80 @@ export default function App() {
     try {
       const db = getDb();
       if (!db) {
-        setDataMode('mock');
         setFirebaseReady(false);
-        setProducts(mockProducts);
-        setCustomers(mockCustomers);
-        setStaff(mockStaff);
-        setBootMessage('Firebase 未設定，先用目前版本畫面保底');
+        setDataMode('offline');
+        setProducts([]);
+        setCustomers([]);
+        setStaff([]);
+        setInventoryLogs([]);
+        setOrderRecords([]);
+        setBootMessage('Firebase 未設定，請先接上真實資料庫');
         return;
       }
 
-      const [productsSnap, customersSnap, staffSnap, inventorySnap, inventoryLogsSnap] = await Promise.all([
+      const [productsSnap, customersSnap, staffSnap, inventorySnap, inventoryLogsSnap, ordersSnap] = await Promise.all([
         getDocs(collection(db, 'products')),
         getDocs(collection(db, 'customers')),
         getDocs(collection(db, 'staff')),
         getDocs(collection(db, 'inventory')),
         getDocs(collection(db, 'inventory_logs')),
+        getDocs(collection(db, 'orders')),
       ]);
 
-      const nextProducts = productsSnap.docs.map((doc) => normalizeProduct(doc.id, doc.data()));
-      const nextCustomers = customersSnap.docs.map((doc) => normalizeCustomer(doc.id, doc.data()));
-      const nextStaff = staffSnap.docs.map((doc) => normalizeStaff(doc.id, doc.data()));
-      const nextInventory = inventorySnap.docs.map((doc) => normalizeInventoryDoc(doc.id, doc.data()));
-      const nextInventoryLogs = inventoryLogsSnap.docs.map((doc) => normalizeInventoryLog(doc.id, doc.data()));
+      const nextProducts = dedupeByLatest(
+        productsSnap.docs.map((item) => normalizeProduct(item.id, item.data())),
+        (item) => item.code,
+        (item: any) => item.updatedAt || item.lastSyncedAt,
+      );
+      const nextCustomers = dedupeByLatest(
+        customersSnap.docs.map((item) => normalizeCustomer(item.id, item.data())),
+        (item) => item.phone || item.id,
+      );
+      const nextStaff = dedupeByLatest(
+        staffSnap.docs.map((item) => normalizeStaff(item.id, item.data())),
+        (item) => item.loginId || item.id,
+      );
+      const nextInventory = dedupeByLatest(
+        inventorySnap.docs.map((item) => normalizeInventoryDoc(item.id, item.data())),
+        (item) => item.code,
+        (item: any) => item.updatedAt || item.lastSyncedAt,
+      );
+      const nextInventoryLogs = dedupeByLatest(
+        inventoryLogsSnap.docs.map((item) => normalizeInventoryLog(item.id, item.data())),
+        (item) => item.id,
+        (item: any) => item.createdAt,
+      );
+      const nextOrders = dedupeByLatest(
+        ordersSnap.docs.map((item) => normalizeOrderRecord(item.id, item.data())),
+        (item) => item.orderNo,
+        (item: any) => item.date,
+      );
 
       const stockMap = new Map(nextInventory.map((item) => [item.productId || item.id || item.code, item.stock]));
       const codeMap = new Map(nextInventory.map((item) => [item.code, item.stock]));
-      const mergedProducts = (nextProducts.length ? nextProducts : mockProducts).map((item) => {
+      const mergedProducts = nextProducts.map((item) => {
         const matchedStock = stockMap.get(item.id) ?? codeMap.get(item.code);
         return typeof matchedStock === 'number' ? { ...item, stock: matchedStock } : item;
       });
 
       setProducts(mergedProducts);
-      setCustomers(nextCustomers.length ? nextCustomers : mockCustomers);
-      setStaff(nextStaff.length ? nextStaff : mockStaff);
-      setInventoryLogs(
-        nextInventoryLogs.length
-          ? nextInventoryLogs
-          : buildInitialInventoryLogs(mergedProducts)
-      );
+      setCustomers(nextCustomers);
+      setStaff(nextStaff);
+      setInventoryLogs(nextInventoryLogs);
+      setOrderRecords(nextOrders);
       setFirebaseReady(true);
       setDataMode('firebase');
-      setBootMessage('Firebase 真資料已接入，目前版本可直接延續');
+      setBootMessage('Firebase 真資料已接入，雙向同步監聽已啟用');
     } catch (error) {
       console.error(error);
-      setProducts(mockProducts);
-      setCustomers(mockCustomers);
-      setStaff(mockStaff);
+      setProducts([]);
+      setCustomers([]);
+      setStaff([]);
+      setInventoryLogs([]);
+      setOrderRecords([]);
       setFirebaseReady(false);
-      setDataMode('mock');
-      setBootMessage('Firebase 讀取失敗，已切回 mock 畫面保底');
+      setDataMode('offline');
+      setBootMessage('Firebase 讀取失敗，請檢查設定或權限');
     } finally {
       setBooting(false);
     }
@@ -1368,6 +1460,86 @@ export default function App() {
   useEffect(() => {
     void loadFirebaseData();
   }, []);
+
+  useEffect(() => {
+    const db = getDb();
+    if (!db) return;
+
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snap) => {
+      setProducts((prev) => {
+        const nextProducts = dedupeByLatest(
+          snap.docs.map((item) => normalizeProduct(item.id, item.data())),
+          (item) => item.code,
+          (item: any) => item.updatedAt || item.lastSyncedAt,
+        );
+        const inventoryMap = new Map(prev.map((item) => [item.code, item.stock]));
+        return nextProducts.map((item) => ({ ...item, stock: inventoryMap.get(item.code) ?? item.stock }));
+      });
+      setFirebaseReady(true);
+      setDataMode('firebase');
+    });
+
+    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snap) => {
+      setCustomers(dedupeByLatest(
+        snap.docs.map((item) => normalizeCustomer(item.id, item.data())),
+        (item) => item.phone || item.id,
+      ));
+    });
+
+    const unsubStaff = onSnapshot(collection(db, 'staff'), (snap) => {
+      setStaff(dedupeByLatest(
+        snap.docs.map((item) => normalizeStaff(item.id, item.data())),
+        (item) => item.loginId || item.id,
+      ));
+    });
+
+    const unsubInventory = onSnapshot(collection(db, 'inventory'), (snap) => {
+      const nextInventory = dedupeByLatest(
+        snap.docs.map((item) => normalizeInventoryDoc(item.id, item.data())),
+        (item) => item.code,
+        (item: any) => item.updatedAt || item.lastSyncedAt,
+      );
+      setProducts((prev) => prev.map((item) => {
+        const matched = nextInventory.find((row) => row.code === item.code);
+        return matched ? { ...item, stock: matched.stock } : item;
+      }));
+    });
+
+    const unsubInventoryLogs = onSnapshot(collection(db, 'inventory_logs'), (snap) => {
+      setInventoryLogs(dedupeByLatest(
+        snap.docs.map((item) => normalizeInventoryLog(item.id, item.data())),
+        (item) => item.id,
+        (item: any) => item.createdAt,
+      ));
+    });
+
+    const unsubOrders = onSnapshot(collection(db, 'orders'), (snap) => {
+      setOrderRecords(dedupeByLatest(
+        snap.docs.map((item) => normalizeOrderRecord(item.id, item.data())),
+        (item) => item.orderNo,
+        (item: any) => item.date,
+      ));
+    });
+
+    return () => {
+      unsubProducts();
+      unsubCustomers();
+      unsubStaff();
+      unsubInventory();
+      unsubInventoryLogs();
+      unsubOrders();
+    };
+  }, []);
+
+
+  useEffect(() => {
+    if (!selectedStockCode && products[0]?.code) setSelectedStockCode(products[0].code);
+    if (!selectedProductId && products[0]?.id) setSelectedProductId(products[0].id);
+    if (!selectedOrderNo && orderRecords[0]?.orderNo) setSelectedOrderNo(orderRecords[0].orderNo);
+    if (!selectedWarehouseOrderNo && orderRecords[0]?.orderNo) setSelectedWarehouseOrderNo(orderRecords[0].orderNo);
+    if (!selectedAccountingOrderNo && orderRecords[0]?.orderNo) setSelectedAccountingOrderNo(orderRecords[0].orderNo);
+    if (!selectedStaffId && staff[0]?.id) setSelectedStaffId(staff[0].id);
+  }, [products, orderRecords, staff, selectedStockCode, selectedProductId, selectedOrderNo, selectedWarehouseOrderNo, selectedAccountingOrderNo, selectedStaffId]);
 
   const filteredProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -1492,7 +1664,7 @@ export default function App() {
       { title: '今日實收', value: `$${paid.toLocaleString()}`, sub: '依實收總額統計' },
       { title: '待收款', value: `$${pending.toLocaleString()}`, sub: `待確認收款 ${paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆` },
       { title: '退款處理', value: `$${refund.toLocaleString()}`, sub: '退款流程中訂單金額' },
-      { title: '本月毛利', value: `$${gross.toLocaleString()}`, sub: '依目前 UI 假資料估算' },
+      { title: '本月毛利', value: `$${gross.toLocaleString()}`, sub: '依目前訂單與退款狀態估算' },
     ];
   }, [paymentQueue]);
 
@@ -1796,7 +1968,7 @@ export default function App() {
     }
 
     const allocations: InventoryLog[] = [];
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const timestamp = getTaipeiTimestamp();
 
     for (const entry of order.items) {
       const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
@@ -1811,7 +1983,7 @@ export default function App() {
         if (remaining <= 0) break;
         const picked = Math.min(bucket.qty, remaining);
         allocations.push({
-          id: `out-${order.orderNo}-${entry.code}-${bucket.qr}-${remaining}`,
+          id: safeFirestoreDocId(`out_${order.orderNo}_${entry.code}_${bucket.qr}_${picked}`, 'inventory_log'),
           createdAt: timestamp,
           type: '出庫',
           code: entry.code,
@@ -1864,9 +2036,9 @@ export default function App() {
       setWarehouseNotice({ text: '❌ 此訂單已退貨', tone: 'danger' });
       return;
     }
-    const timestamp = '2026-04-01 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const timestamp = getTaipeiTimestamp();
     const inboundLogs: InventoryLog[] = order.items.map((entry, index) => ({
-      id: `return-${order.orderNo}-${entry.code}-${index + 1}-${Date.now()}`,
+      id: safeFirestoreDocId(`return_${order.orderNo}_${entry.code}_${index + 1}`, 'inventory_log'),
       createdAt: timestamp,
       type: '入庫',
       code: entry.code,
@@ -1947,7 +2119,7 @@ export default function App() {
     const timestamp = getTaipeiTimestamp();
     const cleanQr = warehouseInboundQr.trim().toUpperCase();
     const newLog: InventoryLog = {
-      id: `in-${selectedStockItem.code}-${Date.now()}`,
+      id: safeFirestoreDocId(`in_${selectedStockItem.code}_${cleanQr}_${timestamp}`, 'inventory_log'),
       createdAt: timestamp,
       type: '入庫',
       code: selectedStockItem.code,
@@ -2128,7 +2300,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, [filteredAccountingQueue, selectedAccountingOrderNo]);
 
   const selectedAccountingRecord = useMemo(
-    () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || paymentQueue[0],
+    () => filteredAccountingQueue.find((item) => item.orderNo === selectedAccountingOrderNo) || filteredAccountingQueue[0] || null,
     [filteredAccountingQueue, selectedAccountingOrderNo],
   );
 
@@ -2242,10 +2414,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
     await batch.commit();
 
-    if (options?.paymentMode === 'refund') {
-      await syncRefundRecordToFirebase(order);
-    }
-
     setFirebaseReady(true);
     setDataMode('firebase');
     return true;
@@ -2278,10 +2446,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     });
     await batch.commit();
 
-    if (options?.paymentMode === 'refund') {
-      await syncRefundRecordToFirebase(order);
-    }
-
     setFirebaseReady(true);
     setDataMode('firebase');
     return true;
@@ -2307,10 +2471,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       lastSyncedAt: nowIso,
     }, { merge: true });
     await batch.commit();
-
-    if (options?.paymentMode === 'refund') {
-      await syncRefundRecordToFirebase(order);
-    }
 
     setFirebaseReady(true);
     setDataMode('firebase');
@@ -2379,10 +2539,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
 
     await batch.commit();
-
-    if (options?.paymentMode === 'refund') {
-      await syncRefundRecordToFirebase(order);
-    }
 
     setFirebaseReady(true);
     setDataMode('firebase');
@@ -2807,7 +2963,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="card source-card">
           <div>
             <div className="muted-label">資料來源</div>
-            <div className="source-value">{dataMode === 'firebase' ? 'Firebase' : 'Mock'}</div>
+            <div className="source-value">{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</div>
           </div>
           {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
         </div>
