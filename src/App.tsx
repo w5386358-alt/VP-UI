@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, setDoc, addDoc, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -52,7 +52,7 @@ type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
-type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number };
+type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number; sourceDocId?: string };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[] };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
@@ -662,18 +662,21 @@ function getDb() {
 }
 
 function normalizeProduct(id: string, data: any): Product {
+  const canonicalCode = String(data.code || data.productCode || data.productId || id || '-').trim();
   return {
-    id,
-    code: data.code || data.productCode || data.productId || '-',
+    id: canonicalCode,
+    sourceDocId: id,
+    code: canonicalCode,
+    barcode: data.barcode || data.productBarcode || canonicalCode,
     name: data.name || data.productName || '未命名商品',
     category: data.category || data.productCategory || '未分類',
-    price: Number(data.price || data.vipPrice || data.salePrice || 0),
-    vipPrice: Number(data.vipPrice || data.price || data.salePrice || 0),
-    agentPrice: Number(data.agentPrice || data.dealerPrice || data.vipPrice || data.price || 0),
-    generalAgentPrice: Number(data.generalAgentPrice || data.masterPrice || data.agentPrice || data.dealerPrice || data.vipPrice || data.price || 0),
+    price: Number(data.originalPrice ?? data.price ?? data.vipPrice ?? data.salePrice ?? 0),
+    vipPrice: Number(data.vipPrice ?? data.price ?? data.salePrice ?? data.originalPrice ?? 0),
+    agentPrice: Number(data.agentPrice ?? data.dealerPrice ?? data.vipPrice ?? data.price ?? data.originalPrice ?? 0),
+    generalAgentPrice: Number(data.generalAgentPrice ?? data.masterPrice ?? data.agentPrice ?? data.dealerPrice ?? data.vipPrice ?? data.price ?? data.originalPrice ?? 0),
     image: data.image || data.imageUrl || data.photo || '',
     enabled: data.enabled ?? data.isActive ?? true,
-    stock: Number(data.stock || data.currentStock || 0),
+    stock: Number(data.stock ?? data.currentStock ?? 0),
   };
 }
 
@@ -702,11 +705,13 @@ function normalizeStaff(id: string, data: any): Staff {
 }
 
 function normalizeInventoryDoc(id: string, data: any) {
+  const canonicalCode = String(data.code || data.productCode || data.productId || data.id || id || '-').trim();
   return {
-    id,
-    productId: data.productId || data.id || id,
-    code: data.code || data.productCode || data.barcode || '-',
-    barcode: data.barcode || data.code || data.productCode || '-',
+    id: canonicalCode,
+    sourceDocId: id,
+    productId: canonicalCode,
+    code: canonicalCode,
+    barcode: data.barcode || canonicalCode,
     name: data.name || data.productName || '未命名商品',
     category: data.category || data.productCategory || '未分類',
     stock: Number(data.currentStock ?? data.stock ?? data.qty ?? 0),
@@ -751,7 +756,7 @@ function getTaipeiTimestamp() {
 function buildProductPayload(product: Product) {
   const nowIso = getIsoNow();
   return {
-    id: product.id,
+    id: product.code,
     code: product.code,
     barcode: product.barcode || product.code,
     name: product.name,
@@ -772,8 +777,8 @@ function buildProductPayload(product: Product) {
 function buildInventoryPayload(product: Product, stock: number) {
   const nowIso = getIsoNow();
   return {
-    id: product.id,
-    productId: product.id,
+    id: product.code,
+    productId: product.code,
     code: product.code,
     barcode: product.barcode || product.code,
     name: product.name,
@@ -1987,10 +1992,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   async function syncProductToFirebase(product: Product, stockValue?: number) {
     const db = getDb();
     if (!db) return false;
-    const stock = typeof stockValue === 'number' ? stockValue : product.stock;
+    const canonicalProduct = { ...product, id: product.code.trim(), code: product.code.trim(), barcode: (product.barcode || product.code).trim() };
+    const stock = typeof stockValue === 'number' ? stockValue : canonicalProduct.stock;
     const batch = writeBatch(db);
-    batch.set(doc(db, 'products', product.id), buildProductPayload({ ...product, stock }));
-    batch.set(doc(db, 'inventory', product.id), buildInventoryPayload(product, stock));
+    batch.set(doc(db, 'products', canonicalProduct.code), buildProductPayload({ ...canonicalProduct, stock }));
+    batch.set(doc(db, 'inventory', canonicalProduct.code), buildInventoryPayload(canonicalProduct, stock));
+    if (canonicalProduct.sourceDocId && canonicalProduct.sourceDocId !== canonicalProduct.code) {
+      batch.delete(doc(db, 'products', canonicalProduct.sourceDocId));
+      batch.delete(doc(db, 'inventory', canonicalProduct.sourceDocId));
+    }
     await batch.commit();
     setFirebaseReady(true);
     setDataMode('firebase');
@@ -2000,8 +2010,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   async function appendInventoryInboundToFirebase(log: InventoryLog, product: Product, nextStock: number) {
     const db = getDb();
     if (!db) return false;
+    const canonicalProduct = { ...product, id: product.code.trim(), code: product.code.trim(), barcode: (product.barcode || product.code).trim() };
     const batch = writeBatch(db);
-    batch.set(doc(db, 'inventory', product.id), buildInventoryPayload(product, nextStock), { merge: true });
+    batch.set(doc(db, 'inventory', canonicalProduct.code), buildInventoryPayload(canonicalProduct, nextStock), { merge: true });
+    if ((product as any).sourceDocId && (product as any).sourceDocId !== canonicalProduct.code) {
+      batch.delete(doc(db, 'inventory', (product as any).sourceDocId));
+    }
     batch.set(doc(db, 'inventory_logs', log.id), {
       id: log.id,
       createdAt: log.createdAt,
@@ -2063,11 +2077,20 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
 
     try {
+      const trimmedCode = productDraft.code.trim();
+      const trimmedBarcode = (productDraft.barcode || productDraft.code).trim();
+      const duplicatedCode = products.some((item) => item.code.trim() === trimmedCode && item.id !== (productDraft.id || '').trim());
+      if (duplicatedCode) {
+        setProductNotice({ text: '❌ 商品編號重複', tone: 'danger' });
+        return;
+      }
+
       if (productEditorMode === 'create') {
         const nextProduct: Product = {
-          id: `product-${Date.now()}`,
-          code: productDraft.code.trim(),
-          barcode: productDraft.barcode.trim(),
+          id: trimmedCode,
+          sourceDocId: trimmedCode,
+          code: trimmedCode,
+          barcode: trimmedBarcode,
           name: productDraft.name.trim(),
           category: productDraft.category.trim(),
           price,
@@ -2078,7 +2101,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           enabled: productDraft.enabled,
         };
         setProducts((prev) => [nextProduct, ...prev]);
-        setSelectedProductId(nextProduct.id);
+        setSelectedProductId(nextProduct.code);
         setProductDraft(toProductDraft(nextProduct));
         setProductEditorMode('edit');
         const synced = await syncProductToFirebase(nextProduct, stock);
@@ -2091,10 +2114,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         return;
       }
 
+      const originalProduct = products.find((item) => item.id === productDraft.id) || null;
       const updatedProduct: Product = {
-        id: productDraft.id,
-        code: productDraft.code.trim(),
-        barcode: productDraft.barcode.trim(),
+        id: trimmedCode,
+        sourceDocId: originalProduct?.sourceDocId || productDraft.id,
+        code: trimmedCode,
+        barcode: trimmedBarcode,
         name: productDraft.name.trim(),
         category: productDraft.category.trim(),
         price,
@@ -2106,6 +2131,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       };
 
       setProducts((prev) => prev.map((item) => item.id === productDraft.id ? { ...item, ...updatedProduct } : item));
+      setSelectedProductId(updatedProduct.code);
       setProductEditorMode('edit');
       const synced = await syncProductToFirebase(updatedProduct, stock);
       setProductNotice({ text: synced ? '✅ 已更新並同步 Firebase / inventory' : '✅ 已更新（目前未接 Firebase）', tone: 'success' });
