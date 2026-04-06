@@ -157,6 +157,7 @@ type InventoryLog = {
 
 type StockSnapshotItem = {
   code: string;
+  barcode?: string;
   name: string;
   stock: number;
   safe: number;
@@ -232,6 +233,69 @@ function findAvailableQrBuckets(logs: InventoryLog[], code: string) {
     .sort((a, b) => b.qty - a.qty);
 }
 
+function getCurrentInventoryQty(logs: InventoryLog[], code: string) {
+  return findAvailableQrBuckets(logs, code).reduce((sum, item) => sum + item.qty, 0);
+}
+
+function getDefaultInventoryQr(product: { code: string; barcode?: string }) {
+  const seeded = INITIAL_QR_SEED[product.code]?.[0]?.qr;
+  if (seeded) return seeded;
+  const base = (product.barcode || product.code || 'NEW').trim();
+  return `QR(${base})`;
+}
+
+function deriveInventoryAdjustmentLogs(params: {
+  logs: InventoryLog[];
+  previousProduct?: Product | null;
+  nextProduct: Product;
+  operator: string;
+}) {
+  const { logs, previousProduct, nextProduct, operator } = params;
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  const ss = String(now.getSeconds()).padStart(2, '0');
+  const timestamp = `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+  const targetCode = nextProduct.code.trim();
+  const previousCode = previousProduct?.code?.trim() || targetCode;
+  const currentQty = getCurrentInventoryQty(logs, previousCode);
+  const targetQty = Math.max(0, Number(nextProduct.stock || 0));
+  const diff = targetQty - currentQty;
+
+  const syncedLogs = logs.map((item) => {
+    if (!previousProduct || item.code !== previousCode) return item;
+    return {
+      ...item,
+      code: targetCode,
+      name: nextProduct.name,
+      note: item.note
+        .split(previousProduct.code).join(nextProduct.code)
+        .split(previousProduct.name).join(nextProduct.name),
+    };
+  });
+
+  if (diff === 0) return syncedLogs;
+
+  const qr = getDefaultInventoryQr(nextProduct);
+  const adjustment: InventoryLog = {
+    id: `inventory-sync-${targetCode}-${Date.now()}`,
+    createdAt: timestamp,
+    type: diff > 0 ? '入庫' : '出庫',
+    code: targetCode,
+    name: nextProduct.name,
+    qty: Math.abs(diff),
+    qr,
+    operator,
+    note: diff > 0
+      ? `${targetCode} 商品建檔/編輯同步入庫 ${Math.abs(diff)} 件（${qr}）`
+      : `${targetCode} 商品編輯同步扣減 ${Math.abs(diff)} 件（${qr}）`,
+  };
+  return [...syncedLogs, adjustment];
+}
+
 function deriveStockSnapshot(source: Product[], logs: InventoryLog[]): StockSnapshotItem[] {
   const latestByCode = new Map<string, InventoryLog>();
   logs.forEach((item) => {
@@ -249,6 +313,7 @@ function deriveStockSnapshot(source: Product[], logs: InventoryLog[]): StockSnap
       const safe = SAFE_STOCK_MAP[product.code] ?? 10;
       return {
         code: product.code,
+        barcode: product.barcode || product.code,
         name: product.name,
         stock,
         safe,
@@ -662,6 +727,7 @@ function normalizeProduct(id: string, data: any): Product {
   return {
     id,
     code: data.code || data.productCode || data.productId || '-',
+    barcode: data.barcode || data.productBarcode || data.sku || '',
     name: data.name || data.productName || '未命名商品',
     category: data.category || data.productCategory || '未分類',
     price: Number(data.price || data.vipPrice || data.salePrice || 0),
@@ -1398,7 +1464,7 @@ export default function App() {
     const normalized = value.toUpperCase();
 
     if (mode === 'barcode') {
-      const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
+      const matched = stockSnapshot.find((item) => (item.barcode || item.code).toUpperCase().includes(normalized) || item.code.toUpperCase().includes(normalized) || item.name.includes(value));
       if (!matched) {
         setWarehouseQueryResult([{ title: '查無商品條碼', desc: `找不到 ${value} 的商品資料`, meta: ['請改掃 QR 或訂單編號'] }]);
         setWarehouseNotice({ text: '❌ 商品條碼查無資料', tone: 'danger' });
@@ -1407,8 +1473,8 @@ export default function App() {
       setSelectedStockCode(matched.code);
       setWarehouseQueryResult([{
         title: matched.name,
-        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
-        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
+        desc: `商品條碼 ${matched.barcode || matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
+        meta: [`商品編號：${matched.code}`, matched.qr, matched.updated, `狀態：${matched.status}`],
       }]);
       setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
       return;
@@ -1908,10 +1974,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         enabled: productDraft.enabled,
       };
       setProducts((prev) => [nextProduct, ...prev]);
+      setInventoryLogs((prev) => deriveInventoryAdjustmentLogs({
+        logs: prev,
+        previousProduct: null,
+        nextProduct,
+        operator: user.loginId,
+      }));
       setSelectedProductId(nextProduct.id);
+      setSelectedStockCode(nextProduct.code);
       setProductDraft(toProductDraft(nextProduct));
       setProductEditorMode('edit');
-      setProductNotice({ text: '✅ 已新增', tone: 'success' });
+      setProductNotice({ text: '✅ 已新增，並完成庫存初始化', tone: 'success' });
       return;
     }
 
@@ -1920,8 +1993,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
 
-    setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
-      ...item,
+    const previousProduct = products.find((item) => item.id === productDraft.id) || null;
+    const nextProduct: Product = {
+      id: productDraft.id,
       code: productDraft.code.trim(),
       barcode: productDraft.barcode.trim(),
       name: productDraft.name.trim(),
@@ -1929,9 +2003,32 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       price,
       stock,
       enabled: productDraft.enabled,
+      image: previousProduct?.image || '',
+      vipPrice: previousProduct?.vipPrice,
+      agentPrice: previousProduct?.agentPrice,
+      generalAgentPrice: previousProduct?.generalAgentPrice,
+    };
+
+    setProducts((prev) => prev.map((item) => item.id === productDraft.id ? {
+      ...item,
+      code: nextProduct.code,
+      barcode: nextProduct.barcode,
+      name: nextProduct.name,
+      category: nextProduct.category,
+      price: nextProduct.price,
+      stock: nextProduct.stock,
+      enabled: nextProduct.enabled,
     } : item));
+    setInventoryLogs((prev) => deriveInventoryAdjustmentLogs({
+      logs: prev,
+      previousProduct,
+      nextProduct,
+      operator: user.loginId,
+    }));
+    setSelectedStockCode(nextProduct.code);
+    setProductDraft(toProductDraft(nextProduct));
     setProductEditorMode('edit');
-    setProductNotice({ text: '✅ 已更新', tone: 'success' });
+    setProductNotice({ text: '✅ 已更新，並同步庫存資料', tone: 'success' });
   }
 
   function toggleProductEnabled(item: Product) {
