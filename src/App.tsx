@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -932,9 +932,13 @@ function buildRefundPayload(order: OrderRecord) {
     id: safeFirestoreDocId(order.orderNo, 'refund'),
     orderNo: order.orderNo,
     customerName: order.customer,
+    customerPhone: order.phone || '',
     refundDate,
     refundAmount: amount,
     actualRefundAmount: amount,
+    paymentMethod: order.paymentMethod || '待確認',
+    invoiceNo: order.invoiceNo || '退款單',
+    proof: order.proof || '待上傳',
     status: '退款處理中',
     note: order.remark || '',
     source: 'VERCEL_UI',
@@ -2237,6 +2241,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       batch.delete(doc(db, 'inventory', canonicalProduct.sourceDocId));
     }
     await batch.commit();
+
+    if (options?.paymentMode === 'refund') {
+      await syncRefundRecordToFirebase(order);
+    }
+
     setFirebaseReady(true);
     setDataMode('firebase');
     return true;
@@ -2268,6 +2277,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       lastSyncedAt: getIsoNow(),
     });
     await batch.commit();
+
+    if (options?.paymentMode === 'refund') {
+      await syncRefundRecordToFirebase(order);
+    }
+
     setFirebaseReady(true);
     setDataMode('firebase');
     return true;
@@ -2293,8 +2307,21 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       lastSyncedAt: nowIso,
     }, { merge: true });
     await batch.commit();
+
+    if (options?.paymentMode === 'refund') {
+      await syncRefundRecordToFirebase(order);
+    }
+
     setFirebaseReady(true);
     setDataMode('firebase');
+    return true;
+  }
+
+  async function syncRefundRecordToFirebase(order: OrderRecord) {
+    const db = getDb();
+    if (!db) return false;
+    const refundPayload = buildRefundPayload(order);
+    await setDoc(doc(db, 'refunds', refundPayload.id), refundPayload, { merge: true });
     return true;
   }
 
@@ -2352,6 +2379,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
 
     await batch.commit();
+
+    if (options?.paymentMode === 'refund') {
+      await syncRefundRecordToFirebase(order);
+    }
+
     setFirebaseReady(true);
     setDataMode('firebase');
     return true;
@@ -2748,6 +2780,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     };
     setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? refundOrder : item));
     await syncOrderBundleToFirebase(refundOrder, { paymentMode: 'refund' });
+    await syncRefundRecordToFirebase(refundOrder);
     setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
