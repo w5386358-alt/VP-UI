@@ -1,4 +1,4 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -11,7 +11,6 @@ export default function ProductsModule(props: any) {
     openViewProduct,
     openEditProduct,
     toggleProductEnabled,
-    deleteProduct,
     productEditorMode,
     productDraft,
     setProductDraft,
@@ -95,9 +94,6 @@ export default function ProductsModule(props: any) {
                     <button type="button" className={`ghost-button compact-btn ${item.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => toggleProductEnabled(item)}>
                       {item.enabled ? '停用' : '啟用'}
                     </button>
-                    <button type="button" className="ghost-button compact-btn danger-ghost" onClick={() => deleteProduct(item)}>
-                      <Trash2 className="small-icon" />刪除
-                    </button>
                   </div>
                 </div>
               ))}
@@ -137,8 +133,20 @@ export default function ProductsModule(props: any) {
                 <input value={productDraft.name} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, name: e.target.value }))} readOnly={productEditorMode === 'view'} />
               </label>
               <label className="field-card">
-                <span className="field-label"><Wallet className="small-icon" />價格</span>
-                <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} />
+                <span className="field-label"><Wallet className="small-icon" />原價</span>
+                <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入原價" />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Wallet className="small-icon" />VIP價</span>
+                <input type="number" min={0} value={productDraft.vipPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, vipPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入VIP價" />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Wallet className="small-icon" />代理價</span>
+                <input type="number" min={0} value={productDraft.agentPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, agentPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入代理價" />
+              </label>
+              <label className="field-card">
+                <span className="field-label"><Wallet className="small-icon" />總代理價</span>
+                <input type="number" min={0} value={productDraft.generalAgentPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, generalAgentPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入總代理價" />
               </label>
               <label className="field-card">
                 <span className="field-label"><Boxes className="small-icon" />庫存</span>
@@ -174,11 +182,6 @@ export default function ProductsModule(props: any) {
                   <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : null}>
                     <Eye className="small-icon" />返回明細
                   </button>
-                  {productEditorMode === 'edit' && selectedProduct && (
-                    <button type="button" className="ghost-button danger-ghost" onClick={() => deleteProduct(selectedProduct)}>
-                      <Trash2 className="small-icon" />刪除商品
-                    </button>
-                  )}
                 </>
               )}
             </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import {
   Bell,
   LogOut,
@@ -38,7 +38,6 @@ import {
   Plus,
   PencilLine,
   Eye,
-  Trash2,
 } from 'lucide-react';
 import DashboardModule from './modules/DashboardModule';
 import ProductsModule from './modules/ProductsModule';
@@ -90,6 +89,9 @@ type ProductDraft = {
   name: string;
   category: string;
   price: string;
+  vipPrice: string;
+  agentPrice: string;
+  generalAgentPrice: string;
   stock: string;
   enabled: boolean;
 };
@@ -734,7 +736,7 @@ function getShippingFee(method: ShippingMethod) {
 }
 
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
-  return { id: '', code: nextCode, barcode: '', name: '', category: '保健', price: '', stock: '', enabled: true };
+  return { id: '', code: nextCode, barcode: '', name: '', category: '保健', price: '', vipPrice: '', agentPrice: '', generalAgentPrice: '', stock: '', enabled: true };
 }
 
 function getTodayDateInputValue() {
@@ -804,6 +806,9 @@ function toProductDraft(item: Product): ProductDraft {
     name: item.name,
     category: item.category,
     price: String(item.price),
+    vipPrice: String(item.vipPrice ?? item.price ?? 0),
+    agentPrice: String(item.agentPrice ?? item.price ?? 0),
+    generalAgentPrice: String(item.generalAgentPrice ?? item.price ?? 0),
     stock: String(item.stock),
     enabled: item.enabled,
   };
@@ -1890,9 +1895,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
 
     const price = Number(productDraft.price || 0);
+    const vipPrice = Number(productDraft.vipPrice || 0);
+    const agentPrice = Number(productDraft.agentPrice || 0);
+    const generalAgentPrice = Number(productDraft.generalAgentPrice || 0);
     const stock = Number(productDraft.stock || 0);
 
-    if (price < 0 || stock < 0) {
+    if ([price, vipPrice, agentPrice, generalAgentPrice, stock].some((value) => value < 0)) {
       setProductNotice({ text: '❌ 數值錯誤', tone: 'danger' });
       return;
     }
@@ -1905,6 +1913,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         name: productDraft.name.trim(),
         category: productDraft.category.trim(),
         price,
+        vipPrice,
+        agentPrice,
+        generalAgentPrice,
         stock,
         enabled: productDraft.enabled,
       };
@@ -1928,6 +1939,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       name: productDraft.name.trim(),
       category: productDraft.category.trim(),
       price,
+      vipPrice,
+      agentPrice,
+      generalAgentPrice,
       stock,
       enabled: productDraft.enabled,
     } : item));
@@ -1941,42 +1955,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setSelectedProductId(item.id);
     setProductDraft((prev) => prev.id === item.id ? { ...prev, enabled: nextEnabled } : prev);
     setProductNotice({ text: nextEnabled ? '✅ 已啟用' : '❌ 已停用', tone: nextEnabled ? 'success' : 'danger' });
-  }
-
-  async function deleteProduct(item: Product) {
-    const ok = window.confirm(`確定刪除商品「${item.name}」？`);
-    if (!ok) return;
-
-    try {
-      const db = getDb();
-      if (db && dataMode === 'firebase') {
-        await deleteDoc(doc(db, 'products', item.id));
-        try {
-          await deleteDoc(doc(db, 'inventory', item.id));
-        } catch (error) {
-          console.warn('inventory delete skipped', error);
-        }
-      }
-
-      setProducts((prev) => prev.filter((entry) => entry.id !== item.id));
-      setInventoryLogs((prev) => prev.filter((entry) => entry.code !== item.code));
-
-      const remaining = products.filter((entry) => entry.id !== item.id);
-      const fallback = remaining[0] || null;
-      setSelectedProductId(fallback?.id || '');
-      if (fallback) {
-        setProductDraft(toProductDraft(fallback));
-        setProductEditorMode('view');
-      } else {
-        setProductDraft(makeEmptyProductDraft(getNextProductCode()));
-        setProductEditorMode('create');
-      }
-
-      setProductNotice({ text: '✅ 商品已刪除', tone: 'success' });
-    } catch (error) {
-      console.error(error);
-      setProductNotice({ text: '❌ 刪除失敗', tone: 'danger' });
-    }
   }
 
 
@@ -2374,7 +2352,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
             {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} deleteProduct={deleteProduct} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'customers' && (
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
