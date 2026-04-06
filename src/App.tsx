@@ -1113,6 +1113,11 @@ function getShippingFee(method: ShippingMethod) {
   return 0;
 }
 
+
+function sortOrderRecords(records: OrderRecord[]) {
+  return [...records].sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date) || b.orderNo.localeCompare(a.orderNo));
+}
+
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
   return { id: '', code: nextCode, barcode: '', name: '', category: '保健', price: '', vipPrice: '', agentPrice: '', generalAgentPrice: '', stock: '', enabled: true };
 }
@@ -1438,7 +1443,7 @@ export default function App() {
       setCustomers(nextCustomers);
       setStaff(nextStaff);
       setInventoryLogs(nextInventoryLogs);
-      setOrderRecords(nextOrders);
+      setOrderRecords(sortOrderRecords(nextOrders));
       setFirebaseReady(true);
       setDataMode('firebase');
       setBootMessage('Firebase 真資料已接入，雙向同步監聽已啟用');
@@ -1514,11 +1519,11 @@ export default function App() {
     });
 
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snap) => {
-      setOrderRecords(dedupeByLatest(
+      setOrderRecords(sortOrderRecords(dedupeByLatest(
         snap.docs.map((item) => normalizeOrderRecord(item.id, item.data())),
         (item) => item.orderNo,
         (item: any) => item.date,
-      ));
+      )));
     });
 
     return () => {
@@ -1670,15 +1675,17 @@ export default function App() {
 
   const filteredWarehouseQueue = useMemo(() => {
     const q = warehouseKeyword.trim().toLowerCase();
-    return shippingQueue.filter((item) => {
-      const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.mainStatus].join(' ').toLowerCase().includes(q);
-      const matchPayment = warehousePaymentFilter === '全部' || item.paymentStatus === warehousePaymentFilter;
-      const matchShipping = warehouseShippingFilter === '全部' || item.shippingStatus === warehouseShippingFilter;
-      const itemDateKey = item.date.split(' ')[0].replace(/\//g, '-');
-      const matchDateStart = !warehouseDateStart || itemDateKey >= warehouseDateStart;
-      const matchDateEnd = !warehouseDateEnd || itemDateKey <= warehouseDateEnd;
-      return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
-    });
+    return shippingQueue
+      .filter((item) => {
+        const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.mainStatus].join(' ').toLowerCase().includes(q);
+        const matchPayment = warehousePaymentFilter === '全部' || item.paymentStatus === warehousePaymentFilter;
+        const matchShipping = warehouseShippingFilter === '全部' || item.shippingStatus === warehouseShippingFilter;
+        const itemDateKey = item.date.split(' ')[0].replace(/\//g, '-');
+        const matchDateStart = !warehouseDateStart || itemDateKey >= warehouseDateStart;
+        const matchDateEnd = !warehouseDateEnd || itemDateKey <= warehouseDateEnd;
+        return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
+      })
+      .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date) || b.orderNo.localeCompare(a.orderNo));
   }, [shippingQueue, warehouseKeyword, warehousePaymentFilter, warehouseShippingFilter, warehouseDateStart, warehouseDateEnd]);
 
   const selectedWarehouseOrder = useMemo(() => filteredWarehouseQueue.find((item) => item.orderNo === selectedWarehouseOrderNo) || filteredWarehouseQueue[0] || null, [selectedWarehouseOrderNo, filteredWarehouseQueue]);
@@ -2012,7 +2019,7 @@ export default function App() {
       mainStatus: '已完成',
     };
     setInventoryLogs((prev) => [...prev, ...allocations]);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? shippedOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === order.orderNo ? shippedOrder : item)));
     await syncOrderBundleToFirebase(shippedOrder, { shippingAllocations: allocations, inventoryAfterMap, inventoryLogType: '出貨' });
     setWarehouseNotice({ text: `✅ 已依 inventory_logs 完成出貨：${order.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 訂單已同步出貨：${order.orderNo}`, tone: 'success' });
@@ -2064,7 +2071,7 @@ export default function App() {
       paymentStatus: order.paymentStatus === '已收款' ? '退款處理中' : order.paymentStatus,
     };
     setInventoryLogs((prev) => [...prev, ...inboundLogs]);
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? returnedOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === order.orderNo ? returnedOrder : item)));
     await syncOrderBundleToFirebase(returnedOrder, { paymentMode: returnedOrder.paymentStatus.includes('退款') ? 'refund' : undefined, shippingAllocations: inboundLogs, inventoryAfterMap, inventoryLogType: '退貨回庫' });
     setWarehouseNotice({ text: `✅ 已完成退貨回補：${order.orderNo}`, tone: 'success' });
     setAccountingNotice({ text: `✅ 倉儲已送回退貨狀態：${order.orderNo}`, tone: 'success' });
@@ -2089,7 +2096,7 @@ export default function App() {
       shippingStatus: '換貨待出庫',
       mainStatus: '換貨處理',
     };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === order.orderNo ? exchangeOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === order.orderNo ? exchangeOrder : item)));
     await syncOrderBundleToFirebase(exchangeOrder);
     setSelectedWarehouseOrderNo(order.orderNo);
     setWarehouseNotice({ text: `✅ 已切入換貨流程：${order.orderNo}`, tone: 'success' });
@@ -2281,16 +2288,18 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const filteredAccountingQueue = useMemo(() => {
     const q = accountingKeyword.trim().toLowerCase();
-    return paymentQueue.filter((item) => {
-      const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
-      const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
-      const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
-      const itemDateKey = item.date.replace(/\//g, '-');
-      const matchDateStart = !accountingDateStart || itemDateKey >= accountingDateStart;
-      const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
-      return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
-    });
-  }, [accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
+    return paymentQueue
+      .filter((item) => {
+        const matchKeyword = !q || [item.orderNo, item.customer, item.paymentStatus, item.shippingStatus, item.paymentMethod, item.invoiceNo].join(' ').toLowerCase().includes(q);
+        const matchPayment = accountingPaymentFilter === '全部' || item.paymentStatus === accountingPaymentFilter;
+        const matchShipping = accountingShippingFilter === '全部' || item.shippingStatus === accountingShippingFilter;
+        const itemDateKey = item.date.replace(/\//g, '-');
+        const matchDateStart = !accountingDateStart || itemDateKey >= accountingDateStart;
+        const matchDateEnd = !accountingDateEnd || itemDateKey <= accountingDateEnd;
+        return matchKeyword && matchPayment && matchShipping && matchDateStart && matchDateEnd;
+      })
+      .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date) || b.orderNo.localeCompare(a.orderNo));
+  }, [paymentQueue, accountingKeyword, accountingPaymentFilter, accountingShippingFilter, accountingDateStart, accountingDateEnd]);
 
   useEffect(() => {
     if (!filteredAccountingQueue.length) return;
@@ -2335,6 +2344,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const accountingActualReceived = getActualReceived(accountingUntaxedAmount, accountingTaxRateNumber, accountingShippingFeeNumber);
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
+
+  const profilePersonalOrders = useMemo(() => orderRecords.map((item) => ({
+    orderNo: item.orderNo,
+    date: item.date,
+    amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
+    paymentStatus: item.paymentStatus,
+    shippingStatus: item.shippingStatus,
+    mainStatus: item.mainStatus,
+  })), [orderRecords]);
 
   const shippingFee = getShippingFee(shippingMethod);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -2777,7 +2795,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       proof: '待上傳',
       items: cart.map((item) => ({ code: item.code, name: item.name, qty: item.qty, price: item.price })),
     };
-    setOrderRecords((prev) => [nextRecord, ...prev]);
+    setOrderRecords((prev) => sortOrderRecords([nextRecord, ...prev]));
     setSelectedOrderNo(orderNo);
     setSelectedAccountingOrderNo(orderNo);
     setAccountingDraft(makeAccountingDraft(nextRecord));
@@ -2808,7 +2826,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
     const nextOrder = { ...target, paymentStatus: '已收款', mainStatus: target.shippingStatus === '待出貨' ? '待出貨' : target.mainStatus };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? nextOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === orderNo ? nextOrder : item)));
     await syncOrderBundleToFirebase(nextOrder, { paymentMode: 'pay' });
     setOrderNotice({ text: `✅ 已收款：${orderNo}`, tone: 'success' });
     setAccountingNotice({ text: `✅ Orders 已同步收款：${orderNo}`, tone: 'success' });
@@ -2822,7 +2840,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
     const nextOrder = { ...target, shippingStatus: '待出貨', mainStatus: '待出貨' };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === orderNo ? nextOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === orderNo ? nextOrder : item)));
     await syncOrderBundleToFirebase(nextOrder);
     setOrderNotice({ text: `✅ 已更新待出貨：${orderNo}`, tone: 'success' });
     setWarehouseNotice({ text: `✅ Orders 已同步待出貨：${orderNo}`, tone: 'success' });
@@ -2874,7 +2892,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       invoiceNo: accountingDraft.invoiceNo.trim() || '待補',
       proof: accountingDraft.proof.trim() || '待上傳',
     };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === accountingDraft.orderNo ? nextOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === accountingDraft.orderNo ? nextOrder : item)));
     setAccountingDraft((prev) => ({ ...prev, actualReceived: String(actualReceived) }));
     await syncOrderBundleToFirebase(nextOrder);
     setAccountingNotice({ text: `✅ 已更新本次訂單：${accountingDraft.orderNo}`, tone: 'success' });
@@ -2916,7 +2934,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         paymentStatus: '已收款',
         mainStatus: latestDraftOrder.shippingStatus === '待出貨' ? '待出貨' : latestDraftOrder.mainStatus,
       };
-      setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? nextOrder : item));
+      setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? nextOrder : item)));
       await syncOrderBundleToFirebase(nextOrder, { paymentMode: 'pay' });
       setAccountingNotice({ text: `✅ 已收款：${selectedAccountingRecord.orderNo}，倉儲端將依狀態判定可出貨`, tone: 'success' });
       setWarehouseNotice({ text: `✅ 收款狀態已更新：${selectedAccountingRecord.orderNo}`, tone: 'success' });
@@ -2934,7 +2952,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       shippingStatus: latestDraftOrder.shippingStatus === '已出貨' ? latestDraftOrder.shippingStatus : '已退款',
       mainStatus: '退款處理',
     };
-    setOrderRecords((prev) => prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? refundOrder : item));
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? refundOrder : item)));
     await syncOrderBundleToFirebase(refundOrder, { paymentMode: 'refund' });
     await syncRefundRecordToFirebase(refundOrder);
     setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
@@ -3120,7 +3138,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             )}
             {active === 'profile' && (
               <ProfileModule
-                personalOrders={personalOrders}
+                personalOrders={profilePersonalOrders}
                 personalSummary={personalSummary}
                 profileQuickActions={profileQuickActions}
                 user={user}
