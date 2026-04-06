@@ -60,12 +60,6 @@ export default function OrdersModule(props: any) {
 
   return (
     <>
-      {orderNotice && (
-        <div className={`card product-notice-banner ${orderNotice.tone} order-notice-banner`}>
-          <strong>{orderNotice.text}</strong>
-        </div>
-      )}
-
       <button
         ref={cartButtonRef}
         type="button"
@@ -229,6 +223,7 @@ export default function OrdersModule(props: any) {
             <button type="button" className="primary-button full-width drawer-submit-button" onClick={handleCreateOrder}>
               <Receipt className="small-icon" />建立訂單
             </button>
+            {orderNotice && <div className={`inline-action-notice ${orderNotice.tone}`}><strong>{orderNotice.text}</strong></div>}
           </div>
         </aside>
       </div>

@@ -2738,3 +2738,37 @@ button:hover { transform: translateY(-1px); }
     grid-template-columns: 1fr;
   }
 }
+
+
+.inline-action-notice {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.inline-action-notice.success {
+  background: rgba(34, 197, 94, 0.10);
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.inline-action-notice.danger {
+  background: rgba(239, 68, 68, 0.10);
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.inline-action-notice.neutral,
+.inline-action-notice.warning {
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.16);
+}
+
+.cart-drawer-footer .inline-action-notice {
+  margin-top: 12px;
+}

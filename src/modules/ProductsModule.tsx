@@ -29,11 +29,6 @@ export default function ProductsModule(props: any) {
         stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
       />
 
-      {productNotice && (
-        <div className={`card product-notice-banner ${productNotice.tone}`}>
-          <strong>{productNotice.text}</strong>
-        </div>
-      )}
 
       <section className="product-admin-layout">
         <div className="product-admin-main">
@@ -98,6 +93,7 @@ export default function ProductsModule(props: any) {
                 </div>
               ))}
             </div>
+            {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>
         </div>
 
@@ -185,6 +181,7 @@ export default function ProductsModule(props: any) {
                 </>
               )}
             </div>
+            {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>
         </aside>
       </section>

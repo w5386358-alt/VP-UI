@@ -1890,6 +1890,11 @@ export default function App() {
 
   const selectedStockItem = useMemo(() => stockSnapshot.find((item) => item.code === selectedStockCode) || stockSnapshot[0], [selectedStockCode, stockSnapshot]);
 
+  function confirmAction(message: string) {
+    if (typeof window === 'undefined') return true;
+    return window.confirm(message);
+  }
+
   useEffect(() => {
     if (!stockSnapshot.length) return;
     if (!stockSnapshot.some((item) => item.code === selectedStockCode)) {
@@ -2611,6 +2616,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       }
 
       if (productEditorMode === 'create') {
+        if (!confirmAction(`確認新增商品：${trimmedCode}？`)) {
+          setProductNotice({ text: '已取消新增商品', tone: 'neutral' });
+          return;
+        }
         const nextProduct: Product = {
           id: trimmedCode,
           sourceDocId: trimmedCode,
@@ -2639,6 +2648,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         return;
       }
 
+      if (!confirmAction(`確認更新商品：${trimmedCode}？`)) {
+        setProductNotice({ text: '已取消更新商品', tone: 'neutral' });
+        return;
+      }
       const originalProduct = products.find((item) => item.id === productDraft.id) || null;
       const updatedProduct: Product = {
         id: trimmedCode,
@@ -2668,6 +2681,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function toggleProductEnabled(item: Product) {
     const nextEnabled = !item.enabled;
+    if (!confirmAction(`確認${nextEnabled ? '啟用' : '停用'}商品：${item.code}？`)) {
+      setProductNotice({ text: `已取消${nextEnabled ? '啟用' : '停用'}商品`, tone: 'neutral' });
+      return;
+    }
     const updatedProduct = { ...item, enabled: nextEnabled };
     setProducts((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, enabled: nextEnabled } : entry));
     setSelectedProductId(item.id);
@@ -2714,6 +2731,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   function resetStaffPassword() {
+    if (!confirmAction('確認初始化密碼？')) {
+      setStaffNotice({ text: '已取消初始化密碼', tone: 'neutral' });
+      return;
+    }
     setStaffDraft((prev) => ({ ...prev, password: prev.loginId.trim() || '' }));
     setStaffNotice({ text: '✅ 已初始化密碼', tone: 'success' });
   }
@@ -2733,6 +2754,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       permissions: getPermissionsByRole(staffDraft.role, staffDraft.rank),
     };
     if (staffEditorMode === 'create') {
+      if (!confirmAction(`確認新增人員：${staffDraft.loginId.trim()}？`)) {
+        setStaffNotice({ text: '已取消新增人員', tone: 'neutral' });
+        return;
+      }
       const nextStaff = { id: staffDraft.loginId.trim(), ...nextPayload };
       setStaff((prev) => [nextStaff, ...prev]);
       setSelectedStaffId(nextStaff.id);
@@ -2744,6 +2769,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
     if (!staffDraft.id) {
       setStaffNotice({ text: '❌ 未選人員', tone: 'danger' });
+      return;
+    }
+    if (!confirmAction(`確認更新人員：${staffDraft.loginId.trim() || staffDraft.id}？`)) {
+      setStaffNotice({ text: '已取消更新人員', tone: 'neutral' });
       return;
     }
     const updatedStaff = { id: staffDraft.loginId.trim() || staffDraft.id, ...nextPayload };
@@ -2771,6 +2800,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
 
     const orderNo = makeNextOrderNo();
+    if (!confirmAction(`確認建立訂單：${orderNo}？`)) {
+      setOrderNotice({ text: '已取消建立訂單', tone: 'neutral' });
+      return;
+    }
     const now = new Date();
     const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const defaultShippingFee = shippingMethod === '宅配' ? 100 : shippingMethod === '店到店' ? 65 : 0;
@@ -2825,6 +2858,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setOrderNotice({ text: '❌ 此訂單處於退款流程', tone: 'danger' });
       return;
     }
+    if (!confirmAction(`確認收款：${orderNo}？`)) {
+      setOrderNotice({ text: '已取消收款', tone: 'neutral' });
+      return;
+    }
     const nextOrder = { ...target, paymentStatus: '已收款', mainStatus: target.shippingStatus === '待出貨' ? '待出貨' : target.mainStatus };
     setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === orderNo ? nextOrder : item)));
     await syncOrderBundleToFirebase(nextOrder, { paymentMode: 'pay' });
@@ -2837,6 +2874,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     if (!target) return;
     if (target.paymentStatus !== '已收款') {
       setOrderNotice({ text: '❌ 需先確認收款', tone: 'danger' });
+      return;
+    }
+    if (!confirmAction(`確認更新待出貨：${orderNo}？`)) {
+      setOrderNotice({ text: '已取消更新', tone: 'neutral' });
       return;
     }
     const nextOrder = { ...target, shippingStatus: '待出貨', mainStatus: '待出貨' };
@@ -2929,6 +2970,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         setAccountingNotice({ text: '❌ 此訂單處於退款流程，請先確認退款結果', tone: 'danger' });
         return;
       }
+      if (!confirmAction(`確認收款：${selectedAccountingRecord.orderNo}？`)) {
+        setAccountingNotice({ text: '已取消收款', tone: 'neutral' });
+        return;
+      }
       const nextOrder = {
         ...latestDraftOrder,
         paymentStatus: '已收款',
@@ -2944,6 +2989,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
     if (selectedAccountingRecord.paymentStatus.includes('退款')) {
       setAccountingNotice({ text: '❌ 此訂單已進入退款流程', tone: 'danger' });
+      return;
+    }
+    if (!confirmAction(`確認退款：${selectedAccountingRecord.orderNo}？`)) {
+      setAccountingNotice({ text: '已取消退款', tone: 'neutral' });
       return;
     }
     const refundOrder = {

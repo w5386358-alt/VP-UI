@@ -32,11 +32,6 @@ export default function StaffModule(props: any) {
         stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '新增 / 編輯 / 啟用']}
       />
 
-      {staffNotice && (
-        <div className={`card product-notice-banner ${staffNotice.tone}`}>
-          <strong>{staffNotice.text}</strong>
-        </div>
-      )}
 
       <section className="product-admin-layout">
         <div className="product-admin-main">
@@ -156,6 +151,7 @@ export default function StaffModule(props: any) {
                 </>
               )}
             </div>
+            {staffNotice && <div className={`inline-action-notice ${staffNotice.tone}`}><strong>{staffNotice.text}</strong></div>}
           </div>
         </aside>
       </section>

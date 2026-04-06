@@ -71,7 +71,6 @@ export default function InventoryModule(props: any) {
         <button type="button" className={`warehouse-tab ${warehouseTab === 'query' ? 'active' : ''}`} onClick={() => setWarehouseTab('query')}><Search className="small-icon" />查詢區</button>
       </div>
 
-      {warehouseNotice && <div className={`card product-notice-banner ${warehouseNotice.tone} accounting-notice-banner`}><strong>{warehouseNotice.text}</strong></div>}
 
       {warehouseTab === 'shipping' && (
         <section className="warehouse-layout">
@@ -168,6 +167,7 @@ export default function InventoryModule(props: any) {
                   <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
                   <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
                 </div>
+                {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
 
               <div className="warehouse-side-section warehouse-reminder-panel">
@@ -245,6 +245,7 @@ export default function InventoryModule(props: any) {
               <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
               <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
             </div>
+            {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
           </div>
 
           <div className="card order-panel">
@@ -282,6 +283,7 @@ export default function InventoryModule(props: any) {
                 <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>
                 <button type="button" className="ghost-button" onClick={handleWarehouseScanFill}><QrCode className="small-icon" />掃碼帶入</button>
               </div>
+              {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
             </div>
 
             <div className="card warehouse-tool-card">

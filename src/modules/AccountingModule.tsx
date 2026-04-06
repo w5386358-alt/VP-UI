@@ -104,6 +104,7 @@ export default function AccountingModule(props: any) {
                 <button type="button" className="primary-button" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
                 <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><RefreshCw className="small-icon" />確認退款</button>
               </div>
+              {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
             </div>
           </section>
 
