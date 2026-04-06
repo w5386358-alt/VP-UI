@@ -11,6 +11,7 @@ export default function AccountingModule(props: any) {
     accountingDateEnd, setAccountingDateEnd,
     accountingNotice, selectedAccountingRecord, selectedAccountingSourceRecord, accountingDraft, accountingTaxAmount, accountingActualReceived, updateAccountingDraftField, saveAccountingDraft,
     triggerAccountingAction, selectAccountingOrder,
+    handleAccountingProofUpload, accountingProofInputRef,
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
     SectionIntro, SummaryCard,
   } = props;
@@ -82,6 +83,18 @@ export default function AccountingModule(props: any) {
                 <label className="field-card"><span className="field-label"><Wallet className="small-icon" />付款方式</span><select value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)}><option value="待確認">待確認</option><option value="銀行轉帳">銀行轉帳</option><option value="LINE Pay">LINE Pay</option><option value="現金">現金</option><option value="信用卡">信用卡</option><option value="其他">其他</option></select></label>
                 <label className="field-card"><span className="field-label"><FileText className="small-icon" />發票 / 單號</span><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="可填發票或退款單號" /></label>
                 <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="可填收款證明、備註、人工確認資訊" /></label>
+                <div className="field-card field-span-2 upload-field-card">
+                  <span className="field-label"><FileText className="small-icon" />收款證明上傳</span>
+                  <input ref={accountingProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleAccountingProofUpload(e.target.files?.[0] || null)} />
+                  <div className="upload-action-row">
+                    <button type="button" className="ghost-button compact-btn" onClick={() => accountingProofInputRef?.current?.click()}>
+                      <FileText className="small-icon" />上傳收款證明
+                    </button>
+                    {accountingDraft?.proof && accountingDraft.proof !== '待上傳' && (
+                      <a className="ghost-button compact-btn upload-link-btn" href={accountingDraft.proof} target="_blank" rel="noreferrer">檢視附件</a>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="accounting-sync-card">
                 <div className="accounting-sync-title">狀態資訊</div>

@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Bell,
   LogOut,
@@ -93,6 +94,7 @@ type ProductDraft = {
   agentPrice: string;
   generalAgentPrice: string;
   stock: string;
+  image: string;
   enabled: boolean;
 };
 
@@ -632,10 +634,21 @@ function hasFirebaseConfig() {
   return Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId);
 }
 
-function getDb() {
+function getFirebaseAppInstance() {
   if (!hasFirebaseConfig()) return null;
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return getApps().length ? getApp() : initializeApp(firebaseConfig);
+}
+
+function getDb() {
+  const app = getFirebaseAppInstance();
+  if (!app) return null;
   return getFirestore(app);
+}
+
+function getStorageService() {
+  const app = getFirebaseAppInstance();
+  if (!app || !firebaseConfig.storageBucket) return null;
+  return getStorage(app);
 }
 
 function normalizeProduct(id: string, data: any): Product {
@@ -819,6 +832,9 @@ function buildProductPayload(product: Product) {
     agentPrice: product.agentPrice ?? product.price,
     generalAgentPrice: product.generalAgentPrice ?? product.price,
     stock: product.stock,
+    image: product.image || '',
+    imageUrl: product.image || '',
+    photo: product.image || '',
     enabled: product.enabled,
     source: 'VERCEL_UI',
     sourceSystem: 'VERCEL_UI',
@@ -1119,7 +1135,7 @@ function sortOrderRecords(records: OrderRecord[]) {
 }
 
 function makeEmptyProductDraft(nextCode = ''): ProductDraft {
-  return { id: '', code: nextCode, barcode: '', name: '', category: '保健', price: '', vipPrice: '', agentPrice: '', generalAgentPrice: '', stock: '', enabled: true };
+  return { id: '', code: nextCode, barcode: '', name: '', category: '保健', price: '', vipPrice: '', agentPrice: '', generalAgentPrice: '', stock: '', image: '', enabled: true };
 }
 
 function getTodayDateInputValue() {
@@ -1193,6 +1209,7 @@ function toProductDraft(item: Product): ProductDraft {
     agentPrice: String(item.agentPrice ?? item.price ?? 0),
     generalAgentPrice: String(item.generalAgentPrice ?? item.price ?? 0),
     stock: String(item.stock),
+    image: item.image || '',
     enabled: item.enabled,
   };
 }
@@ -1306,6 +1323,8 @@ export default function App() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [firebaseReady, setFirebaseReady] = useState(false);
+  const productImageInputRef = useRef<HTMLInputElement | null>(null);
+  const accountingProofInputRef = useRef<HTMLInputElement | null>(null);
   const [dataMode, setDataMode] = useState<'firebase' | 'offline'>('offline');
   const [userRoleView, setUserRoleView] = useState<Role>('admin');
   const [userRankView, setUserRankView] = useState<Rank>('core');
@@ -2423,6 +2442,56 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return `VPP${String(next).padStart(3, '0')}`;
   }
 
+  async function uploadFileToFirebase(folder: 'products' | 'accounting', file: File, targetKey: string) {
+    const storage = getStorageService();
+    if (!storage) throw new Error('storage_not_ready');
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${folder}/${safeFirestoreDocId(targetKey, folder)}/${Date.now()}_${safeName}`;
+    const fileRef = storageRef(storage, path);
+    await uploadBytes(fileRef, file);
+    return await getDownloadURL(fileRef);
+  }
+
+  async function handleProductImageUpload(file?: File | null) {
+    if (!file) return;
+    const code = (productDraft.code || '').trim();
+    if (!code) {
+      setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
+      return;
+    }
+    try {
+      setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
+      const imageUrl = await uploadFileToFirebase('products', file, code);
+      setProductDraft((prev) => ({ ...prev, image: imageUrl }));
+      setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
+    } catch {
+      setProductNotice({ text: '❌ 商品圖片上傳失敗', tone: 'danger' });
+    } finally {
+      if (productImageInputRef.current) productImageInputRef.current.value = '';
+    }
+  }
+
+  async function handleAccountingProofUpload(file?: File | null) {
+    if (!file) return;
+    if (!accountingDraft.orderNo) {
+      setAccountingNotice({ text: '❌ 請先選擇訂單', tone: 'danger' });
+      return;
+    }
+    try {
+      setAccountingNotice({ text: '附件上傳中…', tone: 'neutral' });
+      const proofUrl = await uploadFileToFirebase('accounting', file, accountingDraft.orderNo);
+      setAccountingDraft((prev) => ({ ...prev, proof: proofUrl }));
+      const saved = await saveAccountingDraft();
+      if (saved) {
+        setAccountingNotice({ text: '✅ 收款證明已上傳', tone: 'success' });
+      }
+    } catch {
+      setAccountingNotice({ text: '❌ 收款證明上傳失敗', tone: 'danger' });
+    } finally {
+      if (accountingProofInputRef.current) accountingProofInputRef.current.value = '';
+    }
+  }
+
   async function syncProductToFirebase(product: Product, stockValue?: number) {
     const db = getDb();
     if (!db) return false;
@@ -3168,7 +3237,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
             {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
             )}
             {active === 'customers' && (
               <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
@@ -3183,7 +3252,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
             )}
             {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
             )}
             {active === 'profile' && (
               <ProfileModule

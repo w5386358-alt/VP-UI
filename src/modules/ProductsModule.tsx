@@ -17,6 +17,8 @@ export default function ProductsModule(props: any) {
     saveProductDraft,
     selectedProduct,
     productCategories,
+    handleProductImageUpload,
+    productImageInputRef,
     SectionIntro,
     StatusBadge,
   } = props;
@@ -148,6 +150,25 @@ export default function ProductsModule(props: any) {
                 <span className="field-label"><Boxes className="small-icon" />庫存</span>
                 <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
               </label>
+              <div className="field-card field-span-2 upload-field-card">
+                <span className="field-label"><ImageIcon className="small-icon" />商品圖片</span>
+                <div className="upload-panel">
+                  <div className="upload-preview-box">
+                    {productDraft.image ? <img src={productDraft.image} alt={productDraft.name || '商品圖片'} className="upload-preview-image" /> : <div className="upload-preview-empty">尚未上傳圖片</div>}
+                  </div>
+                  {productEditorMode !== 'view' && (
+                    <>
+                      <input ref={productImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleProductImageUpload(e.target.files?.[0] || null)} />
+                      <div className="upload-action-row">
+                        <button type="button" className="ghost-button compact-btn" onClick={() => productImageInputRef?.current?.click()}>
+                          <ImageIcon className="small-icon" />上傳商品圖片
+                        </button>
+                        {productDraft.image && <button type="button" className="ghost-button compact-btn" onClick={() => setProductDraft((prev: any) => ({ ...prev, image: '' }))}>移除圖片</button>}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="product-editor-status">
