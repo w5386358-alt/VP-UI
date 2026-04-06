@@ -115,11 +115,12 @@ export default function OrdersModule(props: any) {
                     <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>{item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}</span>
                   </div>
                   <div className="catalog-name">{item.name}</div>
-                  <div className="catalog-desc">{item.category} / 依身分顯示對應價格</div>
+                  <div className="catalog-desc">{item.category} / 客顯原價，系統顯示 {priceTierLabel}</div>
                   <div className="catalog-footer">
                     <div>
-                      <div className="mini-label">{priceTierLabel}</div>
+                      <div className="mini-label">原價 ${{item.originalPrice ?? item.price}}</div>
                       <div className="catalog-price">${item.price}</div>
+                      <div className="mini-label">{priceTierLabel}</div>
                     </div>
                     <button
                       type="button"
@@ -157,7 +158,7 @@ export default function OrdersModule(props: any) {
                     <div className="cart-item-top">
                       <div>
                         <div className="cart-name">{item.name}</div>
-                        <div className="cart-meta">{item.code} / 單價 ${item.price}</div>
+                        <div className="cart-meta">{item.code} / 原價 ${item.originalPrice ?? item.price} / {priceTierLabel} ${item.price}</div>
                       </div>
                       <button type="button" className="text-button" onClick={() => removeFromCart(item.id)}>移除</button>
                     </div>

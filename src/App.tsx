@@ -1098,7 +1098,7 @@ export default function App() {
     const source = products
       .filter((item) => item.enabled)
       .filter((item) => orderCategory === '全部商品' || item.category === orderCategory)
-      .map((item) => ({ ...item, price: getTierPrice(item, user.rankKey) }));
+      .map((item) => ({ ...item, originalPrice: item.price, price: getTierPrice(item, user.rankKey) }));
     if (!q) return source;
     return source.filter((item) => [item.code, item.name, item.category].join(' ').toLowerCase().includes(q));
   }, [keyword, products, orderCategory, user.rankKey]);

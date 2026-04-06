@@ -74,12 +74,12 @@ export default function ProductsModule(props: any) {
                   <div className="data-card-title">{item.name}</div>
                   <div className="data-card-subtitle">{item.category} / 條碼 {item.barcode || '未設定'}</div>
                   <div className="metric-row three">
+                    <div className="metric-box"><span>原價</span><strong>${item.price}</strong></div>
                     <div className="metric-box"><span>VIP價</span><strong>${item.vipPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>代理價</span><strong>${item.agentPrice ?? item.price}</strong></div>
-                    <div className="metric-box"><span>總代理</span><strong>${item.generalAgentPrice ?? item.price}</strong></div>
                   </div>
                   <div className="metric-row three product-stock-row">
-                    <div className="metric-box"><span>目前狀態</span><strong>{item.enabled ? '可販售' : '停用'}</strong></div>
+                    <div className="metric-box"><span>總代理價</span><strong>${item.generalAgentPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>庫存</span><strong>{item.stock}</strong></div>
                     <div className="metric-box"><span>狀態</span><strong>{item.enabled ? '啟用' : '停用'}</strong></div>
                   </div>
