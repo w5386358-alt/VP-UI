@@ -53,17 +53,6 @@ type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
-const MODULE_META: Record<NavKey, { title: string; desc: string; accent: string }> = {
-  dashboard: { title: '總覽 / 營運主控台', desc: '用更清楚的主視覺整理系統狀態、流程入口與重點指標。', accent: '查看今日營運與模組入口' },
-  orders: { title: '訂購 / 建立訂單', desc: '商品、客戶與購物車集中在同一個操作舞台，保留你的真實資料流。', accent: '快速建立、修改與查看訂單' },
-  inventory: { title: '倉儲 / 出入庫作業', desc: '把出貨、入庫、盤點與查詢改成同一套卡片化工作區。', accent: '掃碼、出貨、入庫、查詢' },
-  accounting: { title: '會計 / 收退款中心', desc: '讓收款、退款、統計與報表維持同一套乾淨的財務操作版型。', accent: '收款、退款、報表與憑證' },
-  products: { title: '商品 / 商品管理', desc: '商品列表、圖片與編輯表單改成更清楚的左右分欄管理結構。', accent: '商品資料、價格、圖片、狀態' },
-  customers: { title: '客戶 / 客戶資料管理', desc: '客戶名單、關係資訊與明細面板改成更精簡直覺的商務視覺。', accent: '名單、等級、歸屬、聯絡資料' },
-  staff: { title: '人員 / 權限管理', desc: '人員資料、權限與初始化密碼維持原邏輯，但換成更清楚的管理版面。', accent: '角色、階級、權限與啟用狀態' },
-  profile: { title: '個人資料 / 我的工作台', desc: '把個人摘要、訂單與快捷操作整理成更像獨立工作台的頁面。', accent: '個人資料、摘要、紀錄、快捷入口' },
-};
-
 type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number; sourceDocId?: string };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[] };
@@ -1307,21 +1296,8 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
-  return (
-    <section className="section-intro-card card">
-      <div className="section-intro-main">
-        <div className="section-intro-kicker">Velvet Pulse Workspace</div>
-        <h2 className="section-intro-title">{title}</h2>
-        <p className="section-intro-desc">{desc}</p>
-      </div>
-      <div className="section-intro-stats">
-        {stats.map((item) => (
-          <div key={item} className="section-intro-stat">{item}</div>
-        ))}
-      </div>
-    </section>
-  );
+function SectionIntro(_: { title: string; desc: string; stats?: string[] }) {
+  return null;
 }
 
 function PlaceholderCard({ title, desc, bullets }: { title: string; desc: string; bullets: string[] }) {
@@ -3254,52 +3230,21 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
-        <div className="topbar-shell card">
-          <div className="topbar-copy">
+        <div className="topbar">
+          <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{activeMeta.title}</div>
-            <div className="topbar-desc">{activeMeta.desc}</div>
+            <div className="topbar-title">操作區</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <div className="topbar-actions">
-              <div className={`status-pill ${firebaseReady ? 'online' : 'offline'}`}>
-                {firebaseReady ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
-                <span>{firebaseReady ? 'Firebase 已連線' : '離線模式'}</span>
-              </div>
-              <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-                <RefreshCw className="small-icon" />重新整理
-              </button>
-            </div>
+            <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
+              <RefreshCw className="small-icon" />重新整理
+            </button>
           </div>
         </div>
-
-        {!booting && (
-          <div className="hero-strip">
-            <div className="hero-card hero-card-main card">
-              <div className="hero-kicker">Workspace</div>
-              <div className="hero-title">{activeMeta.title}</div>
-              <div className="hero-desc">{activeMeta.desc}</div>
-              <div className="hero-chip-row">
-                <span className="hero-chip">{activeMeta.accent}</span>
-                <span className="hero-chip">{ROLE_LABEL[user.role]}</span>
-                <span className="hero-chip">{RANK_DISPLAY[user.rankKey]}</span>
-              </div>
-            </div>
-            <div className="hero-card hero-card-side card">
-              <div className="hero-side-title">系統摘要</div>
-              <div className="hero-side-grid">
-                <div><strong>{products.length}</strong><span>商品</span></div>
-                <div><strong>{orderRecords.length}</strong><span>訂單</span></div>
-                <div><strong>{visibleCustomerRecords.length}</strong><span>客戶</span></div>
-                <div><strong>{staff.length}</strong><span>人員</span></div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {booting ? (
           <div className="card loading-card">
@@ -3315,13 +3260,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <div className="banner-title">{bootMessage}</div>
                 <div className="banner-desc">
                   {firebaseReady
-                    ? '已讀取商品、客戶、人員、訂單與庫存真實資料。'
+                    ? '已讀取商品、客戶與人員資料。'
                     : '目前使用本地資料。'}
                 </div>
               </div>
             </div>
 
-            <section className={`page-surface module-${active}`}>
+
             {!canAccessNav(user.role, active) && (
               <div className="card access-denied-card">
                 <div className="access-denied-title">此角色不可進入此頁</div>
@@ -3366,7 +3311,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 allOrderRecords={orderRecords}
               />
             )}
-            </section>
           </>
         )}
 
