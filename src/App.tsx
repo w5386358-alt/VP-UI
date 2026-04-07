@@ -525,67 +525,9 @@ const personalOrders = [
 
 
 
-const quickCustomerCards = [
-  { name: '王小美', phone: '0912345678', address: '新竹市東區食品路 88 號', method: '宅配' as ShippingMethod },
-  { name: '林雅雯', phone: '0988777666', address: '竹北市成功八路 12 號', method: '店到店' as ShippingMethod },
-  { name: '門市自取客', phone: '0900111222', address: '自取免填地址', method: '自取' as ShippingMethod },
-];
+const quickCustomerCards: Array<{ name: string; phone: string; address: string; method: ShippingMethod }> = [];
 
-const initialOrderRecords: OrderRecord[] = [
-  {
-    orderNo: 'VP20260331-001',
-    customer: '王小美',
-    phone: '0912345678',
-    shippingMethod: '宅配',
-    address: '新竹市東區食品路 88 號',
-    amount: 4259,
-    itemCount: 3,
-    paymentStatus: '待收款',
-    shippingStatus: '待出貨',
-    mainStatus: '處理中',
-    date: '2026/03/31 10:12',
-    remark: '首批訂單',
-    items: [
-      { code: 'E401', name: '女神酵素液', qty: 2, price: 899 },
-      { code: 'P301', name: '瞬白激光精華4G', qty: 1, price: 1680 },
-    ],
-  },
-  {
-    orderNo: 'VP20260331-002',
-    customer: '林雅雯',
-    phone: '0988777666',
-    shippingMethod: '店到店',
-    address: '竹北市成功八路 12 號',
-    amount: 2825,
-    itemCount: 2,
-    paymentStatus: '已收款',
-    shippingStatus: '理貨中',
-    mainStatus: '出貨中',
-    date: '2026/03/31 13:26',
-    remark: '已上傳收款證明',
-    items: [
-      { code: 'E402', name: '美妍X關鍵賦活飲', qty: 1, price: 1380 },
-      { code: 'E408', name: '魔力抹茶機能飲', qty: 1, price: 1380 },
-    ],
-  },
-  {
-    orderNo: 'EX20260331-001',
-    customer: '陳佳玲',
-    phone: '0933555777',
-    shippingMethod: '宅配',
-    address: '新竹市北區湳雅街 10 號',
-    amount: 65,
-    itemCount: 1,
-    paymentStatus: '退款處理中',
-    shippingStatus: '換貨待出庫',
-    mainStatus: '換貨處理',
-    date: '2026/03/31 16:08',
-    remark: '換貨單，商品金額 0',
-    items: [
-      { code: 'P305', name: '超逆齡修復菁萃', qty: 1, price: 0 },
-    ],
-  },
-];
+const initialOrderRecords: OrderRecord[] = [];
 
 
 const workflowCards: WorkflowCard[] = [
@@ -1339,18 +1281,15 @@ export default function App() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('宅配');
-  const [customerName, setCustomerName] = useState('王小美');
-  const [customerPhone, setCustomerPhone] = useState('0912345678');
-  const [customerAddress, setCustomerAddress] = useState('新竹市東區食品路 88 號');
-  const [remark, setRemark] = useState('晚上可收件，若自取請先通知。');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [remark, setRemark] = useState('');
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState('');
-  const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 倉儲資料已更新',
-    tone: 'success',
-  });
+  const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [warehouseKeyword, setWarehouseKeyword] = useState('');
   const [warehousePaymentFilter, setWarehousePaymentFilter] = useState('全部');
   const [warehouseShippingFilter, setWarehouseShippingFilter] = useState('全部');
