@@ -72,8 +72,9 @@ export default function OrdersModule(props: any) {
         <span className="floating-cart-count">{itemCount}</span>
       </button>
 
-      <section className="order-layout order-layout-drawer">
-        <div className="order-main">
+      <div className="order-workspace">
+        <section className="order-layout order-layout-drawer">
+          <div className="order-main">
           <div className="card order-panel">
             <div className="panel-head">
               <div>
@@ -129,10 +130,10 @@ export default function OrdersModule(props: any) {
               ))}
             </div>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <div className={`cart-drawer-overlay ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
+        <div className={`cart-drawer-overlay ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
         <aside className={`cart-drawer-panel ${cartOpen ? 'show' : ''}`} onClick={(e) => e.stopPropagation()}>
           <div className="cart-drawer-head">
             <div>
@@ -225,7 +226,8 @@ export default function OrdersModule(props: any) {
             </button>
             {orderNotice && <div className={`inline-action-notice ${orderNotice.tone}`}><strong>{orderNotice.text}</strong></div>}
           </div>
-        </aside>
+          </aside>
+        </div>
       </div>
     </>
   );

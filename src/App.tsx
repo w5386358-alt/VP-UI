@@ -3192,7 +3192,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || "受限模組"}</div>
+            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}後台</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
