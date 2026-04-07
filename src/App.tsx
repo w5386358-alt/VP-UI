@@ -1264,6 +1264,7 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 function SummaryCard({ title, value, sub }: { title: string; value: string; sub: string }) {
   return (
     <div className="card summary-card">
+      <div className="summary-orb" />
       <div className="summary-title">{title}</div>
       <div className="summary-value">{value}</div>
       <div className="summary-sub">{sub}</div>
@@ -1279,11 +1280,12 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
         <div className="workflow-icon-wrap">
           <Icon className="workflow-icon" />
         </div>
-        <div>
-          <div className="workflow-title">{card.title}</div>
-          <div className="workflow-desc">{card.desc}</div>
-        </div>
+        <button type="button" className="workflow-arrow-btn" aria-label={`${card.title} 詳細`}>
+          <ArrowUpRight className="small-icon" />
+        </button>
       </div>
+      <div className="workflow-title">{card.title}</div>
+      <div className="workflow-desc">{card.desc}</div>
       <div className="workflow-list">
         {card.bullets.map((bullet) => (
           <div key={bullet} className="workflow-bullet">
@@ -1306,7 +1308,10 @@ function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string
       </div>
       <div className="section-intro-stats">
         {stats.map((item) => (
-          <div key={item} className="section-intro-stat">{item}</div>
+          <div key={item} className="section-intro-stat">
+            <span className="section-intro-dot" />
+            <span>{item}</span>
+          </div>
         ))}
       </div>
     </section>
@@ -3131,35 +3136,58 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
+  const activeMeta = visibleNavItems.find((item) => item.key === active);
+  const activeLabel = activeMeta?.label || '操作區';
+  const topSummaryCards = [
+    { title: '今日訂單', value: `${orderRecords.length}`, sub: '最新到最舊' },
+    { title: '待收款', value: `${paymentQueue.filter((item) => item.paymentStatus === '待收款').length}`, sub: '會計待處理' },
+    { title: '低庫存', value: `${lowStockCount}`, sub: '倉儲提醒' },
+  ];
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand card">
-          <div className="brand-kicker">VP SYSTEM</div>
+    <div className="app-shell vp-overhaul-shell">
+      <aside className="sidebar vp-sidebar">
+        <div className="brand card vp-brand-card">
+          <div className="brand-kicker">VELVET PULSE SYSTEM</div>
           <div className="brand-title">Velvet Pulse</div>
-          <div className="brand-subtitle">真實資料營運後台</div>
+          <div className="brand-subtitle">訂購、倉儲、會計、人員與資料同步的真實營運後台。</div>
+          <div className="brand-shine brand-shine-a" />
+          <div className="brand-shine brand-shine-b" />
         </div>
 
-        <div className="card user-card">
-          <div className="muted-label">登入帳號</div>
-          <div className="user-name">{user.name}</div>
-          <div className="user-id">ID：{user.loginId}</div>
-          <div className="badge-row">
+        <div className="card user-card vp-user-card">
+          <div className="vp-user-head">
+            <div className="vp-avatar">{user.name.slice(0, 1)}</div>
+            <div>
+              <div className="muted-label">登入帳號</div>
+              <div className="user-name">{user.name}</div>
+              <div className="user-id">ID：{user.loginId}</div>
+            </div>
+          </div>
+          <div className="badge-row vp-badge-row">
             <span className="badge badge-role">角色 / {ROLE_LABEL[user.role]}</span>
             <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
           </div>
         </div>
 
-        <div className="card source-card">
-          <div>
-            <div className="muted-label">資料來源</div>
-            <div className="source-value">{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</div>
+        <div className="sidebar-stack-grid">
+          <div className="card source-card vp-mini-card">
+            <div>
+              <div className="muted-label">資料來源</div>
+              <div className="source-value">{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</div>
+            </div>
+            {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
           </div>
-          {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
+
+          <div className="card vp-mini-card vp-mini-card-soft">
+            <div className="muted-label">系統狀態</div>
+            <div className="source-value">{bootMessage}</div>
+            <div className="role-preview-desc">目前顯示真資料，不套假資料。</div>
+          </div>
         </div>
 
-        <div className="card role-preview-card">
-          <div className="muted-label">權限切換</div>
+        <div className="card role-preview-card vp-role-card">
+          <div className="muted-label">畫面預覽切換</div>
           <div className="role-preview-title">目前角色：{ROLE_LABEL[user.role]}</div>
           <div className="role-switch-group">
             <div className="role-switch-label">角色</div>
@@ -3193,15 +3221,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="permission-chip-row">
             <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            <span className="badge badge-neutral">價格層級 / {getPriceTierLabel(user.rankKey)}</span>
-            <span className="badge badge-neutral">客戶範圍 / {customerScopeLabel}</span>
-            <span className="badge badge-neutral">退款 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
+            <span className="badge badge-neutral">價格 / {getPriceTierLabel(user.rankKey)}</span>
+            <span className="badge badge-neutral">客戶 / {customerScopeLabel}</span>
           </div>
-          <div className="role-preview-desc">切換角色與階級查看畫面。</div>
         </div>
 
         <div className="nav-group-title">主功能選單</div>
-        <div className="nav-list">
+        <div className="nav-list vp-nav-list">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -3218,115 +3244,153 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           })}
         </div>
 
-        {canAccessNav(user.role, 'accounting') && (
-        <div className="card accounting-shortcut">
-          <div className="shortcut-title">快捷入口</div>
-          <button
-            type="button"
-            onClick={() => setActive('accounting')}
-            className={`shortcut-button ${active === 'accounting' ? 'active' : ''}`}
-          >
-            <CreditCard className="small-icon" />會計中心
-          </button>
-        </div>
-        )}
-
-        <div className="sidebar-tip card">
-          <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">維持真資料與既有功能邏輯，逐步重整整體版型。</div>
-        </div>
-
-        <div className="sidebar-actions">
+        <div className="sidebar-actions vp-sidebar-actions">
           <button type="button" className="ghost-button"><Bell className="small-icon" />通知</button>
           <button type="button" className="ghost-button"><LogOut className="small-icon" />登出</button>
         </div>
       </aside>
 
-      <main className="main-content">
-        <div className="topbar">
-          <div>
-            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '操作區'}</div>
-            <div className="topbar-subtitle">真資料顯示 · 版型重構中</div>
+      <main className="main-content vp-main-content">
+        <header className="topbar card vp-topbar">
+          <div className="topbar-copy">
+            <div className="section-tag">Velvet Pulse / {activeLabel}</div>
+            <div className="topbar-title">{activeLabel}</div>
+            <div className="topbar-subtitle">真資料顯示 · 全站版型重構</div>
           </div>
-          <div className="toolbar">
-            <div className="search-wrap">
+          <div className="toolbar vp-toolbar">
+            <div className="search-wrap vp-search-wrap">
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
+            <button type="button" className="ghost-button topbar-sync-pill" onClick={() => void loadFirebaseData()}>
               <RefreshCw className="small-icon" />重新整理
             </button>
           </div>
-        </div>
+        </header>
 
-        {booting ? (
-          <div className="card loading-card">
-            <div className="spinner" />
-            <div className="loading-title">{bootMessage}</div>
-            <div className="loading-desc">正在載入資料</div>
+        <section className="card hero-card vp-hero-card">
+          <div className="hero-copy">
+            <div className="page-kicker">{firebaseReady ? 'Firebase Live Workspace' : 'Workspace Preview'}</div>
+            <h1>{activeLabel} 操作區</h1>
+            <p>
+              這次不是只換色，而是把主框架、頂欄、模組頁首、卡片容器、留白與層次整體重做，
+              讓八大區更接近你想要的乾淨精品後台感。
+            </p>
+            <div className="hero-badges">
+              <span className="badge badge-role"><Sparkles className="small-icon" />Velvet Pulse</span>
+              <span className="badge badge-neutral">資料來源 / {dataMode === 'firebase' ? 'Firebase' : 'Offline'}</span>
+              <span className="badge badge-neutral">角色 / {ROLE_LABEL[user.role]}</span>
+            </div>
           </div>
-        ) : (
-          <>
-            <div className={`card banner-card ${firebaseReady ? 'success' : 'warning'}`}>
-              {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
-              <div>
-                <div className="banner-title">{bootMessage}</div>
-                <div className="banner-desc">
-                  {firebaseReady
-                    ? '已讀取商品、客戶與人員資料。'
-                    : '目前使用本地資料。'}
-                </div>
+          <div className="hero-side">
+            <div className="hero-status">
+              <div className="hero-status-head"><ShieldCheck className="small-icon" />主線狀態</div>
+              <div className="hero-status-grid">
+                {topSummaryCards.map((item) => (
+                  <div key={item.title} className="hero-status-tile">
+                    <div className="hero-status-label">{item.title}</div>
+                    <strong>{item.value}</strong>
+                    <span>{item.sub}</span>
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
+        </section>
 
-
-            {!canAccessNav(user.role, active) && (
-              <div className="card access-denied-card">
-                <div className="access-denied-title">此角色不可進入此頁</div>
-                <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
+        <div className="workspace-grid">
+          <section className="workspace-stream">
+            {booting ? (
+              <div className="card loading-card">
+                <div className="spinner" />
+                <div className="loading-title">{bootMessage}</div>
+                <div className="loading-desc">正在載入資料</div>
               </div>
-            )}
+            ) : (
+              <>
+                <div className={`card banner-card ${firebaseReady ? 'success' : 'warning'}`}>
+                  {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
+                  <div>
+                    <div className="banner-title">{bootMessage}</div>
+                    <div className="banner-desc">
+                      {firebaseReady ? '已讀取商品、客戶、人員、訂單與倉儲資料。' : '目前使用本地資料。'}
+                    </div>
+                  </div>
+                </div>
 
-            {active === 'dashboard' && (
-              <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
+                {!canAccessNav(user.role, active) && (
+                  <div className="card access-denied-card">
+                    <div className="access-denied-title">此角色不可進入此頁</div>
+                    <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
+                  </div>
+                )}
+
+                <div className="module-stage card">
+                  {active === 'dashboard' && (
+                    <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
+                  )}
+                  {active === 'products' && (
+                    <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+                  )}
+                  {active === 'customers' && (
+                    <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
+                  )}
+                  {active === 'staff' && (
+                    <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
+                  )}
+                  {active === 'orders' && (
+                    <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+                  )}
+                  {active === 'inventory' && (
+                    <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+                  )}
+                  {active === 'accounting' && (
+                    <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+                  )}
+                  {active === 'profile' && (
+                    <ProfileModule
+                      personalOrders={profilePersonalOrders}
+                      personalSummary={personalSummary}
+                      profileQuickActions={profileQuickActions}
+                      user={user}
+                      getRankClass={getRankClass}
+                      keyword={keyword}
+                      setKeyword={setKeyword}
+                      priceTierLabel={getPriceTierLabel(user.rankKey)}
+                      SectionIntro={SectionIntro}
+                      SummaryCard={SummaryCard}
+                      ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)}
+                      allOrderRecords={orderRecords}
+                    />
+                  )}
+                </div>
+              </>
             )}
-            {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
-            )}
-            {active === 'customers' && (
-              <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
-            )}
-            {active === 'staff' && (
-              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
-            )}
-            {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
-            )}
-            {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
-            )}
-            {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
-            )}
-            {active === 'profile' && (
-              <ProfileModule
-                personalOrders={profilePersonalOrders}
-                personalSummary={personalSummary}
-                profileQuickActions={profileQuickActions}
-                user={user}
-                getRankClass={getRankClass}
-                keyword={keyword}
-                setKeyword={setKeyword}
-                priceTierLabel={getPriceTierLabel(user.rankKey)}
-                SectionIntro={SectionIntro}
-                SummaryCard={SummaryCard}
-                ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)}
-                allOrderRecords={orderRecords}
-              />
-            )}
-          </>
-        )}
+          </section>
+
+          <aside className="workspace-side-rail">
+            <div className="card side-spotlight-card">
+              <div className="side-spotlight-label">目前焦點</div>
+              <div className="side-spotlight-title">{activeLabel}</div>
+              <div className="side-spotlight-desc">保留真資料與既有流程，直接往你要的精品後台版型深改。</div>
+            </div>
+            <div className="card side-metrics-card">
+              <div className="side-card-title">營運摘要</div>
+              <div className="side-metric-list">
+                <div className="side-metric-item"><span>商品</span><strong>{products.length}</strong></div>
+                <div className="side-metric-item"><span>客戶</span><strong>{visibleCustomerRecords.length}</strong></div>
+                <div className="side-metric-item"><span>人員</span><strong>{staff.length}</strong></div>
+                <div className="side-metric-item"><span>訂單</span><strong>{orderRecords.length}</strong></div>
+              </div>
+            </div>
+            <div className="card side-metrics-card rose">
+              <div className="side-card-title">同步與提醒</div>
+              <div className="side-note-row"><Database className="small-icon" />Firebase 已連線：{firebaseReady ? '是' : '否'}</div>
+              <div className="side-note-row"><Wallet className="small-icon" />待收款：{paymentQueue.filter((item) => item.paymentStatus === '待收款').length} 筆</div>
+              <div className="side-note-row"><Warehouse className="small-icon" />低庫存：{lowStockCount} 件</div>
+            </div>
+          </aside>
+        </div>
 
         <div className="mobile-nav">
           {[
