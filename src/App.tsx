@@ -53,6 +53,17 @@ type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
 
+const MODULE_META: Record<NavKey, { title: string; desc: string; accent: string }> = {
+  dashboard: { title: '總覽 / 營運主控台', desc: '用更清楚的主視覺整理系統狀態、流程入口與重點指標。', accent: '查看今日營運與模組入口' },
+  orders: { title: '訂購 / 建立訂單', desc: '商品、客戶與購物車集中在同一個操作舞台，保留你的真實資料流。', accent: '快速建立、修改與查看訂單' },
+  inventory: { title: '倉儲 / 出入庫作業', desc: '把出貨、入庫、盤點與查詢改成同一套卡片化工作區。', accent: '掃碼、出貨、入庫、查詢' },
+  accounting: { title: '會計 / 收退款中心', desc: '讓收款、退款、統計與報表維持同一套乾淨的財務操作版型。', accent: '收款、退款、報表與憑證' },
+  products: { title: '商品 / 商品管理', desc: '商品列表、圖片與編輯表單改成更清楚的左右分欄管理結構。', accent: '商品資料、價格、圖片、狀態' },
+  customers: { title: '客戶 / 客戶資料管理', desc: '客戶名單、關係資訊與明細面板改成更精簡直覺的商務視覺。', accent: '名單、等級、歸屬、聯絡資料' },
+  staff: { title: '人員 / 權限管理', desc: '人員資料、權限與初始化密碼維持原邏輯，但換成更清楚的管理版面。', accent: '角色、階級、權限與啟用狀態' },
+  profile: { title: '個人資料 / 我的工作台', desc: '把個人摘要、訂單與快捷操作整理成更像獨立工作台的頁面。', accent: '個人資料、摘要、紀錄、快捷入口' },
+};
+
 type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number; sourceDocId?: string };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[] };
@@ -1298,18 +1309,15 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
 
 function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
   return (
-    <section className="section-intro-vp">
-      <div className="section-intro-copy">
-        <div className="section-intro-kicker">Velvet Pulse</div>
-        <div className="section-intro-title-row">
-          <h2 className="section-intro-title">{title}</h2>
-          <span className="section-intro-dot" />
-        </div>
+    <section className="section-intro-card card">
+      <div className="section-intro-main">
+        <div className="section-intro-kicker">Velvet Pulse Workspace</div>
+        <h2 className="section-intro-title">{title}</h2>
         <p className="section-intro-desc">{desc}</p>
       </div>
       <div className="section-intro-stats">
-        {stats.map((stat) => (
-          <div key={stat} className="section-intro-stat-pill">{stat}</div>
+        {stats.map((item) => (
+          <div key={item} className="section-intro-stat">{item}</div>
         ))}
       </div>
     </section>
@@ -3138,9 +3146,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand card">
-          <div className="brand-kicker">Velvet Pulse</div>
-          <div className="brand-title">VP System</div>
-          <div className="brand-subtitle">精品感營運後台 / 真實 Firebase 資料</div>
+          <div className="brand-kicker">VP SYSTEM</div>
+          <div className="brand-title">VP UI</div>
+          <div className="brand-subtitle">營運後台</div>
         </div>
 
         <div className="card user-card">
@@ -3203,7 +3211,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <div className="role-preview-desc">切換角色與階級查看畫面。</div>
         </div>
 
-        <div className="nav-group-title">八大模組</div>
+        <div className="nav-group-title">主功能選單</div>
         <div className="nav-list">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
@@ -3236,7 +3244,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">版型已切換為 Velvet Pulse 風格，功能與資料流維持原邏輯。</div>
+          <div className="sidebar-tip-desc">畫面整理完成，逐步補主流程。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -3246,36 +3254,52 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
-        <div className="topbar vp-topbar">
-          <div className="vp-topbar-copy">
+        <div className="topbar-shell card">
+          <div className="topbar-copy">
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '操作區'}</div>
-            <div className="topbar-subtitle">維持原功能邏輯，全面切換為乾淨簡單的精品感後台版型。</div>
+            <div className="topbar-title">{activeMeta.title}</div>
+            <div className="topbar-desc">{activeMeta.desc}</div>
           </div>
-          <div className="toolbar vp-toolbar">
-            <div className="search-wrap vp-search-wrap">
+          <div className="toolbar">
+            <div className="search-wrap">
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <button type="button" className="ghost-button topbar-ghost"><Bell className="small-icon" />通知</button>
-            <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
-            </button>
+            <div className="topbar-actions">
+              <div className={`status-pill ${firebaseReady ? 'online' : 'offline'}`}>
+                {firebaseReady ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                <span>{firebaseReady ? 'Firebase 已連線' : '離線模式'}</span>
+              </div>
+              <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
+                <RefreshCw className="small-icon" />重新整理
+              </button>
+            </div>
           </div>
         </div>
 
-        <section className={`vp-hero-banner ${firebaseReady ? 'online' : 'offline'}`}>
-          <div className="vp-hero-copy">
-            <div className="vp-hero-kicker">Welcome back</div>
-            <h1>{user.name}，今天也繼續推進營運主線。</h1>
-            <p>{firebaseReady ? '系統已接上 Firebase 真實資料，八大區功能沿用原本邏輯與資料流。' : '目前未成功讀到 Firebase，請重新整理或檢查設定。'}</p>
+        {!booting && (
+          <div className="hero-strip">
+            <div className="hero-card hero-card-main card">
+              <div className="hero-kicker">Workspace</div>
+              <div className="hero-title">{activeMeta.title}</div>
+              <div className="hero-desc">{activeMeta.desc}</div>
+              <div className="hero-chip-row">
+                <span className="hero-chip">{activeMeta.accent}</span>
+                <span className="hero-chip">{ROLE_LABEL[user.role]}</span>
+                <span className="hero-chip">{RANK_DISPLAY[user.rankKey]}</span>
+              </div>
+            </div>
+            <div className="hero-card hero-card-side card">
+              <div className="hero-side-title">系統摘要</div>
+              <div className="hero-side-grid">
+                <div><strong>{products.length}</strong><span>商品</span></div>
+                <div><strong>{orderRecords.length}</strong><span>訂單</span></div>
+                <div><strong>{visibleCustomerRecords.length}</strong><span>客戶</span></div>
+                <div><strong>{staff.length}</strong><span>人員</span></div>
+              </div>
+            </div>
           </div>
-          <div className="vp-hero-meta">
-            <div className="vp-hero-meta-card"><span>資料來源</span><strong>{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</strong></div>
-            <div className="vp-hero-meta-card"><span>目前角色</span><strong>{ROLE_LABEL[user.role]}</strong></div>
-            <div className="vp-hero-meta-card"><span>目前階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
-          </div>
-        </section>
+        )}
 
         {booting ? (
           <div className="card loading-card">
@@ -3291,13 +3315,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <div className="banner-title">{bootMessage}</div>
                 <div className="banner-desc">
                   {firebaseReady
-                    ? '已讀取商品、客戶與人員資料。'
+                    ? '已讀取商品、客戶、人員、訂單與庫存真實資料。'
                     : '目前使用本地資料。'}
                 </div>
               </div>
             </div>
 
-
+            <section className={`page-surface module-${active}`}>
             {!canAccessNav(user.role, active) && (
               <div className="card access-denied-card">
                 <div className="access-denied-title">此角色不可進入此頁</div>
@@ -3305,7 +3329,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
             )}
 
-            <div className={`module-board module-${active}`}>
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
@@ -3343,7 +3366,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 allOrderRecords={orderRecords}
               />
             )}
-            </div>
+            </section>
           </>
         )}
 
