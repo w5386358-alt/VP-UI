@@ -1298,15 +1298,18 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
 
 function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
   return (
-    <section className="module-hero card">
-      <div className="module-hero-copy">
-        <div className="module-hero-kicker">模組工作區</div>
-        <div className="module-hero-title">{title}</div>
-        <div className="module-hero-desc">{desc}</div>
+    <section className="section-intro-vp">
+      <div className="section-intro-copy">
+        <div className="section-intro-kicker">Velvet Pulse</div>
+        <div className="section-intro-title-row">
+          <h2 className="section-intro-title">{title}</h2>
+          <span className="section-intro-dot" />
+        </div>
+        <p className="section-intro-desc">{desc}</p>
       </div>
-      <div className="module-hero-stats">
-        {stats.slice(0, 3).map((item) => (
-          <span key={item} className="module-hero-pill">{item}</span>
+      <div className="section-intro-stats">
+        {stats.map((stat) => (
+          <div key={stat} className="section-intro-stat-pill">{stat}</div>
         ))}
       </div>
     </section>
@@ -3135,9 +3138,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand card">
-          <div className="brand-kicker">VELVET PULSE</div>
-          <div className="brand-title">Velvet Pulse</div>
-          <div className="brand-subtitle">營運後台管理中心</div>
+          <div className="brand-kicker">Velvet Pulse</div>
+          <div className="brand-title">VP System</div>
+          <div className="brand-subtitle">精品感營運後台 / 真實 Firebase 資料</div>
         </div>
 
         <div className="card user-card">
@@ -3200,7 +3203,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <div className="role-preview-desc">切換角色與階級查看畫面。</div>
         </div>
 
-        <div className="nav-group-title">主功能選單</div>
+        <div className="nav-group-title">八大模組</div>
         <div className="nav-list">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
@@ -3233,7 +3236,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">目前維持真資料流程與同步架構，主視覺已統一升級。</div>
+          <div className="sidebar-tip-desc">版型已切換為 Velvet Pulse 風格，功能與資料流維持原邏輯。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -3243,21 +3246,36 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
-        <div className="topbar">
-          <div>
+        <div className="topbar vp-topbar">
+          <div className="vp-topbar-copy">
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">總覽 / 操作區</div>
+            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '操作區'}</div>
+            <div className="topbar-subtitle">維持原功能邏輯，全面切換為乾淨簡單的精品感後台版型。</div>
           </div>
-          <div className="toolbar">
-            <div className="search-wrap">
+          <div className="toolbar vp-toolbar">
+            <div className="search-wrap vp-search-wrap">
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
+            <button type="button" className="ghost-button topbar-ghost"><Bell className="small-icon" />通知</button>
             <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
               <RefreshCw className="small-icon" />重新整理
             </button>
           </div>
         </div>
+
+        <section className={`vp-hero-banner ${firebaseReady ? 'online' : 'offline'}`}>
+          <div className="vp-hero-copy">
+            <div className="vp-hero-kicker">Welcome back</div>
+            <h1>{user.name}，今天也繼續推進營運主線。</h1>
+            <p>{firebaseReady ? '系統已接上 Firebase 真實資料，八大區功能沿用原本邏輯與資料流。' : '目前未成功讀到 Firebase，請重新整理或檢查設定。'}</p>
+          </div>
+          <div className="vp-hero-meta">
+            <div className="vp-hero-meta-card"><span>資料來源</span><strong>{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</strong></div>
+            <div className="vp-hero-meta-card"><span>目前角色</span><strong>{ROLE_LABEL[user.role]}</strong></div>
+            <div className="vp-hero-meta-card"><span>目前階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
+          </div>
+        </section>
 
         {booting ? (
           <div className="card loading-card">
@@ -3287,6 +3305,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
             )}
 
+            <div className={`module-board module-${active}`}>
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
@@ -3324,6 +3343,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 allOrderRecords={orderRecords}
               />
             )}
+            </div>
           </>
         )}
 
