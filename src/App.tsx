@@ -3080,16 +3080,21 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand card">
+        <div className="brand">
           <div className="brand-kicker">Enterprise Resource Planning</div>
           <div className="brand-title">Velvet Pulse</div>
-          <div className="brand-subtitle">以 stitch 設計語言整合 VP 功能流程與 Firebase 資料。</div>
+          <div className="brand-subtitle">stitch UI 外觀 × VP 系統邏輯 × Firebase 資料層</div>
         </div>
 
         <div className="card user-card">
-          <div className="muted-label">登入帳號</div>
-          <div className="user-name">{user.name}</div>
-          <div className="user-id">ID：{user.loginId}</div>
+          <div className="user-card-header">
+            <div>
+              <div className="muted-label">登入帳號</div>
+              <div className="user-name">{user.name}</div>
+              <div className="user-id">ID：{user.loginId}</div>
+            </div>
+            <div className="user-avatar">VP</div>
+          </div>
           <div className="badge-row">
             <span className="badge badge-role">角色 / {ROLE_LABEL[user.role]}</span>
             <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
@@ -3143,7 +3148,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             <span className="badge badge-neutral">客戶範圍 / {customerScopeLabel}</span>
             <span className="badge badge-neutral">退款 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
           </div>
-          <div className="role-preview-desc">可直接切換不同角色，檢查 stitch 介面下的 VP 權限邏輯是否正常。</div>
+          <div className="role-preview-desc">切換角色與階級查看畫面。</div>
         </div>
 
         <div className="nav-group-title">主功能選單</div>
@@ -3179,7 +3184,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">目前版本以 stitch 視覺為主，底層保留 VP 包的操作流程、資料欄位與 Firebase 連線。</div>
+          <div className="sidebar-tip-desc">畫面整理完成，逐步補主流程。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -3197,10 +3202,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <div className="toolbar">
             <div className="search-wrap">
               <Search className="search-icon" />
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active) || '搜尋資料、訂單、商品或客戶'} />
+              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
+            <button type="button" className="icon-circle" aria-label="通知">
+              <Bell className="small-icon" />
+            </button>
             <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
+              <RefreshCw className="small-icon" />同步資料
             </button>
           </div>
         </div>
@@ -3219,8 +3227,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <div className="banner-title">{bootMessage}</div>
                 <div className="banner-desc">
                   {firebaseReady
-                    ? '已讀取商品、客戶與人員資料。'
-                    : '目前使用本地資料。'}
+                    ? '已接入 Firebase，商品、客戶、人員與主流程資料可持續讀寫。'
+                    : '目前使用本地資料，仍可先測試 stitch UI 與 VP 主流程畫面。'}
                 </div>
               </div>
             </div>
