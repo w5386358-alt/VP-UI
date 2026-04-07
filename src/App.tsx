@@ -1296,8 +1296,21 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro(_: { title: string; desc: string; stats?: string[] }) {
-  return null;
+function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
+  return (
+    <section className="section-intro card">
+      <div className="section-intro-copy">
+        <div className="page-kicker">Velvet Pulse Workspace</div>
+        <h2 className="section-intro-title">{title}</h2>
+        <p className="section-intro-desc">{desc}</p>
+      </div>
+      <div className="section-intro-stats">
+        {stats.map((item) => (
+          <div key={item} className="section-intro-stat">{item}</div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function PlaceholderCard({ title, desc, bullets }: { title: string; desc: string; bullets: string[] }) {
@@ -3123,8 +3136,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <aside className="sidebar">
         <div className="brand card">
           <div className="brand-kicker">VP SYSTEM</div>
-          <div className="brand-title">VP UI</div>
-          <div className="brand-subtitle">營運後台</div>
+          <div className="brand-title">Velvet Pulse</div>
+          <div className="brand-subtitle">真實資料營運後台</div>
         </div>
 
         <div className="card user-card">
@@ -3220,7 +3233,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">畫面整理完成，逐步補主流程。</div>
+          <div className="sidebar-tip-desc">維持真資料與既有功能邏輯，逐步重整整體版型。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -3233,7 +3246,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">操作區</div>
+            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '操作區'}</div>
+            <div className="topbar-subtitle">真資料顯示 · 版型重構中</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
