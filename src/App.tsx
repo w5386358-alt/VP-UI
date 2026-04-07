@@ -1293,8 +1293,23 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro(_: { title: string; desc: string; stats?: string[] }) {
-  return null;
+function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
+  return (
+    <section className="page-hero">
+      <div className="page-hero-main">
+        <div className="page-hero-kicker">{title}</div>
+        <h1 className="page-hero-title">{title}</h1>
+        <p className="page-hero-desc">{desc}</p>
+      </div>
+      {!!stats.length && (
+        <div className="page-hero-stats">
+          {stats.map((item) => (
+            <div key={item} className="page-hero-stat">{item}</div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function PlaceholderCard({ title, desc, bullets }: { title: string; desc: string; bullets: string[] }) {
@@ -1336,6 +1351,18 @@ export default function App() {
     rankKey: userRankView,
   }), [userRoleView, userRankView]);
   const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
+
+  const activeNavItem = navItems.find((item) => item.key === active && canAccessNav(user.role, item.key));
+  const pageTitleMap: Record<NavKey, string> = {
+    dashboard: '營運總覽',
+    orders: '訂購介面',
+    inventory: '倉儲中心',
+    accounting: '會計中心',
+    products: '商品',
+    customers: '客戶管理',
+    staff: '員工管理',
+    profile: '個人資料',
+  };
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('宅配');
@@ -3081,13 +3108,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand card">
-          <div className="brand-kicker">VELVET PULSE</div>
-          <div className="brand-title">VP Studio</div>
-          <div className="brand-subtitle">八大模組營運中台</div>
+          <div className="brand-kicker">VelvetPulse</div>
+          <div className="brand-title">VP UI</div>
+          <div className="brand-subtitle">八大模組營運後台</div>
         </div>
 
         <div className="card user-card">
-          <div className="muted-label">登入帳號</div>
+          <div className="muted-label">目前登入角色</div>
           <div className="user-name">{user.name}</div>
           <div className="user-id">ID：{user.loginId}</div>
           <div className="badge-row">
@@ -3179,7 +3206,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">畫面整理完成，逐步補主流程。</div>
+          <div className="sidebar-tip-desc">目前以 Stitch 版型語言重構主殼與模組排版。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -3189,24 +3216,22 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
-        <div className="workspace-frame">
-          <div className="workspace-glow workspace-glow-a" />
-          <div className="workspace-glow workspace-glow-b" />
-        <div className="topbar">
-          <div>
-            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-          </div>
-          <div className="toolbar">
-            <div className="search-wrap">
-              <Search className="search-icon" />
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
+        <div className="workspace-surface">
+          <div className="topbar">
+            <div>
+              <div className="section-tag">{activeNavItem?.label || '受限模組'}</div>
+              <div className="topbar-title">{pageTitleMap[active] || '操作區'}</div>
             </div>
-            <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
-            </button>
+            <div className="toolbar">
+              <div className="search-wrap">
+                <Search className="search-icon" />
+                <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
+              </div>
+              <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
+                <RefreshCw className="small-icon" />重新整理
+              </button>
+            </div>
           </div>
-        </div>
 
         {booting ? (
           <div className="card loading-card">
@@ -3236,7 +3261,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
             )}
 
-            <div className={`module-stage module-${active}`}>
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
@@ -3274,9 +3298,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 allOrderRecords={orderRecords}
               />
             )}
-            </div>
           </>
         )}
+
+        </div>
 
         <div className="mobile-nav">
           {[
@@ -3299,7 +3324,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </button>
             );
           })}
-        </div>
         </div>
       </main>
     </div>
