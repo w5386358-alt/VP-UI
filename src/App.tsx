@@ -3081,9 +3081,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand card">
-          <div className="brand-kicker">VP SYSTEM</div>
-          <div className="brand-title">VP UI</div>
-          <div className="brand-subtitle">營運後台</div>
+          <div className="brand-kicker">VELVET PULSE</div>
+          <div className="brand-title">VP Studio</div>
+          <div className="brand-subtitle">八大模組營運中台</div>
         </div>
 
         <div className="card user-card">
@@ -3189,10 +3189,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="main-content">
+        <div className="workspace-frame">
+          <div className="workspace-glow workspace-glow-a" />
+          <div className="workspace-glow workspace-glow-b" />
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}後台</div>
+            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
@@ -3233,6 +3236,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
             )}
 
+            <div className={`module-stage module-${active}`}>
             {active === 'dashboard' && (
               <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
             )}
@@ -3270,6 +3274,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 allOrderRecords={orderRecords}
               />
             )}
+            </div>
           </>
         )}
 
@@ -3294,6 +3299,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </button>
             );
           })}
+        </div>
         </div>
       </main>
     </div>
