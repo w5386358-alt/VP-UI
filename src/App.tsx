@@ -621,11 +621,14 @@ const workflowCards: WorkflowCard[] = [
 
 const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : ({} as Record<string, string>);
 
+const firebaseProjectId = env.VITE_FIREBASE_PROJECT_ID || '';
+const firebaseStorageBucket = env.VITE_FIREBASE_STORAGE_BUCKET || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : '');
+
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY || '',
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  projectId: firebaseProjectId,
+  storageBucket: firebaseStorageBucket,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: env.VITE_FIREBASE_APP_ID || '',
 };
@@ -648,7 +651,7 @@ function getDb() {
 function getStorageService() {
   const app = getFirebaseAppInstance();
   if (!app || !firebaseConfig.storageBucket) return null;
-  return getStorage(app);
+  return getStorage(app, `gs://${firebaseConfig.storageBucket}`);
 }
 
 function normalizeProduct(id: string, data: any): Product {
@@ -2448,24 +2451,32 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const path = `${folder}/${safeFirestoreDocId(targetKey, folder)}/${Date.now()}_${safeName}`;
     const fileRef = storageRef(storage, path);
-    await uploadBytes(fileRef, file);
+    await uploadBytes(fileRef, file, { contentType: file.type || undefined });
     return await getDownloadURL(fileRef);
+  }
+
+  function getUploadErrorMessage(error: unknown, targetLabel: string) {
+    const code = typeof error === 'object' && error && 'code' in error ? String((error as any).code || '') : '';
+    if (code.includes('storage/unauthorized')) return `❌ ${targetLabel}上傳失敗：Storage 權限不足`;
+    if (code.includes('storage/canceled')) return `❌ ${targetLabel}上傳已取消`;
+    if (code.includes('storage/unknown')) return `❌ ${targetLabel}上傳失敗：Storage 未正確連線`;
+    return `❌ ${targetLabel}上傳失敗`;
   }
 
   async function handleProductImageUpload(file?: File | null) {
     if (!file) return;
-    const code = (productDraft.code || '').trim();
-    if (!code) {
-      setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
-      return;
+    const draftCode = (productDraft.code || '').trim() || getNextProductCode();
+    if (!(productDraft.code || '').trim()) {
+      setProductDraft((prev) => ({ ...prev, code: draftCode, barcode: prev.barcode || draftCode }));
     }
     try {
       setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
-      const imageUrl = await uploadFileToFirebase('products', file, code);
-      setProductDraft((prev) => ({ ...prev, image: imageUrl }));
+      const imageUrl = await uploadFileToFirebase('products', file, draftCode);
+      setProductDraft((prev) => ({ ...prev, code: prev.code || draftCode, barcode: prev.barcode || draftCode, image: imageUrl }));
       setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
-    } catch {
-      setProductNotice({ text: '❌ 商品圖片上傳失敗', tone: 'danger' });
+    } catch (error) {
+      console.error('product image upload failed', error);
+      setProductNotice({ text: getUploadErrorMessage(error, '商品圖片'), tone: 'danger' });
     } finally {
       if (productImageInputRef.current) productImageInputRef.current.value = '';
     }
@@ -2484,9 +2495,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const saved = await saveAccountingDraft();
       if (saved) {
         setAccountingNotice({ text: '✅ 收款證明已上傳', tone: 'success' });
+      } else {
+        setAccountingNotice({ text: '✅ 附件已上傳，待寫入訂單', tone: 'success' });
       }
-    } catch {
-      setAccountingNotice({ text: '❌ 收款證明上傳失敗', tone: 'danger' });
+    } catch (error) {
+      console.error('accounting proof upload failed', error);
+      setAccountingNotice({ text: getUploadErrorMessage(error, '收款證明'), tone: 'danger' });
     } finally {
       if (accountingProofInputRef.current) accountingProofInputRef.current.value = '';
     }
