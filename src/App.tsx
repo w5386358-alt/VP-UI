@@ -2466,6 +2466,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   async function handleProductImageUpload(file?: File | null) {
     if (!file) return;
     const draftCode = (productDraft.code || '').trim() || getNextProductCode();
+    const draftBarcode = (productDraft.barcode || draftCode).trim() || draftCode;
     if (!(productDraft.code || '').trim()) {
       setProductDraft((prev) => ({ ...prev, code: draftCode, barcode: prev.barcode || draftCode }));
     }
@@ -2473,7 +2474,31 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
       const imageUrl = await uploadFileToFirebase('products', file, draftCode);
       setProductDraft((prev) => ({ ...prev, code: prev.code || draftCode, barcode: prev.barcode || draftCode, image: imageUrl }));
-      setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
+
+      const existingProduct = products.find((item) => item.id === productDraft.id) || products.find((item) => item.code === draftCode) || null;
+      if (existingProduct) {
+        const updatedProduct: Product = {
+          ...existingProduct,
+          id: draftCode,
+          sourceDocId: existingProduct.sourceDocId || existingProduct.id,
+          code: draftCode,
+          barcode: draftBarcode,
+          name: productDraft.name.trim() || existingProduct.name,
+          category: productDraft.category.trim() || existingProduct.category,
+          price: Number(productDraft.price || existingProduct.price || 0),
+          vipPrice: Number(productDraft.vipPrice || existingProduct.vipPrice || existingProduct.price || 0),
+          agentPrice: Number(productDraft.agentPrice || existingProduct.agentPrice || existingProduct.price || 0),
+          generalAgentPrice: Number(productDraft.generalAgentPrice || existingProduct.generalAgentPrice || existingProduct.price || 0),
+          stock: Number(productDraft.stock || existingProduct.stock || 0),
+          enabled: typeof productDraft.enabled === 'boolean' ? productDraft.enabled : existingProduct.enabled,
+          image: imageUrl,
+        };
+        setProducts((prev) => prev.map((item) => item.id === existingProduct.id ? { ...item, ...updatedProduct } : item));
+        await syncProductToFirebase(updatedProduct, updatedProduct.stock);
+        setProductNotice({ text: '✅ 商品圖片已上傳並寫入商品資料', tone: 'success' });
+      } else {
+        setProductNotice({ text: '✅ 商品圖片已上傳，儲存商品後即會顯示', tone: 'success' });
+      }
     } catch (error) {
       console.error('product image upload failed', error);
       setProductNotice({ text: getUploadErrorMessage(error, '商品圖片'), tone: 'danger' });
@@ -2715,6 +2740,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           agentPrice,
           generalAgentPrice,
           stock,
+          image: (productDraft.image || '').trim(),
           enabled: productDraft.enabled,
         };
         setProducts((prev) => [nextProduct, ...prev]);
@@ -2748,6 +2774,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         agentPrice,
         generalAgentPrice,
         stock,
+        image: (productDraft.image || '').trim(),
         enabled: productDraft.enabled,
       };
 
