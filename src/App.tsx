@@ -525,9 +525,67 @@ const personalOrders = [
 
 
 
-const quickCustomerCards: Array<{ name: string; phone: string; address: string; method: ShippingMethod }> = [];
+const quickCustomerCards = [
+  { name: '王小美', phone: '0912345678', address: '新竹市東區食品路 88 號', method: '宅配' as ShippingMethod },
+  { name: '林雅雯', phone: '0988777666', address: '竹北市成功八路 12 號', method: '店到店' as ShippingMethod },
+  { name: '門市自取客', phone: '0900111222', address: '自取免填地址', method: '自取' as ShippingMethod },
+];
 
-const initialOrderRecords: OrderRecord[] = [];
+const initialOrderRecords: OrderRecord[] = [
+  {
+    orderNo: 'VP20260331-001',
+    customer: '王小美',
+    phone: '0912345678',
+    shippingMethod: '宅配',
+    address: '新竹市東區食品路 88 號',
+    amount: 4259,
+    itemCount: 3,
+    paymentStatus: '待收款',
+    shippingStatus: '待出貨',
+    mainStatus: '處理中',
+    date: '2026/03/31 10:12',
+    remark: '首批訂單',
+    items: [
+      { code: 'E401', name: '女神酵素液', qty: 2, price: 899 },
+      { code: 'P301', name: '瞬白激光精華4G', qty: 1, price: 1680 },
+    ],
+  },
+  {
+    orderNo: 'VP20260331-002',
+    customer: '林雅雯',
+    phone: '0988777666',
+    shippingMethod: '店到店',
+    address: '竹北市成功八路 12 號',
+    amount: 2825,
+    itemCount: 2,
+    paymentStatus: '已收款',
+    shippingStatus: '理貨中',
+    mainStatus: '出貨中',
+    date: '2026/03/31 13:26',
+    remark: '已上傳收款證明',
+    items: [
+      { code: 'E402', name: '美妍X關鍵賦活飲', qty: 1, price: 1380 },
+      { code: 'E408', name: '魔力抹茶機能飲', qty: 1, price: 1380 },
+    ],
+  },
+  {
+    orderNo: 'EX20260331-001',
+    customer: '陳佳玲',
+    phone: '0933555777',
+    shippingMethod: '宅配',
+    address: '新竹市北區湳雅街 10 號',
+    amount: 65,
+    itemCount: 1,
+    paymentStatus: '退款處理中',
+    shippingStatus: '換貨待出庫',
+    mainStatus: '換貨處理',
+    date: '2026/03/31 16:08',
+    remark: '換貨單，商品金額 0',
+    items: [
+      { code: 'P305', name: '超逆齡修復菁萃', qty: 1, price: 0 },
+    ],
+  },
+];
 
 
 const workflowCards: WorkflowCard[] = [
@@ -1281,15 +1339,18 @@ export default function App() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('宅配');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [customerAddress, setCustomerAddress] = useState('');
-  const [remark, setRemark] = useState('');
+  const [customerName, setCustomerName] = useState('王小美');
+  const [customerPhone, setCustomerPhone] = useState('0912345678');
+  const [customerAddress, setCustomerAddress] = useState('新竹市東區食品路 88 號');
+  const [remark, setRemark] = useState('晚上可收件，若自取請先通知。');
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
   const [selectedWarehouseOrderNo, setSelectedWarehouseOrderNo] = useState('');
-  const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
+  const [warehouseNotice, setWarehouseNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
+    text: '✅ 倉儲資料已更新',
+    tone: 'success',
+  });
   const [warehouseKeyword, setWarehouseKeyword] = useState('');
   const [warehousePaymentFilter, setWarehousePaymentFilter] = useState('全部');
   const [warehouseShippingFilter, setWarehouseShippingFilter] = useState('全部');
@@ -3020,9 +3081,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand card">
-          <div className="brand-kicker">VP SYSTEM</div>
-          <div className="brand-title">VP UI</div>
-          <div className="brand-subtitle">營運後台</div>
+          <div className="brand-kicker">Enterprise Resource Planning</div>
+          <div className="brand-title">Velvet Pulse</div>
+          <div className="brand-subtitle">以 stitch 設計語言整合 VP 功能流程與 Firebase 資料。</div>
         </div>
 
         <div className="card user-card">
@@ -3082,7 +3143,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             <span className="badge badge-neutral">客戶範圍 / {customerScopeLabel}</span>
             <span className="badge badge-neutral">退款 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
           </div>
-          <div className="role-preview-desc">切換角色與階級查看畫面。</div>
+          <div className="role-preview-desc">可直接切換不同角色，檢查 stitch 介面下的 VP 權限邏輯是否正常。</div>
         </div>
 
         <div className="nav-group-title">主功能選單</div>
@@ -3118,7 +3179,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="sidebar-tip card">
           <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">畫面整理完成，逐步補主流程。</div>
+          <div className="sidebar-tip-desc">目前版本以 stitch 視覺為主，底層保留 VP 包的操作流程、資料欄位與 Firebase 連線。</div>
         </div>
 
         <div className="sidebar-actions">
@@ -3131,12 +3192,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="topbar">
           <div>
             <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">操作區</div>
+            <div className="topbar-title">Velvet Pulse ERP</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
               <Search className="search-icon" />
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
+              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active) || '搜尋資料、訂單、商品或客戶'} />
             </div>
             <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
               <RefreshCw className="small-icon" />重新整理
