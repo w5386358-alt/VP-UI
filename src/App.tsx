@@ -3080,21 +3080,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-kicker">Enterprise Resource Planning</div>
-          <div className="brand-title">Velvet Pulse</div>
-          <div className="brand-subtitle">stitch UI 外觀 × VP 系統邏輯 × Firebase 資料層</div>
+        <div className="brand card">
+          <div className="brand-kicker">VP SYSTEM</div>
+          <div className="brand-title">VP UI</div>
+          <div className="brand-subtitle">營運後台</div>
         </div>
 
         <div className="card user-card">
-          <div className="user-card-header">
-            <div>
-              <div className="muted-label">登入帳號</div>
-              <div className="user-name">{user.name}</div>
-              <div className="user-id">ID：{user.loginId}</div>
-            </div>
-            <div className="user-avatar">VP</div>
-          </div>
+          <div className="muted-label">登入帳號</div>
+          <div className="user-name">{user.name}</div>
+          <div className="user-id">ID：{user.loginId}</div>
           <div className="badge-row">
             <span className="badge badge-role">角色 / {ROLE_LABEL[user.role]}</span>
             <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
@@ -3196,19 +3191,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <main className="main-content">
         <div className="topbar">
           <div>
-            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">Velvet Pulse ERP</div>
+            <div className="section-tag">VP SYSTEM</div>
+            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
           </div>
           <div className="toolbar">
             <div className="search-wrap">
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <button type="button" className="icon-circle" aria-label="通知">
-              <Bell className="small-icon" />
-            </button>
             <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />同步資料
+              <RefreshCw className="small-icon" />重新整理
             </button>
           </div>
         </div>
@@ -3227,8 +3219,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <div className="banner-title">{bootMessage}</div>
                 <div className="banner-desc">
                   {firebaseReady
-                    ? '已接入 Firebase，商品、客戶、人員與主流程資料可持續讀寫。'
-                    : '目前使用本地資料，仍可先測試 stitch UI 與 VP 主流程畫面。'}
+                    ? '已讀取商品、客戶與人員資料。'
+                    : '目前使用本地資料。'}
                 </div>
               </div>
             </div>
