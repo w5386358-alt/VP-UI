@@ -1,4 +1,5 @@
-import { QrCode, RefreshCw, Search, CalendarRange, Phone, User2, ClipboardList, Sparkles, Wallet, ShieldCheck, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { QrCode, RefreshCw, Search, CalendarRange, Phone, User2, ClipboardList, Sparkles, Wallet, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function ProfileModule(props: any) {
   const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, priceTierLabel, SectionIntro, SummaryCard, ownCustomerRecords = [], allOrderRecords = [] } = props;
@@ -13,6 +14,18 @@ export default function ProfileModule(props: any) {
       latestOrderStatus: latestOrder ? `${latestOrder.paymentStatus} / ${latestOrder.shippingStatus}` : '尚無訂單',
     };
   });
+  const [customerPage, setCustomerPage] = useState(1);
+  const [orderPage, setOrderPage] = useState(1);
+  const pageSize = 10;
+  const totalCustomerPages = Math.max(1, Math.ceil(myCustomerCards.length / pageSize));
+  const safeCustomerPage = Math.min(customerPage, totalCustomerPages);
+  const pagedCustomerCards = useMemo(() => myCustomerCards.slice((safeCustomerPage - 1) * pageSize, safeCustomerPage * pageSize), [myCustomerCards, safeCustomerPage]);
+  const customerPageNumbers = Array.from({ length: totalCustomerPages }, (_, index) => index + 1);
+  const filteredOrders = personalOrders.filter((item: any) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase()));
+  const totalOrderPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const safeOrderPage = Math.min(orderPage, totalOrderPages);
+  const pagedOrders = useMemo(() => filteredOrders.slice((safeOrderPage - 1) * pageSize, safeOrderPage * pageSize), [filteredOrders, safeOrderPage]);
+  const orderPageNumbers = Array.from({ length: totalOrderPages }, (_, index) => index + 1);
 
   return (
     <>
@@ -56,14 +69,23 @@ export default function ProfileModule(props: any) {
           <div className="card order-panel profile-customer-panel-v2">
             <div className="panel-head"><div><div className="panel-title">我的客戶</div><div className="panel-desc">查看我的客戶。</div></div><span className="badge badge-neutral">姓名 / 電話 / 最新訂單</span></div>
             <div className="profile-customer-grid profile-customer-grid-v2">
-              {myCustomerCards.map((item: any) => (
+              {pagedCustomerCards.map((item: any) => (
                 <div key={item.id} className="profile-customer-card profile-customer-card-v2">
                   <div className="profile-customer-head"><div className="profile-customer-name"><User2 className="small-icon" />{item.name}</div><span className="badge badge-soft">{item.orderCount} 筆</span></div>
                   <div className="profile-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
                   <div className="profile-customer-order"><div className="profile-customer-order-no"><ClipboardList className="small-icon" />{item.latestOrderNo}</div><div className="profile-customer-order-status">{item.latestOrderStatus}</div></div>
                 </div>
               ))}
-              {!myCustomerCards.length && <div className="warehouse-empty-state">沒有屬於你的客戶資料</div>}
+              {!pagedCustomerCards.length && <div className="warehouse-empty-state">沒有屬於你的客戶資料</div>}
+            </div>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safeCustomerPage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+              <div className="pagination-pages">
+                {customerPageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safeCustomerPage === page ? 'active' : ''}`} onClick={() => setCustomerPage(page)}>{page}</button>
+                ))}
+              </div>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.min(totalCustomerPages, page + 1))} disabled={safeCustomerPage === totalCustomerPages}>下一頁<ChevronRight className="small-icon" /></button>
             </div>
           </div>
 
@@ -71,7 +93,7 @@ export default function ProfileModule(props: any) {
             <div className="panel-head"><div><div className="panel-title">我的歷史訂單</div><div className="panel-desc">查看歷史訂單。</div></div><div className="history-toolbar"><button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button><button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />重新整理</button></div></div>
             <div className="history-filter-row"><div className="search-wrap inline-search"><Search className="search-icon" /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" /></div><button type="button" className="primary-button compact-primary">搜尋</button></div>
             <div className="history-list">
-              {personalOrders.filter((item: any) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase())).map((item: any) => (
+              {pagedOrders.map((item: any) => (
                 <div key={item.orderNo} className="history-row history-row-v2">
                   <div className="history-main">
                     <div className="history-order">{item.orderNo}</div>
@@ -81,6 +103,15 @@ export default function ProfileModule(props: any) {
                   <div className="history-side"><div className="history-amount">${item.amount}</div><button type="button" className="ghost-button compact-btn history-detail-btn">查看詳情</button></div>
                 </div>
               ))}
+            </div>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setOrderPage((page) => Math.max(1, page - 1))} disabled={safeOrderPage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+              <div className="pagination-pages">
+                {orderPageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safeOrderPage === page ? 'active' : ''}`} onClick={() => setOrderPage(page)}>{page}</button>
+                ))}
+              </div>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setOrderPage((page) => Math.min(totalOrderPages, page + 1))} disabled={safeOrderPage === totalOrderPages}>下一頁<ChevronRight className="small-icon" /></button>
             </div>
           </div>
         </section>

@@ -1,5 +1,14 @@
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 export default function CustomersModule(props: any) {
   const { filteredCustomers, customerViewMode, customerScopeLabel, user } = props;
+  const [customerPage, setCustomerPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
+  const safePage = Math.min(customerPage, totalPages);
+  const pagedCustomers = useMemo(() => filteredCustomers.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredCustomers, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
     <>
@@ -13,7 +22,7 @@ export default function CustomersModule(props: any) {
           </div>
 
           <section className="record-grid customer-grid refined">
-            {filteredCustomers.map((item: any) => (
+            {pagedCustomers.map((item: any) => (
               <div key={item.id} className="card data-card customer-permission-card refined-card">
                 <div className="data-card-top">
                   <span className="badge badge-neutral">{customerViewMode === 'full' ? '完整' : '作業用'}</span>
@@ -47,6 +56,15 @@ export default function CustomersModule(props: any) {
               </div>
             ))}
           </section>
+          <div className="pagination-row">
+            <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+            <div className="pagination-pages">
+              {pageNumbers.map((page) => (
+                <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setCustomerPage(page)}>{page}</button>
+              ))}
+            </div>
+            <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
+          </div>
         </div>
       </section>
 

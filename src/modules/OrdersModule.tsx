@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, Sparkles, PackageCheck, Layers3 } from 'lucide-react';
 
 export default function OrdersModule(props: any) {
@@ -18,7 +18,18 @@ export default function OrdersModule(props: any) {
   } = props;
 
   const [cartOpen, setCartOpen] = useState(false);
+  const [productPage, setProductPage] = useState(1);
+  const [quickCustomerPage, setQuickCustomerPage] = useState(1);
   const cartButtonRef = useRef<HTMLButtonElement | null>(null);
+  const pageSize = 10;
+  const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
+  const safeProductPage = Math.min(productPage, totalProductPages);
+  const pagedOrderProducts = useMemo(() => filteredOrderProducts.slice((safeProductPage - 1) * pageSize, safeProductPage * pageSize), [filteredOrderProducts, safeProductPage]);
+  const productPageNumbers = Array.from({ length: totalProductPages }, (_, index) => index + 1);
+  const totalQuickCustomerPages = Math.max(1, Math.ceil(quickCustomerCards.length / pageSize));
+  const safeQuickCustomerPage = Math.min(quickCustomerPage, totalQuickCustomerPages);
+  const pagedQuickCustomers = useMemo(() => quickCustomerCards.slice((safeQuickCustomerPage - 1) * pageSize, safeQuickCustomerPage * pageSize), [quickCustomerCards, safeQuickCustomerPage]);
+  const quickCustomerPageNumbers = Array.from({ length: totalQuickCustomerPages }, (_, index) => index + 1);
 
   function runAddToCartFx(sourceEl: HTMLElement, item: any) {
     const cartButton = cartButtonRef.current;
@@ -94,7 +105,7 @@ export default function OrdersModule(props: any) {
             </div>
 
             <div className="catalog-grid orders-catalog-grid">
-              {filteredOrderProducts.map((item: any) => (
+              {pagedOrderProducts.map((item: any) => (
                 <div key={item.id} className="catalog-card orders-product-card full-bleed-card">
                   <div className="catalog-image-slot catalog-image-slot-full">
                     {item.image ? (
@@ -132,6 +143,15 @@ export default function OrdersModule(props: any) {
                 </div>
               ))}
             </div>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safeProductPage === 1}>上一頁</button>
+              <div className="pagination-pages">
+                {productPageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safeProductPage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
+                ))}
+              </div>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.min(totalProductPages, page + 1))} disabled={safeProductPage === totalProductPages}>下一頁</button>
+            </div>
           </div>
         </div>
 
@@ -144,12 +164,21 @@ export default function OrdersModule(props: any) {
               <User className="small-icon" />
             </div>
             <div className="quick-customer-grid orders-quick-grid">
-              {previewCustomers.map((item: any) => (
+              {pagedQuickCustomers.map((item: any) => (
                 <button key={item.name} type="button" className="quick-customer-card" onClick={() => applyQuickCustomer(item.name, item.phone, item.address, item.method)}>
                   <div className="quick-customer-name">{item.name}</div>
                   <div className="quick-customer-meta">{item.phone} / {item.method}</div>
                 </button>
               ))}
+            </div>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setQuickCustomerPage((page) => Math.max(1, page - 1))} disabled={safeQuickCustomerPage === 1}>上一頁</button>
+              <div className="pagination-pages">
+                {quickCustomerPageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safeQuickCustomerPage === page ? 'active' : ''}`} onClick={() => setQuickCustomerPage(page)}>{page}</button>
+                ))}
+              </div>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setQuickCustomerPage((page) => Math.min(totalQuickCustomerPages, page + 1))} disabled={safeQuickCustomerPage === totalQuickCustomerPages}>下一頁</button>
             </div>
           </div>
 

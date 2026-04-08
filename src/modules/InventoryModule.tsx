@@ -1,4 +1,5 @@
-import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -54,6 +55,13 @@ export default function InventoryModule(props: any) {
     SectionIntro,
   } = props;
 
+  const [shippingPage, setShippingPage] = useState(1);
+  const shippingPageSize = 10;
+  const shippingTotalPages = Math.max(1, Math.ceil(filteredWarehouseQueue.length / shippingPageSize));
+  const shippingSafePage = Math.min(shippingPage, shippingTotalPages);
+  const pagedWarehouseQueue = useMemo(() => filteredWarehouseQueue.slice((shippingSafePage - 1) * shippingPageSize, shippingSafePage * shippingPageSize), [filteredWarehouseQueue, shippingSafePage]);
+  const shippingPageNumbers = Array.from({ length: shippingTotalPages }, (_, index) => index + 1);
+
   return (
     <>
 
@@ -69,7 +77,7 @@ export default function InventoryModule(props: any) {
             <div className="card order-panel warehouse-filter-shell">
               <div className="panel-head">
                 <div>
-                  <div className="panel-title">待出貨訂單</div>
+                  <div className="panel-title">訂單清單篩選</div>
                   <div className="panel-desc">確認收款與庫存後進行出貨。</div>
                 </div>
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
@@ -93,7 +101,7 @@ export default function InventoryModule(props: any) {
                 <Layers3 className="small-icon" />
               </div>
               <div className="shipping-queue">
-                {filteredWarehouseQueue.map((item: any) => (
+                {pagedWarehouseQueue.map((item: any) => (
                   <button key={item.orderNo} type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
                     <div>
                       <div className="shipping-order">{item.orderNo}</div>
@@ -106,7 +114,16 @@ export default function InventoryModule(props: any) {
                     </div>
                   </button>
                 ))}
-                {!filteredWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
+                {!pagedWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
+              </div>
+              <div className="pagination-row">
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setShippingPage((page) => Math.max(1, page - 1))} disabled={shippingSafePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+                <div className="pagination-pages">
+                  {shippingPageNumbers.map((page) => (
+                    <button key={page} type="button" className={`pagination-page ${shippingSafePage === page ? 'active' : ''}`} onClick={() => setShippingPage(page)}>{page}</button>
+                  ))}
+                </div>
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setShippingPage((page) => Math.min(shippingTotalPages, page + 1))} disabled={shippingSafePage === shippingTotalPages}>下一頁<ChevronRight className="small-icon" /></button>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -25,6 +26,12 @@ export default function ProductsModule(props: any) {
 
   const disabledProducts = products.length - enabledProducts;
   const topProducts = filteredProducts.slice(0, 3);
+  const [productPage, setProductPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const safePage = Math.min(productPage, totalPages);
+  const pagedProducts = useMemo(() => filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredProducts, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
     <>
@@ -42,7 +49,7 @@ export default function ProductsModule(props: any) {
             </div>
 
             <div className="product-admin-grid products-card-grid">
-              {filteredProducts.map((item: any) => (
+              {pagedProducts.map((item: any) => (
                 <div key={item.id} className={`card data-card product-admin-card products-feature-card ${selectedProductId === item.id ? 'selected' : ''}`}>
                   <div className="data-card-top">
                     <span className="data-code">{item.code}</span>
@@ -84,6 +91,15 @@ export default function ProductsModule(props: any) {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+              <div className="pagination-pages">
+                {pageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
+                ))}
+              </div>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>

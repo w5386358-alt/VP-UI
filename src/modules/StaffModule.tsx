@@ -1,4 +1,5 @@
-import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye, Sparkles, BadgeCheck, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye, Sparkles, BadgeCheck, ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function StaffModule(props: any) {
   const {
@@ -23,6 +24,13 @@ export default function StaffModule(props: any) {
     resetStaffPassword,
     saveStaffDraft,
   } = props;
+
+  const [staffPage, setStaffPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / pageSize));
+  const safePage = Math.min(staffPage, totalPages);
+  const pagedStaff = useMemo(() => filteredStaff.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredStaff, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
     <>
@@ -55,7 +63,7 @@ export default function StaffModule(props: any) {
                 <span className="badge badge-role">人員名單</span>
               </div>
               <div className="staff-record-grid-v2">
-                {filteredStaff.map((item: any) => (
+                {pagedStaff.map((item: any) => (
                   <button key={item.id} type="button" className={`card data-card staff-person-card-v2 ${selectedStaffId === item.id ? 'selected' : ''}`} onClick={() => openViewStaff(item)}>
                     <div className="staff-person-top">
                       <div className="staff-person-avatar">{String(item.name || '?').slice(0, 1)}</div>
@@ -66,6 +74,15 @@ export default function StaffModule(props: any) {
                     <div className="staff-person-foot"><span>{(item.permissions || []).length} 項權限</span><span>查看 / 編輯</span></div>
                   </button>
                 ))}
+              </div>
+              <div className="pagination-row">
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setStaffPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+                <div className="pagination-pages">
+                  {pageNumbers.map((page) => (
+                    <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setStaffPage(page)}>{page}</button>
+                  ))}
+                </div>
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setStaffPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
               </div>
             </div>
           </div>
