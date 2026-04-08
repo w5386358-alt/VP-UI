@@ -1295,19 +1295,17 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
 
 function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
   return (
-    <section className="page-hero">
-      <div className="page-hero-main">
-        <div className="page-hero-kicker">{title}</div>
-        <h1 className="page-hero-title">{title}</h1>
-        <p className="page-hero-desc">{desc}</p>
+    <section className="section-intro-shell">
+      <div>
+        <div className="section-intro-kicker">Velvet Pulse Workspace</div>
+        <h2 className="section-intro-title">{title}</h2>
+        <p className="section-intro-desc">{desc}</p>
       </div>
-      {!!stats.length && (
-        <div className="page-hero-stats">
-          {stats.map((item) => (
-            <div key={item} className="page-hero-stat">{item}</div>
-          ))}
-        </div>
-      )}
+      <div className="section-intro-stats">
+        {stats.map((item) => (
+          <span key={item} className="section-intro-chip">{item}</span>
+        ))}
+      </div>
     </section>
   );
 }
@@ -1351,18 +1349,6 @@ export default function App() {
     rankKey: userRankView,
   }), [userRoleView, userRankView]);
   const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
-
-  const activeNavItem = navItems.find((item) => item.key === active && canAccessNav(user.role, item.key));
-  const pageTitleMap: Record<NavKey, string> = {
-    dashboard: '營運總覽',
-    orders: '訂購介面',
-    inventory: '倉儲中心',
-    accounting: '會計中心',
-    products: '商品',
-    customers: '客戶管理',
-    staff: '員工管理',
-    profile: '個人資料',
-  };
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [shippingMethod, setShippingMethod] = useState<ShippingMethod>('宅配');
@@ -3104,204 +3090,214 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
+  const activeLabel = visibleNavItems.find((item) => item.key === active)?.label || '受限模組';
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand card">
-          <div className="brand-kicker">VelvetPulse</div>
-          <div className="brand-title">VP UI</div>
-          <div className="brand-subtitle">八大模組營運後台</div>
-        </div>
+    <div className="vp-shell">
+      <div className="vp-ornament vp-ornament-a" />
+      <div className="vp-ornament vp-ornament-b" />
 
-        <div className="card user-card">
-          <div className="muted-label">目前登入角色</div>
-          <div className="user-name">{user.name}</div>
-          <div className="user-id">ID：{user.loginId}</div>
-          <div className="badge-row">
-            <span className="badge badge-role">角色 / {ROLE_LABEL[user.role]}</span>
-            <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-          </div>
-        </div>
-
-        <div className="card source-card">
+      <aside className="vp-sidebar">
+        <div className="vp-brand-panel card">
+          <div className="vp-brand-mark">VP</div>
           <div>
-            <div className="muted-label">資料來源</div>
-            <div className="source-value">{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</div>
+            <div className="vp-brand-kicker">Velvet Pulse</div>
+            <div className="vp-brand-title">八大區營運後台</div>
+            <div className="vp-brand-desc">先完成白紙 UI 架構，再逐步搬回資料與同步流程。</div>
           </div>
-          {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
         </div>
 
-        <div className="card role-preview-card">
-          <div className="muted-label">權限切換</div>
-          <div className="role-preview-title">目前角色：{ROLE_LABEL[user.role]}</div>
-          <div className="role-switch-group">
-            <div className="role-switch-label">角色</div>
-            <div className="role-switch-row">
-              {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
+        <div className="vp-nav-panel card">
+          <div className="vp-panel-label">Navigation</div>
+          <div className="vp-nav-list">
+            {visibleNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
                 <button
-                  key={role}
+                  key={item.key}
                   type="button"
-                  className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
-                  onClick={() => setUserRoleView(role)}
+                  onClick={() => setActive(item.key)}
+                  className={`vp-nav-button ${active === item.key ? 'active' : ''}`}
                 >
-                  {ROLE_LABEL[role]}
+                  <span className="vp-nav-icon-wrap"><Icon className="nav-icon" /></span>
+                  <span className="vp-nav-copy">
+                    <span className="vp-nav-title">{item.label}</span>
+                    <span className="vp-nav-sub">模組工作區</span>
+                  </span>
+                  <ChevronRight className="small-icon vp-nav-arrow" />
                 </button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="vp-sidebar-stack">
+          <div className="vp-profile-panel card">
+            <div className="vp-panel-label">Current Session</div>
+            <div className="vp-profile-name">{user.name}</div>
+            <div className="vp-profile-id">{ROLE_LABEL[user.role]} · {RANK_DISPLAY[user.rankKey]} · {user.loginId}</div>
+            <div className="vp-pill-row">
+              <span className="badge badge-role">價格 / {getPriceTierLabel(user.rankKey)}</span>
+              <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
             </div>
           </div>
-          <div className="role-switch-group">
-            <div className="role-switch-label">階級</div>
-            <div className="rank-switch-row">
-              {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
-                <button
-                  key={rank}
-                  type="button"
-                  className={`rank-switch-btn ${rank} ${user.rankKey === rank ? 'active' : ''}`}
-                  onClick={() => setUserRankView(rank)}
-                >
-                  {RANK_DISPLAY[rank]}
-                </button>
-              ))}
+
+          <div className="vp-state-panel card">
+            <div className="vp-panel-label">Data Source</div>
+            <div className="vp-state-row">
+              <div>
+                <div className="vp-state-title">{dataMode === 'firebase' ? 'Firebase' : 'Offline Mock'}</div>
+                <div className="vp-state-desc">{firebaseReady ? '連線中，可逐步回接資料。' : '目前以白紙版 UI 驗收為主。'}</div>
+              </div>
+              {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
             </div>
           </div>
-          <div className="permission-chip-row">
-            <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            <span className="badge badge-neutral">價格層級 / {getPriceTierLabel(user.rankKey)}</span>
-            <span className="badge badge-neutral">客戶範圍 / {customerScopeLabel}</span>
-            <span className="badge badge-neutral">退款 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
+
+          <div className="vp-switch-panel card">
+            <div className="vp-panel-label">Preview Switch</div>
+            <div className="vp-switch-group">
+              <div className="role-switch-label">角色預覽</div>
+              <div className="role-switch-row">
+                {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
+                    onClick={() => setUserRoleView(role)}
+                  >
+                    {ROLE_LABEL[role]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="vp-switch-group">
+              <div className="role-switch-label">階級預覽</div>
+              <div className="rank-switch-row">
+                {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
+                  <button
+                    key={rank}
+                    type="button"
+                    className={`rank-switch-btn ${rank} ${user.rankKey === rank ? 'active' : ''}`}
+                    onClick={() => setUserRankView(rank)}
+                  >
+                    {RANK_DISPLAY[rank]}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="role-preview-desc">切換角色與階級查看畫面。</div>
-        </div>
-
-        <div className="nav-group-title">主功能選單</div>
-        <div className="nav-list">
-          {visibleNavItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setActive(item.key)}
-                className={`nav-button ${active === item.key ? 'active' : ''}`}
-              >
-                <Icon className="nav-icon" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {canAccessNav(user.role, 'accounting') && (
-        <div className="card accounting-shortcut">
-          <div className="shortcut-title">快捷入口</div>
-          <button
-            type="button"
-            onClick={() => setActive('accounting')}
-            className={`shortcut-button ${active === 'accounting' ? 'active' : ''}`}
-          >
-            <CreditCard className="small-icon" />會計中心
-          </button>
-        </div>
-        )}
-
-        <div className="sidebar-tip card">
-          <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">目前以 Stitch 版型語言重構主殼與模組排版。</div>
-        </div>
-
-        <div className="sidebar-actions">
-          <button type="button" className="ghost-button"><Bell className="small-icon" />通知</button>
-          <button type="button" className="ghost-button"><LogOut className="small-icon" />登出</button>
         </div>
       </aside>
 
-      <main className="main-content">
-        <div className="workspace-surface">
-          <div className="topbar">
-            <div>
-              <div className="section-tag">{activeNavItem?.label || '受限模組'}</div>
-              <div className="topbar-title">{pageTitleMap[active] || '操作區'}</div>
+      <main className="vp-main">
+        <header className="vp-header card">
+          <div className="vp-header-copy">
+            <div className="vp-header-kicker">White Paper UI Rebuild</div>
+            <h1 className="vp-header-title">{activeLabel}</h1>
+            <p className="vp-header-desc">現在先驗收版型、留白、卡片層級與操作路徑。同步資料與真邏輯之後再慢慢搬進來。</p>
+          </div>
+          <div className="vp-header-tools">
+            <div className="search-wrap vp-search-wrap">
+              <Search className="search-icon" />
+              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <div className="toolbar">
-              <div className="search-wrap">
-                <Search className="search-icon" />
-                <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
-              </div>
-              <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-                <RefreshCw className="small-icon" />重新整理
-              </button>
+            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
+              <RefreshCw className="small-icon" />重新整理
+            </button>
+          </div>
+        </header>
+
+        <section className="vp-overview-grid">
+          <div className="card vp-overview-card">
+            <div className="vp-overview-label">模組狀態</div>
+            <div className="vp-overview-value">{activeLabel}</div>
+            <div className="vp-overview-sub">目前檢視中的工作區</div>
+          </div>
+          <div className="card vp-overview-card">
+            <div className="vp-overview-label">商品資料</div>
+            <div className="vp-overview-value">{products.length}</div>
+            <div className="vp-overview-sub">白紙版保留後續搬運接口</div>
+          </div>
+          <div className="card vp-overview-card">
+            <div className="vp-overview-label">客戶資料</div>
+            <div className="vp-overview-value">{customers.length}</div>
+            <div className="vp-overview-sub">之後逐區接回真資料</div>
+          </div>
+          <div className="card vp-overview-card">
+            <div className="vp-overview-label">資料來源</div>
+            <div className="vp-overview-value">{firebaseReady ? 'ONLINE' : 'MOCK'}</div>
+            <div className="vp-overview-sub">{firebaseReady ? '可開始對接' : '先做 UI 驗收'}</div>
+          </div>
+        </section>
+
+        <section className="vp-workspace card">
+          <div className="vp-workspace-top">
+            <div>
+              <div className="vp-workspace-kicker">Workspace</div>
+              <div className="vp-workspace-title">{activeLabel}</div>
+            </div>
+            <div className="vp-workspace-actions">
+              <button type="button" className="ghost-button vp-tool-button"><Bell className="small-icon" />通知</button>
+              <button type="button" className="primary-button vp-tool-button"><Sparkles className="small-icon" />新殼模式</button>
             </div>
           </div>
 
-        {booting ? (
-          <div className="card loading-card">
-            <div className="spinner" />
-            <div className="loading-title">{bootMessage}</div>
-            <div className="loading-desc">正在載入資料</div>
-          </div>
-        ) : (
-          <>
-            <div className={`card banner-card ${firebaseReady ? 'success' : 'warning'}`}>
-              {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
-              <div>
-                <div className="banner-title">{bootMessage}</div>
-                <div className="banner-desc">
-                  {firebaseReady
-                    ? '已讀取商品、客戶與人員資料。'
-                    : '目前使用本地資料。'}
+          {booting ? (
+            <div className="card loading-card">
+              <div className="spinner" />
+              <div className="loading-title">{bootMessage}</div>
+              <div className="loading-desc">正在載入白紙版 UI 工作區</div>
+            </div>
+          ) : (
+            <>
+              <div className={`card banner-card ${firebaseReady ? 'success' : 'warning'}`}>
+                {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
+                <div>
+                  <div className="banner-title">{bootMessage}</div>
+                  <div className="banner-desc">
+                    {firebaseReady
+                      ? '已讀取資料，可開始逐區回接。'
+                      : '目前以新 UI 驗收為主，之後再搬資料。'}
+                  </div>
                 </div>
               </div>
-            </div>
 
+              {!canAccessNav(user.role, active) && (
+                <div className="card access-denied-card">
+                  <div className="access-denied-title">此角色不可進入此頁</div>
+                  <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
+                </div>
+              )}
 
-            {!canAccessNav(user.role, active) && (
-              <div className="card access-denied-card">
-                <div className="access-denied-title">此角色不可進入此頁</div>
-                <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
+              <div className="vp-module-body">
+                {active === 'dashboard' && (
+                  <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
+                )}
+                {active === 'products' && (
+                  <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+                )}
+                {active === 'customers' && (
+                  <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
+                )}
+                {active === 'staff' && (
+                  <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
+                )}
+                {active === 'orders' && (
+                  <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+                )}
+                {active === 'inventory' && (
+                  <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+                )}
+                {active === 'accounting' && (
+                  <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
+                )}
+                {active === 'profile' && (
+                  <ProfileModule personalOrders={profilePersonalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} />
+                )}
               </div>
-            )}
-
-            {active === 'dashboard' && (
-              <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
-            )}
-            {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
-            )}
-            {active === 'customers' && (
-              <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
-            )}
-            {active === 'staff' && (
-              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
-            )}
-            {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
-            )}
-            {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
-            )}
-            {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
-            )}
-            {active === 'profile' && (
-              <ProfileModule
-                personalOrders={profilePersonalOrders}
-                personalSummary={personalSummary}
-                profileQuickActions={profileQuickActions}
-                user={user}
-                getRankClass={getRankClass}
-                keyword={keyword}
-                setKeyword={setKeyword}
-                priceTierLabel={getPriceTierLabel(user.rankKey)}
-                SectionIntro={SectionIntro}
-                SummaryCard={SummaryCard}
-                ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)}
-                allOrderRecords={orderRecords}
-              />
-            )}
-          </>
-        )}
-
-        </div>
+            </>
+          )}
+        </section>
 
         <div className="mobile-nav">
           {[
