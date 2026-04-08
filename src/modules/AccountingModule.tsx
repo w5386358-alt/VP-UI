@@ -31,11 +31,6 @@ export default function AccountingModule(props: any) {
 
   return (
     <>
-      <SectionIntro
-        title="會計"
-        desc="收款、退款與統計管理。"
-        stats={[`待收款 ${pendingCount} 筆`, `已收款 ${receivedCount} 筆`, '報表 / 排名 / 熱銷']}
-      />
 
       <section className="accounting-shell-v2">
         <div className="accounting-tab-row accounting-tab-row-v2">

@@ -2,9 +2,9 @@
 
 :root {
   color-scheme: light;
-  --bg-1: #f6e4eb;
-  --bg-2: #f1d8e2;
-  --bg-3: #f8eef2;
+  --bg-1: #ecc9d6;
+  --bg-2: #e3b8c8;
+  --bg-3: #f1d7e1;
   --card: rgba(255, 252, 253, 0.93);
   --card-strong: rgba(255, 252, 253, 0.98);
   --line: #f2d7e2;
@@ -14,9 +14,9 @@
   --primary: #eb5b8b;
   --primary-hover: #db477b;
   --primary-soft: #fff2f6;
-  --rose-soft: #f8e8ee;
+  --rose-soft: #f0d7e1;
   --gold-soft: #f8efe6;
-  --pearl-soft: #f7f0f4;
+  --pearl-soft: #f1dde5;
   --lavender-soft: #f4ebf1;
   --success-bg: #ebfff3;
   --success-text: #207a4d;
@@ -37,8 +37,9 @@ body {
   margin: 0;
   font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(255, 212, 227, 0.5), transparent 24%),
-    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 42%, var(--bg-3) 100%);
+    radial-gradient(circle at top left, rgba(228, 135, 171, 0.22), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(255, 219, 230, 0.35), transparent 24%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 46%, var(--bg-3) 100%);
   color: var(--text);
 }
 button, input { font: inherit; }
@@ -4966,4 +4967,13 @@ body {
     background: transparent;
     padding-top: 10px;
   }
+}
+
+
+.customers-shell-clean {
+  display: block;
+}
+
+.customers-main-card-full {
+  width: 100%;
 }

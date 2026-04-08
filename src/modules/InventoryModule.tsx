@@ -56,11 +56,6 @@ export default function InventoryModule(props: any) {
 
   return (
     <>
-      <SectionIntro
-        title="倉儲中心"
-        desc="出貨、庫存與查詢集中在同一區。"
-        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
-      />
 
       <div className="warehouse-tab-row warehouse-primary-tabs">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>

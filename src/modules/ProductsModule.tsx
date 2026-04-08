@@ -28,11 +28,6 @@ export default function ProductsModule(props: any) {
 
   return (
     <>
-      <SectionIntro
-        title="商品管理"
-        desc="商品資料、價格、庫存與狀態。"
-        stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${disabledProducts}`]}
-      />
 
       <section className="product-admin-layout products-stage-layout">
         <div className="product-admin-main">
