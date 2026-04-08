@@ -35,8 +35,8 @@ export default function StaffModule(props: any) {
       <section className="staff-shell-v2">
         <div className="staff-command-card card">
           <div>
-            <div className="staff-command-kicker">人員主控</div>
-            <h3 className="staff-command-title">名單與編輯區分開，操作更清楚。</h3>
+            <div className="staff-command-kicker"></div>
+            <h3 className="staff-command-title">人員名單與資料設定。</h3>
           </div>
           <div className="staff-command-actions">
             <button type="button" className="primary-button" onClick={openCreateStaff}><UserCog className="small-icon" />新增人員</button>
@@ -50,7 +50,7 @@ export default function StaffModule(props: any) {
               <div className="panel-head">
                 <div>
                   <div className="panel-title">人員列表</div>
-                  <div className="panel-desc">卡片化名單，先看層級、狀態與權限數量。</div>
+                  <div className="panel-desc">人員名單。</div>
                 </div>
                 <span className="badge badge-role">人員名單</span>
               </div>
@@ -75,7 +75,7 @@ export default function StaffModule(props: any) {
               <div className="panel-head compact-head">
                 <div>
                   <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '編輯人員' : '人員詳情'}</div>
-                  <div className="panel-desc">顯示人員資料與權限設定。</div>
+                  <div className="panel-desc">人員資料。</div>
                 </div>
                 <span className="badge badge-role">{staffEditorMode === 'create' ? '新增' : staffEditorMode === 'edit' ? '編輯' : '查看'}</span>
               </div>

@@ -4611,7 +4611,7 @@ body {
 
 /* ===== 第七版視覺統一修正 ===== */
 :root {
-  --vp-bg: #f7eef1;
+  --vp-bg: #efdde3;
   --vp-surface: rgba(255,255,255,0.94);
   --vp-surface-2: rgba(251,238,242,0.98);
   --vp-line: rgba(176, 74, 115, 0.08);
@@ -4623,9 +4623,9 @@ body {
 }
 body {
   background:
-    radial-gradient(circle at 14% 16%, rgba(219, 162, 181, 0.28), transparent 0 22%),
-    radial-gradient(circle at 82% 14%, rgba(228, 196, 167, 0.24), transparent 0 18%),
-    linear-gradient(180deg, #fcf4f6 0%, #f8eef1 48%, #f5eaee 100%);
+    radial-gradient(circle at 14% 16%, rgba(187, 112, 140, 0.30), transparent 0 24%),
+    radial-gradient(circle at 82% 14%, rgba(201, 156, 126, 0.22), transparent 0 20%),
+    linear-gradient(180deg, #f5e3e8 0%, #edd9df 48%, #e6d1d8 100%);
 }
 .vp-shell { gap: 22px; padding: 18px; }
 .vp-sidebar {
@@ -4705,9 +4705,10 @@ body {
 .search-wrap, .field-card { border-radius: 20px; }
 .order-panel, .content-card, .workflow-card, .summary-card { border-radius: 26px; }
 .panel-head { margin-bottom: 12px; }
-.accounting-ops-layout-v2 { grid-template-columns: 340px minmax(0, 1.32fr); }
-.accounting-ops-main { order: 1; }
-.accounting-ops-side { order: 2; }
+.accounting-ops-layout-v2 { display:grid; gap:18px; }
+.accounting-ops-top { display:grid; grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr); gap:18px; align-items:start; }
+.accounting-ops-main { order: initial; }
+.accounting-ops-side { order: initial; }
 .accounting-console-card-v2 { min-height: 100%; }
 .accounting-filter-card-v2 .field-span-2 { grid-column: span 1; }
 .accounting-filter-grid-v2 { grid-template-columns: 1fr; }
@@ -4722,5 +4723,48 @@ body {
   .vp-shell { grid-template-columns: 290px minmax(0, 1fr); }
 }
 @media (max-width: 1180px) {
-  .accounting-ops-layout-v2 { grid-template-columns: 1fr; }
+  .accounting-ops-top, .accounting-ops-layout-v2 { grid-template-columns: 1fr; }
 }
+
+
+/* ===== 第八版收尾修正 ===== */
+.vp-brand-kicker, .vp-panel-label, .vp-header-kicker, .vp-workspace-kicker, .section-intro-kicker,
+.section-intro-lead-label, .accounting-command-kicker, .staff-command-kicker, .customers-hero-kicker,
+.dashboard-hero-kicker, .dashboard-side-label, .warehouse-hero-kicker, .products-hero-kicker, .staff-command-kicker {
+  display:none !important;
+}
+.vp-nav-sub, .vp-brand-desc, .vp-header-desc, .section-intro-desc, .panel-desc, .customers-hero-desc,
+.accounting-command-desc, .dashboard-hero-desc, .data-card-subtitle {
+  display:none !important;
+}
+.dashboard-bottom-card, .accounting-insight-card-v2 {
+  display:none !important;
+}
+.vp-header { padding-top: 24px; padding-bottom: 24px; }
+.vp-overview-card { background: linear-gradient(180deg, rgba(255,247,249,0.82), rgba(249,234,239,0.9)) !important; }
+.fake-field, .warehouse-check-summary-card, .warehouse-scan-hint, .warehouse-issue-item {
+  border: none !important;
+  box-shadow: 0 12px 30px rgba(143, 73, 99, 0.06) !important;
+}
+.fake-field {
+  background: linear-gradient(135deg, rgba(255,250,251,0.92) 0%, rgba(246,226,233,0.96) 100%) !important;
+  min-height: 92px;
+}
+.fake-field strong input {
+  border: none !important;
+  background: rgba(255,255,255,0.72) !important;
+  box-shadow: inset 0 0 0 1px rgba(184, 74, 115, 0.10) !important;
+}
+.warehouse-check-summary-card {
+  background: linear-gradient(135deg, rgba(255,249,251,0.94) 0%, rgba(246,232,237,0.95) 100%) !important;
+}
+.warehouse-check-summary-card.ok {
+  background: linear-gradient(135deg, rgba(236,251,241,0.96) 0%, rgba(224,245,231,0.96) 100%) !important;
+}
+.warehouse-check-summary-card.bad, .warehouse-issue-item {
+  background: linear-gradient(135deg, rgba(255,242,245,0.96) 0%, rgba(250,224,231,0.96) 100%) !important;
+}
+.warehouse-scan-hint.idle {
+  background: linear-gradient(135deg, rgba(255,249,251,0.92) 0%, rgba(247,235,240,0.95) 100%) !important;
+}
+.panel-head { align-items:center; }

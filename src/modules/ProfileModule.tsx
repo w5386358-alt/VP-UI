@@ -18,7 +18,7 @@ export default function ProfileModule(props: any) {
     <>
       <SectionIntro
         title="個人資料"
-        desc="個人資料改成偏會員中心的閱讀路徑：左邊身份主卡，右邊成績與快捷功能。"
+        desc="個人資料與常用入口。"
         stats={[`歷史訂單 ${personalOrders.length} 筆`, `我的客戶 ${myCustomerCards.length} 位`, '個人業績 / 快捷入口']}
       />
 
@@ -42,7 +42,7 @@ export default function ProfileModule(props: any) {
         <section className="profile-overview-grid-v2">
           <div className="profile-summary-grid-v2">{personalSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}</div>
           <div className="card profile-quick-panel-v2">
-            <div className="panel-head compact-head"><div><div className="panel-title">快捷入口</div><div className="panel-desc">先把個人中心做成入口式卡片。</div></div><Sparkles className="small-icon" /></div>
+            <div className="panel-head compact-head"><div><div className="panel-title">快捷入口</div><div className="panel-desc">常用入口。</div></div><Sparkles className="small-icon" /></div>
             <div className="profile-action-grid profile-action-grid-v2">
               {profileQuickActions.map((item: any) => {
                 const Icon = item.icon;
@@ -54,7 +54,7 @@ export default function ProfileModule(props: any) {
 
         <section className="profile-content-grid-v2">
           <div className="card order-panel profile-customer-panel-v2">
-            <div className="panel-head"><div><div className="panel-title">我的客戶</div><div className="panel-desc">把客戶改成清單式關係卡，不跟歷史訂單混在一起。</div></div><span className="badge badge-neutral">姓名 / 電話 / 最新訂單</span></div>
+            <div className="panel-head"><div><div className="panel-title">我的客戶</div><div className="panel-desc">查看我的客戶。</div></div><span className="badge badge-neutral">姓名 / 電話 / 最新訂單</span></div>
             <div className="profile-customer-grid profile-customer-grid-v2">
               {myCustomerCards.map((item: any) => (
                 <div key={item.id} className="profile-customer-card profile-customer-card-v2">
@@ -68,7 +68,7 @@ export default function ProfileModule(props: any) {
           </div>
 
           <div className="card order-panel profile-history-panel-v2">
-            <div className="panel-head"><div><div className="panel-title">我的歷史訂單</div><div className="panel-desc">獨立放在右側，保留搜尋與明細按鈕。</div></div><div className="history-toolbar"><button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button><button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />重新整理</button></div></div>
+            <div className="panel-head"><div><div className="panel-title">我的歷史訂單</div><div className="panel-desc">查看歷史訂單。</div></div><div className="history-toolbar"><button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button><button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />重新整理</button></div></div>
             <div className="history-filter-row"><div className="search-wrap inline-search"><Search className="search-icon" /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" /></div><button type="button" className="primary-button compact-primary">搜尋</button></div>
             <div className="history-list">
               {personalOrders.filter((item: any) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase())).map((item: any) => (

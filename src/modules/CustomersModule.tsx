@@ -13,7 +13,7 @@ export default function CustomersModule(props: any) {
       <section className="customers-shell">
         <aside className="customers-side-stack">
           <div className="card customers-hero-card">
-            <div className="customers-hero-kicker">客戶視圖</div>
+            <div className="customers-hero-kicker"></div>
             <div className="customers-hero-title">{customerViewMode === 'full' ? '完整客戶檔' : '作業精簡檔'}</div>
             <div className="customers-hero-desc">目前登入者：{user.name}。客戶資料集中顯示在同一區，方便查詢與管理。</div>
             <div className="customers-hero-pills">

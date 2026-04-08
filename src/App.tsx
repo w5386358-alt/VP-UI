@@ -1298,7 +1298,7 @@ function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string
   return (
     <section className="section-intro-shell section-intro-shell-v2">
       <div className="section-intro-main">
-        <div className="section-intro-kicker">作業區</div>
+        <div className="section-intro-kicker"></div>
         <h2 className="section-intro-title">{title}</h2>
         <p className="section-intro-desc">{desc}</p>
         {lead ? (
@@ -1365,7 +1365,7 @@ export default function App() {
   const [customerName, setCustomerName] = useState('王小美');
   const [customerPhone, setCustomerPhone] = useState('0912345678');
   const [customerAddress, setCustomerAddress] = useState('新竹市東區食品路 88 號');
-  const [remark, setRemark] = useState('晚上可收件，若自取請先通知。');
+  const [remark, setRemark] = useState('晚上可收件，若自取請先提醒。');
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
@@ -3202,9 +3202,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <main className="vp-main">
         <header className="vp-header card">
           <div className="vp-header-copy">
-            <div className="vp-header-kicker">系統總覽</div>
+            <div className="vp-header-kicker"></div>
             <h1 className="vp-header-title">{activeLabel}</h1>
-            <p className="vp-header-desc">集中處理八大模組操作、查詢與資料流程。</p>
+            <p className="vp-header-desc"></p>
           </div>
           <div className="vp-header-tools">
             <div className="search-wrap vp-search-wrap">
@@ -3243,12 +3243,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
             <div>
-              <div className="vp-workspace-kicker">作業區</div>
+              <div className="vp-workspace-kicker"></div>
               <div className="vp-workspace-title">{activeLabel}</div>
             </div>
             <div className="vp-workspace-actions">
-              <button type="button" className="ghost-button vp-tool-button"><Bell className="small-icon" />通知</button>
-              <button type="button" className="primary-button vp-tool-button"><Sparkles className="small-icon" />系統模式</button>
+              <button type="button" className="ghost-button vp-tool-button"><Bell className="small-icon" />提醒</button>
+              <button type="button" className="primary-button vp-tool-button"><Sparkles className="small-icon" />使用中</button>
             </div>
           </div>
 

@@ -64,9 +64,9 @@ export default function InventoryModule(props: any) {
 
       <section className="warehouse-hero-grid">
         <div className="card warehouse-hero-card">
-          <div className="warehouse-hero-kicker">倉儲主控</div>
+          <div className="warehouse-hero-kicker"></div>
           <div className="warehouse-hero-title">把出貨、庫存、查詢拆成更明確的作業控制台。</div>
-          <div className="warehouse-hero-desc">這裡先優先做工作區節奏與資訊分層，之後再逐步接回完整 SOP、同步與資料流。</div>
+          <div className="warehouse-hero-desc"></div>
           <div className="warehouse-hero-metrics">
             <div className="warehouse-hero-pill"><span>待出貨</span><strong>{shippingQueue.length}</strong></div>
             <div className="warehouse-hero-pill"><span>低庫存</span><strong>{lowStockCount}</strong></div>
@@ -77,7 +77,7 @@ export default function InventoryModule(props: any) {
           <div className="panel-head compact-head">
             <div>
               <div className="panel-title">今日提醒</div>
-              <div className="panel-desc">先把作業提示獨立成側邊摘要。</div>
+              <div className="panel-desc"></div>
             </div>
             <BellRing className="small-icon" />
           </div>
@@ -105,7 +105,7 @@ export default function InventoryModule(props: any) {
               <div className="panel-head">
                 <div>
                   <div className="panel-title">待出貨訂單</div>
-                  <div className="panel-desc">出貨前先檢查收款狀態，再依 inventory_logs 可用數量扣減。</div>
+                  <div className="panel-desc">確認收款與庫存後進行出貨。</div>
                 </div>
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
               </div>
@@ -123,7 +123,7 @@ export default function InventoryModule(props: any) {
               <div className="panel-head compact-head">
                 <div>
                   <div className="panel-title">訂單清單</div>
-                  <div className="panel-desc">左側看清單，右側做驗證與出貨。</div>
+                  <div className="panel-desc">查看訂單後完成驗證與出貨。</div>
                 </div>
                 <Layers3 className="small-icon" />
               </div>

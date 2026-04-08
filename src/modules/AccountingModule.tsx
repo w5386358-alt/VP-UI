@@ -31,8 +31,8 @@ export default function AccountingModule(props: any) {
         <div className="accounting-command-card card">
           <div>
             <div className="accounting-command-kicker">會計主控</div>
-            <h3 className="accounting-command-title">收款、退款與統計拆成三條工作線，讓閱讀路徑更清楚。</h3>
-            <p className="accounting-command-desc">收款、退款與查詢集中在同一區，閱讀更直覺。</p>
+            <h3 className="accounting-command-title">收款、退款與統計集中在同一區。</h3>
+            <p className="accounting-command-desc"></p>
           </div>
           <div className="accounting-command-metrics">
             <div className="accounting-command-pill"><span>待處理</span><strong>{pendingCount}</strong></div>
@@ -49,14 +49,11 @@ export default function AccountingModule(props: any) {
 
         {accountingTab === 'ops' && (
           <section className="accounting-ops-layout-v2">
-            <div className="accounting-ops-main">
+            <div className="accounting-ops-top">
               <div className="card order-panel accounting-filter-card-v2">
                 <div className="panel-head">
-                  <div>
-                    <div className="panel-title">收款篩選台</div>
-                    <div className="panel-desc">快速篩出要處理的訂單。</div>
-                  </div>
-                  <span className="badge badge-role">收款清單</span>
+                  <div><div className="panel-title">收款篩選台</div></div>
+                  <span className="badge badge-role">篩選</span>
                 </div>
                 <div className="accounting-filter-grid accounting-filter-grid-v2">
                   <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶 / 發票</span><input value={accountingKeyword} onChange={(e) => setAccountingKeyword(e.target.value)} placeholder="輸入訂單編號、客戶、收款方式、發票號碼" /></label>
@@ -67,58 +64,58 @@ export default function AccountingModule(props: any) {
                 </div>
               </div>
 
-              <div className="card order-panel accounting-queue-card-v2">
-                <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">依訂單狀態快速切換與處理。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
-                <div className="shipping-queue accounting-queue accounting-queue-v2">
-                  {filteredAccountingQueue.map((item: any) => (
-                    <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
-                      <div>
-                        <div className="shipping-order">{item.orderNo}</div>
-                        <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
-                        <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
-                      </div>
-                      <div className="shipping-actions accounting-statuses">
-                        <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                        <span className={`badge ${item.shippingStatus === '待出貨' || item.shippingStatus === '已退款' ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : item.shippingStatus === '已出貨' ? 'badge-success' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                        <strong className="accounting-amount">${item.amount}</strong>
-                      </div>
-                    </button>
-                  ))}
+              <aside className="accounting-ops-side">
+                <div className="card order-panel accounting-console-card-v2 sticky-panel">
+                  <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div></div><span className="badge badge-role">明細</span></div>
+                  <div className="accounting-console-overview">
+                    <div className="accounting-console-mini"><span>訂單</span><strong>{accountingDraft?.orderNo || '未選擇'}</strong></div>
+                    <div className="accounting-console-mini"><span>客戶</span><strong>{accountingDraft?.customer || '-'}</strong></div>
+                    <div className="accounting-console-mini accent"><span>實收總額</span><strong>${accountingActualReceived || 0}</strong></div>
+                  </div>
+                  <div className="form-grid two-col accounting-form-grid">
+                    <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={accountingDraft?.untaxedAmount || ''} readOnly /></label>
+                    <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />稅率 %</span><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" /></label>
+                    <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅金額</span><input value={String(accountingTaxAmount || 0)} readOnly /></label>
+                    <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={accountingDraft?.shippingFee || ''} onChange={(e) => updateAccountingDraftField('shippingFee', e.target.value)} inputMode="decimal" /></label>
+                    <label className="field-card"><span className="field-label"><Wallet className="small-icon" />付款方式</span><select value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)}><option value="待確認">待確認</option><option value="銀行轉帳">銀行轉帳</option><option value="LINE Pay">LINE Pay</option><option value="現金">現金</option><option value="信用卡">信用卡</option><option value="其他">其他</option></select></label>
+                    <label className="field-card"><span className="field-label"><FileText className="small-icon" />發票 / 單號</span><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="輸入發票或退款單號" /></label>
+                    <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="輸入收款備註" /></label>
+                  </div>
+                  <div className="accounting-proof-grid accounting-proof-grid-v2">
+                    <button type="button" className="accounting-proof-card interactive" onClick={() => accountingProofInputRef?.current?.click()}><Receipt className="small-icon" /><div><div className="accounting-proof-title">收款證明</div></div></button>
+                    <div className="accounting-proof-card"><ShieldCheck className="small-icon" /><div><div className="accounting-proof-title">AI 辨識</div></div></div>
+                    <div className="accounting-proof-card"><Clock3 className="small-icon" /><div><div className="accounting-proof-title">最新狀態</div><div className="accounting-proof-desc">{selectedAccountingSourceRecord?.paymentStatus || '未選擇'}</div></div></div>
+                  </div>
+                  <input ref={accountingProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleAccountingProofUpload(e.target.files?.[0] || null)} />
+                  <div className="accounting-action-row accounting-action-row-v2">
+                    <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
+                    <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('receive')}><CreditCard className="small-icon" />確認收款</button>
+                    <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />確認退款</button>
+                  </div>
+                  {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
                 </div>
-              </div>
+              </aside>
             </div>
 
-            <aside className="accounting-ops-side">
-              <div className="card order-panel accounting-console-card-v2 sticky-panel">
-                <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">顯示本次選取單的收款資訊與操作。</div></div><span className="badge badge-role">選取單</span></div>
-                <div className="accounting-console-overview">
-                  <div className="accounting-console-mini"><span>訂單</span><strong>{accountingDraft?.orderNo || '未選擇'}</strong></div>
-                  <div className="accounting-console-mini"><span>客戶</span><strong>{accountingDraft?.customer || '-'}</strong></div>
-                  <div className="accounting-console-mini accent"><span>實收總額</span><strong>${accountingActualReceived || 0}</strong></div>
-                </div>
-                <div className="form-grid two-col accounting-form-grid">
-                  <label className="field-card"><span className="field-label"><Wallet className="small-icon" />未稅價</span><input value={accountingDraft?.untaxedAmount || ''} readOnly /></label>
-                  <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />稅率 %</span><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" /></label>
-                  <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />應稅金額</span><input value={String(accountingTaxAmount || 0)} readOnly /></label>
-                  <label className="field-card"><span className="field-label"><Truck className="small-icon" />運費</span><input value={accountingDraft?.shippingFee || ''} onChange={(e) => updateAccountingDraftField('shippingFee', e.target.value)} inputMode="decimal" /></label>
-                  <label className="field-card"><span className="field-label"><Wallet className="small-icon" />付款方式</span><select value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)}><option value="待確認">待確認</option><option value="銀行轉帳">銀行轉帳</option><option value="LINE Pay">LINE Pay</option><option value="現金">現金</option><option value="信用卡">信用卡</option><option value="其他">其他</option></select></label>
-                  <label className="field-card"><span className="field-label"><FileText className="small-icon" />發票 / 單號</span><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="可填發票或退款單號" /></label>
-                  <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />收款證明 / 備註</span><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="可填收款證明、備註、人工確認資訊" /></label>
-                </div>
-                <div className="accounting-proof-grid accounting-proof-grid-v2">
-                  <button type="button" className="accounting-proof-card interactive" onClick={() => accountingProofInputRef?.current?.click()}><Receipt className="small-icon" /><div><div className="accounting-proof-title">收款證明</div><div className="accounting-proof-desc">上傳收據、轉帳、附件</div></div></button>
-                  <div className="accounting-proof-card"><ShieldCheck className="small-icon" /><div><div className="accounting-proof-title">AI 辨識</div><div className="accounting-proof-desc">可放收款或退款證明</div></div></div>
-                  <div className="accounting-proof-card"><Clock3 className="small-icon" /><div><div className="accounting-proof-title">最新狀態</div><div className="accounting-proof-desc">{selectedAccountingSourceRecord?.paymentStatus || '未選擇'}</div></div></div>
-                </div>
-                <input ref={accountingProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleAccountingProofUpload(e.target.files?.[0] || null)} />
-                <div className="accounting-action-row accounting-action-row-v2">
-                  <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('receive')}><CreditCard className="small-icon" />確認收款</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />確認退款</button>
-                </div>
-                {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
+            <div className="card order-panel accounting-queue-card-v2">
+              <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
+              <div className="shipping-queue accounting-queue accounting-queue-v2">
+                {filteredAccountingQueue.map((item: any) => (
+                  <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
+                    <div>
+                      <div className="shipping-order">{item.orderNo}</div>
+                      <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
+                      <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                    </div>
+                    <div className="shipping-actions accounting-statuses">
+                      <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                      <span className={`badge ${item.shippingStatus === '待出貨' || item.shippingStatus === '已退款' ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : item.shippingStatus === '已出貨' ? 'badge-success' : 'badge-neutral'}`}>{item.shippingStatus}</span>
+                      <strong className="accounting-amount">${item.amount}</strong>
+                    </div>
+                  </button>
+                ))}
               </div>
-            </aside>
+            </div>
           </section>
         )}
 

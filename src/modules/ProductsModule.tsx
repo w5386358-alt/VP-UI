@@ -37,7 +37,7 @@ export default function ProductsModule(props: any) {
       <section className="products-hero-grid">
         <div className="card products-hero-card">
           <div className="products-hero-kicker">商品主控</div>
-          <div className="products-hero-title">把商品卡、價格層級、編輯器切成新的工作區節奏。</div>
+          <div className="products-hero-title">商品資料與價格設定。</div>
           <div className="products-hero-desc">先讓列表、摘要與右側編輯器有主次分工，之後再回接真實資料流。</div>
           <div className="products-hero-metrics">
             <div className="products-hero-pill"><span>商品總數</span><strong>{products.length}</strong></div>
@@ -140,14 +140,14 @@ export default function ProductsModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                <div className="panel-desc">右側編輯器獨立成操作面板。</div>
+                <div className="panel-desc">商品資料。</div>
               </div>
               <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
             </div>
 
             <div className="products-editor-note">
               <Layers3 className="small-icon" />
-              <span>先固定新版右側作業區，之後再逐步搬回真實同步流程。</span>
+              <span>先固定新版右側，之後再逐步搬回真實同步流程。</span>
             </div>
 
             <div className="form-grid two-col form-gap-top">
