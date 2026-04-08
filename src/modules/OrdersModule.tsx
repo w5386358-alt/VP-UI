@@ -131,7 +131,7 @@ export default function OrdersModule(props: any) {
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品清單</div>
-                <div className="panel-desc">先選商品，再進購物車整理客戶與配送資料。</div>
+                
               </div>
               <span className="badge badge-soft">價格層級 / {priceTierLabel}</span>
             </div>
@@ -147,7 +147,7 @@ export default function OrdersModule(props: any) {
             <div className="catalog-grid orders-catalog-grid">
               {filteredOrderProducts.map((item: any) => (
                 <div key={item.id} className="catalog-card orders-product-card">
-                  <div className="catalog-image-slot">
+                  <div className="catalog-image-slot catalog-image-slot-full">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="catalog-image" />
                     ) : (
@@ -189,7 +189,7 @@ export default function OrdersModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">常用客戶</div>
-                <div className="panel-desc">先做快速帶入區。</div>
+                
               </div>
               <User className="small-icon" />
             </div>
@@ -207,7 +207,7 @@ export default function OrdersModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">購物摘要</div>
-                <div className="panel-desc">先把核心資訊做成獨立面板。</div>
+                
               </div>
               <Sparkles className="small-icon" />
             </div>

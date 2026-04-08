@@ -1,4 +1,5 @@
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, User, Wallet, BadgePercent, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, User, Wallet, BadgePercent, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -18,21 +19,27 @@ export default function AccountingModule(props: any) {
 
   const pendingCount = paymentQueue.filter((item: any) => item.paymentStatus === '待收款').length;
   const receivedCount = paymentQueue.filter((item: any) => item.paymentStatus === '已收款').length;
+  const [accountingPage, setAccountingPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredAccountingQueue.length / pageSize));
+  const safePage = Math.min(accountingPage, totalPages);
+  const pagedAccountingQueue = useMemo(() => filteredAccountingQueue.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredAccountingQueue, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
     <>
       <SectionIntro
         title="會計"
-        desc="集中處理收款、退款、報表與排行。"
+        desc="收款、退款與統計管理。"
         stats={[`待收款 ${pendingCount} 筆`, `已收款 ${receivedCount} 筆`, '報表 / 排名 / 熱銷']}
       />
 
       <section className="accounting-shell-v2">
         <div className="accounting-command-card card">
           <div>
-            <div className="accounting-command-kicker">會計主控</div>
+
             <h3 className="accounting-command-title">收款、退款與統計集中在同一區。</h3>
-            <p className="accounting-command-desc"></p>
+
           </div>
           <div className="accounting-command-metrics">
             <div className="accounting-command-pill"><span>待處理</span><strong>{pendingCount}</strong></div>
@@ -49,10 +56,10 @@ export default function AccountingModule(props: any) {
 
         {accountingTab === 'ops' && (
           <section className="accounting-ops-layout-v2">
-            <div className="accounting-ops-top">
-              <div className="card order-panel accounting-filter-card-v2">
+            <div className="accounting-ops-top accounting-ops-top-match-warehouse">
+              <div className="card order-panel accounting-filter-card-v2 accounting-filter-card-match-warehouse">
                 <div className="panel-head">
-                  <div><div className="panel-title">收款篩選台</div></div>
+                  <div><div className="panel-title">訂單清單篩選</div></div>
                   <span className="badge badge-role">篩選</span>
                 </div>
                 <div className="accounting-filter-grid accounting-filter-grid-v2">
@@ -66,7 +73,7 @@ export default function AccountingModule(props: any) {
 
               <aside className="accounting-ops-side">
                 <div className="card order-panel accounting-console-card-v2 sticky-panel">
-                  <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div></div><span className="badge badge-role">明細</span></div>
+                  <div className="panel-head compact-head"><div><div className="panel-title">收款作業</div></div><span className="badge badge-role">作業</span></div>
                   <div className="accounting-console-overview">
                     <div className="accounting-console-mini"><span>訂單</span><strong>{accountingDraft?.orderNo || '未選擇'}</strong></div>
                     <div className="accounting-console-mini"><span>客戶</span><strong>{accountingDraft?.customer || '-'}</strong></div>
@@ -97,10 +104,10 @@ export default function AccountingModule(props: any) {
               </aside>
             </div>
 
-            <div className="card order-panel accounting-queue-card-v2">
-              <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
+            <div className="card order-panel accounting-queue-card-v2 accounting-queue-card-match-warehouse">
+              <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單資訊</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
               <div className="shipping-queue accounting-queue accounting-queue-v2">
-                {filteredAccountingQueue.map((item: any) => (
+                {pagedAccountingQueue.map((item: any) => (
                   <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
                     <div>
                       <div className="shipping-order">{item.orderNo}</div>
@@ -114,6 +121,15 @@ export default function AccountingModule(props: any) {
                     </div>
                   </button>
                 ))}
+              </div>
+              <div className="pagination-row">
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setAccountingPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+                <div className="pagination-pages">
+                  {pageNumbers.map((page) => (
+                    <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setAccountingPage(page)}>{page}</button>
+                  ))}
+                </div>
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setAccountingPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
               </div>
             </div>
           </section>
@@ -132,7 +148,7 @@ export default function AccountingModule(props: any) {
                 ))}
               </div>
               <div className="card order-panel accounting-trend-card-v2">
-                <div className="panel-head"><div><div className="panel-title">區間營收趨勢</div><div className="panel-desc">先保留圖表區塊與節奏，再接真報表。</div></div><span className="badge badge-soft">趨勢</span></div>
+                <div className="panel-head"><div><div className="panel-title">區間營收趨勢</div></div><span className="badge badge-soft">趨勢</span></div>
                 <div className="accounting-trend-list-v2">
                   {accounting趨勢Bars.map((item: any) => (
                     <div key={item.label} className="accounting-trend-item-v2">
@@ -147,7 +163,7 @@ export default function AccountingModule(props: any) {
               <div className="card accounting-insight-card-v2">
                 <Sparkles className="small-icon" />
                 <div className="accounting-insight-title">營運摘要</div>
-                <div className="stack-list compact"><div>收款區與出納區未來可再拆更細</div><div>報表先保留高階區塊</div><div>這版先把資訊層級做出來</div></div>
+                <div className="stack-list compact"><div>收款金額</div><div>退款狀態</div><div>熱門商品</div></div>
               </div>
             </div>
           </section>
@@ -156,7 +172,7 @@ export default function AccountingModule(props: any) {
         {accountingTab === 'ranking' && (
           <section className="accounting-ranking-layout-v2">
             <div className="card order-panel">
-              <div className="panel-head"><div><div className="panel-title">人員排名</div><div className="panel-desc">先做排行榜主區塊。</div></div><span className="badge badge-role">排行</span></div>
+              <div className="panel-head"><div><div className="panel-title">人員排名</div></div><span className="badge badge-role">排行</span></div>
               <div className="ranking-list-v2">
                 {sales排行.map((item: any, index: number) => (
                   <div key={item.name} className="ranking-row-v2">
@@ -167,7 +183,7 @@ export default function AccountingModule(props: any) {
               </div>
             </div>
             <div className="card order-panel">
-              <div className="panel-head"><div><div className="panel-title">熱銷商品</div><div className="panel-desc">與排行分開，避免視覺混在一起。</div></div><span className="badge badge-soft">熱銷</span></div>
+              <div className="panel-head"><div><div className="panel-title">熱銷商品</div></div><span className="badge badge-soft">熱銷</span></div>
               <div className="ranking-list-v2 hot-product-list-v2">
                 {hotProductsBoard.map((item: any) => (
                   <div key={item.name} className="ranking-row-v2">

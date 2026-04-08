@@ -4768,3 +4768,122 @@ body {
   background: linear-gradient(135deg, rgba(255,249,251,0.92) 0%, rgba(247,235,240,0.95) 100%) !important;
 }
 .panel-head { align-items:center; }
+
+
+/* --- final visual refinement overrides --- */
+:root {
+  --bg-1: #f7e8ee;
+  --bg-2: #f0d8e1;
+  --bg-3: #fbf3f6;
+}
+body {
+  background:
+    radial-gradient(circle at top left, rgba(210, 136, 166, 0.28), transparent 24%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 38%, var(--bg-3) 100%);
+}
+.page-kicker,
+.section-intro-desc,
+.panel-desc,
+.accounting-command-kicker,
+.accounting-command-desc,
+.warehouse-hero-kicker,
+.warehouse-hero-desc,
+.brand-subtitle,
+.workflow-desc,
+.data-card-subtitle,
+.sidebar-tip,
+.sidebar-tip-desc,
+.accounting-board-sub,
+.section-title-desc,
+.helper-text {
+  display: none !important;
+}
+.accounting-tab,
+.warehouse-tab,
+.filter-chip,
+.shortcut-button,
+.nav-button,
+.mobile-nav-btn {
+  border-radius: 999px !important;
+}
+.accounting-ops-top-match-warehouse {
+  display: grid;
+  grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+  gap: 20px;
+  align-items: start;
+}
+.accounting-filter-card-match-warehouse,
+.accounting-console-card-v2 {
+  min-height: 100%;
+}
+.accounting-queue-card-match-warehouse {
+  margin-top: 20px;
+}
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pagination-page {
+  min-width: 40px;
+  height: 40px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255,255,255,0.9);
+  color: var(--text);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pagination-page.active {
+  background: linear-gradient(135deg, var(--primary) 0%, #ff6d98 100%);
+  color: #fff;
+  border-color: transparent;
+}
+.pagination-btn[disabled],
+.pagination-page[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.catalog-image-slot-full {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.catalog-image-slot-full .catalog-image,
+.catalog-image-slot-full .catalog-image-placeholder {
+  width: 100%;
+  min-height: 220px;
+  border-radius: 22px;
+}
+.catalog-image-slot-full .catalog-image {
+  object-fit: cover;
+  display: block;
+}
+.catalog-image-slot-full .catalog-image-placeholder {
+  background: linear-gradient(135deg, rgba(255,246,249,.96) 0%, rgba(248,226,234,.95) 100%);
+  border: none !important;
+}
+.warehouse-side-section .fake-field,
+.warehouse-check-summary-card,
+.warehouse-reminder-item,
+.warehouse-side-panel .inline-action-notice {
+  border: none !important;
+  box-shadow: inset 0 0 0 1px rgba(233, 191, 207, 0.18);
+}
+.warehouse-side-section .fake-field {
+  background: linear-gradient(135deg, rgba(255,250,252,.98) 0%, rgba(249,232,239,.96) 100%) !important;
+}
+@media (max-width: 1200px) {
+  .accounting-ops-top-match-warehouse {
+    grid-template-columns: 1fr;
+  }
+}
