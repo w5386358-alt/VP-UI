@@ -12,16 +12,6 @@ export default function CustomersModule(props: any) {
 
       <section className="customers-shell">
         <aside className="customers-side-stack">
-          <div className="card customers-hero-card">
-            <div className="customers-hero-kicker"></div>
-            <div className="customers-hero-title">{customerViewMode === 'full' ? '完整客戶檔' : '作業精簡檔'}</div>
-            <div className="customers-hero-desc">目前登入者：{user.name}。客戶資料集中顯示在同一區，方便查詢與管理。</div>
-            <div className="customers-hero-pills">
-              <span className="badge badge-soft">{customerScopeLabel}</span>
-              <span className="badge badge-neutral">VIP / 代理 {vipCustomers}</span>
-            </div>
-          </div>
-
           <div className="card customers-preview-card">
             <div className="panel-title">重點客戶預覽</div>
             <div className="customers-preview-list">
@@ -42,8 +32,7 @@ export default function CustomersModule(props: any) {
           <div className="customers-main-head">
             <div>
               <div className="panel-title">客戶列表</div>
-              <div className="panel-desc">集中查看客戶名單與基本資訊。</div>
-            </div>
+                          </div>
             <span className="badge badge-role">{filteredCustomers.length} 筆</span>
           </div>
 

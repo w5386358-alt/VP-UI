@@ -62,36 +62,6 @@ export default function InventoryModule(props: any) {
         stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
       />
 
-      <section className="warehouse-hero-grid">
-        <div className="card warehouse-hero-card">
-          <div className="warehouse-hero-kicker"></div>
-          <div className="warehouse-hero-title">把出貨、庫存、查詢拆成更明確的作業控制台。</div>
-          <div className="warehouse-hero-desc"></div>
-          <div className="warehouse-hero-metrics">
-            <div className="warehouse-hero-pill"><span>待出貨</span><strong>{shippingQueue.length}</strong></div>
-            <div className="warehouse-hero-pill"><span>低庫存</span><strong>{lowStockCount}</strong></div>
-            <div className="warehouse-hero-pill accent"><span>查詢模式</span><strong>{warehouseQueryMode}</strong></div>
-          </div>
-        </div>
-        <div className="card warehouse-hero-side">
-          <div className="panel-head compact-head">
-            <div>
-              <div className="panel-title">今日提醒</div>
-              <div className="panel-desc"></div>
-            </div>
-            <BellRing className="small-icon" />
-          </div>
-          <div className="warehouse-reminder-stack compact">
-            {warehouseReminderItems.slice(0, 3).map((item: any, index: number) => (
-              <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
-                <BellRing className="small-icon" />
-                <span>{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <div className="warehouse-tab-row warehouse-primary-tabs">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
         <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}><Boxes className="small-icon" />庫存區</button>

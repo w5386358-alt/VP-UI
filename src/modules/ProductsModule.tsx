@@ -34,57 +34,16 @@ export default function ProductsModule(props: any) {
         stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${disabledProducts}`]}
       />
 
-      <section className="products-hero-grid">
-        <div className="card products-hero-card">
-          <div className="products-hero-kicker">商品主控</div>
-          <div className="products-hero-title">商品資料與價格設定。</div>
-          <div className="products-hero-desc">先讓列表、摘要與右側編輯器有主次分工，之後再回接真實資料流。</div>
-          <div className="products-hero-metrics">
-            <div className="products-hero-pill"><span>商品總數</span><strong>{products.length}</strong></div>
-            <div className="products-hero-pill"><span>啟用中</span><strong>{enabledProducts}</strong></div>
-            <div className="products-hero-pill accent"><span>停用中</span><strong>{disabledProducts}</strong></div>
-          </div>
-        </div>
-
-        <div className="card products-hero-side">
-          <div className="panel-head compact-head">
-            <div>
-              <div className="panel-title">商品摘要</div>
-              <div className="panel-desc">先把重點品項獨立出來。</div>
-            </div>
-            <BarChart3 className="small-icon" />
-          </div>
-          <div className="products-side-list">
-            {topProducts.map((item: any) => (
-              <div key={item.id} className="products-side-row">
-                <div>
-                  <div className="products-side-name">{item.name}</div>
-                  <div className="products-side-meta">{item.category} / {item.code}</div>
-                </div>
-                <span className="badge badge-soft">庫存 {item.stock}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="product-admin-layout products-stage-layout">
         <div className="product-admin-main">
           <div className="card order-panel products-board-card">
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
-                <div className="panel-desc">查看商品、價格、庫存與狀態。</div>
               </div>
               <button type="button" className="primary-button" onClick={openCreateProduct}>
                 <Package className="small-icon" />新增商品
               </button>
-            </div>
-
-            <div className="products-chip-strip">
-              <span className="badge badge-neutral">列表檢視</span>
-              <span className="badge badge-soft">卡片摘要</span>
-              <span className="badge badge-soft">右側編輯器</span>
             </div>
 
             <div className="product-admin-grid products-card-grid">
@@ -140,14 +99,8 @@ export default function ProductsModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                <div className="panel-desc">商品資料。</div>
               </div>
               <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
-            </div>
-
-            <div className="products-editor-note">
-              <Layers3 className="small-icon" />
-              <span>先固定新版右側，之後再逐步搬回真實同步流程。</span>
             </div>
 
             <div className="form-grid two-col form-gap-top">

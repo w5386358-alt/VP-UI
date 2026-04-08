@@ -38,17 +38,6 @@ export default function AccountingModule(props: any) {
       />
 
       <section className="accounting-shell-v2">
-        <div className="accounting-command-card card">
-          <div>
-            <h3 className="accounting-command-title">收款、退款與統計集中在同一區。</h3>
-          </div>
-          <div className="accounting-command-metrics">
-            <div className="accounting-command-pill"><span>待處理</span><strong>{pendingCount}</strong></div>
-            <div className="accounting-command-pill"><span>本區金額</span><strong>${accountingOpsTotal}</strong></div>
-            <div className="accounting-command-pill accent"><span>已選訂單</span><strong>{selectedAccountingRecord?.orderNo || '未選擇'}</strong></div>
-          </div>
-        </div>
-
         <div className="accounting-tab-row accounting-tab-row-v2">
           <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" />收款 / 退款作業</button>
           <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />銷售統計</button>
@@ -63,7 +52,6 @@ export default function AccountingModule(props: any) {
                   <div>
                     <div className="panel-title">訂單清單篩選</div>
                   </div>
-                  <span className="badge badge-role">篩選</span>
                 </div>
 
                 <div className="accounting-filter-grid warehouse-filter-grid warehouse-filter-shell-grid">
@@ -80,7 +68,6 @@ export default function AccountingModule(props: any) {
                   <div>
                     <div className="panel-title">訂單資訊</div>
                   </div>
-                  <Layers3 className="small-icon" />
                 </div>
                 <div className="shipping-queue accounting-queue accounting-queue-v2">
                   {pagedAccountingQueue.map((item: any) => (

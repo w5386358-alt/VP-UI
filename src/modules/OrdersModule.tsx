@@ -75,63 +75,12 @@ export default function OrdersModule(props: any) {
         <span className="floating-cart-count">{itemCount}</span>
       </button>
 
-      <section className="orders-showcase-grid">
-        <div className="card orders-hero-panel">
-          <div className="orders-hero-copy">
-            <div className="orders-kicker">訂購專區</div>
-            <h2 className="orders-hero-title">重新拉成白紙版訂購工作區，先把商品、客戶、配送與結帳節奏切乾淨。</h2>
-            <p className="orders-hero-desc">這裡先看操作路徑與閱讀分層。之後再把真實資料、會計與倉儲流程慢慢搬回來。</p>
-          </div>
-          <div className="orders-hero-cards">
-            <div className="orders-mini-stat">
-              <span>目前商品</span>
-              <strong>{filteredOrderProducts.length}</strong>
-            </div>
-            <div className="orders-mini-stat">
-              <span>購物車</span>
-              <strong>{itemCount} 件</strong>
-            </div>
-            <div className="orders-mini-stat accent">
-              <span>預估總額</span>
-              <strong>${grandTotal}</strong>
-            </div>
-          </div>
-        </div>
-
-        <div className="card orders-side-surface">
-          <div className="panel-head compact-head">
-            <div>
-              <div className="panel-title">本次設定</div>
-              <div className="panel-desc">先把購物流程拆成摘要區。</div>
-            </div>
-            <Layers3 className="small-icon" />
-          </div>
-          <div className="orders-side-stats">
-            <div className="orders-side-pill"><span>價格層級</span><strong>{priceTierLabel}</strong></div>
-            <div className="orders-side-pill"><span>配送方式</span><strong>{shippingMethod}</strong></div>
-            <div className="orders-side-pill"><span>折扣模式</span><strong>{discountMode || '未設定'}</strong></div>
-          </div>
-          <div className="orders-side-preview-list">
-            {previewProducts.map((item: any) => (
-              <div key={item.id} className="orders-preview-row">
-                <div>
-                  <div className="orders-preview-name">{item.name}</div>
-                  <div className="orders-preview-meta">{item.category} / {item.code}</div>
-                </div>
-                <strong>${item.price}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="orders-workspace-grid">
         <div className="order-main">
           <div className="card order-panel orders-catalog-panel">
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品清單</div>
-                
               </div>
               <span className="badge badge-soft">價格層級 / {priceTierLabel}</span>
             </div>
@@ -163,7 +112,7 @@ export default function OrdersModule(props: any) {
                       <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>{item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}</span>
                     </div>
                     <div className="catalog-name">{item.name}</div>
-                    <div className="catalog-desc">{item.category} / 客顯原價，系統顯示 {priceTierLabel}</div>
+                    <div className="catalog-desc">{item.category} / {priceTierLabel}</div>
                     <div className="catalog-footer">
                       <div>
                         <div className="mini-label">原價 ${item.originalPrice ?? item.price}</div>
@@ -191,7 +140,6 @@ export default function OrdersModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">常用客戶</div>
-                
               </div>
               <User className="small-icon" />
             </div>
@@ -209,7 +157,6 @@ export default function OrdersModule(props: any) {
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">購物摘要</div>
-                
               </div>
               <Sparkles className="small-icon" />
             </div>
