@@ -64,7 +64,7 @@ export default function InventoryModule(props: any) {
 
       <section className="warehouse-hero-grid">
         <div className="card warehouse-hero-card">
-          <div className="warehouse-hero-kicker">Warehouse Command</div>
+          <div className="warehouse-hero-kicker">倉儲主控</div>
           <div className="warehouse-hero-title">把出貨、庫存、查詢拆成更明確的作業控制台。</div>
           <div className="warehouse-hero-desc">這裡先優先做工作區節奏與資訊分層，之後再逐步接回完整 SOP、同步與資料流。</div>
           <div className="warehouse-hero-metrics">

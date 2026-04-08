@@ -12,7 +12,7 @@ export default function AccountingModule(props: any) {
     accountingNotice, selectedAccountingRecord, selectedAccountingSourceRecord, accountingDraft, accountingTaxAmount, accountingActualReceived, updateAccountingDraftField, saveAccountingDraft,
     triggerAccountingAction, selectAccountingOrder,
     handleAccountingProofUpload, accountingProofInputRef,
-    accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
+    accountingBoards, accounting趨勢Bars, sales排行, hotProductsBoard,
     SectionIntro,
   } = props;
 
@@ -23,16 +23,16 @@ export default function AccountingModule(props: any) {
     <>
       <SectionIntro
         title="會計"
-        desc="這區先拉成偏控制台型格局，把收款主線、報表次要資訊、排名區塊拆開。"
+        desc="集中處理收款、退款、報表與排行。"
         stats={[`待收款 ${pendingCount} 筆`, `已收款 ${receivedCount} 筆`, '報表 / 排名 / 熱銷']}
       />
 
       <section className="accounting-shell-v2">
         <div className="accounting-command-card card">
           <div>
-            <div className="accounting-command-kicker">Finance Command</div>
+            <div className="accounting-command-kicker">會計主控</div>
             <h3 className="accounting-command-title">收款、退款與統計拆成三條工作線，讓閱讀路徑更清楚。</h3>
-            <p className="accounting-command-desc">先定義帳務控制台，再回接真資料。這一版重點是版型與卡片層級。</p>
+            <p className="accounting-command-desc">收款、退款與查詢集中在同一區，閱讀更直覺。</p>
           </div>
           <div className="accounting-command-metrics">
             <div className="accounting-command-pill"><span>待處理</span><strong>{pendingCount}</strong></div>
@@ -54,9 +54,9 @@ export default function AccountingModule(props: any) {
                 <div className="panel-head">
                   <div>
                     <div className="panel-title">收款篩選台</div>
-                    <div className="panel-desc">把搜尋、日期與狀態分成獨立工作列。</div>
+                    <div className="panel-desc">快速篩出要處理的訂單。</div>
                   </div>
-                  <span className="badge badge-role">Finance Queue</span>
+                  <span className="badge badge-role">收款清單</span>
                 </div>
                 <div className="accounting-filter-grid accounting-filter-grid-v2">
                   <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶 / 發票</span><input value={accountingKeyword} onChange={(e) => setAccountingKeyword(e.target.value)} placeholder="輸入訂單編號、客戶、收款方式、發票號碼" /></label>
@@ -68,7 +68,7 @@ export default function AccountingModule(props: any) {
               </div>
 
               <div className="card order-panel accounting-queue-card-v2">
-                <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">左側先看收款清單，再往右做動作。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
+                <div className="panel-head accounting-inline-records-head"><div><div className="panel-title">訂單紀錄 / 收款狀態</div><div className="panel-desc">依訂單狀態快速切換與處理。</div></div><span className="badge badge-soft">共 {filteredAccountingQueue.length} 筆 / 金額 ${accountingOpsTotal}</span></div>
                 <div className="shipping-queue accounting-queue accounting-queue-v2">
                   {filteredAccountingQueue.map((item: any) => (
                     <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
@@ -90,7 +90,7 @@ export default function AccountingModule(props: any) {
 
             <aside className="accounting-ops-side">
               <div className="card order-panel accounting-console-card-v2 sticky-panel">
-                <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">把計算、附件與動作都收進右側控制台。</div></div><span className="badge badge-role">Console</span></div>
+                <div className="panel-head compact-head"><div><div className="panel-title">本次選取單</div><div className="panel-desc">顯示本次選取單的收款資訊與操作。</div></div><span className="badge badge-role">選取單</span></div>
                 <div className="accounting-console-overview">
                   <div className="accounting-console-mini"><span>訂單</span><strong>{accountingDraft?.orderNo || '未選擇'}</strong></div>
                   <div className="accounting-console-mini"><span>客戶</span><strong>{accountingDraft?.customer || '-'}</strong></div>
@@ -107,7 +107,7 @@ export default function AccountingModule(props: any) {
                 </div>
                 <div className="accounting-proof-grid accounting-proof-grid-v2">
                   <button type="button" className="accounting-proof-card interactive" onClick={() => accountingProofInputRef?.current?.click()}><Receipt className="small-icon" /><div><div className="accounting-proof-title">收款證明</div><div className="accounting-proof-desc">上傳收據、轉帳、附件</div></div></button>
-                  <div className="accounting-proof-card"><ShieldCheck className="small-icon" /><div><div className="accounting-proof-title">AI 辨識</div><div className="accounting-proof-desc">保留未來辨識接口</div></div></div>
+                  <div className="accounting-proof-card"><ShieldCheck className="small-icon" /><div><div className="accounting-proof-title">AI 辨識</div><div className="accounting-proof-desc">可放收款或退款證明</div></div></div>
                   <div className="accounting-proof-card"><Clock3 className="small-icon" /><div><div className="accounting-proof-title">最新狀態</div><div className="accounting-proof-desc">{selectedAccountingSourceRecord?.paymentStatus || '未選擇'}</div></div></div>
                 </div>
                 <input ref={accountingProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleAccountingProofUpload(e.target.files?.[0] || null)} />
@@ -135,9 +135,9 @@ export default function AccountingModule(props: any) {
                 ))}
               </div>
               <div className="card order-panel accounting-trend-card-v2">
-                <div className="panel-head"><div><div className="panel-title">區間營收趨勢</div><div className="panel-desc">先保留圖表區塊與節奏，再接真報表。</div></div><span className="badge badge-soft">Trend</span></div>
+                <div className="panel-head"><div><div className="panel-title">區間營收趨勢</div><div className="panel-desc">先保留圖表區塊與節奏，再接真報表。</div></div><span className="badge badge-soft">趨勢</span></div>
                 <div className="accounting-trend-list-v2">
-                  {accountingTrendBars.map((item: any) => (
+                  {accounting趨勢Bars.map((item: any) => (
                     <div key={item.label} className="accounting-trend-item-v2">
                       <div className="accounting-trend-top"><span>{item.label}</span><strong>${item.value}</strong></div>
                       <div className="accounting-trend-track"><div className="accounting-trend-fill" style={{ width: `${item.width}%` }} /></div>
@@ -159,9 +159,9 @@ export default function AccountingModule(props: any) {
         {accountingTab === 'ranking' && (
           <section className="accounting-ranking-layout-v2">
             <div className="card order-panel">
-              <div className="panel-head"><div><div className="panel-title">人員排名</div><div className="panel-desc">先做排行榜主區塊。</div></div><span className="badge badge-role">Ranking</span></div>
+              <div className="panel-head"><div><div className="panel-title">人員排名</div><div className="panel-desc">先做排行榜主區塊。</div></div><span className="badge badge-role">排行</span></div>
               <div className="ranking-list-v2">
-                {salesRanking.map((item: any, index: number) => (
+                {sales排行.map((item: any, index: number) => (
                   <div key={item.name} className="ranking-row-v2">
                     <div className="ranking-left"><div className="ranking-index">#{index + 1}</div><div><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.role}</div></div></div>
                     <div className="ranking-right"><strong>${item.amount}</strong><span>{item.orders} 筆</span></div>
@@ -170,7 +170,7 @@ export default function AccountingModule(props: any) {
               </div>
             </div>
             <div className="card order-panel">
-              <div className="panel-head"><div><div className="panel-title">熱銷商品</div><div className="panel-desc">與排行分開，避免視覺混在一起。</div></div><span className="badge badge-soft">Hot Products</span></div>
+              <div className="panel-head"><div><div className="panel-title">熱銷商品</div><div className="panel-desc">與排行分開，避免視覺混在一起。</div></div><span className="badge badge-soft">熱銷</span></div>
               <div className="ranking-list-v2 hot-product-list-v2">
                 {hotProductsBoard.map((item: any) => (
                   <div key={item.name} className="ranking-row-v2">

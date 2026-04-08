@@ -4607,3 +4607,120 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+/* ===== 第七版視覺統一修正 ===== */
+:root {
+  --vp-bg: #f7eef1;
+  --vp-surface: rgba(255,255,255,0.94);
+  --vp-surface-2: rgba(251,238,242,0.98);
+  --vp-line: rgba(176, 74, 115, 0.08);
+  --vp-line-strong: rgba(176, 74, 115, 0.16);
+  --vp-primary: #b84f73;
+  --vp-primary-strong: #963654;
+  --vp-pill: #f8dbe4;
+  --vp-shadow: 0 18px 42px rgba(143, 73, 99, 0.08);
+}
+body {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(219, 162, 181, 0.28), transparent 0 22%),
+    radial-gradient(circle at 82% 14%, rgba(228, 196, 167, 0.24), transparent 0 18%),
+    linear-gradient(180deg, #fcf4f6 0%, #f8eef1 48%, #f5eaee 100%);
+}
+.vp-shell { gap: 22px; padding: 18px; }
+.vp-sidebar {
+  position: sticky;
+  top: 18px;
+  height: auto;
+  align-self: start;
+  gap: 14px;
+}
+.vp-brand-panel, .vp-nav-panel, .vp-profile-panel, .vp-state-panel, .vp-switch-panel,
+.vp-header, .vp-overview-card, .vp-workspace, .section-intro-shell,
+.order-panel, .content-card, .workflow-card, .summary-card,
+.dashboard-side-card, .field-card, .shipping-row, .data-card, .profile-customer-card,
+.history-row, .warehouse-reminder-item, .profile-action-card-v2, .customers-preview-row,
+.customers-info-box, .accounting-proof-card, .accounting-command-pill, .accounting-console-mini,
+.staff-person-card-v2, .ranking-row-v2 {
+  border: none !important;
+  box-shadow: 0 14px 34px rgba(143, 73, 99, 0.06) !important;
+}
+.vp-brand-panel, .vp-nav-panel, .vp-profile-panel, .vp-state-panel, .vp-switch-panel, .vp-header,
+.vp-workspace, .section-intro-shell, .order-panel, .content-card, .workflow-card, .summary-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(252,242,246,0.97) 100%) !important;
+}
+.vp-overview-card:nth-child(1), .section-intro-main, .accounting-command-card, .staff-command-card, .profile-hero-card-v2,
+.dashboard-hero-card-v2, .warehouse-command-card, .product-hero-shell {
+  background: linear-gradient(135deg, rgba(255,250,251,0.98) 0%, rgba(250,230,237,0.98) 100%) !important;
+}
+.vp-overview-card:nth-child(2), .section-intro-stat-card.stat-1, .customers-preview-card, .warehouse-sop-card, .accounting-queue-card-v2 {
+  background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(247,237,241,0.98) 100%) !important;
+}
+.vp-overview-card:nth-child(3), .section-intro-stat-card.stat-2, .dashboard-note-card-v2, .staff-editor-panel-v2, .profile-quick-panel-v2 {
+  background: linear-gradient(135deg, rgba(255,253,249,0.98) 0%, rgba(248,239,233,0.98) 100%) !important;
+}
+.vp-overview-card:nth-child(4), .section-intro-stat-card.stat-3, .warehouse-query-panel, .accounting-insight-card-v2 {
+  background: linear-gradient(135deg, rgba(253,248,251,0.98) 0%, rgba(244,234,239,0.98) 100%) !important;
+}
+.vp-brand-title, .vp-header-title, .vp-workspace-title, .section-intro-title, .panel-title, .data-card-title,
+.profile-hero-name, .customers-hero-title, .dashboard-hero-title, .accounting-command-title, .staff-command-title {
+  color: #2f2027;
+}
+.vp-brand-kicker, .vp-panel-label, .vp-header-kicker, .vp-workspace-kicker, .section-intro-kicker,
+.section-intro-lead-label, .accounting-command-kicker, .staff-command-kicker, .customers-hero-kicker,
+.dashboard-hero-kicker, .dashboard-side-label {
+  color: #b25f7f;
+}
+.vp-header-desc, .section-intro-desc, .panel-desc, .customers-hero-desc, .accounting-command-desc, .dashboard-hero-desc, .data-card-subtitle, .history-meta,
+.shipping-meta, .warehouse-empty-state, .ranking-meta, .profile-customer-order-status {
+  color: #7f6a74;
+}
+.vp-nav-copy { gap: 2px; }
+.vp-nav-sub, .vp-brand-desc, .vp-profile-id, .vp-state-desc { font-size: 12px; }
+.vp-nav-button { padding: 12px 13px; border-radius: 18px; background: rgba(255,248,250,0.92); }
+.vp-nav-button.active { background: linear-gradient(135deg, #c05a7d 0%, #e87896 100%); box-shadow: 0 14px 26px rgba(192,90,125,.22); }
+.vp-nav-panel, .vp-profile-panel, .vp-state-panel, .vp-switch-panel { padding: 16px; border-radius: 24px; }
+.vp-brand-panel { padding: 18px; border-radius: 24px; }
+.vp-sidebar-stack { gap: 10px; }
+.vp-panel-label, .vp-header-kicker, .vp-workspace-kicker, .section-intro-kicker { letter-spacing: .12em; font-size: 10px; }
+.vp-brand-desc, .vp-header-desc { margin-top: 6px; }
+.vp-header, .vp-workspace { border-radius: 28px; }
+.vp-header { padding: 20px 24px; }
+.vp-overview-grid { gap: 14px; }
+.vp-overview-card { min-height: 116px; border-radius: 24px; }
+.section-intro-shell-v2 { gap: 16px; }
+.section-intro-shell-v2, .section-intro-main, .section-intro-stat-card, .section-intro-lead-card { border-radius: 24px; }
+.section-intro-main { padding: 22px; }
+.section-intro-stat-card { min-height: 118px; padding: 18px; }
+.section-intro-lead-card { background: rgba(255,255,255,0.66); }
+.field-card, .search-wrap, .shipping-row, .customers-preview-row, .customers-info-box, .accounting-proof-card,
+.accounting-console-mini, .accounting-command-pill, .history-row, .profile-customer-card, .ranking-row-v2, .staff-person-card-v2 {
+  background: rgba(255,255,255,0.62) !important;
+}
+.field-card input, .field-card select, .field-card textarea, .search-wrap input {
+  border: none !important;
+  background: rgba(255,255,255,0.72) !important;
+  box-shadow: inset 0 0 0 1px rgba(184, 74, 115, 0.08);
+}
+.search-wrap, .field-card { border-radius: 20px; }
+.order-panel, .content-card, .workflow-card, .summary-card { border-radius: 26px; }
+.panel-head { margin-bottom: 12px; }
+.accounting-ops-layout-v2 { grid-template-columns: 340px minmax(0, 1.32fr); }
+.accounting-ops-main { order: 1; }
+.accounting-ops-side { order: 2; }
+.accounting-console-card-v2 { min-height: 100%; }
+.accounting-filter-card-v2 .field-span-2 { grid-column: span 1; }
+.accounting-filter-grid-v2 { grid-template-columns: 1fr; }
+.accounting-queue-card-v2 .shipping-queue { max-height: 540px; }
+.accounting-console-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.compact-head .badge, .panel-head .badge.badge-role, .panel-head .badge.badge-soft { opacity: .88; }
+.inline-action-notice { border: none !important; }
+.vp-brand-mark { background: linear-gradient(135deg, #f6dce5 0%, #f2c4d3 100%); color: #9d3659; }
+.vp-switch-panel .role-switch-row, .vp-switch-panel .rank-switch-row { gap: 8px; }
+.role-switch-btn, .rank-switch-btn { padding: 10px 12px; border-radius: 14px; }
+@media (max-width: 1360px) {
+  .vp-shell { grid-template-columns: 290px minmax(0, 1fr); }
+}
+@media (max-width: 1180px) {
+  .accounting-ops-layout-v2 { grid-template-columns: 1fr; }
+}

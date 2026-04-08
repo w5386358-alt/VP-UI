@@ -36,7 +36,7 @@ export default function ProductsModule(props: any) {
 
       <section className="products-hero-grid">
         <div className="card products-hero-card">
-          <div className="products-hero-kicker">Product Studio</div>
+          <div className="products-hero-kicker">商品主控</div>
           <div className="products-hero-title">把商品卡、價格層級、編輯器切成新的工作區節奏。</div>
           <div className="products-hero-desc">先讓列表、摘要與右側編輯器有主次分工，之後再回接真實資料流。</div>
           <div className="products-hero-metrics">

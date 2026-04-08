@@ -78,7 +78,7 @@ export default function OrdersModule(props: any) {
       <section className="orders-showcase-grid">
         <div className="card orders-hero-panel">
           <div className="orders-hero-copy">
-            <div className="orders-kicker">Orders Workspace</div>
+            <div className="orders-kicker">訂購專區</div>
             <h2 className="orders-hero-title">重新拉成白紙版訂購工作區，先把商品、客戶、配送與結帳節奏切乾淨。</h2>
             <p className="orders-hero-desc">這裡先看操作路徑與閱讀分層。之後再把真實資料、會計與倉儲流程慢慢搬回來。</p>
           </div>

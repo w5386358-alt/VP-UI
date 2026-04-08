@@ -1298,12 +1298,12 @@ function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string
   return (
     <section className="section-intro-shell section-intro-shell-v2">
       <div className="section-intro-main">
-        <div className="section-intro-kicker">Workspace</div>
+        <div className="section-intro-kicker">作業區</div>
         <h2 className="section-intro-title">{title}</h2>
         <p className="section-intro-desc">{desc}</p>
         {lead ? (
           <div className="section-intro-lead-card">
-            <div className="section-intro-lead-label">Current Focus</div>
+            <div className="section-intro-lead-label">目前重點</div>
             <div className="section-intro-lead-value">{lead}</div>
           </div>
         ) : null}
@@ -1311,7 +1311,7 @@ function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string
       <div className="section-intro-stats-grid">
         {rest.map((item, index) => (
           <div key={item} className={`section-intro-stat-card stat-${index + 1}`}>
-            <div className="section-intro-stat-label">摘要 {index + 2}</div>
+            <div className="section-intro-stat-label">重點 {index + 2}</div>
             <div className="section-intro-stat-value">{item}</div>
           </div>
         ))}
@@ -3113,12 +3113,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <div>
             <div className="vp-brand-kicker">Velvet Pulse</div>
             <div className="vp-brand-title">八大區營運後台</div>
-            <div className="vp-brand-desc">先完成白紙 UI 架構，再逐步搬回資料與同步流程。</div>
+            <div className="vp-brand-desc">整合八大模組操作、資料、權限與流程。</div>
           </div>
         </div>
 
         <div className="vp-nav-panel card">
-          <div className="vp-panel-label">Navigation</div>
+          <div className="vp-panel-label">主選單</div>
           <div className="vp-nav-list">
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
@@ -3132,7 +3132,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   <span className="vp-nav-icon-wrap"><Icon className="nav-icon" /></span>
                   <span className="vp-nav-copy">
                     <span className="vp-nav-title">{item.label}</span>
-                    <span className="vp-nav-sub">模組工作區</span>
+                    <span className="vp-nav-sub">功能入口</span>
                   </span>
                   <ChevronRight className="small-icon vp-nav-arrow" />
                 </button>
@@ -3143,7 +3143,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="vp-sidebar-stack">
           <div className="vp-profile-panel card">
-            <div className="vp-panel-label">Current Session</div>
+            <div className="vp-panel-label">目前登入</div>
             <div className="vp-profile-name">{user.name}</div>
             <div className="vp-profile-id">{ROLE_LABEL[user.role]} · {RANK_DISPLAY[user.rankKey]} · {user.loginId}</div>
             <div className="vp-pill-row">
@@ -3153,7 +3153,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
 
           <div className="vp-state-panel card">
-            <div className="vp-panel-label">Data Source</div>
+            <div className="vp-panel-label">資料來源</div>
             <div className="vp-state-row">
               <div>
                 <div className="vp-state-title">{dataMode === 'firebase' ? 'Firebase' : 'Offline Mock'}</div>
@@ -3164,7 +3164,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
 
           <div className="vp-switch-panel card">
-            <div className="vp-panel-label">Preview Switch</div>
+            <div className="vp-panel-label">預覽切換</div>
             <div className="vp-switch-group">
               <div className="role-switch-label">角色預覽</div>
               <div className="role-switch-row">
@@ -3202,9 +3202,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <main className="vp-main">
         <header className="vp-header card">
           <div className="vp-header-copy">
-            <div className="vp-header-kicker">White Paper UI Rebuild</div>
+            <div className="vp-header-kicker">系統總覽</div>
             <h1 className="vp-header-title">{activeLabel}</h1>
-            <p className="vp-header-desc">現在先驗收版型、留白、卡片層級與操作路徑。同步資料與真邏輯之後再慢慢搬進來。</p>
+            <p className="vp-header-desc">集中處理八大模組操作、查詢與資料流程。</p>
           </div>
           <div className="vp-header-tools">
             <div className="search-wrap vp-search-wrap">
@@ -3219,36 +3219,36 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <section className="vp-overview-grid">
           <div className="card vp-overview-card">
-            <div className="vp-overview-label">模組狀態</div>
+            <div className="vp-overview-label">目前模組</div>
             <div className="vp-overview-value">{activeLabel}</div>
-            <div className="vp-overview-sub">目前檢視中的工作區</div>
+            <div className="vp-overview-sub">目前正在操作的區域</div>
           </div>
           <div className="card vp-overview-card">
             <div className="vp-overview-label">商品資料</div>
             <div className="vp-overview-value">{products.length}</div>
-            <div className="vp-overview-sub">白紙版保留後續搬運接口</div>
+            <div className="vp-overview-sub">商品資料與庫存基礎</div>
           </div>
           <div className="card vp-overview-card">
             <div className="vp-overview-label">客戶資料</div>
             <div className="vp-overview-value">{customers.length}</div>
-            <div className="vp-overview-sub">之後逐區接回真資料</div>
+            <div className="vp-overview-sub">客戶資料與業務名單</div>
           </div>
           <div className="card vp-overview-card">
             <div className="vp-overview-label">資料來源</div>
             <div className="vp-overview-value">{firebaseReady ? 'ONLINE' : 'MOCK'}</div>
-            <div className="vp-overview-sub">{firebaseReady ? '可開始對接' : '先做 UI 驗收'}</div>
+            <div className="vp-overview-sub">{firebaseReady ? '已連線同步' : '介面預覽中'}</div>
           </div>
         </section>
 
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
             <div>
-              <div className="vp-workspace-kicker">Workspace</div>
+              <div className="vp-workspace-kicker">作業區</div>
               <div className="vp-workspace-title">{activeLabel}</div>
             </div>
             <div className="vp-workspace-actions">
               <button type="button" className="ghost-button vp-tool-button"><Bell className="small-icon" />通知</button>
-              <button type="button" className="primary-button vp-tool-button"><Sparkles className="small-icon" />新殼模式</button>
+              <button type="button" className="primary-button vp-tool-button"><Sparkles className="small-icon" />系統模式</button>
             </div>
           </div>
 
@@ -3256,7 +3256,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             <div className="card loading-card">
               <div className="spinner" />
               <div className="loading-title">{bootMessage}</div>
-              <div className="loading-desc">正在載入白紙版 UI 工作區</div>
+              <div className="loading-desc">正在載入系統畫面</div>
             </div>
           ) : (
             <>
@@ -3266,8 +3266,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   <div className="banner-title">{bootMessage}</div>
                   <div className="banner-desc">
                     {firebaseReady
-                      ? '已讀取資料，可開始逐區回接。'
-                      : '目前以新 UI 驗收為主，之後再搬資料。'}
+                      ? '已讀取資料，可直接操作目前畫面。'
+                      : '目前顯示介面預覽資料，可再逐步補齊。'}
                   </div>
                 </div>
               </div>

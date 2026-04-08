@@ -6,16 +6,16 @@ export default function CustomersModule(props: any) {
     <>
       <SectionIntro
         title="客戶資料"
-        desc="依角色顯示完整或作業所需資料。"
+        desc="依權限顯示完整資料或作業所需資訊。"
         stats={[`可見 ${customers.length}`, `VIP / 代理 ${vipCustomers}`, customerScopeLabel]}
       />
 
       <section className="customers-shell">
         <aside className="customers-side-stack">
           <div className="card customers-hero-card">
-            <div className="customers-hero-kicker">Customer View</div>
+            <div className="customers-hero-kicker">客戶視圖</div>
             <div className="customers-hero-title">{customerViewMode === 'full' ? '完整客戶檔' : '作業精簡檔'}</div>
-            <div className="customers-hero-desc">目前登入者：{user.name}。這裡先把客戶資訊整理成白紙版新卡片，後續再回接真資料流程。</div>
+            <div className="customers-hero-desc">目前登入者：{user.name}。客戶資料集中顯示在同一區，方便查詢與管理。</div>
             <div className="customers-hero-pills">
               <span className="badge badge-soft">{customerScopeLabel}</span>
               <span className="badge badge-neutral">VIP / 代理 {vipCustomers}</span>
@@ -42,7 +42,7 @@ export default function CustomersModule(props: any) {
           <div className="customers-main-head">
             <div>
               <div className="panel-title">客戶列表</div>
-              <div className="panel-desc">新殼版本改成更乾淨的資料卡片與資訊分層。</div>
+              <div className="panel-desc">集中查看客戶名單與基本資訊。</div>
             </div>
             <span className="badge badge-role">{filteredCustomers.length} 筆</span>
           </div>
