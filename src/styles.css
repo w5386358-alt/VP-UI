@@ -3694,3 +3694,125 @@ textarea {
     grid-template-columns:1fr;
   }
 }
+
+
+.section-intro-shell-v2 { align-items: stretch; }
+.section-intro-lead-card {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(255,241,246,0.98) 100%);
+}
+.section-intro-lead-label, .accounting-command-kicker, .staff-command-kicker {
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #cb6a8c;
+}
+.section-intro-lead-value { margin-top: 8px; font-size: 20px; font-weight: 800; }
+.section-intro-stats-grid { align-content: stretch; }
+
+.dashboard-shell-v2 { display: grid; gap: 20px; }
+.dashboard-hero-grid-v2 { grid-template-columns: minmax(0, 1.45fr) 330px; }
+.dashboard-hero-card-v2 { min-height: 100%; }
+.dashboard-hero-metrics-v2 { margin-top: 26px; }
+.dashboard-side-stack-v2 { display: grid; gap: 14px; }
+.soft-pearl { background: linear-gradient(135deg, #f6fbff 0%, #ffffff 100%); }
+.dashboard-feature-grid-v2 { align-items: start; }
+.dashboard-note-card-v2 { min-height: 180px; }
+.dashboard-bottom-grid-v2 { grid-template-columns: 1.15fr 1fr; }
+
+.accounting-shell-v2, .staff-shell-v2, .profile-shell-v2 { display: grid; gap: 20px; }
+.accounting-command-card, .staff-command-card, .profile-hero-card-v2 {
+  padding: 24px;
+  border-radius: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .9fr);
+  gap: 18px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,244,248,0.97) 100%);
+}
+.accounting-command-title, .staff-command-title { margin: 8px 0 0; font-size: 28px; line-height: 1.2; }
+.accounting-command-desc { margin-top: 10px; color: #687488; line-height: 1.75; }
+.accounting-command-metrics, .staff-command-actions { display: grid; gap: 12px; align-content: start; }
+.accounting-command-pill, .staff-command-pill, .accounting-console-mini, .profile-hero-mini {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255,255,255,0.9);
+}
+.accounting-command-pill span, .staff-command-pill span, .accounting-console-mini span, .profile-hero-mini span { display:block; color: var(--muted); font-size: 12px; }
+.accounting-command-pill strong, .staff-command-pill strong, .accounting-console-mini strong, .profile-hero-mini strong { display:block; margin-top:6px; font-size: 20px; }
+.accounting-command-pill.accent, .accounting-console-mini.accent, .profile-hero-mini.accent { background: linear-gradient(135deg, var(--primary) 0%, #ff6f99 100%); color: white; border-color: transparent; }
+.accounting-command-pill.accent span, .accounting-console-mini.accent span, .profile-hero-mini.accent span { color: rgba(255,255,255,0.84); }
+.accounting-tab-row-v2 { margin-top: -4px; }
+.accounting-ops-layout-v2 { display:grid; grid-template-columns: minmax(0, 1.25fr) 380px; gap:20px; align-items:start; }
+.accounting-ops-main { display:grid; gap:20px; }
+.accounting-filter-grid-v2 { gap: 14px; }
+.accounting-queue-card-v2 .shipping-queue { max-height: 760px; }
+.accounting-console-overview { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+.accounting-proof-grid-v2 { grid-template-columns: 1fr; }
+.accounting-proof-card.interactive { cursor:pointer; text-align:left; }
+.accounting-proof-card { display:flex; gap:12px; align-items:flex-start; }
+.accounting-action-row-v2 { margin-top: 16px; flex-wrap: wrap; }
+.accounting-stats-layout-v2 { display:grid; grid-template-columns: minmax(0, 1.2fr) 320px; gap:20px; }
+.accounting-board-grid-v2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; }
+.accounting-board-card-v2 { padding: 20px; border-radius: 24px; }
+.accounting-board-kicker { font-size:12px; color: var(--muted); }
+.accounting-board-value { margin-top: 10px; font-size: 28px; font-weight: 800; }
+.accounting-board-sub { margin-top: 6px; color: var(--muted); }
+.accounting-trend-card-v2 { min-height: 100%; }
+.accounting-trend-list-v2 { display:grid; gap: 16px; }
+.accounting-insight-card-v2 { padding:22px; border-radius:28px; }
+.accounting-insight-title { margin: 12px 0 10px; font-size: 20px; font-weight: 800; }
+.accounting-ranking-layout-v2 { display:grid; grid-template-columns: 1.05fr .95fr; gap:20px; }
+.ranking-list-v2 { display:grid; gap:12px; }
+.ranking-row-v2 {
+  display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 18px; border:1px solid var(--line); border-radius:20px; background: rgba(255,255,255,.86);
+}
+.ranking-left, .ranking-right { display:flex; align-items:center; gap:12px; }
+.ranking-index { width: 36px; height: 36px; border-radius: 50%; display:grid; place-items:center; background: var(--primary-soft); color: var(--primary); font-weight: 800; }
+.ranking-name { font-weight: 800; }
+.ranking-meta { color: var(--muted); font-size: 13px; }
+.ranking-right { flex-direction: column; align-items:flex-end; gap:4px; }
+.hot-product-list-v2 .ranking-row-v2 { align-items:flex-start; }
+
+.staff-layout-v2 { display:grid; grid-template-columns: minmax(0, 1.1fr) 400px; gap:20px; align-items:start; }
+.staff-record-grid-v2 { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.staff-person-card-v2 { padding: 18px; border-radius: 24px; text-align:left; cursor:pointer; }
+.staff-person-top { display:flex; align-items:center; gap:14px; }
+.staff-person-avatar, .staff-editor-avatar, .profile-hero-avatar { width: 52px; height:52px; border-radius:18px; display:grid; place-items:center; font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #ffdce6 0%, #fff4f7 100%); color: #b72e62; }
+.staff-person-meta { flex:1; }
+.staff-person-tags { margin-top: 14px; display:flex; flex-wrap:wrap; gap:8px; }
+.staff-person-foot { margin-top: 14px; display:flex; justify-content:space-between; color: var(--muted); font-size: 13px; }
+.staff-editor-panel-v2 { padding-bottom: 18px; }
+.staff-editor-profile { display:flex; align-items:center; gap:14px; padding: 14px 0 4px; }
+.staff-editor-name { font-size: 22px; font-weight: 800; }
+.staff-editor-sub { color: var(--muted); }
+.staff-editor-state-row { margin-top: 14px; display:flex; gap:10px; flex-wrap:wrap; }
+.staff-permission-card { margin-top: 16px; padding: 16px; border:1px solid var(--line); border-radius: 22px; background: rgba(255,255,255,.88); }
+.staff-permission-head { display:flex; align-items:center; gap:8px; font-weight:800; margin-bottom:10px; }
+
+.profile-hero-card-v2 { align-items: center; }
+.profile-hero-identity { display:flex; align-items:center; gap:16px; }
+.profile-hero-name { font-size: 30px; font-weight: 800; }
+.profile-hero-id { margin-top:6px; color: var(--muted); }
+.profile-hero-side-grid { display:grid; gap:12px; }
+.profile-hero-mini { display:flex; align-items:center; gap:12px; }
+.profile-overview-grid-v2 { display:grid; grid-template-columns: minmax(0, 1.15fr) 360px; gap:20px; align-items:start; }
+.profile-summary-grid-v2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:16px; }
+.profile-quick-panel-v2 { min-height: 100%; }
+.profile-action-grid-v2 { margin-top: 10px; display:grid; gap:12px; }
+.profile-action-card-v2 { border-radius: 20px; border:1px solid var(--line); background: rgba(255,255,255,.85); }
+.profile-content-grid-v2 { display:grid; grid-template-columns: 1.05fr .95fr; gap:20px; align-items:start; }
+.profile-customer-card-v2, .history-row-v2 { border-radius: 22px; border:1px solid var(--line); background: rgba(255,255,255,.85); }
+.profile-customer-grid-v2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.profile-history-panel-v2 .history-list { max-height: 760px; overflow:auto; }
+
+@media (max-width: 1280px) {
+  .accounting-ops-layout-v2, .staff-layout-v2, .profile-content-grid-v2, .accounting-stats-layout-v2, .accounting-ranking-layout-v2, .dashboard-hero-grid-v2, .profile-overview-grid-v2, .accounting-command-card, .staff-command-card, .profile-hero-card-v2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 960px) {
+  .accounting-console-overview, .staff-record-grid-v2, .profile-summary-grid-v2, .profile-customer-grid-v2, .accounting-board-grid-v2 { grid-template-columns: 1fr; }
+}

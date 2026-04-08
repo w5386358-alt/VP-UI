@@ -1294,17 +1294,24 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
 }
 
 function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
+  const [lead, ...rest] = stats;
   return (
-    <section className="section-intro-shell">
+    <section className="section-intro-shell section-intro-shell-v2">
       <div className="section-intro-main">
         <div className="section-intro-kicker">Velvet Pulse Workspace</div>
         <h2 className="section-intro-title">{title}</h2>
         <p className="section-intro-desc">{desc}</p>
+        {lead ? (
+          <div className="section-intro-lead-card">
+            <div className="section-intro-lead-label">Current Focus</div>
+            <div className="section-intro-lead-value">{lead}</div>
+          </div>
+        ) : null}
       </div>
       <div className="section-intro-stats-grid">
-        {stats.map((item, index) => (
+        {rest.map((item, index) => (
           <div key={item} className={`section-intro-stat-card stat-${index + 1}`}>
-            <div className="section-intro-stat-label">Panel {String(index + 1).padStart(2, '0')}</div>
+            <div className="section-intro-stat-label">Panel {String(index + 2).padStart(2, '0')}</div>
             <div className="section-intro-stat-value">{item}</div>
           </div>
         ))}
