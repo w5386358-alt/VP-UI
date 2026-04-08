@@ -9,7 +9,7 @@ export default function DashboardModule(props: any) {
         <div className="card dashboard-hero-card dashboard-hero-card-v2">
           <div className="dashboard-hero-kicker">Overview Center</div>
           <h3 className="dashboard-hero-title">八大區白紙 UI 已經開始成形，現在改的是模組節奏，不是舊版換色。</h3>
-          <p className="dashboard-hero-desc">先把總覽做成偏品牌首頁的閱讀感：主敘事在左，運作狀態與摘要在右，下面再切成功能區。</p>
+          <p className="dashboard-hero-desc">先把儀表板做成偏品牌首頁的閱讀感：主敘事在左，運作狀態與摘要在右，下面再切成功能區。</p>
           <div className="dashboard-hero-metrics dashboard-hero-metrics-v2">
             <div className="dashboard-metric-pill"><span>訂單摘要</span><strong>{itemCount} 件商品</strong></div>
             <div className="dashboard-metric-pill"><span>配送方式</span><strong>{shippingMethod}</strong></div>

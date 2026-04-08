@@ -22,7 +22,7 @@ export default function AccountingModule(props: any) {
   return (
     <>
       <SectionIntro
-        title="會計中心"
+        title="會計"
         desc="這區先拉成偏控制台型格局，把收款主線、報表次要資訊、排名區塊拆開。"
         stats={[`待收款 ${pendingCount} 筆`, `已收款 ${receivedCount} 筆`, '報表 / 排名 / 熱銷']}
       />

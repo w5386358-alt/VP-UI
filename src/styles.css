@@ -4145,3 +4145,465 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ===== Final desktop visual unification pass ===== */
+:root {
+  --unify-white: rgba(255,255,255,0.94);
+  --unify-pink: rgba(255,244,248,0.92);
+  --unify-pink-strong: rgba(255,236,243,0.96);
+  --unify-cream: rgba(255,249,241,0.92);
+  --unify-shadow: 0 10px 28px rgba(216, 167, 186, 0.10);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 228, 238, 0.68), transparent 24%),
+    linear-gradient(180deg, #fff9fb 0%, #fff4f7 56%, #fffdfd 100%);
+}
+
+.card,
+.order-panel,
+.field-card,
+.catalog-card,
+.cart-item,
+.metric-box,
+.shipping-row,
+.warehouse-check-item,
+.warehouse-log-item,
+.warehouse-result-item,
+.accounting-mini-card,
+.ranking-item,
+.placeholder-bullet,
+.profile-customer-card,
+.profile-customer-card-v2,
+.profile-action-card,
+.history-row,
+.order-record-card,
+.stock-select-card,
+.product-admin-card,
+.quick-customer-card,
+.warehouse-check-summary-card,
+.customers-info-box,
+.staff-person-card-v2,
+.customers-preview-row,
+.products-side-row,
+.accounting-proof-card,
+.accounting-console-mini,
+.section-intro-lead-card,
+.section-intro-stat-card,
+.warehouse-hero-pill,
+.products-hero-pill,
+.customers-hero-card,
+.staff-command-pill,
+.dashboard-metric-pill,
+.profile-hero-mini,
+.vp-nav-button,
+.vp-overview-card,
+.vp-brand-panel,
+.vp-nav-panel,
+.vp-profile-panel,
+.vp-state-panel,
+.vp-switch-panel,
+.vp-header,
+.vp-workspace,
+.section-intro-shell {
+  border: 0 !important;
+  box-shadow: var(--unify-shadow) !important;
+}
+
+.vp-brand-panel,
+.vp-nav-panel,
+.vp-profile-panel,
+.vp-state-panel,
+.vp-switch-panel,
+.vp-header,
+.vp-overview-card,
+.vp-workspace,
+.section-intro-shell,
+.section-intro-main,
+.section-intro-lead-card,
+.section-intro-stat-card,
+.summary-card,
+.content-card,
+.workflow-card,
+.dashboard-note-card,
+.dashboard-bottom-card,
+.dashboard-hero-card,
+.dashboard-side-card,
+.products-hero-card,
+.products-hero-side,
+.warehouse-hero-card,
+.warehouse-hero-side,
+.accounting-command-card,
+.accounting-console-card-v2,
+.accounting-filter-card-v2,
+.accounting-queue-card-v2,
+.accounting-board-card-v2,
+.accounting-insight-card-v2,
+.staff-command-card,
+.staff-list-card-v2,
+.staff-editor-panel-v2,
+.profile-hero-card-v2,
+.profile-quick-panel-v2,
+.profile-customer-panel-v2,
+.profile-history-panel-v2,
+.customers-main-card,
+.customers-preview-card,
+.product-editor-panel,
+.products-board-card,
+.warehouse-filter-shell,
+.warehouse-detail-card,
+.warehouse-tool-card,
+.stock-snapshot-card {
+  background: var(--unify-white) !important;
+}
+
+.workflow-card.workflow-rose,
+.dashboard-side-card.soft-rose,
+.section-intro-main,
+.products-hero-card,
+.accounting-command-card,
+.staff-command-card,
+.profile-hero-card-v2,
+.customers-hero-card,
+.warehouse-hero-card {
+  background: linear-gradient(180deg, rgba(255,245,249,0.98) 0%, rgba(255,250,252,0.95) 100%) !important;
+}
+
+.workflow-card.workflow-gold,
+.dashboard-side-card.soft-gold,
+.section-intro-stat-card.stat-2,
+.warehouse-hero-side,
+.accounting-insight-card-v2,
+.profile-quick-panel-v2 {
+  background: linear-gradient(180deg, rgba(255,249,241,0.98) 0%, rgba(255,253,248,0.95) 100%) !important;
+}
+
+.workflow-card.workflow-pearl,
+.dashboard-side-card.soft-pearl,
+.section-intro-stat-card.stat-1,
+.products-hero-side,
+.customers-preview-card,
+.staff-editor-panel-v2,
+.product-editor-panel,
+.warehouse-tool-card {
+  background: linear-gradient(180deg, rgba(246,251,255,0.98) 0%, rgba(252,254,255,0.95) 100%) !important;
+}
+
+.section-intro-shell,
+.vp-header,
+.vp-workspace,
+.vp-overview-card,
+.dashboard-hero-card,
+.dashboard-side-card,
+.dashboard-note-card,
+.products-hero-card,
+.products-hero-side,
+.customers-hero-card,
+.customers-preview-card,
+.customers-main-card,
+.staff-command-card,
+.staff-list-card-v2,
+.staff-editor-panel-v2,
+.accounting-command-card,
+.accounting-console-card-v2,
+.accounting-filter-card-v2,
+.accounting-queue-card-v2,
+.accounting-board-card-v2,
+.accounting-insight-card-v2,
+.warehouse-hero-card,
+.warehouse-hero-side,
+.warehouse-filter-shell,
+.warehouse-detail-card,
+.warehouse-tool-card,
+.stock-snapshot-card,
+.profile-hero-card-v2,
+.profile-quick-panel-v2,
+.profile-customer-panel-v2,
+.profile-history-panel-v2 {
+  border-radius: 26px !important;
+}
+
+.vp-header,
+.section-intro-shell,
+.vp-overview-grid,
+.dashboard-hero-grid-v2,
+.dashboard-feature-grid-v2,
+.dashboard-bottom-grid-v2,
+.order-layout,
+.warehouse-layout,
+.accounting-ops-layout-v2,
+.accounting-stats-layout-v2,
+.accounting-ranking-layout-v2,
+.profile-content-grid-v2,
+.profile-overview-grid-v2,
+.product-admin-layout,
+.staff-layout-v2,
+.customers-shell {
+  gap: 18px !important;
+}
+
+.vp-workspace {
+  padding: 28px !important;
+  background: linear-gradient(180deg, rgba(255,252,253,0.96) 0%, rgba(255,246,249,0.96) 100%) !important;
+}
+
+.vp-workspace-top {
+  padding-bottom: 16px;
+  margin-bottom: 22px;
+  border-bottom: 0;
+}
+
+.section-intro-shell {
+  grid-template-columns: minmax(0, 1.9fr) minmax(280px, 0.95fr);
+  align-items: stretch;
+  padding: 14px;
+}
+
+.section-intro-main,
+.section-intro-stat-card,
+.section-intro-lead-card {
+  border-radius: 22px;
+}
+
+.section-intro-main {
+  padding: 24px 26px;
+  min-height: 172px;
+}
+
+.section-intro-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.section-intro-lead-card,
+.section-intro-stat-card {
+  padding: 20px;
+  min-height: 79px;
+  display: grid;
+  align-content: end;
+}
+
+.section-intro-title,
+.panel-title,
+.workflow-title,
+.dashboard-hero-title,
+.products-hero-title,
+.warehouse-hero-title,
+.staff-command-title,
+.profile-hero-name,
+.data-card-title {
+  letter-spacing: -0.02em;
+}
+
+.section-intro-title {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.section-intro-desc,
+.panel-desc,
+.dashboard-hero-desc,
+.products-hero-desc,
+.warehouse-hero-desc,
+.customers-hero-desc,
+.workflow-desc,
+.profile-customer-order-status,
+.data-card-subtitle,
+.shipping-meta,
+.query-value,
+.flow-desc,
+.customers-preview-meta,
+.products-side-meta,
+.vp-brand-desc,
+.vp-header-desc,
+.vp-overview-sub {
+  line-height: 1.65;
+}
+
+.vp-brand-title,
+.vp-header-title,
+.topbar-title {
+  font-size: 30px;
+}
+
+.vp-overview-grid {
+  align-items: stretch;
+}
+
+.vp-overview-card,
+.summary-card,
+.dashboard-side-card,
+.dashboard-note-card,
+.accounting-board-card-v2 {
+  padding: 18px 20px !important;
+}
+
+.field-card {
+  background: rgba(255,250,252,0.95);
+  border-radius: 18px;
+  padding: 12px 14px;
+}
+
+.field-card input,
+.field-card select,
+.field-card textarea,
+.search-wrap input,
+.vp-search-wrap input {
+  border: 0 !important;
+  background: rgba(255,255,255,0.92) !important;
+  box-shadow: inset 0 0 0 1px rgba(239, 214, 224, 0.75);
+}
+
+.shipping-row,
+.order-record-card,
+.warehouse-check-item,
+.warehouse-log-item,
+.warehouse-result-item,
+.profile-customer-card-v2,
+.history-row,
+.product-admin-card,
+.staff-person-card-v2,
+.quick-customer-card,
+.customers-preview-row,
+.products-side-row,
+.accounting-proof-card,
+.accounting-console-mini,
+.metric-box,
+.cart-item,
+.catalog-card,
+.data-card {
+  background: rgba(255,255,255,0.86) !important;
+}
+
+.metric-box,
+.accounting-console-mini,
+.profile-hero-mini,
+.warehouse-hero-pill,
+.products-hero-pill,
+.dashboard-metric-pill,
+.staff-command-pill,
+.customers-info-box {
+  border-radius: 18px;
+  padding: 14px 16px;
+}
+
+.badge {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.badge-soft { background: rgba(235,91,139,0.10); color: #c8386b; }
+.badge-role { background: rgba(96,146,210,0.12); color: #396ea6; }
+.badge-success { background: rgba(57,170,113,0.12); color: #24784d; }
+.badge-danger { background: rgba(235,91,139,0.12); color: #c53e6d; }
+.badge-neutral { background: rgba(91,103,121,0.10); color: #5b6779; }
+
+.vp-nav-button,
+.nav-button,
+.accounting-tab,
+.warehouse-tab,
+.shipping-chip,
+.shortcut-button,
+.ghost-button,
+.primary-button,
+.mobile-nav-btn {
+  box-shadow: none !important;
+}
+
+.vp-nav-button,
+.nav-button {
+  min-height: 56px;
+}
+
+.vp-nav-button.active,
+.nav-button.active,
+.accounting-tab.active,
+.warehouse-tab.active,
+.shortcut-button.active,
+.primary-button {
+  background: linear-gradient(135deg, #ea5a8b 0%, #f27ea3 100%) !important;
+}
+
+.inline-action-notice,
+.banner-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 18px;
+}
+
+.warehouse-reminder-item,
+.stack-list > div,
+.profile-action-card-v2,
+.profile-customer-order,
+.profile-customer-head,
+.ranking-row-v2,
+.products-side-row,
+.customers-preview-row {
+  border-radius: 16px;
+}
+
+.ranking-row-v2,
+.profile-action-card-v2,
+.warehouse-reminder-item,
+.profile-customer-order,
+.profile-customer-head,
+.stack-list > div {
+  background: rgba(255,255,255,0.66);
+}
+
+.dashboard-feature-main,
+.dashboard-feature-side,
+.order-main,
+.order-side,
+.warehouse-main,
+.warehouse-side,
+.accounting-ops-main,
+.accounting-ops-side,
+.profile-content-grid-v2 > *,
+.staff-main-v2,
+.staff-side-v2 {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-feature-side,
+.accounting-ops-side,
+.staff-side-v2 {
+  align-content: start;
+}
+
+.topbar,
+.customers-main-head,
+.panel-head,
+.vp-workspace-top {
+  align-items: center;
+}
+
+.panel-head {
+  margin-bottom: 14px;
+}
+
+@media (max-width: 1180px) {
+  .section-intro-shell,
+  .dashboard-hero-grid-v2,
+  .dashboard-feature-grid-v2,
+  .dashboard-bottom-grid-v2,
+  .accounting-ops-layout-v2,
+  .accounting-stats-layout-v2,
+  .accounting-ranking-layout-v2,
+  .customers-shell,
+  .staff-layout-v2,
+  .profile-content-grid-v2,
+  .profile-overview-grid-v2,
+  .warehouse-layout,
+  .product-admin-layout,
+  .vp-overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .section-intro-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

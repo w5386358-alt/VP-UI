@@ -277,10 +277,10 @@ function buildRecentWarehouseLogs(logs: InventoryLog[]) {
 }
 
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: 'dashboard', label: '總覽', icon: BarChart3 },
+  { key: 'dashboard', label: '儀表板', icon: BarChart3 },
   { key: 'orders', label: '訂購', icon: ShoppingCart },
   { key: 'inventory', label: '倉儲', icon: Warehouse },
-  { key: 'accounting', label: '會計中心', icon: CreditCard },
+  { key: 'accounting', label: '會計', icon: CreditCard },
   { key: 'products', label: '商品', icon: Package },
   { key: 'customers', label: '客戶', icon: Users },
   { key: 'staff', label: '人員', icon: UserCog },
@@ -597,7 +597,7 @@ const workflowCards: WorkflowCard[] = [
     bullets: ['商品列表 / 分類 / 搜尋', '客戶資料 / 配送欄位', '訂單主檔 / 訂單明細'],
   },
   {
-    title: '會計中心',
+    title: '會計',
     desc: '收款、退款與報表。',
     accent: 'gold',
     icon: CreditCard,
@@ -1298,7 +1298,7 @@ function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string
   return (
     <section className="section-intro-shell section-intro-shell-v2">
       <div className="section-intro-main">
-        <div className="section-intro-kicker">Velvet Pulse Workspace</div>
+        <div className="section-intro-kicker">Workspace</div>
         <h2 className="section-intro-title">{title}</h2>
         <p className="section-intro-desc">{desc}</p>
         {lead ? (
@@ -1311,7 +1311,7 @@ function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string
       <div className="section-intro-stats-grid">
         {rest.map((item, index) => (
           <div key={item} className={`section-intro-stat-card stat-${index + 1}`}>
-            <div className="section-intro-stat-label">Panel {String(index + 2).padStart(2, '0')}</div>
+            <div className="section-intro-stat-label">摘要 {index + 2}</div>
             <div className="section-intro-stat-value">{item}</div>
           </div>
         ))}
@@ -3311,7 +3311,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <div className="mobile-nav">
           {[
-            { key: 'dashboard' as NavKey, label: '總覽', icon: BarChart3 },
+            { key: 'dashboard' as NavKey, label: '儀表板', icon: BarChart3 },
             { key: 'orders' as NavKey, label: '訂購', icon: ShoppingCart },
             { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
             { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
