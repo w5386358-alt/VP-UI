@@ -146,7 +146,7 @@ export default function OrdersModule(props: any) {
 
             <div className="catalog-grid orders-catalog-grid">
               {filteredOrderProducts.map((item: any) => (
-                <div key={item.id} className="catalog-card orders-product-card">
+                <div key={item.id} className="catalog-card orders-product-card full-bleed-card">
                   <div className="catalog-image-slot catalog-image-slot-full">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="catalog-image" />
@@ -157,26 +157,28 @@ export default function OrdersModule(props: any) {
                       </div>
                     )}
                   </div>
-                  <div className="catalog-meta-row">
-                    <span className="data-code">{item.code}</span>
-                    <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>{item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}</span>
-                  </div>
-                  <div className="catalog-name">{item.name}</div>
-                  <div className="catalog-desc">{item.category} / 客顯原價，系統顯示 {priceTierLabel}</div>
-                  <div className="catalog-footer">
-                    <div>
-                      <div className="mini-label">原價 ${item.originalPrice ?? item.price}</div>
-                      <div className="catalog-price">${item.price}</div>
-                      <div className="mini-label">{priceTierLabel}</div>
+                  <div className="orders-product-body">
+                    <div className="catalog-meta-row">
+                      <span className="data-code">{item.code}</span>
+                      <span className={`badge ${item.stock <= 10 ? 'badge-danger' : 'badge-success'}`}>{item.stock <= 10 ? `低庫存 ${item.stock}` : `庫存 ${item.stock}`}</span>
                     </div>
-                    <button
-                      type="button"
-                      className="mini-add-btn"
-                      onClick={(event) => handleAddToCart(item, event)}
-                      disabled={!item.enabled || item.stock <= 0}
-                    >
-                      加入
-                    </button>
+                    <div className="catalog-name">{item.name}</div>
+                    <div className="catalog-desc">{item.category} / 客顯原價，系統顯示 {priceTierLabel}</div>
+                    <div className="catalog-footer">
+                      <div>
+                        <div className="mini-label">原價 ${item.originalPrice ?? item.price}</div>
+                        <div className="catalog-price">${item.price}</div>
+                        <div className="mini-label">{priceTierLabel}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="mini-add-btn"
+                        onClick={(event) => handleAddToCart(item, event)}
+                        disabled={!item.enabled || item.stock <= 0}
+                      >
+                        加入
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
