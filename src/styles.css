@@ -3816,3 +3816,332 @@ textarea {
 @media (max-width: 960px) {
   .accounting-console-overview, .staff-record-grid-v2, .profile-summary-grid-v2, .profile-customer-grid-v2, .accounting-board-grid-v2 { grid-template-columns: 1fr; }
 }
+
+
+/* === 桌機精修版：一致性 / 列表表格 / 互動狀態收尾 === */
+.main-content {
+  padding: 26px 26px 108px;
+}
+
+.vp-module-body,
+.dashboard-shell-v2,
+.accounting-shell-v2,
+.staff-shell-v2,
+.profile-shell-v2,
+.customers-shell,
+.product-admin-layout,
+.warehouse-layout,
+.orders-workspace-grid {
+  gap: 22px;
+}
+
+.card,
+.content-card,
+.order-panel,
+.section-intro-shell,
+.dashboard-side-card,
+.dashboard-note-card,
+.customers-hero-card,
+.customers-preview-card,
+.customers-main-card,
+.orders-hero-panel,
+.orders-side-surface,
+.orders-quick-panel,
+.orders-brief-panel,
+.products-hero-card,
+.products-hero-side,
+.products-board-card,
+.products-editor-shell,
+.warehouse-hero-card,
+.warehouse-hero-side,
+.warehouse-filter-shell,
+.warehouse-queue-card,
+.warehouse-command-panel,
+.accounting-command-card,
+.accounting-filter-card-v2,
+.accounting-queue-card-v2,
+.accounting-console-card-v2,
+.staff-command-card,
+.staff-list-card-v2,
+.staff-editor-panel-v2,
+.profile-hero-card-v2,
+.profile-quick-panel-v2,
+.profile-customer-panel-v2,
+.profile-history-panel-v2 {
+  box-shadow: 0 20px 50px rgba(219,166,185,.12);
+}
+
+.panel-head,
+.compact-head,
+.customers-main-head,
+.data-card-top,
+.staff-person-top,
+.profile-customer-head,
+.shipping-row,
+.history-row,
+.history-row-v2,
+.orders-preview-row,
+.products-side-row,
+.customers-preview-row,
+.ranking-row-v2 {
+  position: relative;
+}
+
+.panel-head::after,
+.customers-main-head::after,
+.compact-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(235,195,211,.95), rgba(235,195,211,.2), transparent);
+}
+
+.order-panel,
+.content-card,
+.section-intro-main,
+.section-intro-stat-card,
+.dashboard-metric-pill,
+.orders-mini-stat,
+.orders-side-pill,
+.orders-brief-item,
+.products-hero-pill,
+.warehouse-hero-pill,
+.accounting-command-pill,
+.staff-command-pill,
+.accounting-console-mini,
+.profile-hero-mini,
+.metric-box,
+.customers-info-box,
+.staff-permission-card,
+.profile-action-card-v2,
+.profile-customer-card-v2,
+.history-row-v2,
+.ranking-row-v2 {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.order-panel:hover,
+.content-card:hover,
+.profile-action-card-v2:hover,
+.profile-customer-card-v2:hover,
+.history-row-v2:hover,
+.ranking-row-v2:hover,
+.shipping-row:hover,
+.catalog-card:hover,
+.products-feature-card:hover,
+.staff-person-card-v2:hover,
+.customer-permission-card.refined-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 48px rgba(219,166,185,.14);
+  border-color: rgba(235,145,178,.55);
+}
+
+.search-wrap,
+.vp-search-wrap,
+.field-card,
+.fake-field {
+  border-radius: 20px;
+  border-color: rgba(233,196,211,.82);
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,249,251,.9));
+}
+
+.search-wrap input,
+.vp-search-wrap input,
+.field-card input,
+.field-card select,
+.field-card textarea {
+  color: #273243;
+}
+
+.search-wrap:focus-within,
+.vp-search-wrap:focus-within,
+.field-card:focus-within {
+  border-color: rgba(219,71,123,.45);
+  box-shadow: 0 0 0 4px rgba(235,91,139,.08);
+}
+
+.badge {
+  min-height: 30px;
+  padding: 7px 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+
+.primary-button,
+.ghost-button,
+.shortcut-button,
+.mini-add-btn,
+.drawer-close-button,
+.filter-chip,
+.accounting-tab,
+.warehouse-tab,
+.mobile-nav-btn,
+.nav-button {
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease, color .16s ease;
+}
+
+.primary-button:hover,
+.shortcut-button:hover,
+.mini-add-btn:hover,
+.filter-chip.active,
+.accounting-tab.active,
+.warehouse-tab.active,
+.mobile-nav-btn.active,
+.nav-button.active {
+  box-shadow: 0 14px 30px rgba(235,91,139,.18);
+}
+
+.ghost-button:hover,
+.shortcut-button:hover,
+.filter-chip:hover,
+.accounting-tab:hover,
+.warehouse-tab:hover,
+.history-detail-btn:hover {
+  border-color: rgba(219,71,123,.35);
+  background: rgba(255,243,247,.96);
+}
+
+.record-grid,
+.catalog-grid,
+.product-admin-grid,
+.staff-record-grid-v2,
+.profile-customer-grid-v2,
+.customer-grid.refined,
+.accounting-board-grid-v2,
+.warehouse-stock-card-grid,
+.dashboard-bottom-grid,
+.dashboard-feature-grid,
+.vp-overview-grid {
+  align-items: stretch;
+}
+
+.catalog-card,
+.products-feature-card,
+.staff-person-card-v2,
+.customer-permission-card.refined-card,
+.profile-customer-card-v2,
+.dashboard-bottom-card,
+.accounting-board-card-v2 {
+  min-height: 100%;
+}
+
+.catalog-card,
+.products-feature-card,
+.staff-person-card-v2,
+.customer-permission-card.refined-card,
+.shipping-row,
+.history-row-v2,
+.ranking-row-v2,
+.profile-customer-card-v2,
+.orders-preview-row,
+.products-side-row,
+.customers-preview-row {
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(233,196,211,.75);
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,248,250,.9));
+}
+
+.shipping-queue,
+.history-list,
+.orders-side-preview-list,
+.products-side-list,
+.customers-preview-list,
+.ranking-list-v2,
+.accounting-trend-list-v2 {
+  gap: 12px;
+}
+
+.shipping-row,
+.history-row-v2,
+.ranking-row-v2 {
+  padding: 16px 18px;
+  border-radius: 22px;
+}
+
+.shipping-row.selected,
+.accounting-select-row.selected,
+.products-feature-card.selected,
+.staff-person-card-v2.selected {
+  border-color: rgba(219,71,123,.55);
+  box-shadow: 0 0 0 4px rgba(235,91,139,.08), 0 18px 42px rgba(219,166,185,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,240,246,.94));
+}
+
+.panel-title,
+.data-card-title,
+.dashboard-note-title,
+.profile-action-title,
+.profile-customer-name,
+.orders-preview-name,
+.products-side-name,
+.customers-preview-name,
+.ranking-name {
+  letter-spacing: -.01em;
+}
+
+.panel-desc,
+.data-card-subtitle,
+.profile-action-desc,
+.shipping-meta,
+.history-meta,
+.orders-preview-meta,
+.products-side-meta,
+.customers-preview-meta,
+.ranking-meta {
+  line-height: 1.7;
+}
+
+.metric-box {
+  min-height: 86px;
+  border-radius: 20px;
+  border: 1px solid rgba(233,196,211,.74);
+  background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,248,250,.9));
+}
+
+.sticky-panel {
+  top: 22px;
+}
+
+.table-like-head,
+.order-toolbar-row,
+.history-toolbar,
+.accounting-tab-row-v2,
+.warehouse-primary-tabs,
+.products-chip-strip,
+.chip-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.inline-action-notice {
+  border-radius: 18px;
+  font-weight: 800;
+}
+
+.inline-action-notice.success,
+.inline-action-notice.ok {
+  background: linear-gradient(180deg, #f0fff6, #e8fff1);
+}
+
+.inline-action-notice.error,
+.inline-action-notice.danger {
+  background: linear-gradient(180deg, #fff4f6, #fff0f3);
+}
+
+@media (min-width: 1200px) {
+  .catalog-grid.orders-catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .products-card-grid,
+  .staff-record-grid-v2,
+  .customer-grid.refined,
+  .profile-customer-grid-v2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
