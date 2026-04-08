@@ -1,4 +1,4 @@
-import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3 } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -21,8 +21,6 @@ export default function InventoryModule(props: any) {
     setWarehouseDateStart,
     warehouseDateEnd,
     setWarehouseDateEnd,
-    shippingChecklist,
-    warehouseSopPoints,
     warehouseReminderItems,
     handleWarehouseShip,
     handleWarehouseReturn,
@@ -39,7 +37,6 @@ export default function InventoryModule(props: any) {
     warehouseExpectedScan,
     warehouseScanValidation,
     handleWarehousePrint,
-    inventoryFlow,
     stockSnapshot,
     selectedStockCode,
     setSelectedStockCode,
@@ -65,17 +62,46 @@ export default function InventoryModule(props: any) {
         stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
       />
 
-      <div className="warehouse-tab-row">
+      <section className="warehouse-hero-grid">
+        <div className="card warehouse-hero-card">
+          <div className="warehouse-hero-kicker">Warehouse Command</div>
+          <div className="warehouse-hero-title">把出貨、庫存、查詢拆成更明確的作業控制台。</div>
+          <div className="warehouse-hero-desc">這裡先優先做工作區節奏與資訊分層，之後再逐步接回完整 SOP、同步與資料流。</div>
+          <div className="warehouse-hero-metrics">
+            <div className="warehouse-hero-pill"><span>待出貨</span><strong>{shippingQueue.length}</strong></div>
+            <div className="warehouse-hero-pill"><span>低庫存</span><strong>{lowStockCount}</strong></div>
+            <div className="warehouse-hero-pill accent"><span>查詢模式</span><strong>{warehouseQueryMode}</strong></div>
+          </div>
+        </div>
+        <div className="card warehouse-hero-side">
+          <div className="panel-head compact-head">
+            <div>
+              <div className="panel-title">今日提醒</div>
+              <div className="panel-desc">先把作業提示獨立成側邊摘要。</div>
+            </div>
+            <BellRing className="small-icon" />
+          </div>
+          <div className="warehouse-reminder-stack compact">
+            {warehouseReminderItems.slice(0, 3).map((item: any, index: number) => (
+              <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
+                <BellRing className="small-icon" />
+                <span>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="warehouse-tab-row warehouse-primary-tabs">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
         <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}><Boxes className="small-icon" />庫存區</button>
         <button type="button" className={`warehouse-tab ${warehouseTab === 'query' ? 'active' : ''}`} onClick={() => setWarehouseTab('query')}><Search className="small-icon" />查詢區</button>
       </div>
 
-
       {warehouseTab === 'shipping' && (
-        <section className="warehouse-layout">
+        <section className="warehouse-layout warehouse-command-layout">
           <div className="warehouse-main warehouse-stack">
-            <div className="card order-panel">
+            <div className="card order-panel warehouse-filter-shell">
               <div className="panel-head">
                 <div>
                   <div className="panel-title">待出貨訂單</div>
@@ -84,14 +110,23 @@ export default function InventoryModule(props: any) {
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
               </div>
 
-              <div className="accounting-filter-grid warehouse-filter-grid">
+              <div className="accounting-filter-grid warehouse-filter-grid warehouse-filter-shell-grid">
                 <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶</span><input value={warehouseKeyword} onChange={(e) => setWarehouseKeyword(e.target.value)} placeholder="輸入訂單編號、客戶姓名、收款狀態、出貨狀態" /></label>
                 <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />開始日期</span><input type="date" value={warehouseDateStart} onChange={(e) => setWarehouseDateStart(e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />結束日期</span><input type="date" value={warehouseDateEnd} onChange={(e) => setWarehouseDateEnd(e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />收款狀態</span><select value={warehousePaymentFilter} onChange={(e) => setWarehousePaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
                 <label className="field-card"><span className="field-label"><Truck className="small-icon" />出貨狀態</span><select value={warehouseShippingFilter} onChange={(e) => setWarehouseShippingFilter(e.target.value)}><option value="全部">全部</option><option value="待出貨">待出貨</option><option value="理貨中">理貨中</option><option value="已出貨">已出貨</option><option value="換貨待出庫">換貨待出庫</option><option value="已退貨">已退貨</option></select></label>
               </div>
+            </div>
 
+            <div className="card order-panel warehouse-queue-card">
+              <div className="panel-head compact-head">
+                <div>
+                  <div className="panel-title">訂單清單</div>
+                  <div className="panel-desc">左側看清單，右側做驗證與出貨。</div>
+                </div>
+                <Layers3 className="small-icon" />
+              </div>
               <div className="shipping-queue">
                 {filteredWarehouseQueue.map((item: any) => (
                   <button key={item.orderNo} type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
@@ -109,11 +144,10 @@ export default function InventoryModule(props: any) {
                 {!filteredWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
               </div>
             </div>
-
           </div>
 
           <div className="warehouse-side warehouse-stack">
-            <div className="card order-panel sticky-panel warehouse-side-panel">
+            <div className="card order-panel sticky-panel warehouse-side-panel warehouse-command-panel">
               <div className="warehouse-side-section">
                 <div className="warehouse-card-head">
                   <div>
@@ -134,7 +168,7 @@ export default function InventoryModule(props: any) {
                   </div>
                 </div>
 
-                <div className="warehouse-form-grid">
+                <div className="warehouse-form-grid warehouse-command-fields">
                   <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '未選擇'}</strong></div>
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
                   <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
@@ -169,32 +203,13 @@ export default function InventoryModule(props: any) {
                 </div>
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
-
-              <div className="warehouse-side-section warehouse-reminder-panel">
-                <div className="panel-head compact-head">
-                  <div>
-                    <div className="panel-title">出貨狀態</div>
-                    <div className="panel-desc">查看本次出貨狀態。</div>
-                  </div>
-                  <BellRing className="small-icon" />
-                </div>
-                <div className="stack-list compact warehouse-reminder-stack">
-                  {warehouseReminderItems.map((item: any, index: number) => (
-                    <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
-                      <BellRing className="small-icon" />
-                      <span>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="warehouse-reminder-footer">請依狀態完成作業。</div>
-              </div>
             </div>
           </div>
         </section>
       )}
 
       {warehouseTab === 'stock' && (
-        <section className="warehouse-stack-section">
+        <section className="warehouse-stack-section warehouse-stock-shell">
           <div className="card order-panel warehouse-stock-overview-card">
             <div className="panel-head compact-head">
               <div>
@@ -203,7 +218,7 @@ export default function InventoryModule(props: any) {
               <span className="badge badge-soft">共 {stockSnapshot.length} 項</span>
             </div>
 
-            <div className="warehouse-stock-grid compact">
+            <div className="warehouse-stock-grid compact warehouse-stock-card-grid">
               {stockSnapshot.map((item: any) => (
                 <button key={item.code} type="button" className={`card stock-snapshot-card compact accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
                   <div className="stock-card-top compact">
@@ -229,7 +244,7 @@ export default function InventoryModule(props: any) {
             </div>
           </div>
 
-          <div className="card warehouse-tool-card">
+          <div className="card warehouse-tool-card warehouse-inbound-card">
             <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><Boxes className="small-icon" /></div>
             <div className="warehouse-form-grid">
               <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
@@ -248,7 +263,7 @@ export default function InventoryModule(props: any) {
             {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
           </div>
 
-          <div className="card order-panel">
+          <div className="card order-panel warehouse-log-shell">
             <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div></div></div>
             <div className="warehouse-log-list">
               {warehouseRecentLogs.map((item: any) => (
@@ -263,12 +278,12 @@ export default function InventoryModule(props: any) {
       )}
 
       {warehouseTab === 'query' && (
-        <section className="warehouse-stack-section">
-          <div className="warehouse-query-grid">
+        <section className="warehouse-stack-section warehouse-query-shell">
+          <div className="warehouse-query-grid warehouse-query-examples-grid">
             {queryExamples.map((item: any) => <div key={item.label} className="card query-card"><div className="query-label">{item.label}</div><div className="query-value">{item.value}</div></div>)}
           </div>
 
-          <div className="warehouse-tool-grid">
+          <div className="warehouse-tool-grid warehouse-query-panels">
             <div className="card warehouse-tool-card">
               <div className="warehouse-card-head"><div><div className="flow-title">庫存查詢</div></div><Search className="small-icon" /></div>
               <div className="warehouse-tab-row warehouse-query-mode-row">

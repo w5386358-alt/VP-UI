@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
-import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X } from 'lucide-react';
+import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, Sparkles, PackageCheck, Layers3 } from 'lucide-react';
 
 export default function OrdersModule(props: any) {
   const {
     itemCount, shippingMethod, grandTotal,
-    user, orderCategoryChips, orderCategory, setOrderCategory,
+    orderCategoryChips, orderCategory, setOrderCategory,
     filteredOrderProducts, addToCart,
     quickCustomerCards, applyQuickCustomer,
     customerName, setCustomerName, customerPhone, setCustomerPhone, customerAddress, setCustomerAddress,
@@ -58,6 +58,9 @@ export default function OrdersModule(props: any) {
     createOrderRecord();
   }
 
+  const previewCustomers = quickCustomerCards.slice(0, 3);
+  const previewProducts = filteredOrderProducts.slice(0, 3);
+
   return (
     <>
       <button
@@ -72,13 +75,63 @@ export default function OrdersModule(props: any) {
         <span className="floating-cart-count">{itemCount}</span>
       </button>
 
-      <section className="order-layout order-layout-drawer">
+      <section className="orders-showcase-grid">
+        <div className="card orders-hero-panel">
+          <div className="orders-hero-copy">
+            <div className="orders-kicker">Orders Workspace</div>
+            <h2 className="orders-hero-title">重新拉成白紙版訂購工作區，先把商品、客戶、配送與結帳節奏切乾淨。</h2>
+            <p className="orders-hero-desc">這裡先看操作路徑與閱讀分層。之後再把真實資料、會計與倉儲流程慢慢搬回來。</p>
+          </div>
+          <div className="orders-hero-cards">
+            <div className="orders-mini-stat">
+              <span>目前商品</span>
+              <strong>{filteredOrderProducts.length}</strong>
+            </div>
+            <div className="orders-mini-stat">
+              <span>購物車</span>
+              <strong>{itemCount} 件</strong>
+            </div>
+            <div className="orders-mini-stat accent">
+              <span>預估總額</span>
+              <strong>${grandTotal}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="card orders-side-surface">
+          <div className="panel-head compact-head">
+            <div>
+              <div className="panel-title">本次設定</div>
+              <div className="panel-desc">先把購物流程拆成摘要區。</div>
+            </div>
+            <Layers3 className="small-icon" />
+          </div>
+          <div className="orders-side-stats">
+            <div className="orders-side-pill"><span>價格層級</span><strong>{priceTierLabel}</strong></div>
+            <div className="orders-side-pill"><span>配送方式</span><strong>{shippingMethod}</strong></div>
+            <div className="orders-side-pill"><span>折扣模式</span><strong>{discountMode || '未設定'}</strong></div>
+          </div>
+          <div className="orders-side-preview-list">
+            {previewProducts.map((item: any) => (
+              <div key={item.id} className="orders-preview-row">
+                <div>
+                  <div className="orders-preview-name">{item.name}</div>
+                  <div className="orders-preview-meta">{item.category} / {item.code}</div>
+                </div>
+                <strong>${item.price}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="orders-workspace-grid">
         <div className="order-main">
-          <div className="card order-panel">
+          <div className="card order-panel orders-catalog-panel">
             <div className="panel-head">
               <div>
-                <div className="panel-title">商品列表</div>
-                <div className="panel-desc">商品分類、搜尋與購物車。</div>
+                <div className="panel-title">商品清單</div>
+                <div className="panel-desc">先選商品，再進購物車整理客戶與配送資料。</div>
               </div>
               <span className="badge badge-soft">價格層級 / {priceTierLabel}</span>
             </div>
@@ -91,9 +144,9 @@ export default function OrdersModule(props: any) {
               </div>
             </div>
 
-            <div className="catalog-grid">
+            <div className="catalog-grid orders-catalog-grid">
               {filteredOrderProducts.map((item: any) => (
-                <div key={item.id} className="catalog-card">
+                <div key={item.id} className="catalog-card orders-product-card">
                   <div className="catalog-image-slot">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="catalog-image" />
@@ -130,6 +183,42 @@ export default function OrdersModule(props: any) {
             </div>
           </div>
         </div>
+
+        <aside className="orders-side-column">
+          <div className="card orders-quick-panel">
+            <div className="panel-head compact-head">
+              <div>
+                <div className="panel-title">常用客戶</div>
+                <div className="panel-desc">先做快速帶入區。</div>
+              </div>
+              <User className="small-icon" />
+            </div>
+            <div className="quick-customer-grid orders-quick-grid">
+              {previewCustomers.map((item: any) => (
+                <button key={item.name} type="button" className="quick-customer-card" onClick={() => applyQuickCustomer(item.name, item.phone, item.address, item.method)}>
+                  <div className="quick-customer-name">{item.name}</div>
+                  <div className="quick-customer-meta">{item.phone} / {item.method}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="card orders-brief-panel">
+            <div className="panel-head compact-head">
+              <div>
+                <div className="panel-title">購物摘要</div>
+                <div className="panel-desc">先把核心資訊做成獨立面板。</div>
+              </div>
+              <Sparkles className="small-icon" />
+            </div>
+            <div className="orders-brief-grid">
+              <div className="orders-brief-item"><span>商品小計</span><strong>${subtotal}</strong></div>
+              <div className="orders-brief-item"><span>運費</span><strong>${shippingFee}</strong></div>
+              <div className="orders-brief-item"><span>折扣</span><strong>-${discountAmount}</strong></div>
+              <div className="orders-brief-item accent"><span>預估總額</span><strong>${grandTotal}</strong></div>
+            </div>
+          </div>
+        </aside>
       </section>
 
       <div className={`cart-drawer-overlay ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
@@ -212,16 +301,29 @@ export default function OrdersModule(props: any) {
               </div>
 
               <div className="form-grid two-col form-gap-top">
-                <label className="field-card"><span className="field-label"><BadgePercent className="small-icon" />折扣模式</span><select value={discountMode} onChange={(e) => setDiscountMode(e.target.value)}><option value="無">無</option><option value="固定金額">固定金額</option></select></label>
-                <label className="field-card"><span className="field-label"><Wallet className="small-icon" />折扣金額</span><input type="number" min={0} value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value || 0))} placeholder="0" disabled={discountMode === '無'} /></label>
-                <label className="field-card field-span-2"><span className="field-label"><FileText className="small-icon" />訂單備註</span><textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={4} placeholder="例：收款提醒、配送備註、時間要求" /></label>
+                <label className="field-card">
+                  <span className="field-label"><BadgePercent className="small-icon" />折扣模式</span>
+                  <select value={discountMode} onChange={(e) => setDiscountMode(e.target.value)}>
+                    <option value="無折扣">無折扣</option>
+                    <option value="百分比">百分比</option>
+                    <option value="固定金額">固定金額</option>
+                  </select>
+                </label>
+                <label className="field-card">
+                  <span className="field-label"><Wallet className="small-icon" />折扣數值</span>
+                  <input type="number" min={0} value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} placeholder="0" />
+                </label>
+                <label className="field-card field-span-2">
+                  <span className="field-label"><FileText className="small-icon" />備註</span>
+                  <textarea value={remark} onChange={(e) => setRemark(e.target.value)} rows={3} placeholder="可填寫配送、收款或出貨備註" />
+                </label>
               </div>
             </div>
           </div>
 
           <div className="cart-drawer-footer">
             <button type="button" className="primary-button full-width drawer-submit-button" onClick={handleCreateOrder}>
-              <Receipt className="small-icon" />建立訂單
+              <PackageCheck className="small-icon" />建立訂單
             </button>
             {orderNotice && <div className={`inline-action-notice ${orderNotice.tone}`}><strong>{orderNotice.text}</strong></div>}
           </div>

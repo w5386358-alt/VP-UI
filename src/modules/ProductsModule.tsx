@@ -1,4 +1,4 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3 } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -23,18 +23,54 @@ export default function ProductsModule(props: any) {
     StatusBadge,
   } = props;
 
+  const disabledProducts = products.length - enabledProducts;
+  const topProducts = filteredProducts.slice(0, 3);
+
   return (
     <>
       <SectionIntro
         title="商品管理"
         desc="商品資料、價格、庫存與狀態。"
-        stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
+        stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${disabledProducts}`]}
       />
 
+      <section className="products-hero-grid">
+        <div className="card products-hero-card">
+          <div className="products-hero-kicker">Product Studio</div>
+          <div className="products-hero-title">把商品卡、價格層級、編輯器切成新的工作區節奏。</div>
+          <div className="products-hero-desc">先讓列表、摘要與右側編輯器有主次分工，之後再回接真實資料流。</div>
+          <div className="products-hero-metrics">
+            <div className="products-hero-pill"><span>商品總數</span><strong>{products.length}</strong></div>
+            <div className="products-hero-pill"><span>啟用中</span><strong>{enabledProducts}</strong></div>
+            <div className="products-hero-pill accent"><span>停用中</span><strong>{disabledProducts}</strong></div>
+          </div>
+        </div>
 
-      <section className="product-admin-layout">
+        <div className="card products-hero-side">
+          <div className="panel-head compact-head">
+            <div>
+              <div className="panel-title">商品摘要</div>
+              <div className="panel-desc">先把重點品項獨立出來。</div>
+            </div>
+            <BarChart3 className="small-icon" />
+          </div>
+          <div className="products-side-list">
+            {topProducts.map((item: any) => (
+              <div key={item.id} className="products-side-row">
+                <div>
+                  <div className="products-side-name">{item.name}</div>
+                  <div className="products-side-meta">{item.category} / {item.code}</div>
+                </div>
+                <span className="badge badge-soft">庫存 {item.stock}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="product-admin-layout products-stage-layout">
         <div className="product-admin-main">
-          <div className="card order-panel">
+          <div className="card order-panel products-board-card">
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
@@ -45,15 +81,15 @@ export default function ProductsModule(props: any) {
               </button>
             </div>
 
-            <div className="product-editor-chip-row">
-              <span className="badge badge-neutral">商品列表</span>
-              <span className="badge badge-soft">卡片檢視</span>
-              <span className="badge badge-soft">編輯面板</span>
+            <div className="products-chip-strip">
+              <span className="badge badge-neutral">列表檢視</span>
+              <span className="badge badge-soft">卡片摘要</span>
+              <span className="badge badge-soft">右側編輯器</span>
             </div>
 
-            <div className="product-admin-grid">
+            <div className="product-admin-grid products-card-grid">
               {filteredProducts.map((item: any) => (
-                <div key={item.id} className={`card data-card product-admin-card ${selectedProductId === item.id ? 'selected' : ''}`}>
+                <div key={item.id} className={`card data-card product-admin-card products-feature-card ${selectedProductId === item.id ? 'selected' : ''}`}>
                   <div className="data-card-top">
                     <span className="data-code">{item.code}</span>
                     <StatusBadge enabled={item.enabled} />
@@ -70,12 +106,12 @@ export default function ProductsModule(props: any) {
                   </div>
                   <div className="data-card-title">{item.name}</div>
                   <div className="data-card-subtitle">{item.category} / 條碼 {item.barcode || '未設定'}</div>
-                  <div className="metric-row three">
+                  <div className="metric-row three products-metric-grid">
                     <div className="metric-box"><span>原價</span><strong>${item.price}</strong></div>
                     <div className="metric-box"><span>VIP價</span><strong>${item.vipPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>代理價</span><strong>${item.agentPrice ?? item.price}</strong></div>
                   </div>
-                  <div className="metric-row three product-stock-row">
+                  <div className="metric-row three product-stock-row products-metric-grid">
                     <div className="metric-box"><span>總代理價</span><strong>${item.generalAgentPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>庫存</span><strong>{item.stock}</strong></div>
                     <div className="metric-box"><span>狀態</span><strong>{item.enabled ? '啟用' : '停用'}</strong></div>
@@ -100,13 +136,18 @@ export default function ProductsModule(props: any) {
         </div>
 
         <aside className="product-admin-side">
-          <div className="card order-panel sticky-panel product-editor-panel">
+          <div className="card order-panel sticky-panel product-editor-panel products-editor-shell">
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                <div className="panel-desc">在這裡編輯商品資料。</div>
+                <div className="panel-desc">右側編輯器獨立成操作面板。</div>
               </div>
               <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
+            </div>
+
+            <div className="products-editor-note">
+              <Layers3 className="small-icon" />
+              <span>先固定新版右側作業區，之後再逐步搬回真實同步流程。</span>
             </div>
 
             <div className="form-grid two-col form-gap-top">
