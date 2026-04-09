@@ -85,8 +85,8 @@ export default function ProductsModule(props: any) {
                     <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
                       <PencilLine className="small-icon" />編輯
                     </button>
-                    <button type="button" className={`ghost-button compact-btn ${item.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => toggleProductEnabled(item)}>
-                      {item.enabled ? '停用' : '啟用'}
+                    <button type="button" className="toggle-switch-card" onClick={() => toggleProductEnabled(item)} aria-pressed={item.enabled} title={item.enabled ? '停用商品' : '啟用商品'}>
+                      <span className={`toggle-switch ${item.enabled ? 'on' : ''}`}><span className="toggle-switch-thumb" /></span>
                     </button>
                   </div>
                 </div>
@@ -179,8 +179,8 @@ export default function ProductsModule(props: any) {
             <div className="product-editor-status">
               <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
               {productEditorMode !== 'view' && (
-                <button type="button" className={`ghost-button compact-btn ${productDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))}>
-                  {productDraft.enabled ? '切換停用' : '切換啟用'}
+                <button type="button" className="toggle-switch-card toggle-switch-inline" onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-pressed={productDraft.enabled} title={productDraft.enabled ? '切換停用' : '切換啟用'}>
+                  <span className={`toggle-switch ${productDraft.enabled ? 'on' : ''}`}><span className="toggle-switch-thumb" /></span>
                 </button>
               )}
             </div>

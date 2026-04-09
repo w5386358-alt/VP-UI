@@ -71,7 +71,7 @@ type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
 type WarehouseQueryMode = 'barcode' | 'qr' | 'order';
-type AccountingTab = 'ops' | 'treasury' | 'stats' | 'ranking';
+type AccountingTab = 'ops' | 'stats' | 'ranking';
 
 type WorkflowCard = {
   title: string;
@@ -120,34 +120,6 @@ type AccountingDraft = {
   paymentMethod: string;
   invoiceNo: string;
   proof: string;
-};
-
-type TreasuryDraft = {
-  orderNo: string;
-  customer: string;
-  refundAmount: string;
-  payoutMethod: string;
-  proof: string;
-  note: string;
-};
-
-type TreasuryExpenseDraft = {
-  category: string;
-  amount: string;
-  referenceNo: string;
-  note: string;
-  proof: string;
-};
-
-type TreasuryExpenseRecord = {
-  id: string;
-  category: string;
-  amount: number;
-  referenceNo: string;
-  note: string;
-  proof: string;
-  createdAt: string;
-  operator: string;
 };
 
 type OrderRecord = {
@@ -1188,7 +1160,6 @@ function getActualReceived(untaxedAmount: number, taxRate: number, shippingFee: 
   return untaxedAmount + getTaxAmount(untaxedAmount, taxRate) + shippingFee;
 }
 
-
 function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
   if (!record) {
     return {
@@ -1220,33 +1191,11 @@ function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
     taxRate: String(taxRate),
     shippingFee: String(shippingFee),
     actualReceived: String(actualReceived),
-    paymentMethod: record.paymentMethod || '待確認',
-    invoiceNo: record.invoiceNo || '待補',
-    proof: record.proof || '待上傳',
+    paymentMethod: record.paymentMethod || (record.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
+    invoiceNo: record.invoiceNo || (record.paymentStatus.includes('退款') ? '退款單' : '待補'),
+    proof: record.proof || (record.paymentStatus === '已收款' ? '已上傳' : record.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
   };
 }
-
-function makeTreasuryDraft(record?: OrderRecord | null): TreasuryDraft {
-  return {
-    orderNo: record?.orderNo || '',
-    customer: record?.customer || '',
-    refundAmount: String(typeof record?.actualReceived === 'number' ? record.actualReceived : record?.amount || 0),
-    payoutMethod: record?.paymentMethod || '原路退回',
-    proof: record?.proof || '待上傳',
-    note: record?.paymentStatus === '退款處理中' ? '退款進行中，待出納撥款完成。' : '',
-  };
-}
-
-function makeTreasuryExpenseDraft(): TreasuryExpenseDraft {
-  return {
-    category: '進貨支出',
-    amount: '',
-    referenceNo: '',
-    note: '',
-    proof: '待上傳',
-  };
-}
-
 
 function toProductDraft(item: Product): ProductDraft {
   return {
@@ -1399,8 +1348,6 @@ export default function App() {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const productImageInputRef = useRef<HTMLInputElement | null>(null);
   const accountingProofInputRef = useRef<HTMLInputElement | null>(null);
-  const treasuryProofInputRef = useRef<HTMLInputElement | null>(null);
-  const treasuryExpenseProofInputRef = useRef<HTMLInputElement | null>(null);
   const [dataMode, setDataMode] = useState<'firebase' | 'offline'>('offline');
   const [userRoleView, setUserRoleView] = useState<Role>('admin');
   const [userRankView, setUserRankView] = useState<Rank>('core');
@@ -1453,14 +1400,6 @@ export default function App() {
   const [accountingDraft, setAccountingDraft] = useState<AccountingDraft>(() => makeAccountingDraft(null));
   const [accountingNotice, setAccountingNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
-    tone: 'success',
-  });
-  const [selectedTreasuryOrderNo, setSelectedTreasuryOrderNo] = useState('');
-  const [treasuryDraft, setTreasuryDraft] = useState<TreasuryDraft>(() => makeTreasuryDraft(null));
-  const [treasuryExpenseDraft, setTreasuryExpenseDraft] = useState<TreasuryExpenseDraft>(() => makeTreasuryExpenseDraft());
-  const [treasuryExpenseLogs, setTreasuryExpenseLogs] = useState<TreasuryExpenseRecord[]>([]);
-  const [treasuryNotice, setTreasuryNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 出納子頁已啟動，可接手退款撥款與支出登記',
     tone: 'success',
   });
   const [orderCategory, setOrderCategory] = useState('全部商品');
@@ -2451,75 +2390,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const accountingTaxAmount = getTaxAmount(accountingUntaxedAmount, accountingTaxRateNumber);
   const accountingActualReceived = getActualReceived(accountingUntaxedAmount, accountingTaxRateNumber, accountingShippingFeeNumber);
 
-
-  const treasuryQueue = useMemo(
-    () => orderRecords
-      .filter((item) => item.paymentStatus === '退款處理中' || item.paymentStatus === '已退款')
-      .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date) || b.orderNo.localeCompare(a.orderNo)),
-    [orderRecords],
-  );
-
-  useEffect(() => {
-    if (!treasuryQueue.length) return;
-    if (!treasuryQueue.some((item) => item.orderNo === selectedTreasuryOrderNo)) {
-      setSelectedTreasuryOrderNo(treasuryQueue[0].orderNo);
-    }
-  }, [treasuryQueue, selectedTreasuryOrderNo]);
-
-  const selectedTreasuryRecord = useMemo(
-    () => treasuryQueue.find((item) => item.orderNo === selectedTreasuryOrderNo) || treasuryQueue[0] || null,
-    [treasuryQueue, selectedTreasuryOrderNo],
-  );
-
-  useEffect(() => {
-    setTreasuryDraft(makeTreasuryDraft(selectedTreasuryRecord));
-  }, [selectedTreasuryRecord?.orderNo, orderRecords]);
-
-  const treasuryReminderCount = useMemo(
-    () => treasuryQueue.filter((item) => item.paymentStatus === '退款處理中' && (!item.proof || item.proof === '待上傳')).length,
-    [treasuryQueue],
-  );
-
-  const treasuryPendingAmount = useMemo(
-    () => treasuryQueue
-      .filter((item) => item.paymentStatus === '退款處理中')
-      .reduce((sum, item) => sum + (typeof item.actualReceived === 'number' ? item.actualReceived : item.amount), 0),
-    [treasuryQueue],
-  );
-
-  const treasuryPaidAmount = useMemo(
-    () => treasuryQueue
-      .filter((item) => item.paymentStatus === '已退款')
-      .reduce((sum, item) => sum + (typeof item.actualReceived === 'number' ? item.actualReceived : item.amount), 0),
-    [treasuryQueue],
-  );
-
-  const treasuryExpenseTotal = useMemo(
-    () => treasuryExpenseLogs.reduce((sum, item) => sum + item.amount, 0),
-    [treasuryExpenseLogs],
-  );
-
-  const treasuryReminders = useMemo(
-    () => treasuryQueue
-      .filter((item) => item.paymentStatus === '退款處理中')
-      .map((item) => ({
-        orderNo: item.orderNo,
-        customer: item.customer,
-        missingProof: !item.proof || item.proof === '待上傳',
-        amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
-      })),
-    [treasuryQueue],
-  );
-
-  const treasurySummary = useMemo(() => ([
-    { title: '退款進行中', value: `$${treasuryPendingAmount.toLocaleString()}`, sub: `待出納處理 ${treasuryQueue.filter((item) => item.paymentStatus === '退款處理中').length} 筆` },
-    { title: '已完成退款', value: `$${treasuryPaidAmount.toLocaleString()}`, sub: '已完成實際撥款' },
-    { title: '提醒中', value: String(treasuryReminderCount), sub: '缺退款證明將持續提醒' },
-    { title: '支出總額', value: `$${treasuryExpenseTotal.toLocaleString()}`, sub: '目前為前端暫存紀錄' },
-  ]), [treasuryPendingAmount, treasuryQueue, treasuryPaidAmount, treasuryReminderCount, treasuryExpenseTotal]);
-
-  const treasuryExpenseCategories = ['進貨支出', '運費支出', '雜項支出', '請款撥付'];
-
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
 
   const profilePersonalOrders = useMemo(() => orderRecords.map((item) => ({
@@ -2595,7 +2465,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return `VPP${String(next).padStart(3, '0')}`;
   }
 
-  async function uploadFileToFirebase(folder: 'products' | 'accounting' | 'treasury', file: File, targetKey: string) {
+  async function uploadFileToFirebase(folder: 'products' | 'accounting', file: File, targetKey: string) {
     const storage = getStorageService();
     if (!storage) throw new Error('storage_not_ready');
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -2643,117 +2513,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     } finally {
       if (accountingProofInputRef.current) accountingProofInputRef.current.value = '';
     }
-  }
-
-
-  function updateTreasuryDraftField(field: keyof TreasuryDraft, value: string) {
-    setTreasuryDraft((prev) => ({ ...prev, [field]: value }));
-  }
-
-  function updateTreasuryExpenseField(field: keyof TreasuryExpenseDraft, value: string) {
-    setTreasuryExpenseDraft((prev) => ({ ...prev, [field]: value }));
-  }
-
-  async function handleTreasuryProofUpload(file?: File | null) {
-    if (!file) return;
-    if (!selectedTreasuryRecord && !treasuryExpenseDraft.category) {
-      setTreasuryNotice({ text: '❌ 請先選擇退款單或支出項目', tone: 'danger' });
-      return;
-    }
-    try {
-      setTreasuryNotice({ text: '附件上傳中…', tone: 'neutral' });
-      const targetKey = selectedTreasuryRecord?.orderNo || `expense-${Date.now()}`;
-      const proofUrl = await uploadFileToFirebase('treasury', file, targetKey);
-      if (selectedTreasuryRecord) {
-        setTreasuryDraft((prev) => ({ ...prev, proof: proofUrl }));
-      } else {
-        setTreasuryExpenseDraft((prev) => ({ ...prev, proof: proofUrl }));
-      }
-      setTreasuryNotice({ text: '✅ 出納證明已上傳', tone: 'success' });
-    } catch {
-      setTreasuryNotice({ text: '❌ 出納證明上傳失敗', tone: 'danger' });
-    } finally {
-      if (treasuryProofInputRef.current) treasuryProofInputRef.current.value = '';
-    }
-  }
-
-
-  async function handleTreasuryExpenseProofUpload(file?: File | null) {
-    if (!file) return;
-    try {
-      setTreasuryNotice({ text: '附件上傳中…', tone: 'neutral' });
-      const proofUrl = await uploadFileToFirebase('treasury', file, `expense-${Date.now()}`);
-      setTreasuryExpenseDraft((prev) => ({ ...prev, proof: proofUrl }));
-      setTreasuryNotice({ text: '✅ 支出證明已上傳', tone: 'success' });
-    } catch {
-      setTreasuryNotice({ text: '❌ 支出證明上傳失敗', tone: 'danger' });
-    } finally {
-      if (treasuryExpenseProofInputRef.current) treasuryExpenseProofInputRef.current.value = '';
-    }
-  }
-
-  async function confirmTreasuryRefund() {
-    if (!selectedTreasuryRecord) {
-      setTreasuryNotice({ text: '❌ 尚未選擇退款訂單', tone: 'danger' });
-      return;
-    }
-    if (selectedTreasuryRecord.paymentStatus === '已退款') {
-      setTreasuryNotice({ text: '❌ 此訂單已完成退款', tone: 'danger' });
-      return;
-    }
-    if (!treasuryDraft.proof || treasuryDraft.proof === '待上傳') {
-      setTreasuryNotice({ text: '❌ 請先補上退款證明，否則不能完成撥款', tone: 'danger' });
-      return;
-    }
-    if (!confirmAction(`確認由出納完成退款：${selectedTreasuryRecord.orderNo}？`)) {
-      setTreasuryNotice({ text: '已取消出納退款', tone: 'neutral' });
-      return;
-    }
-
-    const currentOrder = orderRecords.find((item) => item.orderNo === selectedTreasuryRecord.orderNo) || selectedTreasuryRecord;
-    const refundAmount = Number(treasuryDraft.refundAmount || currentOrder.actualReceived || currentOrder.amount || 0);
-    const nextOrder = {
-      ...currentOrder,
-      amount: refundAmount,
-      actualReceived: refundAmount,
-      paymentStatus: '已退款',
-      shippingStatus: currentOrder.shippingStatus === '已出貨' ? '已出貨' : '已退款',
-      mainStatus: '已完成',
-      paymentMethod: treasuryDraft.payoutMethod || currentOrder.paymentMethod || '原路退回',
-      proof: treasuryDraft.proof,
-      remark: [currentOrder.remark, `出納完成退款：${user.loginId}`].filter(Boolean).join('｜'),
-    };
-    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === selectedTreasuryRecord.orderNo ? nextOrder : item)));
-    await syncOrderBundleToFirebase(nextOrder, { paymentMode: 'refund' });
-    await syncRefundRecordToFirebase(nextOrder);
-    setTreasuryNotice({ text: `✅ 出納已完成退款：${selectedTreasuryRecord.orderNo}`, tone: 'success' });
-    setAccountingNotice({ text: `✅ 出納已完成退款：${selectedTreasuryRecord.orderNo}`, tone: 'success' });
-    setOrderNotice({ text: `✅ 訂單退款完成：${selectedTreasuryRecord.orderNo}`, tone: 'success' });
-  }
-
-  function saveTreasuryExpense() {
-    const amount = Number(treasuryExpenseDraft.amount || 0);
-    if (!treasuryExpenseDraft.category.trim()) {
-      setTreasuryNotice({ text: '❌ 請選擇支出分類', tone: 'danger' });
-      return;
-    }
-    if (!amount || Number.isNaN(amount) || amount < 0) {
-      setTreasuryNotice({ text: '❌ 支出金額格式錯誤', tone: 'danger' });
-      return;
-    }
-    const nextRecord: TreasuryExpenseRecord = {
-      id: `expense-${Date.now()}`,
-      category: treasuryExpenseDraft.category.trim(),
-      amount,
-      referenceNo: treasuryExpenseDraft.referenceNo.trim() || '未填寫',
-      note: treasuryExpenseDraft.note.trim() || '—',
-      proof: treasuryExpenseDraft.proof || '待上傳',
-      createdAt: getTaipeiTimestamp(),
-      operator: user.loginId,
-    };
-    setTreasuryExpenseLogs((prev) => [nextRecord, ...prev]);
-    setTreasuryExpenseDraft(makeTreasuryExpenseDraft());
-    setTreasuryNotice({ text: `✅ 已新增支出：${nextRecord.category}`, tone: 'success' });
   }
 
   async function syncProductToFirebase(product: Product, stockValue?: number) {
@@ -3279,11 +3038,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setAccountingNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
   }
 
-  function selectTreasuryOrder(orderNo: string) {
-    setSelectedTreasuryOrderNo(orderNo);
-    setTreasuryNotice({ text: `✅ 出納已切換 ${orderNo}`, tone: 'neutral' });
-  }
-
   async function triggerAccountingAction(action: 'pay' | 'refund') {
     if (!selectedAccountingRecord) return;
     if (!await saveAccountingDraft()) return;
@@ -3340,11 +3094,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       mainStatus: '退款處理',
     };
     setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? refundOrder : item)));
-    setSelectedTreasuryOrderNo(selectedAccountingRecord.orderNo);
     await syncOrderBundleToFirebase(refundOrder, { paymentMode: 'refund' });
     await syncRefundRecordToFirebase(refundOrder);
-    setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}，等待出納撥款`, tone: 'success' });
-    setTreasuryNotice({ text: `✅ 已接收退款單：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+    setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
@@ -3465,29 +3217,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
         </header>
 
-        <section className="vp-overview-grid">
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">目前模組</div>
-            <div className="vp-overview-value">{activeLabel}</div>
-            <div className="vp-overview-sub">目前正在操作的區域</div>
-          </div>
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">商品資料</div>
-            <div className="vp-overview-value">{products.length}</div>
-            <div className="vp-overview-sub">商品資料與庫存基礎</div>
-          </div>
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">客戶資料</div>
-            <div className="vp-overview-value">{customers.length}</div>
-            <div className="vp-overview-sub">客戶資料與業務名單</div>
-          </div>
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">資料來源</div>
-            <div className="vp-overview-value">{firebaseReady ? 'ONLINE' : 'MOCK'}</div>
-            <div className="vp-overview-sub">{firebaseReady ? '已連線同步' : '介面預覽中'}</div>
-          </div>
-        </section>
-
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
             <div>
@@ -3547,62 +3276,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
                 )}
                 {active === 'accounting' && (
-                  
-<AccountingModule
-                    paymentQueue={paymentQueue}
-                    accountingSummary={accountingSummary}
-                    accountingTab={accountingTab}
-                    setAccountingTab={setAccountingTab}
-                    filteredAccountingQueue={filteredAccountingQueue}
-                    accountingOpsTotal={accountingOpsTotal}
-                    accountingKeyword={accountingKeyword}
-                    setAccountingKeyword={setAccountingKeyword}
-                    accountingPaymentFilter={accountingPaymentFilter}
-                    setAccountingPaymentFilter={setAccountingPaymentFilter}
-                    accountingShippingFilter={accountingShippingFilter}
-                    setAccountingShippingFilter={setAccountingShippingFilter}
-                    accountingDateStart={accountingDateStart}
-                    setAccountingDateStart={setAccountingDateStart}
-                    accountingDateEnd={accountingDateEnd}
-                    setAccountingDateEnd={setAccountingDateEnd}
-                    accountingNotice={accountingNotice}
-                    selectedAccountingRecord={selectedAccountingRecord}
-                    selectedAccountingSourceRecord={selectedAccountingSourceRecord}
-                    accountingDraft={accountingDraft}
-                    accountingTaxAmount={accountingTaxAmount}
-                    accountingActualReceived={accountingActualReceived}
-                    updateAccountingDraftField={updateAccountingDraftField}
-                    saveAccountingDraft={saveAccountingDraft}
-                    triggerAccountingAction={triggerAccountingAction}
-                    selectAccountingOrder={selectAccountingOrder}
-                    handleAccountingProofUpload={handleAccountingProofUpload}
-                    accountingProofInputRef={accountingProofInputRef}
-                    treasuryQueue={treasuryQueue}
-                    treasurySummary={treasurySummary}
-                    treasuryReminders={treasuryReminders}
-                    selectedTreasuryRecord={selectedTreasuryRecord}
-                    treasuryDraft={treasuryDraft}
-                    treasuryNotice={treasuryNotice}
-                    selectTreasuryOrder={selectTreasuryOrder}
-                    updateTreasuryDraftField={updateTreasuryDraftField}
-                    confirmTreasuryRefund={confirmTreasuryRefund}
-                    handleTreasuryProofUpload={handleTreasuryProofUpload}
-                    treasuryProofInputRef={treasuryProofInputRef}
-                    treasuryExpenseDraft={treasuryExpenseDraft}
-                    updateTreasuryExpenseField={updateTreasuryExpenseField}
-                    saveTreasuryExpense={saveTreasuryExpense}
-                    treasuryExpenseLogs={treasuryExpenseLogs}
-                    treasuryExpenseCategories={treasuryExpenseCategories}
-                    handleTreasuryExpenseProofUpload={handleTreasuryExpenseProofUpload}
-                    treasuryExpenseProofInputRef={treasuryExpenseProofInputRef}
-                    user={user}
-                    accountingBoards={accountingBoards}
-                    accountingTrendBars={accountingTrendBars}
-                    salesRanking={salesRanking}
-                    hotProductsBoard={hotProductsBoard}
-                    SectionIntro={SectionIntro}
-                    SummaryCard={SummaryCard}
-                  />
+                  <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
                 )}
                 {active === 'profile' && (
                   <ProfileModule personalOrders={profilePersonalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} />

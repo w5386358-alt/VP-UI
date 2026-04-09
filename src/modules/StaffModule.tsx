@@ -137,7 +137,9 @@ export default function StaffModule(props: any) {
                 {staffEditorMode !== 'view' && (
                   <>
                     <button type="button" className="ghost-button compact-btn" onClick={resetStaffPassword}><KeyRound className="small-icon" />初始化密碼</button>
-                    <button type="button" className={`ghost-button compact-btn ${staffDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => updateStaffDraftField('enabled', !staffDraft.enabled)}>{staffDraft.enabled ? '切換停用' : '切換啟用'}</button>
+                    <button type="button" className="toggle-switch-card toggle-switch-inline" onClick={() => updateStaffDraftField('enabled', !staffDraft.enabled)} aria-pressed={staffDraft.enabled} title={staffDraft.enabled ? '切換停用' : '切換啟用'}>
+                      <span className={`toggle-switch ${staffDraft.enabled ? 'on' : ''}`}><span className="toggle-switch-thumb" /></span>
+                    </button>
                   </>
                 )}
               </div>

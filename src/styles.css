@@ -4933,8 +4933,9 @@ body {
   min-height: 112px;
 }
 .pagination-row {
-  position: static;
-  background: transparent;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(247,232,238,0) 0%, rgba(247,232,238,0.94) 28%, rgba(247,232,238,0.98) 100%);
   padding-top: 14px;
 }
 .orders-product-card.full-bleed-card {
@@ -4977,134 +4978,362 @@ body {
   width: 100%;
 }
 
+/* 第十四版：移除八大區骨架卡後的間距補正 */
+.vp-workspace {
+  margin-top: 14px;
+}
 
-/* treasury subpage */
-.accounting-treasury-layout{
-  display:grid;
-  grid-template-columns:minmax(0,1.35fr) minmax(340px,0.85fr);
-  gap:18px;
+/* 第十四版：乾淨切換開關 */
+.toggle-switch-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
-.accounting-treasury-main,
-.accounting-treasury-side{
-  display:flex;
-  flex-direction:column;
-  gap:18px;
+
+.toggle-switch-inline {
+  margin-left: auto;
 }
-.treasury-queue,
-.treasury-expense-log{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
+
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #ead9df;
+  border: 1px solid rgba(180, 145, 157, 0.28);
+  box-shadow: inset 0 1px 2px rgba(92, 55, 70, 0.08);
+  position: relative;
+  transition: background .22s ease, border-color .22s ease, box-shadow .22s ease;
 }
-.treasury-reminder-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:12px;
+
+.toggle-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(43, 22, 30, 0.18);
+  transition: transform .22s ease;
 }
-.treasury-reminder-card{
-  border:1px solid rgba(226,196,201,.9);
-  border-radius:18px;
-  padding:14px;
-  background:rgba(255,255,255,.82);
+
+.toggle-switch.on {
+  background: linear-gradient(135deg, #d93f77 0%, #f06c9b 100%);
+  border-color: rgba(217, 63, 119, 0.2);
+  box-shadow: 0 0 0 4px rgba(240, 108, 155, 0.12);
 }
-.treasury-reminder-card.danger{
-  border-color:rgba(214,106,106,.45);
-  box-shadow:0 10px 28px rgba(214,106,106,.10);
+
+.toggle-switch.on .toggle-switch-thumb {
+  transform: translateX(20px);
 }
-.treasury-reminder-card.ok{
-  border-color:rgba(112,177,134,.35);
-  box-shadow:0 10px 28px rgba(112,177,134,.08);
+
+.product-card-actions .toggle-switch-card {
+  margin-left: 2px;
 }
-.treasury-reminder-top{
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:8px;
+
+/* 第十四版：營運報表重做 */
+.accounting-report-layout-v3 {
+  align-items: start;
 }
-.treasury-reminder-top span,
-.treasury-reminder-meta{
-  color:#7d6570;
-  font-size:13px;
+
+.accounting-report-feature-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
 }
-.treasury-expense-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  padding:12px 14px;
-  border:1px solid rgba(226,196,201,.9);
-  border-radius:16px;
-  background:rgba(255,255,255,.82);
+
+.accounting-donut-card,
+.accounting-tree-card,
+.accounting-mini-kpi-card {
+  border-radius: 26px;
 }
-.treasury-expense-right{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:4px;
-  color:#7d6570;
-  font-size:13px;
+
+.accounting-donut-wrap {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 18px;
+  align-items: center;
+  min-height: 240px;
 }
-.treasury-expense-grid .fake-field.wide{
-  grid-column:span 2;
+
+.accounting-donut-chart {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
 }
-@media (max-width: 1100px){
-  .accounting-treasury-layout{
-    grid-template-columns:1fr;
+
+.accounting-donut-ring {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(#f05d8f 0 68%, #f5b8c9 68% 85%, #f7e4ea 85% 100%);
+  position: relative;
+}
+
+.accounting-donut-ring::after {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(226, 197, 206, 0.45);
+}
+
+.accounting-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.accounting-donut-center strong {
+  font-size: 18px;
+  color: #5d3140;
+}
+
+.accounting-donut-center span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.accounting-donut-legend {
+  display: grid;
+  gap: 12px;
+}
+
+.accounting-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(250,241,245,.9));
+  border: 1px solid rgba(232, 214, 220, 0.85);
+  font-weight: 700;
+  color: #68424f;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.legend-dot.revenue { background: #f05d8f; }
+.legend-dot.refund { background: #f5b8c9; }
+.legend-dot.expense { background: #f7e4ea; }
+
+.accounting-tree-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 240px;
+  justify-content: center;
+}
+
+.tree-root {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f05d8f 0%, #f47aa3 100%);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(240, 93, 143, 0.18);
+}
+
+.tree-branches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  position: relative;
+}
+
+.tree-branches::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 16.66%;
+  right: 16.66%;
+  height: 1px;
+  background: rgba(223, 186, 198, 0.9);
+}
+
+.tree-branch-card {
+  position: relative;
+  padding: 18px 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(229, 208, 216, 0.95);
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(252,245,247,.96));
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.tree-branch-card::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 1px;
+  height: 10px;
+  background: rgba(223, 186, 198, 0.9);
+}
+
+.tree-branch-card span {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.tree-branch-card strong {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #54313e;
+}
+
+.tree-branch-card.income { box-shadow: inset 0 0 0 1px rgba(240, 93, 143, 0.05); }
+.tree-branch-card.refund { box-shadow: inset 0 0 0 1px rgba(245, 184, 201, 0.16); }
+.tree-branch-card.expense { box-shadow: inset 0 0 0 1px rgba(230, 210, 220, 0.55); }
+
+.accounting-trend-card-v3 {
+  margin-top: 16px;
+}
+
+.accounting-trend-chart-v3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 14px;
+  align-items: end;
+  min-height: 280px;
+  padding-top: 10px;
+}
+
+.accounting-trend-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.accounting-trend-bar-shell {
+  width: 100%;
+  min-height: 180px;
+  display: flex;
+  align-items: end;
+  border-radius: 18px;
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(251,244,246,.94), rgba(245,229,235,.92));
+  border: 1px solid rgba(231, 211, 219, 0.85);
+}
+
+.accounting-trend-bar-fill {
+  width: 100%;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8a5c1 0%, #ef5a8d 100%);
+  box-shadow: 0 10px 24px rgba(239, 90, 141, 0.18);
+}
+
+.accounting-trend-bar-col strong {
+  font-size: 15px;
+  color: #5f3644;
+}
+
+.accounting-trend-bar-col span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.accounting-insight-card-v3 {
+  min-height: 200px;
+  justify-content: center;
+}
+
+.accounting-insight-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(240,93,143,.12), rgba(240,93,143,.22));
+  color: #d64578;
+  margin-bottom: 10px;
+}
+
+.accounting-mini-kpi-card {
+  margin-top: 16px;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(250,244,246,.98));
+  border: 1px solid rgba(231, 213, 219, 0.9);
+}
+
+.accounting-mini-kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: #664150;
+  margin-bottom: 14px;
+}
+
+.accounting-mini-kpi-list {
+  display: grid;
+  gap: 12px;
+}
+
+.accounting-mini-kpi-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(235, 219, 224, 0.9);
+}
+
+.accounting-mini-kpi-list strong {
+  color: #573241;
+}
+
+.accounting-mini-kpi-list span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .accounting-report-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .accounting-donut-wrap {
+    grid-template-columns: 1fr;
   }
 }
-@media (max-width: 720px){
-  .treasury-expense-grid .fake-field.wide{
-    grid-column:span 1;
+
+@media (max-width: 720px) {
+  .tree-branches {
+    grid-template-columns: 1fr;
   }
-}
 
+  .tree-branches::before,
+  .tree-branch-card::before {
+    display: none;
+  }
 
-/* 出納子頁微調：解除鎖定 + 表單協調 */
-.accounting-treasury-side .sticky-panel{
-  position: static;
-  top: auto;
-}
-.accounting-treasury-side .fake-field strong{
-  display:block;
-  width:100%;
-  margin-top:8px;
-  font-weight:700;
-  color:var(--text);
-}
-.accounting-treasury-side .fake-field strong input,
-.accounting-treasury-side .fake-field strong select,
-.accounting-treasury-side .fake-field strong textarea{
-  width:100%;
-  display:block;
-  border:none;
-  border-radius:16px;
-  padding:12px 14px;
-  background:rgba(255,255,255,.9);
-  box-shadow:inset 0 0 0 1px rgba(184,74,115,.12);
-  color:var(--text);
-  font:inherit;
-  font-weight:600;
-  outline:none;
-  appearance:none;
-  -webkit-appearance:none;
-}
-.accounting-treasury-side .fake-field strong select{
-  min-height:46px;
-  cursor:pointer;
-}
-.accounting-treasury-side .fake-field strong textarea{
-  min-height:112px;
-  resize:vertical;
-  line-height:1.6;
-}
-.accounting-treasury-side .fake-field strong input::placeholder,
-.accounting-treasury-side .fake-field strong textarea::placeholder{
-  color:#a48a94;
-  font-weight:500;
-}
-.accounting-treasury-side .warehouse-scan-hint-grid{
-  margin-top:14px;
-}
-.accounting-treasury-side .warehouse-scan-hint{
-  min-height:50px;
+  .accounting-trend-chart-v3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
