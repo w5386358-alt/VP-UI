@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, BadgeDollarSign, ShoppingBag, Star } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
-  const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [] } = props;
+  const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], dashboardAvatarImage = '', dashboardAvatarInputRef, handleDashboardAvatarUpload } = props;
 
   const myCustomerCards = useMemo(() => ownCustomerRecords.map((customer: any) => {
     const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
@@ -68,7 +68,10 @@ export default function DashboardModule(props: any) {
       <section className="dashboard-personal-grid">
         <div className="card dashboard-profile-card">
           <div className="dashboard-profile-art" />
-          <div className="dashboard-profile-avatar">秉</div>
+          <button type="button" className="dashboard-profile-avatar uploadable-avatar" onClick={() => dashboardAvatarInputRef?.current?.click()}>
+            {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="dashboard-profile-avatar-image" /> : '秉'}
+          </button>
+          <input ref={dashboardAvatarInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleDashboardAvatarUpload?.(e.target.files?.[0] || null)} />
           <div className="dashboard-profile-name">{user.name}</div>
           <div className="dashboard-profile-role">VP 訂購 ERP 核心使用者</div>
           <div className="dashboard-profile-badges">

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -1403,6 +1403,8 @@ export default function App() {
   const [active, setActive] = useState<NavKey>('dashboard');
   const [booting, setBooting] = useState(true);
   const [bootMessage, setBootMessage] = useState('初始化中...');
+  const [logoImage, setLogoImage] = useState('');
+  const [dashboardAvatarImage, setDashboardAvatarImage] = useState('');
   const [keyword, setKeyword] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -3543,7 +3545,39 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const notificationCount = notificationItems.length;
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
+  const logoImageInputRef = useRef<HTMLInputElement | null>(null);
+  const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
+
+  useEffect(() => {
+    setLogoImage(localStorage.getItem('vp.logoImage') || '');
+    setDashboardAvatarImage(localStorage.getItem('vp.dashboardAvatarImage') || '');
+  }, []);
+
+  useEffect(() => {
+    if (logoImage) localStorage.setItem('vp.logoImage', logoImage);
+    else localStorage.removeItem('vp.logoImage');
+  }, [logoImage]);
+
+  useEffect(() => {
+    if (dashboardAvatarImage) localStorage.setItem('vp.dashboardAvatarImage', dashboardAvatarImage);
+    else localStorage.removeItem('vp.dashboardAvatarImage');
+  }, [dashboardAvatarImage]);
+
+  function readImageFile(file: File | null, onDone: (value: string) => void) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onDone(String(reader.result || ''));
+    reader.readAsDataURL(file);
+  }
+
+  function handleLogoImageUpload(file: File | null) {
+    readImageFile(file, setLogoImage);
+  }
+
+  function handleDashboardAvatarUpload(file: File | null) {
+    readImageFile(file, setDashboardAvatarImage);
+  }
 
   useEffect(() => {
     function handleOutside(event: MouseEvent) {
@@ -3563,13 +3597,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
-          <div className="vp-brand-mark vp-brand-logo-slot">
-            <span>LOGO</span>
-          </div>
+          <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
+            {logoImage ? <img src={logoImage} alt="品牌 Logo" className="vp-brand-logo-image" /> : <span>LOGO</span>}
+          </button>
+          <input ref={logoImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e: ChangeEvent<HTMLInputElement>) => handleLogoImageUpload(e.target.files?.[0] || null)} />
           <div>
             <div className="vp-brand-kicker">Velvet Pulse</div>
             <div className="vp-brand-title">VP訂購ERP</div>
-            <div className="vp-brand-desc">品牌 Logo 圖位預留，後續可直接替換。</div>
+            <div className="vp-brand-desc">點擊 Logo 區即可上傳品牌圖。</div>
           </div>
         </div>
 
@@ -3735,18 +3770,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             </div>
           ) : (
             <>
-              <div className={`card banner-card ${firebaseReady ? 'success' : 'warning'}`}>
-                {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
-                <div>
-                  <div className="banner-title">{bootMessage}</div>
-                  <div className="banner-desc">
-                    {firebaseReady
-                      ? '已讀取資料，可直接操作目前畫面。'
-                      : '目前顯示介面預覽資料，可再逐步補齊。'}
-                  </div>
-                </div>
-              </div>
-
               {!canAccessNav(user.role, active) && (
                 <div className="card access-denied-card">
                   <div className="access-denied-title">此角色不可進入此頁</div>
@@ -3756,7 +3779,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
               <div className="vp-module-body">
                 {active === 'dashboard' && (
-                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
+                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} dashboardAvatarImage={dashboardAvatarImage} dashboardAvatarInputRef={dashboardAvatarInputRef} handleDashboardAvatarUpload={handleDashboardAvatarUpload} />
                 )}
                 {active === 'products' && (
                   <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />

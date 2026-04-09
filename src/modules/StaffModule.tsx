@@ -34,33 +34,20 @@ export default function StaffModule(props: any) {
 
   return (
     <>
-      <SectionIntro
-        title="人員管理"
-        desc="管理人員名單、角色、階級與權限。"
-        stats={[`總數 ${staff.length}`, `啟用中 ${activeStaff}`, '角色 / 階級 / 權限']}
-      />
+      <section className="staff-shell-v2 staff-shell-v3">
 
-      <section className="staff-shell-v2">
-        <div className="staff-command-card card">
-          <div>
-            <div className="staff-command-kicker"></div>
-            <h3 className="staff-command-title">人員名單與資料設定。</h3>
-          </div>
-          <div className="staff-command-actions">
-            <button type="button" className="primary-button" onClick={openCreateStaff}><UserCog className="small-icon" />新增人員</button>
-            <div className="staff-command-pill"><span>啟用人員</span><strong>{activeStaff}</strong></div>
-          </div>
-        </div>
-
-        <section className="staff-layout-v2">
+        <section className="staff-layout-v2 staff-layout-v3">
           <div className="staff-main-v2">
             <div className="card order-panel staff-list-card-v2">
-              <div className="panel-head">
+              <div className="panel-head staff-list-head-v3">
                 <div>
                   <div className="panel-title">人員列表</div>
                   <div className="panel-desc">人員名單。</div>
                 </div>
-                <span className="badge badge-role">人員名單</span>
+                <div className="staff-list-head-actions">
+                  <span className="badge badge-role">啟用 {activeStaff}</span>
+                  <button type="button" className="primary-button compact-add-button" onClick={openCreateStaff}><UserCog className="small-icon" />新增人員</button>
+                </div>
               </div>
               <div className="staff-record-grid-v2">
                 {pagedStaff.map((item: any) => (
