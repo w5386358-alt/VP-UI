@@ -4933,9 +4933,8 @@ body {
   min-height: 112px;
 }
 .pagination-row {
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(180deg, rgba(247,232,238,0) 0%, rgba(247,232,238,0.94) 28%, rgba(247,232,238,0.98) 100%);
+  position: static;
+  background: transparent;
   padding-top: 14px;
 }
 .orders-product-card.full-bleed-card {
@@ -5057,4 +5056,55 @@ body {
   .treasury-expense-grid .fake-field.wide{
     grid-column:span 1;
   }
+}
+
+
+/* 出納子頁微調：解除鎖定 + 表單協調 */
+.accounting-treasury-side .sticky-panel{
+  position: static;
+  top: auto;
+}
+.accounting-treasury-side .fake-field strong{
+  display:block;
+  width:100%;
+  margin-top:8px;
+  font-weight:700;
+  color:var(--text);
+}
+.accounting-treasury-side .fake-field strong input,
+.accounting-treasury-side .fake-field strong select,
+.accounting-treasury-side .fake-field strong textarea{
+  width:100%;
+  display:block;
+  border:none;
+  border-radius:16px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.9);
+  box-shadow:inset 0 0 0 1px rgba(184,74,115,.12);
+  color:var(--text);
+  font:inherit;
+  font-weight:600;
+  outline:none;
+  appearance:none;
+  -webkit-appearance:none;
+}
+.accounting-treasury-side .fake-field strong select{
+  min-height:46px;
+  cursor:pointer;
+}
+.accounting-treasury-side .fake-field strong textarea{
+  min-height:112px;
+  resize:vertical;
+  line-height:1.6;
+}
+.accounting-treasury-side .fake-field strong input::placeholder,
+.accounting-treasury-side .fake-field strong textarea::placeholder{
+  color:#a48a94;
+  font-weight:500;
+}
+.accounting-treasury-side .warehouse-scan-hint-grid{
+  margin-top:14px;
+}
+.accounting-treasury-side .warehouse-scan-hint{
+  min-height:50px;
 }
