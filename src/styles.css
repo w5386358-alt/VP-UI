@@ -6224,3 +6224,115 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* 第二十版：儀表板統計卡恢復 / 樹狀圖重排 / 間距再拉開 */
+.dashboard-personal-shell { gap: 34px; }
+.dashboard-personal-grid { gap: 34px; }
+.dashboard-personal-main { gap: 34px; }
+.dashboard-hero-stat-grid-v3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.dashboard-hero-stat-card-v3 {
+  min-height: 172px;
+  padding: 22px 22px 20px;
+  border-radius: 26px;
+}
+.dashboard-hero-stat-card-v3 .dashboard-hero-stat-value {
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.05;
+}
+.dashboard-feature-grid { gap: 30px; }
+.dashboard-personal-bottom-grid {
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 34px;
+}
+.dashboard-tree-card,
+.dashboard-growth-card,
+.dashboard-history-card,
+.dashboard-customer-card { border-radius: 28px; }
+.dashboard-tree-layout {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) minmax(0, 1.05fr);
+  gap: 28px;
+  align-items: center;
+}
+.dashboard-tree-visual {
+  position: relative;
+  min-height: 300px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255,249,251,0.96), rgba(252,244,247,0.96));
+  overflow: hidden;
+}
+.dashboard-tree-canopy.canopy-main {
+  width: 68%;
+  height: 120px;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle at 50% 50%, rgba(234,189,204,0.96) 0%, rgba(244,217,226,0.9) 62%, rgba(255,240,245,0.1) 80%);
+}
+.dashboard-tree-canopy.canopy-soft {
+  position: absolute;
+  width: 42%;
+  height: 88px;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgba(250,231,237,0.95), rgba(250,231,237,0.2) 76%);
+}
+.dashboard-tree-trunk.trunk-main {
+  width: 24px;
+  height: 132px;
+  bottom: 34px;
+  background: linear-gradient(180deg, #b87876, #8b5a55);
+}
+.tree-fruit {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #c6315a, #a21239);
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.55);
+}
+.fruit-1 { top: 88px; left: 34%; }
+.fruit-2 { top: 78px; left: 49%; }
+.fruit-3 { top: 96px; left: 61%; }
+.fruit-4 { top: 126px; left: 40%; }
+.fruit-5 { top: 136px; left: 56%; }
+.dashboard-tree-score-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.dashboard-tree-score-card {
+  border-radius: 24px;
+  padding: 18px 18px 16px;
+  background: radial-gradient(circle at top, rgba(255,236,242,0.98), rgba(255,250,252,0.98));
+  border: 1px solid rgba(228, 208, 216, 0.9);
+}
+.dashboard-tree-score-card .dashboard-tree-score {
+  display: block;
+  margin-top: 10px;
+  font-size: 30px;
+  line-height: 1;
+}
+.dashboard-tree-score-card .dashboard-tree-label {
+  display: block;
+  min-height: 20px;
+}
+.dashboard-history-list,
+.dashboard-customer-list { gap: 18px; }
+.dashboard-history-row,
+.dashboard-customer-row { border-radius: 22px; }
+@media (max-width: 1180px) {
+  .dashboard-hero-stat-grid-v3,
+  .dashboard-tree-layout,
+  .dashboard-tree-score-grid,
+  .dashboard-personal-bottom-grid,
+  .dashboard-feature-grid { grid-template-columns: 1fr; }
+}

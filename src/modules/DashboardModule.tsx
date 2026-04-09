@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, ShieldCheck, BarChart3, Users } from 'lucide-react';
+import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, BadgeDollarSign, ShoppingBag, Star } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
   const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [] } = props;
@@ -22,6 +22,28 @@ export default function DashboardModule(props: any) {
     { label: '回購表現', value: 72 },
     { label: '流程配合', value: 91 },
     { label: '整體綜合', value: 80 },
+  ];
+  const totalSales = personalOrders.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
+  const averageScore = Math.round(rankingTree.reduce((sum, item) => sum + item.value, 0) / rankingTree.length);
+  const statCards = [
+    {
+      title: '我的歷史訂單',
+      value: `${personalOrders.length}`,
+      sub: '沿用原個人資料訂單邏輯',
+      icon: ShoppingBag,
+    },
+    {
+      title: '我的客戶資料',
+      value: `${myCustomerCards.length}`,
+      sub: '目前由你管理的客戶數',
+      icon: Users,
+    },
+    {
+      title: '個人評鑑平均',
+      value: `${averageScore}`,
+      sub: `累計銷售 $${totalSales.toLocaleString()}`,
+      icon: Star,
+    },
   ];
 
   return (
@@ -47,6 +69,20 @@ export default function DashboardModule(props: any) {
         </div>
 
         <div className="dashboard-personal-main">
+          <div className="dashboard-hero-stat-grid dashboard-hero-stat-grid-v3">
+            {statCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="card dashboard-hero-stat-card dashboard-hero-stat-card-v3 compact-card">
+                  <div className="dashboard-hero-stat-icon"><Icon className="small-icon" /></div>
+                  <div className="dashboard-hero-stat-title">{item.title}</div>
+                  <div className="dashboard-hero-stat-value">{item.value}</div>
+                  <div className="dashboard-hero-stat-sub">{item.sub}</div>
+                </div>
+              );
+            })}
+          </div>
+
           <div className="dashboard-feature-grid">
             <div className="card dashboard-history-card compact-card">
               <div className="panel-head">
@@ -106,20 +142,26 @@ export default function DashboardModule(props: any) {
           <div className="panel-head">
             <div>
               <div className="panel-title">個人評鑑樹狀圖</div>
-              <div className="panel-desc">保留分數數字，但和樹狀圖拆開，讓視覺更清楚。</div>
+              <div className="panel-desc">樹狀主體與分數拆開呈現，避免互相遮住。</div>
             </div>
             <span className="badge badge-soft">評鑑</span>
           </div>
-          <div className="dashboard-tree-wrap dashboard-tree-wrap-v2">
-            <div className="dashboard-tree-canopy" />
-            <div className="dashboard-tree-trunk" />
-            <div className="dashboard-tree-branches v2">
+          <div className="dashboard-tree-layout">
+            <div className="dashboard-tree-visual">
+              <div className="dashboard-tree-canopy canopy-main" />
+              <div className="dashboard-tree-canopy canopy-soft" />
+              <div className="dashboard-tree-trunk trunk-main" />
+              <span className="tree-fruit fruit-1" />
+              <span className="tree-fruit fruit-2" />
+              <span className="tree-fruit fruit-3" />
+              <span className="tree-fruit fruit-4" />
+              <span className="tree-fruit fruit-5" />
+            </div>
+            <div className="dashboard-tree-score-grid">
               {rankingTree.map((item) => (
-                <div key={item.label} className="dashboard-tree-branch branch-leaf">
-                  <div className="dashboard-tree-node leaf-node">
-                    <span className="dashboard-tree-label">{item.label}</span>
-                    <strong className="dashboard-tree-score">{item.value}</strong>
-                  </div>
+                <div key={item.label} className="dashboard-tree-score-card">
+                  <span className="dashboard-tree-label">{item.label}</span>
+                  <strong className="dashboard-tree-score">{item.value}</strong>
                 </div>
               ))}
             </div>
