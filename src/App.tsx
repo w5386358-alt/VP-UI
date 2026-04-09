@@ -3334,6 +3334,73 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const activeLabel = visibleNavItems.find((item) => item.key === active)?.label || '受限模組';
 
+  const notificationItems = useMemo(() => {
+    const items: Array<{ id: string; title: string; detail: string; tone: 'danger' | 'warning' | 'neutral' }> = [];
+
+    orderRecords
+      .filter((item) => item.paymentStatus === '退款處理中')
+      .forEach((item) => {
+        items.push({
+          id: `refund-${item.orderNo}` ,
+          title: `${item.orderNo} 待出納退款`,
+          detail: `${item.customer}｜退款金額 $${(typeof item.actualReceived === 'number' ? item.actualReceived : item.amount).toLocaleString()}`,
+          tone: 'danger',
+        });
+      });
+
+    orderRecords
+      .filter((item) => item.paymentStatus === '退款處理中' && (!item.proof || item.proof === '待上傳'))
+      .forEach((item) => {
+        items.push({
+          id: `proof-${item.orderNo}`,
+          title: `${item.orderNo} 待補退款證明`,
+          detail: `${item.customer}｜未上傳退款證明`,
+          tone: 'warning',
+        });
+      });
+
+    orderRecords
+      .filter((item) => item.paymentStatus === '未收款')
+      .slice(0, 6)
+      .forEach((item) => {
+        items.push({
+          id: `payment-${item.orderNo}`,
+          title: `${item.orderNo} 待收款`,
+          detail: `${item.customer}｜應收 $${item.amount.toLocaleString()}`,
+          tone: 'neutral',
+        });
+      });
+
+    orderRecords
+      .filter((item) => item.paymentStatus === '已收款' && item.shippingStatus !== '已出貨')
+      .slice(0, 6)
+      .forEach((item) => {
+        items.push({
+          id: `shipping-${item.orderNo}`,
+          title: `${item.orderNo} 待出貨`,
+          detail: `${item.customer}｜已收款待倉儲處理`,
+          tone: 'warning',
+        });
+      });
+
+    return items;
+  }, [orderRecords]);
+
+  const notificationCount = notificationItems.length;
+  const notificationPanelRef = useRef<HTMLDivElement | null>(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+
+  useEffect(() => {
+    function handleOutside(event: MouseEvent) {
+      if (!notificationPanelRef.current) return;
+      if (!notificationPanelRef.current.contains(event.target as Node)) {
+        setNotificationOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+
   return (
     <div className="vp-shell">
       <div className="vp-ornament vp-ornament-a" />
@@ -3341,11 +3408,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
-          <div className="vp-brand-mark">VP</div>
+          <div className="vp-brand-mark vp-brand-logo-slot">
+            <span>LOGO</span>
+          </div>
           <div>
             <div className="vp-brand-kicker">Velvet Pulse</div>
-            <div className="vp-brand-title">八大區營運後台</div>
-            <div className="vp-brand-desc">整合八大模組操作、資料、權限與流程。</div>
+            <div className="vp-brand-title">VP訂購ERP</div>
+            <div className="vp-brand-desc">品牌 Logo 圖位預留，後續可直接替換。</div>
           </div>
         </div>
 
@@ -3437,10 +3506,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
       <main className="vp-main">
         <header className="vp-header card">
-          <div className="vp-header-copy">
-            <div className="vp-header-kicker"></div>
-            <h1 className="vp-header-title">{activeLabel}</h1>
-            <p className="vp-header-desc"></p>
+          <div className="vp-header-banner">
+            <div className="vp-header-visual">
+              <span className="vp-visual-line vp-visual-line-a" />
+              <span className="vp-visual-line vp-visual-line-b" />
+              <span className="vp-visual-line vp-visual-line-c" />
+            </div>
+            <div className="vp-header-branding">
+              <div className="vp-header-kicker">brand visual banner</div>
+              <div className="vp-header-watermark">VP ORDER ERP</div>
+              <p className="vp-header-desc">以斜線、漸層與留白維持乾淨感，通知集中到右側小鈴鐺。</p>
+            </div>
           </div>
           <div className="vp-header-tools">
             <div className="search-wrap vp-search-wrap">
@@ -3455,13 +3531,43 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
-            <div>
-              <div className="vp-workspace-kicker"></div>
-              <div className="vp-workspace-title">{activeLabel}</div>
-            </div>
-            <div className="vp-workspace-actions">
-              <button type="button" className="ghost-button vp-tool-button"><Bell className="small-icon" />提醒</button>
-              <button type="button" className="primary-button vp-tool-button"><Sparkles className="small-icon" />使用中</button>
+            <div className="vp-workspace-head-empty" />
+            <div className="vp-workspace-actions" ref={notificationPanelRef}>
+              <button
+                type="button"
+                className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
+                onClick={() => setNotificationOpen((prev) => !prev)}
+              >
+                <span className="vp-bell-icon-wrap">
+                  <Bell className="small-icon" />
+                  {notificationCount > 0 && <span className="vp-bell-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>}
+                </span>
+                提醒
+              </button>
+              {notificationOpen && (
+                <div className="vp-notification-popover">
+                  <div className="vp-notification-head">
+                    <div>
+                      <div className="vp-notification-title">待辦提醒</div>
+                      <div className="vp-notification-sub">未完成事項會自動顯示在這裡</div>
+                    </div>
+                    <span className="vp-notification-count">{notificationCount}</span>
+                  </div>
+                  <div className="vp-notification-list">
+                    {notificationItems.length ? notificationItems.map((item) => (
+                      <div key={item.id} className={`vp-notification-item ${item.tone}`}>
+                        <div className="vp-notification-dot" />
+                        <div className="vp-notification-copy">
+                          <div className="vp-notification-item-title">{item.title}</div>
+                          <div className="vp-notification-item-detail">{item.detail}</div>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="vp-notification-empty">目前沒有待處理事項</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
