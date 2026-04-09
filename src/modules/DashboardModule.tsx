@@ -142,26 +142,30 @@ export default function DashboardModule(props: any) {
           <div className="panel-head">
             <div>
               <div className="panel-title">個人評鑑樹狀圖</div>
-              <div className="panel-desc">樹狀主體與分數拆開呈現，避免互相遮住。</div>
+              <div className="panel-desc">改成評鑑節點連線圖，保留分數但不再畫成真的樹。</div>
             </div>
             <span className="badge badge-soft">評鑑</span>
           </div>
-          <div className="dashboard-tree-layout">
-            <div className="dashboard-tree-visual">
-              <div className="dashboard-tree-canopy canopy-main" />
-              <div className="dashboard-tree-canopy canopy-soft" />
-              <div className="dashboard-tree-trunk trunk-main" />
-              <span className="tree-fruit fruit-1" />
-              <span className="tree-fruit fruit-2" />
-              <span className="tree-fruit fruit-3" />
-              <span className="tree-fruit fruit-4" />
-              <span className="tree-fruit fruit-5" />
-            </div>
-            <div className="dashboard-tree-score-grid">
-              {rankingTree.map((item) => (
-                <div key={item.label} className="dashboard-tree-score-card">
+          <div className="dashboard-tree-layout node-layout">
+            <div className="dashboard-tree-visual node-visual">
+              <div className="dashboard-eval-hub">
+                <span className="dashboard-eval-hub-label">綜合評分</span>
+                <strong className="dashboard-eval-hub-score">{averageScore}</strong>
+              </div>
+              <div className="dashboard-eval-links" />
+              {rankingTree.map((item, index) => (
+                <div key={item.label} className={`dashboard-eval-node eval-node-${index + 1}`}>
                   <span className="dashboard-tree-label">{item.label}</span>
                   <strong className="dashboard-tree-score">{item.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="dashboard-tree-score-grid node-summary-grid">
+              {rankingTree.map((item) => (
+                <div key={item.label} className="dashboard-tree-score-card summary-card-lite">
+                  <span className="dashboard-tree-label">{item.label}</span>
+                  <strong className="dashboard-tree-score">{item.value}</strong>
+                  <small className="dashboard-tree-mini-desc">依評鑑維度個別統計</small>
                 </div>
               ))}
             </div>
