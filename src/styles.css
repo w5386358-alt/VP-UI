@@ -6533,7 +6533,7 @@ body {
 
 /* 第二十三版：提示移除 + 人員精簡 + 圖片上傳 */
 .vp-workspace {
-  background: linear-gradient(180deg, rgba(240, 210, 220, 0.99) 0%, rgba(229, 190, 202, 0.99) 100%) !important;
+  background: linear-gradient(180deg, rgba(245, 225, 231, 0.98) 0%, rgba(236, 211, 220, 0.98) 100%) !important;
 }
 .vp-brand-logo-slot {
   appearance: none;
@@ -6550,6 +6550,7 @@ body {
 .dashboard-profile-avatar.uploadable-avatar {
   border: 3px solid rgba(162, 18, 57, 0.18);
   background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,232,239,0.96));
+  color: #a21239;
   cursor: pointer;
   overflow: hidden;
 }
@@ -6610,3 +6611,39 @@ body {
     justify-content: space-between;
   }
 }
+
+
+/* 第二十四版：雷達置中修正 + 圖片預覽即時顯示 */
+.dashboard-tree-visual.radar-visual {
+  min-height: 400px;
+  padding: 18px 18px 10px;
+}
+.dashboard-radar-svg {
+  width: 300px;
+  height: 300px;
+}
+.dashboard-radar-center-badge {
+  width: 108px;
+  height: 108px;
+}
+.dashboard-radar-center-badge .dashboard-eval-hub-score {
+  font-size: 36px;
+}
+.dashboard-radar-label {
+  width: 112px;
+  padding: 8px 10px;
+}
+.dashboard-radar-label .dashboard-tree-label {
+  display: block;
+  line-height: 1.1;
+}
+.dashboard-radar-label .dashboard-tree-score {
+  margin-top: 4px;
+  font-size: 20px;
+  line-height: 1;
+}
+.dashboard-radar-label.is-top { transform: translate(-50%, -100%); }
+.dashboard-radar-label.is-right { transform: translate(0, -50%); }
+.dashboard-radar-label.is-bottom { transform: translate(-50%, 0); }
+.dashboard-radar-label.is-left { transform: translate(-100%, -50%); }
+.dashboard-tree-card .panel-desc { display: none; }

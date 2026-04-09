@@ -47,7 +47,13 @@ export default function DashboardModule(props: any) {
   ];
   const radarLevels = [1, 0.75, 0.5, 0.25];
   const center = 160;
-  const outerRadius = 112;
+  const outerRadius = 96;
+  const labelPresets = [
+    { className: 'is-top', labelX: center, labelY: center - outerRadius - 28 },
+    { className: 'is-right', labelX: center + outerRadius + 34, labelY: center },
+    { className: 'is-bottom', labelX: center, labelY: center + outerRadius + 28 },
+    { className: 'is-left', labelX: center - outerRadius - 34, labelY: center },
+  ];
   const radarPoints = rankingTree.map((item, index) => {
     const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
     const radius = outerRadius * (item.value / 100);
@@ -55,8 +61,9 @@ export default function DashboardModule(props: any) {
       ...item,
       x: center + Math.cos(angle) * radius,
       y: center + Math.sin(angle) * radius,
-      labelX: center + Math.cos(angle) * (outerRadius + 34),
-      labelY: center + Math.sin(angle) * (outerRadius + 34),
+      labelX: labelPresets[index].labelX,
+      labelY: labelPresets[index].labelY,
+      labelClassName: labelPresets[index].className,
       axisX: center + Math.cos(angle) * outerRadius,
       axisY: center + Math.sin(angle) * outerRadius,
     };
@@ -71,7 +78,7 @@ export default function DashboardModule(props: any) {
           <button type="button" className="dashboard-profile-avatar uploadable-avatar" onClick={() => dashboardAvatarInputRef?.current?.click()}>
             {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="dashboard-profile-avatar-image" /> : '秉'}
           </button>
-          <input ref={dashboardAvatarInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleDashboardAvatarUpload?.(e.target.files?.[0] || null)} />
+          <input ref={dashboardAvatarInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => { handleDashboardAvatarUpload?.(e.target.files?.[0] || null); e.target.value = ''; }} />
           <div className="dashboard-profile-name">{user.name}</div>
           <div className="dashboard-profile-role">VP 訂購 ERP 核心使用者</div>
           <div className="dashboard-profile-badges">
@@ -194,7 +201,7 @@ export default function DashboardModule(props: any) {
               {radarPoints.map((item) => (
                 <div
                   key={item.label}
-                  className="dashboard-radar-label"
+                  className={`dashboard-radar-label ${item.labelClassName}`}
                   style={{ left: `${item.labelX}px`, top: `${item.labelY}px` }}
                 >
                   <span className="dashboard-tree-label">{item.label}</span>

@@ -3555,17 +3555,31 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, []);
 
   useEffect(() => {
-    if (logoImage) localStorage.setItem('vp.logoImage', logoImage);
-    else localStorage.removeItem('vp.logoImage');
+    try {
+      if (logoImage && !logoImage.startsWith('blob:')) localStorage.setItem('vp.logoImage', logoImage);
+      else if (!logoImage) localStorage.removeItem('vp.logoImage');
+    } catch (error) {
+      console.warn('logo image cache skipped', error);
+    }
   }, [logoImage]);
 
   useEffect(() => {
-    if (dashboardAvatarImage) localStorage.setItem('vp.dashboardAvatarImage', dashboardAvatarImage);
-    else localStorage.removeItem('vp.dashboardAvatarImage');
+    try {
+      if (dashboardAvatarImage && !dashboardAvatarImage.startsWith('blob:')) localStorage.setItem('vp.dashboardAvatarImage', dashboardAvatarImage);
+      else if (!dashboardAvatarImage) localStorage.removeItem('vp.dashboardAvatarImage');
+    } catch (error) {
+      console.warn('avatar image cache skipped', error);
+    }
   }, [dashboardAvatarImage]);
 
   function readImageFile(file: File | null, onDone: (value: string) => void) {
     if (!file) return;
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      onDone(previewUrl);
+    } catch (error) {
+      console.warn('preview url failed', error);
+    }
     const reader = new FileReader();
     reader.onload = () => onDone(String(reader.result || ''));
     reader.readAsDataURL(file);
@@ -3600,7 +3614,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
             {logoImage ? <img src={logoImage} alt="品牌 Logo" className="vp-brand-logo-image" /> : <span>LOGO</span>}
           </button>
-          <input ref={logoImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e: ChangeEvent<HTMLInputElement>) => handleLogoImageUpload(e.target.files?.[0] || null)} />
+          <input ref={logoImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e: ChangeEvent<HTMLInputElement>) => { handleLogoImageUpload(e.target.files?.[0] || null); e.target.value = ''; }} />
           <div>
             <div className="vp-brand-kicker">Velvet Pulse</div>
             <div className="vp-brand-title">VP訂購ERP</div>
