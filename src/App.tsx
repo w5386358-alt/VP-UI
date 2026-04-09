@@ -150,6 +150,22 @@ type TreasuryExpenseRecord = {
   operator: string;
 };
 
+type BonusDraft = {
+  date: string;
+  time: string;
+  amount: string;
+  note: string;
+};
+
+type BonusRecord = {
+  id: string;
+  date: string;
+  time: string;
+  amount: number;
+  note: string;
+  operator: string;
+};
+
 type OrderRecord = {
   orderNo: string;
   customer: string;
@@ -1247,6 +1263,17 @@ function makeTreasuryExpenseDraft(): TreasuryExpenseDraft {
   };
 }
 
+function makeBonusDraft(): BonusDraft {
+  const now = new Date();
+  const date = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+  const time = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hour12: false });
+  return {
+    date,
+    time,
+    amount: '',
+    note: '',
+  };
+}
 
 function toProductDraft(item: Product): ProductDraft {
   return {
@@ -1443,6 +1470,8 @@ export default function App() {
   const [treasuryDraft, setTreasuryDraft] = useState<TreasuryDraft>(() => makeTreasuryDraft(null));
   const [treasuryExpenseDraft, setTreasuryExpenseDraft] = useState<TreasuryExpenseDraft>(() => makeTreasuryExpenseDraft());
   const [treasuryExpenseLogs, setTreasuryExpenseLogs] = useState<TreasuryExpenseRecord[]>([]);
+  const [bonusDraft, setBonusDraft] = useState<BonusDraft>(() => makeBonusDraft());
+  const [bonusLogs, setBonusLogs] = useState<BonusRecord[]>([]);
   const [treasuryNotice, setTreasuryNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
     text: '✅ 出納子頁已啟動，可接手退款撥款與支出登記',
     tone: 'success',
@@ -2483,6 +2512,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     [treasuryExpenseLogs],
   );
 
+  const bonusTotal = useMemo(
+    () => bonusLogs.reduce((sum, item) => sum + item.amount, 0),
+    [bonusLogs],
+  );
+
   const treasuryReminders = useMemo(
     () => treasuryQueue
       .filter((item) => item.paymentStatus === '退款處理中')
@@ -2505,6 +2539,20 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const treasuryExpenseCategories = ['進貨支出', '運費支出', '雜項支出', '請款撥付'];
 
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
+
+  const accountingBoardsView = useMemo(() => ([
+    { title: '已收款總額', value: `$${orderRecords.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + (item.actualReceived ?? item.amount), 0).toLocaleString()}`, sub: '訂單入帳總覽' },
+    { title: '退款總額', value: `$${treasuryPaidAmount.toLocaleString()}`, sub: '出納完成撥款' },
+    { title: '支出總額', value: `$${treasuryExpenseTotal.toLocaleString()}`, sub: '採購 / 運費 / 雜支' },
+    { title: '獎金入帳', value: `$${bonusTotal.toLocaleString()}`, sub: `共 ${bonusLogs.length} 筆獎金入帳` },
+  ]), [orderRecords, treasuryPaidAmount, treasuryExpenseTotal, bonusTotal, bonusLogs.length]);
+
+  const accountingTrendBarsView = useMemo(() => {
+    const maxValue = Math.max(...accountingTrendBars.map((item) => item.value), bonusTotal || 0, 1);
+    const base = accountingTrendBars.map((item) => ({ ...item, width: Math.round((item.value / maxValue) * 100) }));
+    if (!bonusTotal) return base;
+    return [...base, { label: '獎金', value: bonusTotal, width: Math.round((bonusTotal / maxValue) * 100) }];
+  }, [bonusTotal]);
 
   const profilePersonalOrders = useMemo(() => orderRecords.map((item) => ({
     orderNo: item.orderNo,
@@ -2738,6 +2786,33 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setTreasuryExpenseLogs((prev) => [nextRecord, ...prev]);
     setTreasuryExpenseDraft(makeTreasuryExpenseDraft());
     setTreasuryNotice({ text: `✅ 已新增支出：${nextRecord.category}`, tone: 'success' });
+  }
+
+  function updateBonusDraftField(field: keyof BonusDraft, value: string) {
+    setBonusDraft((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function saveBonusEntry() {
+    const amount = Number(bonusDraft.amount || 0);
+    if (!bonusDraft.date || !bonusDraft.time) {
+      setAccountingNotice({ text: '❌ 請先補齊入帳日期與時間', tone: 'danger' });
+      return;
+    }
+    if (!amount || Number.isNaN(amount) || amount < 0) {
+      setAccountingNotice({ text: '❌ 獎金金額格式錯誤', tone: 'danger' });
+      return;
+    }
+    const nextRecord: BonusRecord = {
+      id: `bonus-${Date.now()}`,
+      date: bonusDraft.date,
+      time: bonusDraft.time,
+      amount,
+      note: bonusDraft.note.trim() || '獎金入帳',
+      operator: user.loginId,
+    };
+    setBonusLogs((prev) => [nextRecord, ...prev]);
+    setBonusDraft(makeBonusDraft());
+    setAccountingNotice({ text: `✅ 已加入獎金入帳：$${amount.toLocaleString()}`, tone: 'success' });
   }
 
   async function syncProductToFirebase(product: Product, stockValue?: number) {
@@ -3337,54 +3412,134 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const notificationItems = useMemo(() => {
     const items: Array<{ id: string; title: string; detail: string; tone: 'danger' | 'warning' | 'neutral' }> = [];
 
-    orderRecords
-      .filter((item) => item.paymentStatus === '退款處理中')
-      .forEach((item) => {
-        items.push({
-          id: `refund-${item.orderNo}` ,
-          title: `${item.orderNo} 待出納退款`,
-          detail: `${item.customer}｜退款金額 $${(typeof item.actualReceived === 'number' ? item.actualReceived : item.amount).toLocaleString()}`,
-          tone: 'danger',
+    if (active === 'orders') {
+      orderRecords
+        .filter((item) => item.paymentStatus === '未收款')
+        .slice(0, 6)
+        .forEach((item) => {
+          items.push({
+            id: `payment-${item.orderNo}` ,
+            title: `${item.orderNo} 待收款`,
+            detail: `${item.customer}｜應收 $${item.amount.toLocaleString()}`,
+            tone: 'neutral',
+          });
         });
-      });
+    }
 
-    orderRecords
-      .filter((item) => item.paymentStatus === '退款處理中' && (!item.proof || item.proof === '待上傳'))
-      .forEach((item) => {
-        items.push({
-          id: `proof-${item.orderNo}`,
-          title: `${item.orderNo} 待補退款證明`,
-          detail: `${item.customer}｜未上傳退款證明`,
-          tone: 'warning',
+    if (active === 'inventory') {
+      orderRecords
+        .filter((item) => item.paymentStatus === '已收款' && item.shippingStatus !== '已出貨')
+        .slice(0, 6)
+        .forEach((item) => {
+          items.push({
+            id: `shipping-${item.orderNo}` ,
+            title: `${item.orderNo} 待出貨`,
+            detail: `${item.customer}｜已收款待倉儲處理`,
+            tone: 'warning',
+          });
         });
-      });
+      stockSnapshot
+        .filter((item) => item.stock <= item.safe)
+        .slice(0, 4)
+        .forEach((item) => {
+          items.push({
+            id: `stock-${item.code}`,
+            title: `${item.name} 低庫存`,
+            detail: `${item.code}｜目前 ${item.stock} / 安全值 ${item.safe}`,
+            tone: 'danger',
+          });
+        });
+    }
 
-    orderRecords
-      .filter((item) => item.paymentStatus === '未收款')
-      .slice(0, 6)
-      .forEach((item) => {
+    if (active === 'accounting') {
+      if (accountingTab === 'ops') {
+        orderRecords
+          .filter((item) => item.paymentStatus === '未收款')
+          .slice(0, 6)
+          .forEach((item) => {
+            items.push({
+              id: `accounting-pay-${item.orderNo}`,
+              title: `${item.orderNo} 待會計收款`,
+              detail: `${item.customer}｜待確認入帳`,
+              tone: 'neutral',
+            });
+          });
+        if (bonusLogs.length) {
+          items.push({
+            id: 'bonus-summary',
+            title: '獎金入帳已更新',
+            detail: `目前累計 ${bonusLogs.length} 筆 / $${bonusTotal.toLocaleString()}`,
+            tone: 'warning',
+          });
+        }
+      }
+      if (accountingTab === 'treasury') {
+        treasuryQueue
+          .filter((item) => item.paymentStatus === '退款處理中')
+          .forEach((item) => {
+            items.push({
+              id: `refund-${item.orderNo}`,
+              title: `${item.orderNo} 待出納退款`,
+              detail: `${item.customer}｜退款金額 $${(typeof item.actualReceived === 'number' ? item.actualReceived : item.amount).toLocaleString()}`,
+              tone: 'danger',
+            });
+          });
+        treasuryQueue
+          .filter((item) => item.paymentStatus === '退款處理中' && (!item.proof || item.proof === '待上傳'))
+          .forEach((item) => {
+            items.push({
+              id: `proof-${item.orderNo}`,
+              title: `${item.orderNo} 待補退款證明`,
+              detail: `${item.customer}｜未上傳退款證明`,
+              tone: 'warning',
+            });
+          });
+      }
+      if (accountingTab === 'stats' && bonusLogs.length) {
         items.push({
-          id: `payment-${item.orderNo}`,
-          title: `${item.orderNo} 待收款`,
-          detail: `${item.customer}｜應收 $${item.amount.toLocaleString()}`,
+          id: 'stats-bonus',
+          title: '營運報表已含獎金入帳',
+          detail: `目前獎金合計 $${bonusTotal.toLocaleString()}`,
           tone: 'neutral',
         });
-      });
+      }
+    }
 
-    orderRecords
-      .filter((item) => item.paymentStatus === '已收款' && item.shippingStatus !== '已出貨')
-      .slice(0, 6)
-      .forEach((item) => {
+    if (active === 'products') {
+      products.filter((item) => !item.enabled).slice(0, 6).forEach((item) => {
         items.push({
-          id: `shipping-${item.orderNo}`,
-          title: `${item.orderNo} 待出貨`,
-          detail: `${item.customer}｜已收款待倉儲處理`,
+          id: `product-${item.id}`,
+          title: `${item.name} 尚未啟用`,
+          detail: `${item.code}｜可切換啟用狀態`,
           tone: 'warning',
         });
       });
+    }
+
+    if (active === 'customers') {
+      visibleCustomerRecords.filter((item) => !item.phone || item.phone.trim() === '').slice(0, 6).forEach((item) => {
+        items.push({
+          id: `customer-${item.id}`,
+          title: `${item.name} 待補資料`,
+          detail: '缺少聯絡電話',
+          tone: 'warning',
+        });
+      });
+    }
+
+    if (active === 'staff') {
+      staff.filter((item) => !item.enabled).slice(0, 6).forEach((item) => {
+        items.push({
+          id: `staff-${item.id}`,
+          title: `${item.name} 尚未啟用`,
+          detail: `${item.loginId}｜可於人員模組開啟使用權`,
+          tone: 'warning',
+        });
+      });
+    }
 
     return items;
-  }, [orderRecords]);
+  }, [active, accountingTab, bonusLogs, bonusTotal, orderRecords, products, staff, stockSnapshot, treasuryQueue, visibleCustomerRecords]);
 
   const notificationCount = notificationItems.length;
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
@@ -3508,14 +3663,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <header className="vp-header card">
           <div className="vp-header-banner">
             <div className="vp-header-visual">
-              <span className="vp-visual-line vp-visual-line-a" />
-              <span className="vp-visual-line vp-visual-line-b" />
-              <span className="vp-visual-line vp-visual-line-c" />
+              <span className="vp-visual-orb vp-visual-orb-a" />
+              <span className="vp-visual-orb vp-visual-orb-b" />
+              <span className="vp-visual-curve vp-visual-curve-a" />
+              <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
               <div className="vp-header-kicker">brand visual banner</div>
               <div className="vp-header-watermark">VP ORDER ERP</div>
-              <p className="vp-header-desc">以斜線、漸層與留白維持乾淨感，通知集中到右側小鈴鐺。</p>
+              <p className="vp-header-desc">改用柔和光暈、圓弧流線與玻璃霧感，通知集中到右側小鈴鐺。</p>
             </div>
           </div>
           <div className="vp-header-tools">
@@ -3666,9 +3822,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                     treasuryExpenseCategories={treasuryExpenseCategories}
                     handleTreasuryExpenseProofUpload={handleTreasuryExpenseProofUpload}
                     treasuryExpenseProofInputRef={treasuryExpenseProofInputRef}
+                    bonusDraft={bonusDraft}
+                    updateBonusDraftField={updateBonusDraftField}
+                    saveBonusEntry={saveBonusEntry}
+                    bonusLogs={bonusLogs}
+                    bonusTotal={bonusTotal}
                     user={user}
-                    accountingBoards={accountingBoards}
-                    accountingTrendBars={accountingTrendBars}
+                    accountingBoards={accountingBoardsView}
+                    accountingTrendBars={accountingTrendBarsView}
                     salesRanking={salesRanking}
                     hotProductsBoard={hotProductsBoard}
                     SectionIntro={SectionIntro}

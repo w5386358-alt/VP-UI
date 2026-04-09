@@ -16,7 +16,8 @@ export default function AccountingModule(props: any) {
 
     treasuryQueue, treasurySummary, treasuryReminders, selectedTreasuryRecord, treasuryDraft, treasuryNotice,
     selectTreasuryOrder, updateTreasuryDraftField, confirmTreasuryRefund, handleTreasuryProofUpload, treasuryProofInputRef,
-    treasuryExpenseDraft, updateTreasuryExpenseField, saveTreasuryExpense, treasuryExpenseLogs, treasuryExpenseCategories, handleTreasuryExpenseProofUpload, treasuryExpenseProofInputRef, user,
+    treasuryExpenseDraft, updateTreasuryExpenseField, saveTreasuryExpense, treasuryExpenseLogs, treasuryExpenseCategories, handleTreasuryExpenseProofUpload, treasuryExpenseProofInputRef,
+    bonusDraft, updateBonusDraftField, saveBonusEntry, bonusLogs, bonusTotal, user,
 
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
   } = props;
@@ -134,6 +135,27 @@ export default function AccountingModule(props: any) {
               </div>
 
               <div className="warehouse-side-section">
+                <div className="panel-head compact-head">
+                  <div><div className="panel-title">獎金入帳</div></div>
+                  <span className="badge badge-soft">連動報表</span>
+                </div>
+                <div className="warehouse-form-grid warehouse-command-fields bonus-entry-grid">
+                  <div className="fake-field"><span>入帳日期</span><strong><input type="date" value={bonusDraft.date} onChange={(e) => updateBonusDraftField('date', e.target.value)} /></strong></div>
+                  <div className="fake-field"><span>入帳時間</span><strong><input type="time" value={bonusDraft.time} onChange={(e) => updateBonusDraftField('time', e.target.value)} /></strong></div>
+                  <div className="fake-field"><span>金額</span><strong><input value={bonusDraft.amount} onChange={(e) => updateBonusDraftField('amount', e.target.value)} inputMode="decimal" placeholder="輸入獎金金額" /></strong></div>
+                  <div className="fake-field wide"><span>備註</span><strong><input value={bonusDraft.note} onChange={(e) => updateBonusDraftField('note', e.target.value)} placeholder="例如：業績獎金 / 推廣獎金" /></strong></div>
+                </div>
+                <div className="bonus-entry-footer">
+                  <div className="bonus-entry-summary">
+                    <span>目前累計</span>
+                    <strong>${bonusTotal.toLocaleString()}</strong>
+                    <em>{bonusLogs.length} 筆</em>
+                  </div>
+                  <button type="button" className="ghost-button compact-btn" onClick={saveBonusEntry}><Wallet className="small-icon" />加入獎金</button>
+                </div>
+              </div>
+
+              <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
                   <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
                   <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
@@ -178,26 +200,6 @@ export default function AccountingModule(props: any) {
                   </button>
                 ))}
                 {!treasuryQueue.length && <div className="warehouse-empty-state">目前沒有待處理退款</div>}
-              </div>
-            </div>
-
-            <div className="card order-panel">
-              <div className="panel-head">
-                <div><div className="panel-title">提醒通知</div></div>
-                <span className="badge badge-danger">缺證明會持續提醒</span>
-              </div>
-              <div className="treasury-reminder-grid">
-                {treasuryReminders.map((item: any) => (
-                  <div key={item.orderNo} className={`treasury-reminder-card ${item.missingProof ? 'danger' : 'ok'}`}>
-                    <div className="treasury-reminder-top">
-                      <strong>{item.orderNo}</strong>
-                      <span>{item.customer}</span>
-                    </div>
-                    <div className="treasury-reminder-meta">退款金額 ${item.amount}</div>
-                    <div className="treasury-reminder-meta">{item.missingProof ? '尚未補退款證明' : '資料完整'}</div>
-                  </div>
-                ))}
-                {!treasuryReminders.length && <div className="warehouse-empty-state">目前沒有提醒事項</div>}
               </div>
             </div>
           </div>
@@ -342,6 +344,7 @@ export default function AccountingModule(props: any) {
                 <div className="insight-row"><span>收款主軸</span><strong>訂單完成後入帳</strong></div>
                 <div className="insight-row"><span>退款主軸</span><strong>退款進行中 → 出納完成</strong></div>
                 <div className="insight-row"><span>支出主軸</span><strong>採購 / 運費 / 雜支分流</strong></div>
+                <div className="insight-row"><span>獎金入帳</span><strong>${bonusTotal.toLocaleString()} / {bonusLogs.length} 筆</strong></div>
               </div>
             </div>
           </div>
