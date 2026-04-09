@@ -277,75 +277,71 @@ export default function AccountingModule(props: any) {
 
       {accountingTab === 'stats' && (
         <section className="accounting-stats-layout-v3">
-          <div className="accounting-stats-hero card">
-            <div>
-              <div className="accounting-stats-hero-kicker">營運報表</div>
-              <h3 className="accounting-stats-hero-title">先做視覺骨架，後續再接真實邏輯資料。</h3>
-              <p className="accounting-stats-hero-desc">目前先用圖表模組呈現營運結構、收退款占比、支出流向與區間變化。</p>
+          <div className="accounting-stats-main-v3">
+            <div className="accounting-board-grid-v3">
+              {accountingBoards.map((item: any) => (
+                <div key={item.title} className="card accounting-board-card-v3">
+                  <div className="accounting-board-kicker">{item.title}</div>
+                  <div className="accounting-board-value">{item.value}</div>
+                  <div className="accounting-board-sub">{item.sub}</div>
+                </div>
+              ))}
             </div>
-            <div className="accounting-stats-hero-tags">
-              <span className="badge badge-soft">可後續改邏輯</span>
-              <span className="badge badge-role">圖表骨架版</span>
+
+            <div className="accounting-visual-grid-v3">
+              <div className="card order-panel accounting-visual-card">
+                <div className="panel-head"><div><div className="panel-title">收支占比</div></div><span className="badge badge-soft">圓圖</span></div>
+                <div className="accounting-donut-wrap">
+                  <div className="accounting-donut-chart">
+                    <div className="accounting-donut-hole">
+                      <strong>營運</strong>
+                      <span>本期概覽</span>
+                    </div>
+                  </div>
+                  <div className="accounting-donut-legend">
+                    <div><span className="legend-dot income" />已收款</div>
+                    <div><span className="legend-dot refund" />退款</div>
+                    <div><span className="legend-dot expense" />支出</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card order-panel accounting-visual-card">
+                <div className="panel-head"><div><div className="panel-title">營運流向</div></div><span className="badge badge-soft">樹狀</span></div>
+                <div className="accounting-tree-map">
+                  <div className="tree-block tree-income"><strong>收款</strong><span>訂單收入</span></div>
+                  <div className="tree-column">
+                    <div className="tree-block tree-refund"><strong>退款</strong><span>退貨 / 退款</span></div>
+                    <div className="tree-block tree-expense"><strong>支出</strong><span>採購 / 運費 / 雜支</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card order-panel accounting-trend-card-v3">
+              <div className="panel-head"><div><div className="panel-title">區間營收趨勢</div></div><span className="badge badge-soft">柱狀</span></div>
+              <div className="accounting-bar-chart-v3">
+                {accountingTrendBars.map((item: any) => (
+                  <div key={item.label} className="accounting-bar-item-v3">
+                    <div className="accounting-bar-rail">
+                      <div className="accounting-bar-fill-v3" style={{ height: `${Math.max(item.width, 12)}%` }} />
+                    </div>
+                    <div className="accounting-bar-label">{item.label}</div>
+                    <div className="accounting-bar-value">${item.value}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="accounting-stats-grid-v3">
-            <div className="card accounting-chart-card accounting-donut-card">
-              <div className="panel-head"><div><div className="panel-title">收支結構</div><div className="panel-desc">圓環式視覺</div></div><span className="badge badge-soft">占比</span></div>
-              <div className="accounting-donut-layout">
-                <div className="accounting-donut-visual">
-                  <div className="accounting-donut-ring">
-                    <div className="accounting-donut-center">
-                      <strong>營運</strong>
-                      <span>總覽</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="accounting-donut-legend">
-                  <div className="accounting-legend-row"><span className="legend-dot income"></span><div><strong>已收款</strong><span>主收入來源</span></div></div>
-                  <div className="accounting-legend-row"><span className="legend-dot refund"></span><div><strong>退款中 / 已退款</strong><span>退款流程追蹤</span></div></div>
-                  <div className="accounting-legend-row"><span className="legend-dot expense"></span><div><strong>支出</strong><span>採購、運費、雜支</span></div></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card accounting-chart-card accounting-tree-card">
-              <div className="panel-head"><div><div className="panel-title">資金流向</div><div className="panel-desc">樹狀視覺</div></div><span className="badge badge-soft">分流</span></div>
-              <div className="accounting-tree-shell">
-                <div className="accounting-tree-root">營運金流</div>
-                <div className="accounting-tree-branches">
-                  <div className="accounting-tree-branch"><strong>訂單收入</strong><span>收款完成</span></div>
-                  <div className="accounting-tree-branch"><strong>退款流程</strong><span>退款中 → 已退款</span></div>
-                  <div className="accounting-tree-branch"><strong>支出管理</strong><span>採購 / 運費 / 雜支</span></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card accounting-chart-card accounting-bars-card">
-              <div className="panel-head"><div><div className="panel-title">區間變化</div><div className="panel-desc">柱狀趨勢圖</div></div><span className="badge badge-soft">趨勢</span></div>
-              <div className="accounting-bars-visual">
-                {accountingTrendBars.map((item: any) => (
-                  <div key={item.label} className="accounting-bar-col">
-                    <div className="accounting-bar-track"><div className="accounting-bar-fill" style={{ height: `${Math.max(18, item.width)}%` }} /></div>
-                    <strong>${item.value}</strong>
-                    <span>{item.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="card accounting-chart-card accounting-summary-card">
-              <div className="panel-head"><div><div className="panel-title">摘要小卡</div><div className="panel-desc">先放視覺區塊</div></div><Sparkles className="small-icon" /></div>
-              <div className="accounting-summary-stack">
-                {accountingBoards.map((item: any) => (
-                  <div key={item.title} className="accounting-summary-row">
-                    <div>
-                      <div className="accounting-summary-label">{item.title}</div>
-                      <div className="accounting-summary-sub">{item.sub}</div>
-                    </div>
-                    <strong>{item.value}</strong>
-                  </div>
-                ))}
+          <div className="accounting-stats-side-v3">
+            <div className="card accounting-insight-card-v3">
+              <Sparkles className="small-icon" />
+              <div className="accounting-insight-title">營運摘要</div>
+              <div className="accounting-insight-list">
+                <div className="insight-row"><span>收款主軸</span><strong>訂單完成後入帳</strong></div>
+                <div className="insight-row"><span>退款主軸</span><strong>退款進行中 → 出納完成</strong></div>
+                <div className="insight-row"><span>支出主軸</span><strong>採購 / 運費 / 雜支分流</strong></div>
               </div>
             </div>
           </div>

@@ -85,8 +85,8 @@ export default function ProductsModule(props: any) {
                     <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
                       <PencilLine className="small-icon" />編輯
                     </button>
-                    <button type="button" className={`switch-toggle ${item.enabled ? 'active' : ''}`} onClick={() => toggleProductEnabled(item)} aria-label={item.enabled ? '停用商品' : '啟用商品'} title={item.enabled ? '停用商品' : '啟用商品'}>
-                      <span className="switch-knob" />
+                    <button type="button" className={`ui-switch ${item.enabled ? 'on' : 'off'}`} onClick={() => toggleProductEnabled(item)} aria-label={item.enabled ? '停用商品' : '啟用商品'} aria-pressed={item.enabled}>
+                      <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
                     </button>
                   </div>
                 </div>
@@ -176,11 +176,11 @@ export default function ProductsModule(props: any) {
               </div>
             </div>
 
-            <div className="product-editor-status">
+            <div className="product-editor-status product-editor-status-clean">
               <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
               {productEditorMode !== 'view' && (
-                <button type="button" className={`switch-toggle ${productDraft.enabled ? 'active' : ''}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-label={productDraft.enabled ? '停用商品' : '啟用商品'} title={productDraft.enabled ? '停用商品' : '啟用商品'}>
-                  <span className="switch-knob" />
+                <button type="button" className={`ui-switch ${productDraft.enabled ? 'on' : 'off'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-label={productDraft.enabled ? '停用商品' : '啟用商品'} aria-pressed={productDraft.enabled}>
+                  <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
                 </button>
               )}
             </div>

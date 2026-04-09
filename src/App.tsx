@@ -1346,11 +1346,10 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
 
 function SectionIntro({ title, desc }: { title: string; desc: string; stats?: string[] }) {
   return (
-    <section className="section-intro-shell section-intro-shell-v2 section-intro-shell-clean">
+    <section className="section-intro-shell section-intro-shell-minimal">
       <div className="section-intro-main">
-        <div className="section-intro-kicker"></div>
         <h2 className="section-intro-title">{title}</h2>
-        <p className="section-intro-desc">{desc}</p>
+        {desc ? <p className="section-intro-desc">{desc}</p> : null}
       </div>
     </section>
   );
@@ -3398,32 +3397,36 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
           <div className="vp-switch-panel card">
             <div className="vp-panel-label">預覽切換</div>
-            <div className="vp-switch-group">
-              <div className="role-switch-label">角色預覽</div>
-              <div className="role-switch-row">
+            <div className="vp-clean-toggle-group">
+              <div className="clean-toggle-head">角色</div>
+              <div className="clean-toggle-grid">
                 {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
                   <button
                     key={role}
                     type="button"
-                    className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
+                    className={`clean-mode-chip ${user.role === role ? 'active' : ''}`}
                     onClick={() => setUserRoleView(role)}
+                    aria-pressed={user.role === role}
                   >
-                    {ROLE_LABEL[role]}
+                    <span className="clean-mode-dot" />
+                    <span>{ROLE_LABEL[role]}</span>
                   </button>
                 ))}
               </div>
             </div>
-            <div className="vp-switch-group">
-              <div className="role-switch-label">階級預覽</div>
-              <div className="rank-switch-row">
+            <div className="vp-clean-toggle-group">
+              <div className="clean-toggle-head">階級</div>
+              <div className="clean-toggle-grid clean-toggle-grid-rank">
                 {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
                   <button
                     key={rank}
                     type="button"
-                    className={`rank-switch-btn ${rank} ${user.rankKey === rank ? 'active' : ''}`}
+                    className={`clean-mode-chip rank-${rank} ${user.rankKey === rank ? 'active' : ''}`}
                     onClick={() => setUserRankView(rank)}
+                    aria-pressed={user.rankKey === rank}
                   >
-                    {RANK_DISPLAY[rank]}
+                    <span className="clean-mode-dot" />
+                    <span>{RANK_DISPLAY[rank]}</span>
                   </button>
                 ))}
               </div>
@@ -3449,29 +3452,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             </button>
           </div>
         </header>
-
-        <section className="vp-overview-grid">
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">目前模組</div>
-            <div className="vp-overview-value">{activeLabel}</div>
-            <div className="vp-overview-sub">目前正在操作的區域</div>
-          </div>
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">商品資料</div>
-            <div className="vp-overview-value">{products.length}</div>
-            <div className="vp-overview-sub">商品資料與庫存基礎</div>
-          </div>
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">客戶資料</div>
-            <div className="vp-overview-value">{customers.length}</div>
-            <div className="vp-overview-sub">客戶資料與業務名單</div>
-          </div>
-          <div className="card vp-overview-card">
-            <div className="vp-overview-label">資料來源</div>
-            <div className="vp-overview-value">{firebaseReady ? 'ONLINE' : 'MOCK'}</div>
-            <div className="vp-overview-sub">{firebaseReady ? '已連線同步' : '介面預覽中'}</div>
-          </div>
-        </section>
 
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
