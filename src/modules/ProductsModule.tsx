@@ -85,8 +85,8 @@ export default function ProductsModule(props: any) {
                     <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
                       <PencilLine className="small-icon" />編輯
                     </button>
-                    <button type="button" className="toggle-switch-card" onClick={() => toggleProductEnabled(item)} aria-pressed={item.enabled} title={item.enabled ? '停用商品' : '啟用商品'}>
-                      <span className={`toggle-switch ${item.enabled ? 'on' : ''}`}><span className="toggle-switch-thumb" /></span>
+                    <button type="button" className={`switch-toggle ${item.enabled ? 'active' : ''}`} onClick={() => toggleProductEnabled(item)} aria-label={item.enabled ? '停用商品' : '啟用商品'} title={item.enabled ? '停用商品' : '啟用商品'}>
+                      <span className="switch-knob" />
                     </button>
                   </div>
                 </div>
@@ -179,8 +179,8 @@ export default function ProductsModule(props: any) {
             <div className="product-editor-status">
               <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
               {productEditorMode !== 'view' && (
-                <button type="button" className="toggle-switch-card toggle-switch-inline" onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-pressed={productDraft.enabled} title={productDraft.enabled ? '切換停用' : '切換啟用'}>
-                  <span className={`toggle-switch ${productDraft.enabled ? 'on' : ''}`}><span className="toggle-switch-thumb" /></span>
+                <button type="button" className={`switch-toggle ${productDraft.enabled ? 'active' : ''}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-label={productDraft.enabled ? '停用商品' : '啟用商品'} title={productDraft.enabled ? '停用商品' : '啟用商品'}>
+                  <span className="switch-knob" />
                 </button>
               )}
             </div>
