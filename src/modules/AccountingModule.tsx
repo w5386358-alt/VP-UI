@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3 } from 'lucide-react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -36,6 +36,7 @@ export default function AccountingModule(props: any) {
     <section className="accounting-shell-v2">
       <div className="accounting-tab-row accounting-tab-row-v2">
         <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" />收款作業</button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'bonus' ? 'active' : ''}`} onClick={() => setAccountingTab('bonus')}><Coins className="small-icon" />獎金入帳</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'treasury' ? 'active' : ''}`} onClick={() => setAccountingTab('treasury')}><Wallet className="small-icon" />出納</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />營運報表</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" />排名 / 熱銷</button>
@@ -168,6 +169,48 @@ export default function AccountingModule(props: any) {
         </section>
       )}
 
+      {accountingTab === 'bonus' && (
+        <section className="accounting-bonus-layout">
+          <div className="card order-panel accounting-bonus-entry-card">
+            <div className="panel-head">
+              <div><div className="panel-title">獎金入帳</div><div className="panel-desc">獨立於收款作業，單獨管理獎金入帳與後續報表連動。</div></div>
+              <span className="badge badge-role">登入者：{user?.loginId || '-'}</span>
+            </div>
+            <div className="warehouse-form-grid warehouse-command-fields treasury-expense-grid">
+              <div className="fake-field"><span>入帳日期</span><strong><input type="date" value={bonusDraft.date} onChange={(e) => updateBonusDraftField('date', e.target.value)} /></strong></div>
+              <div className="fake-field"><span>入帳時間</span><strong><input type="time" value={bonusDraft.time} onChange={(e) => updateBonusDraftField('time', e.target.value)} /></strong></div>
+              <div className="fake-field"><span>金額</span><strong><input value={bonusDraft.amount} onChange={(e) => updateBonusDraftField('amount', e.target.value)} inputMode="decimal" placeholder="輸入獎金金額" /></strong></div>
+              <div className="fake-field wide"><span>備註</span><strong><input value={bonusDraft.note} onChange={(e) => updateBonusDraftField('note', e.target.value)} placeholder="例如：業績獎金 / 推廣獎金" /></strong></div>
+            </div>
+            <div className="accounting-action-row warehouse-action-row">
+              <button type="button" className="primary-button" onClick={saveBonusEntry}><Coins className="small-icon" />加入獎金</button>
+            </div>
+          </div>
+
+          <div className="card order-panel accounting-bonus-log-card">
+            <div className="panel-head">
+              <div><div className="panel-title">獎金入帳紀錄</div><div className="panel-desc">這裡的資料會同步反映到營運報表摘要區。</div></div>
+              <span className="badge badge-soft">合計 ${bonusTotal.toLocaleString()}</span>
+            </div>
+            <div className="treasury-expense-log">
+              {bonusLogs.map((item: any) => (
+                <div key={item.id} className="treasury-expense-row">
+                  <div>
+                    <strong>{item.note || '獎金入帳'}</strong>
+                    <div className="shipping-meta">{item.date} {item.time} / {item.operator}</div>
+                  </div>
+                  <div className="treasury-expense-right">
+                    <strong>${item.amount}</strong>
+                    <span>已登記</span>
+                  </div>
+                </div>
+              ))}
+              {!bonusLogs.length && <div className="warehouse-empty-state">尚未建立獎金入帳紀錄</div>}
+            </div>
+          </div>
+        </section>
+      )}
+
       {accountingTab === 'treasury' && (
         <section className="accounting-treasury-layout">
           <div className="accounting-treasury-main">
@@ -280,16 +323,6 @@ export default function AccountingModule(props: any) {
       {accountingTab === 'stats' && (
         <section className="accounting-stats-layout-v3">
           <div className="accounting-stats-main-v3">
-            <div className="accounting-board-grid-v3">
-              {accountingBoards.map((item: any) => (
-                <div key={item.title} className="card accounting-board-card-v3">
-                  <div className="accounting-board-kicker">{item.title}</div>
-                  <div className="accounting-board-value">{item.value}</div>
-                  <div className="accounting-board-sub">{item.sub}</div>
-                </div>
-              ))}
-            </div>
-
             <div className="accounting-visual-grid-v3">
               <div className="card order-panel accounting-visual-card">
                 <div className="panel-head"><div><div className="panel-title">收支占比</div></div><span className="badge badge-soft">圓圖</span></div>

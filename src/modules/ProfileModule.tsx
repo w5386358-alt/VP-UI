@@ -1,121 +1,63 @@
-import { useMemo, useState } from 'react';
-import { QrCode, RefreshCw, Search, CalendarRange, Phone, User2, ClipboardList, Sparkles, Wallet, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ClipboardCheck, Sparkles, Vote, ShieldCheck } from 'lucide-react';
 
 export default function ProfileModule(props: any) {
-  const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, priceTierLabel, SectionIntro, SummaryCard, ownCustomerRecords = [], allOrderRecords = [] } = props;
-
-  const myCustomerCards = ownCustomerRecords.map((customer: any) => {
-    const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
-    const latestOrder = relatedOrders[0];
-    return {
-      ...customer,
-      orderCount: relatedOrders.length,
-      latestOrderNo: latestOrder?.orderNo || '尚無訂單',
-      latestOrderStatus: latestOrder ? `${latestOrder.paymentStatus} / ${latestOrder.shippingStatus}` : '尚無訂單',
-    };
-  });
-  const [customerPage, setCustomerPage] = useState(1);
-  const [orderPage, setOrderPage] = useState(1);
-  const pageSize = 10;
-  const totalCustomerPages = Math.max(1, Math.ceil(myCustomerCards.length / pageSize));
-  const safeCustomerPage = Math.min(customerPage, totalCustomerPages);
-  const pagedCustomerCards = useMemo(() => myCustomerCards.slice((safeCustomerPage - 1) * pageSize, safeCustomerPage * pageSize), [myCustomerCards, safeCustomerPage]);
-  const customerPageNumbers = Array.from({ length: totalCustomerPages }, (_, index) => index + 1);
-  const filteredOrders = personalOrders.filter((item: any) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase()));
-  const totalOrderPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
-  const safeOrderPage = Math.min(orderPage, totalOrderPages);
-  const pagedOrders = useMemo(() => filteredOrders.slice((safeOrderPage - 1) * pageSize, safeOrderPage * pageSize), [filteredOrders, safeOrderPage]);
-  const orderPageNumbers = Array.from({ length: totalOrderPages }, (_, index) => index + 1);
+  const { user, getRankClass, priceTierLabel } = props;
 
   return (
-    <>
-      <SectionIntro
-        title="個人資料"
-        desc="個人資料與常用入口。"
-        stats={[`歷史訂單 ${personalOrders.length} 筆`, `我的客戶 ${myCustomerCards.length} 位`, '個人業績 / 快捷入口']}
-      />
-
-      <section className="profile-shell-v2">
-        <div className="profile-hero-card-v2 card">
-          <div className="profile-hero-identity">
-            <div className="profile-hero-avatar">秉</div>
-            <div>
-              <div className="profile-hero-name">{user.name}</div>
-              <div className="profile-hero-id">員工編號：VP001 / 登入 ID：{user.loginId}</div>
-              <div className="data-chip-row"><span className="badge badge-role">角色 / 管理</span><span className={getRankClass(user.rank)}>階級 / {user.rank}</span><span className="badge badge-neutral">價格層級 / {priceTierLabel}</span></div>
+    <section className="evaluation-shell">
+      <div className="card evaluation-hero-card">
+        <div>
+          <div className="evaluation-kicker">評鑑模組</div>
+          <div className="evaluation-title">個人資料區後續改為評鑑與投票機制</div>
+          <div className="evaluation-desc">這一區先切換成評鑑模組定位，下一版再依你提供的詳細投票規則補齊內容與流程。</div>
+        </div>
+        <div className="evaluation-identity">
+          <div className="evaluation-avatar">評</div>
+          <div>
+            <div className="evaluation-user">{user.name}</div>
+            <div className="data-chip-row">
+              <span className="badge badge-role">帳號 / {user.loginId}</span>
+              <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
+              <span className="badge badge-neutral">價格層級 / {priceTierLabel}</span>
             </div>
-          </div>
-          <div className="profile-hero-side-grid">
-            <div className="profile-hero-mini"><Wallet className="small-icon" /><div><span>累積業績</span><strong>$128,600</strong></div></div>
-            <div className="profile-hero-mini"><ShieldCheck className="small-icon" /><div><span>目前排名</span><strong>#3</strong></div></div>
-            <div className="profile-hero-mini accent"><QrCode className="small-icon" /><div><span>員編 QR</span><strong>已建立</strong></div></div>
           </div>
         </div>
+      </div>
 
-        <section className="profile-overview-grid-v2">
-          <div className="profile-summary-grid-v2">{personalSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}</div>
-          <div className="card profile-quick-panel-v2">
-            <div className="panel-head compact-head"><div><div className="panel-title">快捷入口</div><div className="panel-desc">常用入口。</div></div><Sparkles className="small-icon" /></div>
-            <div className="profile-action-grid profile-action-grid-v2">
-              {profileQuickActions.map((item: any) => {
-                const Icon = item.icon;
-                return <div key={item.title} className="profile-action-card profile-action-card-v2"><div className="profile-action-icon"><Icon className="small-icon" /></div><div className="profile-action-title">{item.title}</div><div className="profile-action-desc">{item.desc}</div></div>;
-              })}
-            </div>
+      <div className="evaluation-grid">
+        <div className="card evaluation-card">
+          <div className="evaluation-card-head"><Vote className="small-icon" /><span>投票機制預留</span></div>
+          <div className="evaluation-bullets">
+            <div>候選人 / 評分項目 / 票數統計</div>
+            <div>支援身分與權限控管</div>
+            <div>之後可接評鑑結果與排行</div>
           </div>
-        </section>
-
-        <section className="profile-content-grid-v2">
-          <div className="card order-panel profile-customer-panel-v2">
-            <div className="panel-head"><div><div className="panel-title">我的客戶</div><div className="panel-desc">查看我的客戶。</div></div><span className="badge badge-neutral">姓名 / 電話 / 最新訂單</span></div>
-            <div className="profile-customer-grid profile-customer-grid-v2">
-              {pagedCustomerCards.map((item: any) => (
-                <div key={item.id} className="profile-customer-card profile-customer-card-v2">
-                  <div className="profile-customer-head"><div className="profile-customer-name"><User2 className="small-icon" />{item.name}</div><span className="badge badge-soft">{item.orderCount} 筆</span></div>
-                  <div className="profile-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
-                  <div className="profile-customer-order"><div className="profile-customer-order-no"><ClipboardList className="small-icon" />{item.latestOrderNo}</div><div className="profile-customer-order-status">{item.latestOrderStatus}</div></div>
-                </div>
-              ))}
-              {!pagedCustomerCards.length && <div className="warehouse-empty-state">沒有屬於你的客戶資料</div>}
-            </div>
-            <div className="pagination-row">
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safeCustomerPage === 1}><ChevronLeft className="small-icon" />上一頁</button>
-              <div className="pagination-pages">
-                {customerPageNumbers.map((page) => (
-                  <button key={page} type="button" className={`pagination-page ${safeCustomerPage === page ? 'active' : ''}`} onClick={() => setCustomerPage(page)}>{page}</button>
-                ))}
-              </div>
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.min(totalCustomerPages, page + 1))} disabled={safeCustomerPage === totalCustomerPages}>下一頁<ChevronRight className="small-icon" /></button>
-            </div>
+        </div>
+        <div className="card evaluation-card">
+          <div className="evaluation-card-head"><ClipboardCheck className="small-icon" /><span>評鑑流程預留</span></div>
+          <div className="evaluation-bullets">
+            <div>發起評鑑</div>
+            <div>投票中</div>
+            <div>結果彙整 / 歷史紀錄</div>
           </div>
-
-          <div className="card order-panel profile-history-panel-v2">
-            <div className="panel-head"><div><div className="panel-title">我的歷史訂單</div><div className="panel-desc">查看歷史訂單。</div></div><div className="history-toolbar"><button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button><button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />重新整理</button></div></div>
-            <div className="history-filter-row"><div className="search-wrap inline-search"><Search className="search-icon" /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" /></div><button type="button" className="primary-button compact-primary">搜尋</button></div>
-            <div className="history-list">
-              {pagedOrders.map((item: any) => (
-                <div key={item.orderNo} className="history-row history-row-v2">
-                  <div className="history-main">
-                    <div className="history-order">{item.orderNo}</div>
-                    <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
-                    <div className="history-statuses"><span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span><span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span><span className="badge badge-soft">{item.mainStatus}</span></div>
-                  </div>
-                  <div className="history-side"><div className="history-amount">${item.amount}</div><button type="button" className="ghost-button compact-btn history-detail-btn">查看詳情</button></div>
-                </div>
-              ))}
-            </div>
-            <div className="pagination-row">
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setOrderPage((page) => Math.max(1, page - 1))} disabled={safeOrderPage === 1}><ChevronLeft className="small-icon" />上一頁</button>
-              <div className="pagination-pages">
-                {orderPageNumbers.map((page) => (
-                  <button key={page} type="button" className={`pagination-page ${safeOrderPage === page ? 'active' : ''}`} onClick={() => setOrderPage(page)}>{page}</button>
-                ))}
-              </div>
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setOrderPage((page) => Math.min(totalOrderPages, page + 1))} disabled={safeOrderPage === totalOrderPages}>下一頁<ChevronRight className="small-icon" /></button>
-            </div>
+        </div>
+        <div className="card evaluation-card">
+          <div className="evaluation-card-head"><ShieldCheck className="small-icon" /><span>權限預留</span></div>
+          <div className="evaluation-bullets">
+            <div>建立投票</div>
+            <div>審核結果</div>
+            <div>限制可見範圍</div>
           </div>
-        </section>
-      </section>
-    </>
+        </div>
+        <div className="card evaluation-card accent">
+          <div className="evaluation-card-head"><Sparkles className="small-icon" /><span>下一步</span></div>
+          <div className="evaluation-bullets">
+            <div>你提供評鑑規則後</div>
+            <div>我直接把 UI 與互動補完整</div>
+            <div>再依需求接資料流</div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

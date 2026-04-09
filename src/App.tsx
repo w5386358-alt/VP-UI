@@ -71,7 +71,7 @@ type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
 type WarehouseQueryMode = 'barcode' | 'qr' | 'order';
-type AccountingTab = 'ops' | 'treasury' | 'stats' | 'ranking';
+type AccountingTab = 'ops' | 'bonus' | 'treasury' | 'stats' | 'ranking';
 
 type WorkflowCard = {
   title: string;
@@ -3756,7 +3756,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
               <div className="vp-module-body">
                 {active === 'dashboard' && (
-                  <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
+                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
                 )}
                 {active === 'products' && (
                   <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
@@ -3837,7 +3837,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} personalSummary={personalSummary} profileQuickActions={profileQuickActions} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} SectionIntro={SectionIntro} SummaryCard={SummaryCard} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} />
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} />
                 )}
               </div>
             </>
