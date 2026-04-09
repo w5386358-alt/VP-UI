@@ -4977,3 +4977,84 @@ body {
 .customers-main-card-full {
   width: 100%;
 }
+
+
+/* treasury subpage */
+.accounting-treasury-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(340px,0.85fr);
+  gap:18px;
+}
+.accounting-treasury-main,
+.accounting-treasury-side{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.treasury-queue,
+.treasury-expense-log{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.treasury-reminder-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+.treasury-reminder-card{
+  border:1px solid rgba(226,196,201,.9);
+  border-radius:18px;
+  padding:14px;
+  background:rgba(255,255,255,.82);
+}
+.treasury-reminder-card.danger{
+  border-color:rgba(214,106,106,.45);
+  box-shadow:0 10px 28px rgba(214,106,106,.10);
+}
+.treasury-reminder-card.ok{
+  border-color:rgba(112,177,134,.35);
+  box-shadow:0 10px 28px rgba(112,177,134,.08);
+}
+.treasury-reminder-top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.treasury-reminder-top span,
+.treasury-reminder-meta{
+  color:#7d6570;
+  font-size:13px;
+}
+.treasury-expense-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px 14px;
+  border:1px solid rgba(226,196,201,.9);
+  border-radius:16px;
+  background:rgba(255,255,255,.82);
+}
+.treasury-expense-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+  color:#7d6570;
+  font-size:13px;
+}
+.treasury-expense-grid .fake-field.wide{
+  grid-column:span 2;
+}
+@media (max-width: 1100px){
+  .accounting-treasury-layout{
+    grid-template-columns:1fr;
+  }
+}
+@media (max-width: 720px){
+  .treasury-expense-grid .fake-field.wide{
+    grid-column:span 1;
+  }
+}
