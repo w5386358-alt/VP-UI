@@ -45,6 +45,23 @@ export default function DashboardModule(props: any) {
       icon: Star,
     },
   ];
+  const radarLevels = [1, 0.75, 0.5, 0.25];
+  const center = 160;
+  const outerRadius = 112;
+  const radarPoints = rankingTree.map((item, index) => {
+    const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
+    const radius = outerRadius * (item.value / 100);
+    return {
+      ...item,
+      x: center + Math.cos(angle) * radius,
+      y: center + Math.sin(angle) * radius,
+      labelX: center + Math.cos(angle) * (outerRadius + 34),
+      labelY: center + Math.sin(angle) * (outerRadius + 34),
+      axisX: center + Math.cos(angle) * outerRadius,
+      axisY: center + Math.sin(angle) * outerRadius,
+    };
+  });
+  const radarPolygon = radarPoints.map((item) => `${item.x},${item.y}`).join(' ');
 
   return (
     <div className="dashboard-personal-shell">
@@ -141,31 +158,53 @@ export default function DashboardModule(props: any) {
         <div className="card dashboard-tree-card compact-card">
           <div className="panel-head">
             <div>
-              <div className="panel-title">個人評鑑樹狀圖</div>
-              <div className="panel-desc">改成評鑑節點連線圖，保留分數但不再畫成真的樹。</div>
+              <div className="panel-title">個人評鑑雷達能力圖</div>
+              <div className="panel-desc">改成中心雷達能力圖，分數越高就越往對應能力軸延伸。</div>
             </div>
             <span className="badge badge-soft">評鑑</span>
           </div>
-          <div className="dashboard-tree-layout node-layout">
-            <div className="dashboard-tree-visual node-visual">
-              <div className="dashboard-eval-hub">
+          <div className="dashboard-tree-layout radar-layout">
+            <div className="dashboard-tree-visual radar-visual">
+              <svg className="dashboard-radar-svg" viewBox="0 0 320 320" aria-label="個人評鑑雷達能力圖">
+                {radarLevels.map((level) => {
+                  const points = rankingTree.map((_, index) => {
+                    const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
+                    const radius = outerRadius * level;
+                    const x = center + Math.cos(angle) * radius;
+                    const y = center + Math.sin(angle) * radius;
+                    return `${x},${y}`;
+                  }).join(' ');
+                  return <polygon key={level} points={points} className="dashboard-radar-grid" />;
+                })}
+                {radarPoints.map((item) => (
+                  <line key={item.label} x1={center} y1={center} x2={item.axisX} y2={item.axisY} className="dashboard-radar-axis" />
+                ))}
+                <polygon points={radarPolygon} className="dashboard-radar-shape" />
+                {radarPoints.map((item) => (
+                  <circle key={item.label} cx={item.x} cy={item.y} r="6" className="dashboard-radar-point" />
+                ))}
+              </svg>
+              <div className="dashboard-radar-center-badge">
                 <span className="dashboard-eval-hub-label">綜合評分</span>
                 <strong className="dashboard-eval-hub-score">{averageScore}</strong>
               </div>
-              <div className="dashboard-eval-links" />
-              {rankingTree.map((item, index) => (
-                <div key={item.label} className={`dashboard-eval-node eval-node-${index + 1}`}>
+              {radarPoints.map((item) => (
+                <div
+                  key={item.label}
+                  className="dashboard-radar-label"
+                  style={{ left: `${item.labelX}px`, top: `${item.labelY}px` }}
+                >
                   <span className="dashboard-tree-label">{item.label}</span>
                   <strong className="dashboard-tree-score">{item.value}</strong>
                 </div>
               ))}
             </div>
-            <div className="dashboard-tree-score-grid node-summary-grid">
+            <div className="dashboard-tree-score-grid radar-summary-grid">
               {rankingTree.map((item) => (
-                <div key={item.label} className="dashboard-tree-score-card summary-card-lite">
+                <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card">
                   <span className="dashboard-tree-label">{item.label}</span>
                   <strong className="dashboard-tree-score">{item.value}</strong>
-                  <small className="dashboard-tree-mini-desc">依評鑑維度個別統計</small>
+                  <small className="dashboard-tree-mini-desc">分數越高，雷達圖越往該能力軸延伸</small>
                 </div>
               ))}
             </div>

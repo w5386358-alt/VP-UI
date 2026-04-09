@@ -6415,3 +6415,117 @@ body {
   }
   .dashboard-eval-hub-score { font-size: 34px; }
 }
+
+
+/* 第二十二版：工作區底色加深 + 評鑑改為雷達能力圖 */
+.vp-workspace {
+  background: linear-gradient(180deg, rgba(245, 225, 231, 0.98) 0%, rgba(236, 211, 220, 0.98) 100%) !important;
+}
+.dashboard-tree-layout.radar-layout {
+  grid-template-columns: minmax(380px, 1.15fr) minmax(260px, 0.85fr);
+  gap: 30px;
+}
+.dashboard-tree-visual.radar-visual {
+  position: relative;
+  min-height: 380px;
+  display: grid;
+  place-items: center;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(255,249,251,0.98), rgba(250,239,244,0.96));
+  border: 1px solid rgba(226, 198, 209, 0.95);
+  overflow: hidden;
+}
+.dashboard-tree-visual.radar-visual::before {
+  content: '';
+  position: absolute;
+  inset: 26px;
+  border-radius: 28px;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.66), transparent 58%), radial-gradient(circle at 70% 24%, rgba(242, 210, 221, 0.42), transparent 26%);
+}
+.dashboard-radar-svg {
+  position: relative;
+  z-index: 1;
+  width: 320px;
+  height: 320px;
+  overflow: visible;
+}
+.dashboard-radar-grid {
+  fill: rgba(162, 18, 57, 0.03);
+  stroke: rgba(162, 18, 57, 0.12);
+  stroke-width: 1.2;
+}
+.dashboard-radar-axis {
+  stroke: rgba(162, 18, 57, 0.16);
+  stroke-width: 1.4;
+}
+.dashboard-radar-shape {
+  fill: rgba(162, 18, 57, 0.17);
+  stroke: rgba(162, 18, 57, 0.72);
+  stroke-width: 2.5;
+}
+.dashboard-radar-point {
+  fill: #a21239;
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+.dashboard-radar-center-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(251,234,240,0.96));
+  border: 1px solid rgba(162, 18, 57, 0.18);
+  box-shadow: 0 16px 36px rgba(162, 18, 57, 0.12);
+}
+.dashboard-radar-center-badge .dashboard-eval-hub-label {
+  color: #a95b74;
+}
+.dashboard-radar-center-badge .dashboard-eval-hub-score {
+  color: #a21239;
+  font-size: 36px;
+}
+.dashboard-radar-label {
+  position: absolute;
+  z-index: 2;
+  width: 114px;
+  transform: translate(-50%, -50%);
+  border-radius: 18px;
+  padding: 10px 12px;
+  text-align: center;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(226, 198, 209, 0.9);
+  box-shadow: 0 10px 22px rgba(162, 18, 57, 0.08);
+}
+.dashboard-radar-label .dashboard-tree-score {
+  margin-top: 6px;
+  font-size: 24px;
+}
+.dashboard-tree-score-grid.radar-summary-grid {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+.radar-summary-card {
+  background: linear-gradient(180deg, rgba(255,247,250,0.98), rgba(255,252,253,0.98));
+}
+@media (max-width: 1180px) {
+  .dashboard-tree-layout.radar-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .dashboard-tree-visual.radar-visual { min-height: 340px; }
+  .dashboard-radar-svg { width: 280px; height: 280px; }
+  .dashboard-radar-label {
+    width: 100px;
+    padding: 8px 10px;
+  }
+  .dashboard-radar-label .dashboard-tree-score { font-size: 22px; }
+}
