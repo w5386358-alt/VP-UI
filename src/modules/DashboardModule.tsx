@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, Wallet, ShieldCheck, Users, BarChart3 } from 'lucide-react';
+import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, ShieldCheck, BarChart3, Users } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
   const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [] } = props;
@@ -14,12 +14,6 @@ export default function DashboardModule(props: any) {
       latestOrderStatus: latestOrder ? `${latestOrder.paymentStatus} / ${latestOrder.shippingStatus}` : '尚無訂單',
     };
   }), [ownCustomerRecords, allOrderRecords]);
-
-  const dashboardStats = [
-    { title: '累積銷售排名', value: '#3', sub: '本月持續穩定推進', icon: ShieldCheck },
-    { title: '本季成交總額', value: '$128.6k', sub: '依既有個人資料邏輯延伸', icon: Wallet },
-    { title: '管理客戶總數', value: `${myCustomerCards.length}`, sub: '我的客戶資料同步整理', icon: Users },
-  ];
 
   const latestOrders = personalOrders.slice(0, 4);
   const latestCustomers = myCustomerCards.slice(0, 4);
@@ -53,62 +47,78 @@ export default function DashboardModule(props: any) {
         </div>
 
         <div className="dashboard-personal-main">
-          <div className="dashboard-hero-stat-grid">
-            {dashboardStats.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="card dashboard-hero-stat-card">
-                  <div className="dashboard-hero-stat-icon"><Icon className="small-icon" /></div>
-                  <div className="dashboard-hero-stat-title">{item.title}</div>
-                  <div className="dashboard-hero-stat-value">{item.value}</div>
-                  <div className="dashboard-hero-stat-sub">{item.sub}</div>
+          <div className="dashboard-feature-grid">
+            <div className="card dashboard-history-card compact-card">
+              <div className="panel-head">
+                <div>
+                  <div className="panel-title">我的歷史訂單</div>
+                  <div className="panel-desc">保留原個人資料中的歷史訂單邏輯，集中放在儀表板首頁。</div>
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="card dashboard-history-card">
-            <div className="panel-head">
-              <div>
-                <div className="panel-title">我的歷史訂單</div>
-                <div className="panel-desc">保留個人資料原本的歷史訂單邏輯，集中放在儀表板首頁。</div>
+                <span className="badge badge-soft">{personalOrders.length} 筆</span>
+              </div>
+              <div className="dashboard-history-list">
+                {latestOrders.map((item: any) => (
+                  <div key={item.orderNo} className="dashboard-history-row">
+                    <div className="dashboard-history-icon"><ClipboardList className="small-icon" /></div>
+                    <div className="dashboard-history-main">
+                      <div className="dashboard-history-title">{item.orderNo}</div>
+                      <div className="dashboard-history-meta"><CalendarRange className="small-icon" />{item.date}</div>
+                      <div className="dashboard-history-status">{item.paymentStatus} / {item.shippingStatus} / {item.mainStatus}</div>
+                    </div>
+                    <div className="dashboard-history-side">${item.amount?.toLocaleString?.() || item.amount}</div>
+                  </div>
+                ))}
+                {!latestOrders.length && <div className="warehouse-empty-state">尚無歷史訂單</div>}
               </div>
             </div>
-            <div className="dashboard-history-list">
-              {latestOrders.map((item: any) => (
-                <div key={item.orderNo} className="dashboard-history-row">
-                  <div className="dashboard-history-icon"><ClipboardList className="small-icon" /></div>
-                  <div className="dashboard-history-main">
-                    <div className="dashboard-history-title">{item.orderNo}</div>
-                    <div className="dashboard-history-meta"><CalendarRange className="small-icon" />{item.date}</div>
-                    <div className="dashboard-history-status">{item.paymentStatus} / {item.shippingStatus} / {item.mainStatus}</div>
-                  </div>
-                  <div className="dashboard-history-side">${item.amount?.toLocaleString?.() || item.amount}</div>
+
+            <div className="card dashboard-customer-card compact-card">
+              <div className="panel-head">
+                <div>
+                  <div className="panel-title">我的客戶資料</div>
+                  <div className="panel-desc">把原個人資料中的客戶邏輯同步搬進儀表板。</div>
                 </div>
-              ))}
-              {!latestOrders.length && <div className="warehouse-empty-state">尚無歷史訂單</div>}
+                <span className="badge badge-neutral"><Users className="small-icon" />{myCustomerCards.length}</span>
+              </div>
+              <div className="dashboard-customer-list">
+                {latestCustomers.map((item: any) => (
+                  <div key={item.id} className="dashboard-customer-row">
+                    <div className="dashboard-customer-head">
+                      <div className="dashboard-customer-name"><User2 className="small-icon" />{item.name}</div>
+                      <span className="badge badge-soft">{item.level || '一般'}</span>
+                    </div>
+                    <div className="dashboard-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
+                    <div className="dashboard-customer-order-line">
+                      <span>{item.latestOrderNo}</span>
+                      <ChevronRight className="small-icon" />
+                    </div>
+                  </div>
+                ))}
+                {!latestCustomers.length && <div className="warehouse-empty-state">目前沒有屬於你的客戶資料</div>}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section className="dashboard-personal-bottom-grid">
-        <div className="card dashboard-tree-card">
+        <div className="card dashboard-tree-card compact-card">
           <div className="panel-head">
             <div>
-              <div className="panel-title">評鑑分數樹狀圖</div>
-              <div className="panel-desc">原年度榮譽勳章區改為評鑑視覺區，之後可再接真實邏輯。</div>
+              <div className="panel-title">個人評鑑樹狀圖</div>
+              <div className="panel-desc">保留分數數字，但和樹狀圖拆開，讓視覺更清楚。</div>
             </div>
             <span className="badge badge-soft">評鑑</span>
           </div>
-          <div className="dashboard-tree-wrap">
+          <div className="dashboard-tree-wrap dashboard-tree-wrap-v2">
+            <div className="dashboard-tree-canopy" />
             <div className="dashboard-tree-trunk" />
-            <div className="dashboard-tree-branches">
+            <div className="dashboard-tree-branches v2">
               {rankingTree.map((item) => (
-                <div key={item.label} className="dashboard-tree-branch">
-                  <div className="dashboard-tree-node">
-                    <strong>{item.value}</strong>
-                    <span>{item.label}</span>
+                <div key={item.label} className="dashboard-tree-branch branch-leaf">
+                  <div className="dashboard-tree-node leaf-node">
+                    <span className="dashboard-tree-label">{item.label}</span>
+                    <strong className="dashboard-tree-score">{item.value}</strong>
                   </div>
                 </div>
               ))}
@@ -116,33 +126,7 @@ export default function DashboardModule(props: any) {
           </div>
         </div>
 
-        <div className="card dashboard-customer-card">
-          <div className="panel-head">
-            <div>
-              <div className="panel-title">我的客戶資料</div>
-              <div className="panel-desc">把原個人資料中的客戶邏輯同步搬進儀表板。</div>
-            </div>
-            <span className="badge badge-neutral">客戶 {myCustomerCards.length}</span>
-          </div>
-          <div className="dashboard-customer-list">
-            {latestCustomers.map((item: any) => (
-              <div key={item.id} className="dashboard-customer-row">
-                <div className="dashboard-customer-head">
-                  <div className="dashboard-customer-name"><User2 className="small-icon" />{item.name}</div>
-                  <span className="badge badge-soft">{item.level || '一般'}</span>
-                </div>
-                <div className="dashboard-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
-                <div className="dashboard-customer-order-line">
-                  <span>{item.latestOrderNo}</span>
-                  <ChevronRight className="small-icon" />
-                </div>
-              </div>
-            ))}
-            {!latestCustomers.length && <div className="warehouse-empty-state">目前沒有屬於你的客戶資料</div>}
-          </div>
-        </div>
-
-        <div className="card dashboard-growth-card">
+        <div className="card dashboard-growth-card compact-card">
           <div className="panel-head">
             <div>
               <div className="panel-title">銷售表現趨勢</div>

@@ -328,7 +328,7 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
   { key: 'products', label: '商品', icon: Package },
   { key: 'customers', label: '客戶', icon: Users },
   { key: 'staff', label: '人員', icon: UserCog },
-  { key: 'profile', label: '個人資料', icon: ClipboardList },
+  { key: 'profile', label: '評鑑', icon: ClipboardList },
 ];
 
 
@@ -655,8 +655,8 @@ const workflowCards: WorkflowCard[] = [
     bullets: ['出貨 / 庫存 / 查詢', '商品條碼 / QR 身分識別', '入庫 / 出貨 / 退貨 / 換貨'],
   },
   {
-    title: '個人資料',
-    desc: '個人資料、訂單與業績。',
+    title: '評鑑',
+    desc: '評鑑與後續投票機制。',
     accent: 'lavender',
     icon: ClipboardList,
     bullets: ['歷史訂單', '累積業績 / 排名', '身分 / 階級 / 價格層級'],

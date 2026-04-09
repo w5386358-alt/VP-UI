@@ -7,9 +7,9 @@ export default function ProfileModule(props: any) {
     <section className="evaluation-shell">
       <div className="card evaluation-hero-card">
         <div>
-          <div className="evaluation-kicker">評鑑模組</div>
-          <div className="evaluation-title">個人資料區後續改為評鑑與投票機制</div>
-          <div className="evaluation-desc">這一區先切換成評鑑模組定位，下一版再依你提供的詳細投票規則補齊內容與流程。</div>
+          <div className="evaluation-kicker">評鑑</div>
+          <div className="evaluation-title">評鑑模組後續改為投票與評分機制</div>
+          <div className="evaluation-desc">這一區先切換成評鑑定位，下一版再依你提供的詳細投票規則補齊內容與流程。</div>
         </div>
         <div className="evaluation-identity">
           <div className="evaluation-avatar">評</div>

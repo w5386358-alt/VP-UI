@@ -135,26 +135,6 @@ export default function AccountingModule(props: any) {
                 <input ref={accountingProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleAccountingProofUpload(e.target.files?.[0] || null)} />
               </div>
 
-              <div className="warehouse-side-section">
-                <div className="panel-head compact-head">
-                  <div><div className="panel-title">獎金入帳</div></div>
-                  <span className="badge badge-soft">連動報表</span>
-                </div>
-                <div className="warehouse-form-grid warehouse-command-fields bonus-entry-grid">
-                  <div className="fake-field"><span>入帳日期</span><strong><input type="date" value={bonusDraft.date} onChange={(e) => updateBonusDraftField('date', e.target.value)} /></strong></div>
-                  <div className="fake-field"><span>入帳時間</span><strong><input type="time" value={bonusDraft.time} onChange={(e) => updateBonusDraftField('time', e.target.value)} /></strong></div>
-                  <div className="fake-field"><span>金額</span><strong><input value={bonusDraft.amount} onChange={(e) => updateBonusDraftField('amount', e.target.value)} inputMode="decimal" placeholder="輸入獎金金額" /></strong></div>
-                  <div className="fake-field wide"><span>備註</span><strong><input value={bonusDraft.note} onChange={(e) => updateBonusDraftField('note', e.target.value)} placeholder="例如：業績獎金 / 推廣獎金" /></strong></div>
-                </div>
-                <div className="bonus-entry-footer">
-                  <div className="bonus-entry-summary">
-                    <span>目前累計</span>
-                    <strong>${bonusTotal.toLocaleString()}</strong>
-                    <em>{bonusLogs.length} 筆</em>
-                  </div>
-                  <button type="button" className="ghost-button compact-btn" onClick={saveBonusEntry}><Wallet className="small-icon" />加入獎金</button>
-                </div>
-              </div>
 
               <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
