@@ -3809,6 +3809,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const notificationCount = notificationItems.length;
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 900;
+  });
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -3867,12 +3871,20 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="vp-shell">
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 
+      {!isMobileViewport && (
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
           <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
@@ -3971,6 +3983,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
         </div>
       </aside>
+      )}
 
       <main className="vp-main">
         <header className="vp-header card">
