@@ -2588,6 +2588,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const activeStaff = staff.filter((s) => s.enabled).length;
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const currentNavItem = navItems.find((item) => item.key === active) || navItems[0];
+  const currentModuleLabel = currentNavItem.label;
+  const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
+
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
   const customerScopeLabel = permissionProfile.canViewAllCustomers
     ? '全部客戶完整資料'
@@ -3731,11 +3735,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">{navItems.find((item) => item.key === active)?.label || '總覽'}</div>
-              <div className="vp-header-title-red">{NAV_ENGLISH_LABEL[active]}</div>
-              <div className="vp-header-subtitle-red">{navItems.find((item) => item.key === active)?.label || '總覽'} / {NAV_ENGLISH_LABEL[active]}</div>
-              <div className="vp-header-watermark vp-header-watermark-red">{NAV_ENGLISH_LABEL[active]}</div>
-              <p className="vp-header-desc">{SECTION_HINTS[active]?.desc || '依照目前模組顯示對應資料與操作內容。'}</p>
+              <div className="vp-header-kicker">CURRENT MODULE</div>
+              <div className="vp-header-watermark vp-header-module-title">{currentModuleLabel}</div>
+              <p className="vp-header-desc vp-header-module-desc">{currentModuleEnglish}</p>
             </div>
           </div>
           <div className="vp-header-tools">
@@ -3751,10 +3753,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
-            <div className="vp-workspace-section-tag">
-              <span className="vp-workspace-section-cn">{navItems.find((item) => item.key === active)?.label || '總覽'}</span>
-              <span className="vp-workspace-section-divider">/</span>
-              <span className="vp-workspace-section-en">{NAV_ENGLISH_LABEL[active]}</span>
+            <div className="vp-workspace-title-strip">
+              <div className="vp-workspace-module-title">
+                <span className="vp-workspace-title-cn">{currentModuleLabel}</span>
+                <span className="vp-workspace-title-en">{currentModuleEnglish}</span>
+              </div>
             </div>
             <div className="vp-workspace-actions" ref={notificationPanelRef}>
               <button

@@ -224,6 +224,13 @@ export default function OrdersModule(props: any) {
               )}
             </div>
 
+            <div className="summary-lines drawer-summary-lines">
+              <div><span>商品小計</span><strong>${subtotal}</strong></div>
+              <div><span>運費</span><strong>${shippingFee}</strong></div>
+              <div><span>折扣</span><strong>-${discountAmount}</strong></div>
+              <div className="grand"><span>訂單總額</span><strong>${grandTotal}</strong></div>
+            </div>
+
             <div className="drawer-section-block">
               <div className="panel-head compact-head">
                 <div>
