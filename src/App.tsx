@@ -331,6 +331,17 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
   { key: 'profile', label: '評鑑', icon: ClipboardList },
 ];
 
+const NAV_ENGLISH_LABEL: Record<NavKey, string> = {
+  dashboard: 'Dashboard',
+  orders: 'Orders',
+  inventory: 'Warehouse',
+  accounting: 'Accounting',
+  products: 'Products',
+  customers: 'Customers',
+  staff: 'Staff',
+  profile: 'Evaluation',
+};
+
 
 const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
   admin: ['dashboard', 'orders', 'inventory', 'accounting', 'products', 'customers', 'staff', 'profile'],
@@ -1145,18 +1156,6 @@ function getRankClass(rank: string) {
   if (rank.includes('高級')) return 'badge badge-rank-senior';
   return 'badge badge-rank-normal';
 }
-
-
-const HEADER_TITLE_MAP: Record<NavKey, { zh: string; en: string }> = {
-  dashboard: { zh: '儀表板', en: 'Dashboard' },
-  orders: { zh: '訂購', en: 'Orders' },
-  inventory: { zh: '倉儲', en: 'Inventory' },
-  accounting: { zh: '會計', en: 'Accounting' },
-  products: { zh: '商品', en: 'Products' },
-  customers: { zh: '客戶', en: 'Customers' },
-  staff: { zh: '人員', en: 'Staff' },
-  profile: { zh: '評鑑', en: 'Evaluation' },
-};
 
 function getSearchPlaceholder(active: NavKey) {
   switch (active) {
@@ -2658,22 +2657,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
       return;
     }
-
-    let previewUrl = '';
     try {
-      previewUrl = URL.createObjectURL(file);
-      setProductDraft((prev) => ({ ...prev, image: previewUrl }));
-      setProductNotice({ text: '圖片預覽已載入，正在上傳…', tone: 'neutral' });
-    } catch {
-      setProductNotice({ text: '圖片載入中…', tone: 'neutral' });
-    }
-
-    try {
+      setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
       const imageUrl = await uploadFileToFirebase('products', file, code);
       setProductDraft((prev) => ({ ...prev, image: imageUrl }));
       setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
     } catch {
-      setProductNotice({ text: previewUrl ? '⚠️ 已先顯示本地預覽，雲端上傳失敗' : '❌ 商品圖片上傳失敗', tone: previewUrl ? 'neutral' : 'danger' });
+      setProductNotice({ text: '❌ 商品圖片上傳失敗', tone: 'danger' });
     } finally {
       if (productImageInputRef.current) productImageInputRef.current.value = '';
     }
@@ -3047,6 +3037,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           agentPrice,
           generalAgentPrice,
           stock,
+          image: productDraft.image || '',
           enabled: productDraft.enabled,
         };
         setProducts((prev) => [nextProduct, ...prev]);
@@ -3080,6 +3071,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         agentPrice,
         generalAgentPrice,
         stock,
+        image: productDraft.image || '',
         enabled: productDraft.enabled,
       };
 
@@ -3431,7 +3423,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   const activeLabel = visibleNavItems.find((item) => item.key === active)?.label || '受限模組';
-  const currentHeaderTitle = HEADER_TITLE_MAP[active] || HEADER_TITLE_MAP.dashboard;
 
   const notificationItems = useMemo(() => {
     const items: Array<{ id: string; title: string; detail: string; tone: 'danger' | 'warning' | 'neutral' }> = [];
@@ -3740,9 +3731,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">{currentHeaderTitle.en}</div>
-              <div className="vp-header-watermark module-title-red">{currentHeaderTitle.zh}</div>
-              <p className="vp-header-desc module-title-sub">{currentHeaderTitle.zh} / {currentHeaderTitle.en}</p>
+              <div className="vp-header-kicker">brand visual banner</div>
+              <div className="vp-header-watermark">VP ORDER ERP</div>
+              <p className="vp-header-desc">改用柔和光暈、圓弧流線與玻璃霧感，通知集中到右側小鈴鐺。</p>
             </div>
           </div>
           <div className="vp-header-tools">
@@ -3758,7 +3749,22 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
-            <div className="vp-workspace-head-empty" />
+            <div className="vp-workspace-title-strip">
+              {navItems.map((item) => {
+                const isActive = item.key === active;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`vp-workspace-title-chip ${isActive ? 'active' : ''}`}
+                    onClick={() => setActive(item.key)}
+                  >
+                    <span className="vp-workspace-title-cn">{item.label}</span>
+                    <span className="vp-workspace-title-en">{NAV_ENGLISH_LABEL[item.key]}</span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="vp-workspace-actions" ref={notificationPanelRef}>
               <button
                 type="button"

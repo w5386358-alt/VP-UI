@@ -46,26 +46,28 @@ export default function DashboardModule(props: any) {
     },
   ];
   const radarLevels = [1, 0.75, 0.5, 0.25];
-  const center = 160;
-  const outerRadius = 84;
-  const labelPresets = [
-    { className: 'is-top', labelX: center, labelY: 34 },
-    { className: 'is-right', labelX: 276, labelY: center },
-    { className: 'is-bottom', labelX: center, labelY: 286 },
-    { className: 'is-left', labelX: 44, labelY: center },
-  ];
+  const svgSize = 360;
+  const center = svgSize / 2;
+  const outerRadius = 92;
+  const labelRadius = 136;
   const radarPoints = rankingTree.map((item, index) => {
     const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
     const radius = outerRadius * (item.value / 100);
+    const axisX = center + Math.cos(angle) * outerRadius;
+    const axisY = center + Math.sin(angle) * outerRadius;
+    const labelX = center + Math.cos(angle) * labelRadius;
+    const labelY = center + Math.sin(angle) * labelRadius;
     return {
       ...item,
       x: center + Math.cos(angle) * radius,
       y: center + Math.sin(angle) * radius,
-      labelX: labelPresets[index].labelX,
-      labelY: labelPresets[index].labelY,
-      labelClassName: labelPresets[index].className,
-      axisX: center + Math.cos(angle) * outerRadius,
-      axisY: center + Math.sin(angle) * outerRadius,
+      axisX,
+      axisY,
+      labelX,
+      labelY,
+      textAnchor: index === 1 ? 'start' : index === 3 ? 'end' : 'middle',
+      labelOffsetY: index === 0 ? -8 : index === 2 ? 10 : -2,
+      scoreOffsetY: index === 0 ? 18 : index === 2 ? 36 : 20,
     };
   });
   const radarPolygon = radarPoints.map((item) => `${item.x},${item.y}`).join(' ');
@@ -175,7 +177,7 @@ export default function DashboardModule(props: any) {
           </div>
           <div className="dashboard-tree-layout radar-layout">
             <div className="dashboard-tree-visual radar-visual">
-              <svg className="dashboard-radar-svg" viewBox="0 0 320 320" aria-label="個人評鑑雷達能力圖">
+              <svg className="dashboard-radar-svg" viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="個人評鑑雷達能力圖">
                 {radarLevels.map((level) => {
                   const points = rankingTree.map((_, index) => {
                     const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
@@ -191,23 +193,20 @@ export default function DashboardModule(props: any) {
                 ))}
                 <polygon points={radarPolygon} className="dashboard-radar-shape" />
                 {radarPoints.map((item) => (
-                  <circle key={item.label} cx={item.x} cy={item.y} r="6" className="dashboard-radar-point" />
+                  <circle key={item.label} cx={item.x} cy={item.y} r="5.5" className="dashboard-radar-point" />
+                ))}
+                <g className="dashboard-radar-center-group">
+                  <circle cx={center} cy={center} r="30" className="dashboard-radar-center-disc" />
+                  <text x={center} y={center - 4} textAnchor="middle" className="dashboard-radar-center-title">綜合評分</text>
+                  <text x={center} y={center + 18} textAnchor="middle" className="dashboard-radar-center-score">{averageScore}</text>
+                </g>
+                {radarPoints.map((item) => (
+                  <g key={item.label} className="dashboard-radar-label-group">
+                    <text x={item.labelX} y={item.labelY + item.labelOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-label">{item.label}</text>
+                    <text x={item.labelX} y={item.labelY + item.scoreOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-score">{item.value}</text>
+                  </g>
                 ))}
               </svg>
-              <div className="dashboard-radar-center-badge">
-                <span className="dashboard-eval-hub-label">綜合評分</span>
-                <strong className="dashboard-eval-hub-score">{averageScore}</strong>
-              </div>
-              {radarPoints.map((item) => (
-                <div
-                  key={item.label}
-                  className={`dashboard-radar-label ${item.labelClassName}`}
-                  style={{ left: `${item.labelX}px`, top: `${item.labelY}px` }}
-                >
-                  <span className="dashboard-tree-label">{item.label}</span>
-                  <strong className="dashboard-tree-score">{item.value}</strong>
-                </div>
-              ))}
             </div>
             <div className="dashboard-tree-score-grid radar-summary-grid">
               {rankingTree.map((item) => (
