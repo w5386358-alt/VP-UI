@@ -46,7 +46,7 @@ export default function ProfileModule(props: any) {
         <div>
           <div className="evaluation-kicker">評鑑系統</div>
           <div className="evaluation-title">核心夥伴季度匿名評鑑</div>
-          <div className="evaluation-desc">目前僅開放核心人員，且只能評鑑除自己以外的其他核心人員。送出後不可修改。</div>
+          <div className="evaluation-desc">目前僅開放核心人員，且只能評鑑除自己以外的其他核心人員。測試期間暫時開放重複送出。</div>
         </div>
         <div className="evaluation-identity">
           <div className="evaluation-avatar">評</div>
@@ -86,12 +86,12 @@ export default function ProfileModule(props: any) {
                 <button
                   key={item.loginId}
                   type="button"
-                  className={`card evaluation-target-card ${selectedTargetIdSafe === item.loginId ? 'active' : ''} ${submitted ? 'locked' : ''}`}
+                  className={`card evaluation-target-card ${selectedTargetIdSafe === item.loginId ? 'active' : ''}`}
                   onClick={() => setSelectedTargetId(item.loginId)}
                 >
                   <div className="evaluation-target-top">
                     <div className="evaluation-target-name"><UserRound className="tiny-icon" />{item.name}</div>
-                    <span className={`badge ${submitted ? 'badge-success' : 'badge-soft'}`}>{submitted ? '已完成' : '待評鑑'}</span>
+                    <span className={`badge ${submitted ? 'badge-success' : 'badge-soft'}`}>{submitted ? '已送出' : '待評鑑'}</span>
                   </div>
                   <div className="evaluation-target-meta">{item.loginId} / {item.role || '核心夥伴'}</div>
                 </button>
@@ -106,22 +106,22 @@ export default function ProfileModule(props: any) {
               <div className="evaluation-form-head">
                 <div>
                   <div className="evaluation-card-title">評鑑對象：{selectedTarget?.name || '請先選擇'}</div>
-                  <div className="evaluation-card-subtitle">本季：{evaluationQuarter} / 送出後不可修改</div>
+                  <div className="evaluation-card-subtitle">本季：{evaluationQuarter} / 測試期間可重複送出</div>
                 </div>
                 <span className="badge badge-role">匿名制</span>
               </div>
               <div className="evaluation-score-grid">
-                <label className="field-card"><span className="field-label">業績（0-40）</span><input type="number" min="0" max="40" value={draft.sales} onChange={(e) => updateField('sales', e.target.value, 40)} disabled={!selectedTarget || submittedTargetMap.has(selectedTargetIdSafe)} /></label>
-                <label className="field-card"><span className="field-label">協作（0-25）</span><input type="number" min="0" max="25" value={draft.collaboration} onChange={(e) => updateField('collaboration', e.target.value, 25)} disabled={!selectedTarget || submittedTargetMap.has(selectedTargetIdSafe)} /></label>
-                <label className="field-card"><span className="field-label">專業（0-20）</span><input type="number" min="0" max="20" value={draft.professional} onChange={(e) => updateField('professional', e.target.value, 20)} disabled={!selectedTarget || submittedTargetMap.has(selectedTargetIdSafe)} /></label>
-                <label className="field-card"><span className="field-label">效率（0-15）</span><input type="number" min="0" max="15" value={draft.efficiency} onChange={(e) => updateField('efficiency', e.target.value, 15)} disabled={!selectedTarget || submittedTargetMap.has(selectedTargetIdSafe)} /></label>
+                <label className="field-card"><span className="field-label">業績（0-40）</span><input type="number" min="0" max="40" value={draft.sales} onChange={(e) => updateField('sales', e.target.value, 40)} disabled={!selectedTarget} /></label>
+                <label className="field-card"><span className="field-label">協作（0-25）</span><input type="number" min="0" max="25" value={draft.collaboration} onChange={(e) => updateField('collaboration', e.target.value, 25)} disabled={!selectedTarget} /></label>
+                <label className="field-card"><span className="field-label">專業（0-20）</span><input type="number" min="0" max="20" value={draft.professional} onChange={(e) => updateField('professional', e.target.value, 20)} disabled={!selectedTarget} /></label>
+                <label className="field-card"><span className="field-label">效率（0-15）</span><input type="number" min="0" max="15" value={draft.efficiency} onChange={(e) => updateField('efficiency', e.target.value, 15)} disabled={!selectedTarget} /></label>
               </div>
               <div className="evaluation-submit-row">
                 <div className="evaluation-total-box">
                   <span>總分</span>
                   <strong>{draft.sales + draft.collaboration + draft.professional + draft.efficiency}</strong>
                 </div>
-                <button type="button" className="primary-button" disabled={!selectedTarget || submittedTargetMap.has(selectedTargetIdSafe)} onClick={handleSubmit}><Send className="small-icon" />送出評鑑</button>
+                <button type="button" className="primary-button" disabled={!selectedTarget} onClick={handleSubmit}><Send className="small-icon" />送出評鑑</button>
               </div>
               {evaluationNotice && <div className={`inline-action-notice ${evaluationNotice.tone}`}><strong>{evaluationNotice.text}</strong></div>}
             </div>
@@ -132,7 +132,7 @@ export default function ProfileModule(props: any) {
                 <div>只有核心人員可進行評鑑</div>
                 <div>目前只評其他核心人員，不可自評</div>
                 <div>匿名送出，但系統保留送出紀錄用於防重覆</div>
-                <div>送出後不可修改，會進入會計的評鑑分數頁</div>
+                <div>測試期間暫時解除鎖定，可重複送出驗證流程</div>
               </div>
             </div>
 

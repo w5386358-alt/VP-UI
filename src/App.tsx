@@ -1852,18 +1852,13 @@ export default function App() {
       setEvaluationNotice({ text: '❌ 目前沒有可評鑑的核心成員', tone: 'danger' });
       return false;
     }
-    const alreadySubmitted = evaluationSubmissions.some((item) => item.quarter === evaluationQuarter && item.evaluatorLoginId === user.loginId && item.evaluateeLoginId === target.loginId);
-    if (alreadySubmitted) {
-      setEvaluationNotice({ text: `⚠️ ${evaluationQuarter} 已送出，不能再次修改`, tone: 'neutral' });
-      return false;
-    }
     const safeDraft = {
       sales: Math.max(0, Math.min(40, Math.round(Number(draft.sales || 0)))),
       collaboration: Math.max(0, Math.min(25, Math.round(Number(draft.collaboration || 0)))),
       professional: Math.max(0, Math.min(20, Math.round(Number(draft.professional || 0)))),
       efficiency: Math.max(0, Math.min(15, Math.round(Number(draft.efficiency || 0)))),
     };
-    if (!window.confirm(`確認送出 ${evaluationQuarter} 對 ${target.name} 的匿名評鑑？送出後不可修改。`)) return false;
+    if (!window.confirm(`確認送出 ${evaluationQuarter} 對 ${target.name} 的匿名評鑑？目前為測試模式，可重複送出。`)) return false;
     const nextItem: EvaluationSubmission = {
       id: `eval-${Date.now()}`,
       quarter: evaluationQuarter,
@@ -1880,7 +1875,7 @@ export default function App() {
       isAnonymous: true,
     };
     setEvaluationSubmissions((prev) => [nextItem, ...prev]);
-    setEvaluationNotice({ text: `✅ ${evaluationQuarter} 匿名評鑑已送出，送出後不可修改`, tone: 'success' });
+    setEvaluationNotice({ text: `✅ ${evaluationQuarter} 匿名評鑑已送出，目前為測試模式，可再次送出`, tone: 'success' });
     return true;
   };
 
@@ -1894,15 +1889,13 @@ export default function App() {
       return;
     }
     if (hasSubmittedSelectedEvaluation) {
-      setEvaluationNotice({ text: '⚠️ 此季度你已評過這位核心成員，送出後不可修改', tone: 'neutral' });
-      return;
     }
     const metricIssues = EVALUATION_METRIC_META.some((meta) => Number((evaluationDraft as any)[meta.key]) < 0 || Number((evaluationDraft as any)[meta.key]) > meta.max);
     if (metricIssues) {
       setEvaluationNotice({ text: '❌ 分數超出可評範圍，請重新確認', tone: 'danger' });
       return;
     }
-    const confirmed = window.confirm(`你即將以匿名方式送出 ${evaluationQuarter} 對 ${selectedEvaluatee.name} 的評鑑。送出後將無法修改，是否確認？`);
+    const confirmed = window.confirm(`你即將以匿名方式送出 ${evaluationQuarter} 對 ${selectedEvaluatee.name} 的評鑑。測試期間可重複送出，是否確認？`);
     if (!confirmed) return;
     const nextItem: EvaluationSubmission = {
       id: `eval-${Date.now()}`,
@@ -1920,7 +1913,7 @@ export default function App() {
       isAnonymous: true,
     };
     setEvaluationSubmissions((prev) => [nextItem, ...prev]);
-    setEvaluationNotice({ text: `✅ ${selectedEvaluatee.name} 的 ${evaluationQuarter} 評鑑已匿名送出，送出後不可修改`, tone: 'success' });
+    setEvaluationNotice({ text: `✅ ${selectedEvaluatee.name} 的 ${evaluationQuarter} 評鑑已匿名送出，測試期間可重複送出`, tone: 'success' });
   };
 
   const updateEvaluationDraftField = (field: EvaluationMetric, value: number) => {

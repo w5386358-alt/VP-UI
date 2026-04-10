@@ -760,10 +760,12 @@ button:hover { transform: translateY(-1px); }
   color: #c82e60;
 }
 .mini-add-btn {
-  min-width: 90px;
+  min-width: 68px;
   border: none;
-  border-radius: 16px;
-  padding: 12px 14px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
   background: linear-gradient(135deg, var(--primary) 0%, #bf3e62 100%);
   color: white;
   cursor: pointer;
@@ -2198,7 +2200,7 @@ button:hover { transform: translateY(-1px); }
   z-index: 70;
   border: none;
   border-radius: 999px;
-  padding: 14px 18px;
+  padding: 10px 14px;
   background: linear-gradient(135deg, var(--primary) 0%, #bf3e62 100%);
   color: #fff;
   display: inline-flex;
@@ -2215,12 +2217,13 @@ button:hover { transform: translateY(-1px); }
 .floating-cart-text {
   font-weight: 800;
   letter-spacing: .02em;
+  font-size: 13px;
 }
 
 .floating-cart-count {
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -2356,7 +2359,7 @@ button:hover { transform: translateY(-1px); }
   .floating-cart-button {
     right: 16px;
     bottom: 88px;
-    padding: 14px 16px;
+    padding: 10px 12px;
   }
 
   .floating-cart-text {
