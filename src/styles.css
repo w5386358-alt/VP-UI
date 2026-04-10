@@ -8826,3 +8826,272 @@ body {
     border-radius: 16px !important;
   }
 }
+
+
+/* === 手機版續修：倉儲 / 會計 / 商品 / 客戶 / 人員 === */
+@media (max-width: 900px) {
+  .warehouse-primary-tabs,
+  .accounting-tab-row-v2 {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(128px, 1fr);
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .warehouse-primary-tabs::-webkit-scrollbar,
+  .accounting-tab-row-v2::-webkit-scrollbar {
+    display: none;
+  }
+
+  .warehouse-tab,
+  .accounting-tab {
+    min-height: 44px;
+    justify-content: center;
+    white-space: nowrap;
+    border-radius: 14px;
+    padding: 10px 14px;
+  }
+
+  .warehouse-layout,
+  .warehouse-command-layout,
+  .accounting-warehouse-layout,
+  .product-admin-layout,
+  .staff-layout-v2,
+  .staff-layout-v3,
+  .accounting-treasury-layout,
+  .accounting-bonus-layout {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  .warehouse-main,
+  .warehouse-side,
+  .accounting-treasury-main,
+  .accounting-treasury-side,
+  .product-admin-main,
+  .product-admin-side,
+  .staff-main-v2,
+  .staff-side-v2 {
+    min-width: 0;
+  }
+
+  .sticky-panel,
+  .warehouse-side-panel,
+  .accounting-side-panel,
+  .product-editor-panel,
+  .staff-editor-panel-v2 {
+    position: static !important;
+    top: auto !important;
+  }
+
+  .warehouse-filter-shell,
+  .warehouse-queue-card,
+  .warehouse-command-panel,
+  .products-board-card,
+  .products-editor-shell,
+  .customers-main-card,
+  .staff-list-card-v2,
+  .staff-editor-panel-v2,
+  .accounting-bonus-entry-card,
+  .accounting-bonus-log-card,
+  .accounting-board-card-v2 {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .warehouse-filter-grid,
+  .accounting-filter-grid,
+  .warehouse-form-grid,
+  .form-grid.two-col,
+  .products-card-grid,
+  .record-grid.customer-grid.refined,
+  .staff-record-grid-v2,
+  .accounting-board-grid-v2,
+  .warehouse-check-summary-grid,
+  .customers-info-grid,
+  .metric-row.three,
+  .product-stock-row,
+  .treasury-expense-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .field-span-2,
+  .fake-field.wide,
+  .upload-field-card {
+    grid-column: auto !important;
+  }
+
+  .shipping-row,
+  .accounting-row,
+  .accounting-select-row,
+  .treasury-expense-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .shipping-actions,
+  .accounting-statuses,
+  .warehouse-order-statuses,
+  .treasury-expense-right,
+  .staff-person-tags,
+  .product-card-actions,
+  .accounting-action-row,
+  .warehouse-action-row {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .product-admin-card,
+  .customer-permission-card,
+  .staff-person-card-v2 {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .product-admin-card .metric-box,
+  .customer-permission-card .customers-info-box,
+  .staff-person-card-v2 .badge,
+  .warehouse-check-summary-card {
+    min-height: 0;
+  }
+
+  .product-image-slot {
+    max-height: 180px;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .product-card-actions .compact-btn,
+  .accounting-action-row .compact-btn,
+  .warehouse-action-row .compact-btn,
+  .product-card-actions .ghost-button,
+  .accounting-action-row .ghost-button,
+  .warehouse-action-row .ghost-button,
+  .accounting-action-row .primary-button,
+  .warehouse-action-row .primary-button,
+  .product-card-actions .primary-button {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 120px;
+  }
+
+  .pagination-row {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pagination-pages {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .pagination-pages::-webkit-scrollbar {
+    display: none;
+  }
+
+  .staff-editor-profile,
+  .warehouse-card-head,
+  .customers-main-head,
+  .staff-list-head-v3,
+  .panel-head,
+  .compact-head {
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .staff-editor-avatar,
+  .staff-person-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .warehouse-scan-hint-grid,
+  .data-chip-row,
+  .quick-example-row,
+  .query-examples,
+  .warehouse-query-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .fake-field strong input,
+  .fake-field strong textarea,
+  .fake-field strong select,
+  .field-card input,
+  .field-card select,
+  .field-card textarea {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .warehouse-filter-shell,
+  .warehouse-queue-card,
+  .warehouse-command-panel,
+  .products-board-card,
+  .products-editor-shell,
+  .customers-main-card,
+  .staff-list-card-v2,
+  .staff-editor-panel-v2,
+  .accounting-bonus-entry-card,
+  .accounting-bonus-log-card,
+  .accounting-board-card-v2 {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .warehouse-tab,
+  .accounting-tab {
+    min-height: 42px;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .shipping-order,
+  .data-card-title,
+  .staff-editor-name,
+  .panel-title,
+  .flow-title {
+    font-size: 15px;
+  }
+
+  .shipping-meta,
+  .data-card-subtitle,
+  .panel-desc,
+  .flow-desc,
+  .accounting-board-sub {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .accounting-board-value {
+    font-size: 24px;
+  }
+
+  .product-card-actions .compact-btn,
+  .accounting-action-row .compact-btn,
+  .warehouse-action-row .compact-btn,
+  .product-card-actions .ghost-button,
+  .accounting-action-row .ghost-button,
+  .warehouse-action-row .ghost-button,
+  .accounting-action-row .primary-button,
+  .warehouse-action-row .primary-button,
+  .product-card-actions .primary-button {
+    flex-basis: 100%;
+  }
+}

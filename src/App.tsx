@@ -4224,7 +4224,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             { key: 'orders' as NavKey, label: '訂購', icon: ShoppingCart },
             { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
             { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
-            { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
+            { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
           ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
             const Icon = item.icon;
             return (
