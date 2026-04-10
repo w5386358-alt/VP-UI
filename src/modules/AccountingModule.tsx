@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins } from 'lucide-react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, UserRound } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -18,6 +18,7 @@ export default function AccountingModule(props: any) {
     selectTreasuryOrder, updateTreasuryDraftField, confirmTreasuryRefund, handleTreasuryProofUpload, treasuryProofInputRef,
     treasuryExpenseDraft, updateTreasuryExpenseField, saveTreasuryExpense, treasuryExpenseLogs, treasuryExpenseCategories, handleTreasuryExpenseProofUpload, treasuryExpenseProofInputRef,
     bonusDraft, updateBonusDraftField, saveBonusEntry, bonusLogs, bonusTotal, user,
+    evaluationQuarter, setEvaluationQuarter, evaluationQuarterResults, evaluationSubmissions,
 
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
   } = props;
@@ -40,6 +41,7 @@ export default function AccountingModule(props: any) {
         <button type="button" className={`accounting-tab ${accountingTab === 'treasury' ? 'active' : ''}`} onClick={() => setAccountingTab('treasury')}><Wallet className="small-icon" />出納</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />營運報表</button>
         <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" />排名 / 熱銷</button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'evaluation' ? 'active' : ''}`} onClick={() => setAccountingTab('evaluation')}><Medal className="small-icon" />評鑑分數</button>
       </div>
 
       {accountingTab === 'ops' && (
@@ -390,6 +392,52 @@ export default function AccountingModule(props: any) {
           </div>
         </section>
       )}
+
+
+      {accountingTab === 'evaluation' && (
+        <section className="accounting-evaluation-layout">
+          <div className="card order-panel">
+            <div className="panel-head">
+              <div>
+                <div className="panel-title">核心成員評鑑結果</div>
+                <div className="panel-desc">系統依四大維度平均後，自動結算總分、K值與榮譽勳章。評分者採匿名，不顯示來源。</div>
+              </div>
+              <span className="badge badge-soft">匿名 {evaluationSubmissions.length} 份</span>
+            </div>
+            <div className="evaluation-quarter-row accounting-quarter-row">
+              {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
+                <button key={quarter} type="button" className={`evaluation-quarter-btn ${evaluationQuarter === quarter ? 'active' : ''}`} onClick={() => setEvaluationQuarter(quarter as any)}>{quarter}</button>
+              ))}
+            </div>
+            <div className="accounting-evaluation-table">
+              <div className="accounting-evaluation-head">
+                <span>核心成員</span>
+                <span>業績</span>
+                <span>協作</span>
+                <span>專業</span>
+                <span>效率</span>
+                <span>總分</span>
+                <span>K值</span>
+                <span>勳章</span>
+              </div>
+              {evaluationQuarterResults.map((item: any) => (
+                <div key={`${item.quarter}-${item.loginId}`} className="accounting-evaluation-row">
+                  <div className="accounting-evaluation-name"><UserRound className="small-icon" />{item.name}</div>
+                  <span>{item.sales}</span>
+                  <span>{item.collaboration}</span>
+                  <span>{item.professional}</span>
+                  <span>{item.efficiency}</span>
+                  <strong>{item.total}</strong>
+                  <span>{item.kValue.toFixed(2)}</span>
+                  <span className="badge badge-neutral">{item.medal}</span>
+                </div>
+              ))}
+              {!evaluationQuarterResults.length && <div className="warehouse-empty-state">目前尚無評鑑結果</div>}
+            </div>
+          </div>
+        </section>
+      )}
+
     </section>
   );
 }

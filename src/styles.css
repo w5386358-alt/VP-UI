@@ -7134,3 +7134,26 @@ body {
   min-height: 56px;
   align-items: center;
 }
+
+.evaluation-quarter-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px}
+.evaluation-quarter-btn{border:none;border-radius:999px;padding:10px 16px;background:rgba(176,28,46,.08);color:#8f1d2c;font-weight:700;cursor:pointer}
+.evaluation-quarter-btn.active{background:#b01c2e;color:#fff;box-shadow:0 10px 24px rgba(176,28,46,.18)}
+.evaluation-voting-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:18px}
+.evaluation-vote-card,.evaluation-card{padding:22px}
+.evaluation-grid.one-col{display:grid;grid-template-columns:1fr}
+.evaluation-grid.side{display:grid;grid-template-columns:1fr;gap:18px}
+.evaluation-vote-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.evaluation-score-card strong{min-width:44px;text-align:right;color:#8f1d2c}
+.evaluation-score-row{display:flex;align-items:center;gap:14px}
+.evaluation-score-row input[type="range"]{flex:1}
+.evaluation-score-card small{color:#7f8896}
+.evaluation-lock-tip{display:flex;align-items:center;gap:8px;margin:16px 0;color:#8f1d2c;background:rgba(176,28,46,.06);padding:12px 14px;border-radius:14px}
+.dashboard-quarter-row{margin-top:10px}
+.accounting-evaluation-layout{display:grid;grid-template-columns:1fr;gap:18px}
+.accounting-quarter-row{margin-top:8px}
+.accounting-evaluation-table{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.accounting-evaluation-head,.accounting-evaluation-row{display:grid;grid-template-columns:1.4fr repeat(7,minmax(70px,1fr));gap:10px;align-items:center}
+.accounting-evaluation-head{font-size:12px;color:#7d8594;padding:0 8px}
+.accounting-evaluation-row{background:#fff;border:1px solid rgba(176,28,46,.08);border-radius:16px;padding:14px 12px;box-shadow:0 10px 24px rgba(15,23,42,.04)}
+.accounting-evaluation-name{display:flex;align-items:center;gap:8px;font-weight:700}
+@media (max-width: 960px){.evaluation-voting-layout{grid-template-columns:1fr}.evaluation-vote-grid{grid-template-columns:1fr}.accounting-evaluation-head,.accounting-evaluation-row{grid-template-columns:1.2fr repeat(7,minmax(56px,1fr));font-size:12px}}

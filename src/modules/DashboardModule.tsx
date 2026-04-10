@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, BadgeDollarSign, ShoppingBag, Star } from 'lucide-react';
+import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, ShoppingBag, Star } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
-  const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], dashboardAvatarImage = '', dashboardAvatarInputRef, handleDashboardAvatarUpload } = props;
+  const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], dashboardAvatarImage = '', dashboardAvatarInputRef, handleDashboardAvatarUpload, evaluationQuarter, setEvaluationQuarter, dashboardRadarMetrics = [], myEvaluationQuarterResult } = props;
 
   const myCustomerCards = useMemo(() => ownCustomerRecords.map((customer: any) => {
     const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
@@ -17,42 +17,28 @@ export default function DashboardModule(props: any) {
 
   const latestOrders = personalOrders.slice(0, 4);
   const latestCustomers = myCustomerCards.slice(0, 4);
-  const rankingTree = [
-    { label: '服務評價', value: 86 },
-    { label: '回購表現', value: 72 },
-    { label: '流程配合', value: 91 },
-    { label: '整體綜合', value: 80 },
+  const rankingTree = dashboardRadarMetrics.length ? dashboardRadarMetrics : [
+    { label: '業績', value: 0 },
+    { label: '協作', value: 0 },
+    { label: '專業', value: 0 },
+    { label: '效率', value: 0 },
   ];
   const totalSales = personalOrders.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
-  const averageScore = Math.round(rankingTree.reduce((sum, item) => sum + item.value, 0) / rankingTree.length);
+  const averageScore = myEvaluationQuarterResult?.total || 0;
+  const medal = myEvaluationQuarterResult?.medal || '精進級';
   const statCards = [
-    {
-      title: '我的歷史訂單',
-      value: `${personalOrders.length}`,
-      sub: '沿用原個人資料訂單邏輯',
-      icon: ShoppingBag,
-    },
-    {
-      title: '我的客戶資料',
-      value: `${myCustomerCards.length}`,
-      sub: '目前由你管理的客戶數',
-      icon: Users,
-    },
-    {
-      title: '個人評鑑平均',
-      value: `${averageScore}`,
-      sub: `累計銷售 $${totalSales.toLocaleString()}`,
-      icon: Star,
-    },
+    { title: '我的歷史訂單', value: `${personalOrders.length}`, sub: '沿用原個人資料訂單邏輯', icon: ShoppingBag },
+    { title: '我的客戶資料', value: `${myCustomerCards.length}`, sub: '目前由你管理的客戶數', icon: Users },
+    { title: '個人評鑑平均', value: `${averageScore}`, sub: `${evaluationQuarter} / ${medal}`, icon: Star },
   ];
   const radarLevels = [1, 0.75, 0.5, 0.25];
   const svgSize = 360;
   const center = svgSize / 2;
   const outerRadius = 92;
   const labelRadius = 136;
-  const radarPoints = rankingTree.map((item, index) => {
+  const radarPoints = rankingTree.map((item: any, index: number) => {
     const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
-    const radius = outerRadius * (item.value / 100);
+    const radius = outerRadius * ((item.value || 0) / 100);
     const axisX = center + Math.cos(angle) * outerRadius;
     const axisY = center + Math.sin(angle) * outerRadius;
     const labelX = center + Math.cos(angle) * labelRadius;
@@ -70,7 +56,7 @@ export default function DashboardModule(props: any) {
       scoreOffsetY: index === 0 ? 18 : index === 2 ? 36 : 20,
     };
   });
-  const radarPolygon = radarPoints.map((item) => `${item.x},${item.y}`).join(' ');
+  const radarPolygon = radarPoints.map((item: any) => `${item.x},${item.y}`).join(' ');
 
   return (
     <div className="dashboard-personal-shell">
@@ -171,15 +157,20 @@ export default function DashboardModule(props: any) {
           <div className="panel-head">
             <div>
               <div className="panel-title">個人評鑑雷達能力圖</div>
-              <div className="panel-desc">改成中心雷達能力圖，分數越高就越往對應能力軸延伸。</div>
+              <div className="panel-desc">四個季度可切換查看，能力項目已改為業績、協作、專業、效率。</div>
             </div>
-            <span className="badge badge-soft">評鑑</span>
+            <span className="badge badge-soft">{evaluationQuarter}</span>
+          </div>
+          <div className="evaluation-quarter-row dashboard-quarter-row">
+            {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
+              <button key={quarter} type="button" className={`evaluation-quarter-btn ${evaluationQuarter === quarter ? 'active' : ''}`} onClick={() => setEvaluationQuarter(quarter)}>{quarter}</button>
+            ))}
           </div>
           <div className="dashboard-tree-layout radar-layout">
             <div className="dashboard-tree-visual radar-visual">
               <svg className="dashboard-radar-svg" viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="個人評鑑雷達能力圖">
                 {radarLevels.map((level) => {
-                  const points = rankingTree.map((_, index) => {
+                  const points = rankingTree.map((_: any, index: number) => {
                     const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
                     const radius = outerRadius * level;
                     const x = center + Math.cos(angle) * radius;
@@ -188,11 +179,11 @@ export default function DashboardModule(props: any) {
                   }).join(' ');
                   return <polygon key={level} points={points} className="dashboard-radar-grid" />;
                 })}
-                {radarPoints.map((item) => (
+                {radarPoints.map((item: any) => (
                   <line key={item.label} x1={center} y1={center} x2={item.axisX} y2={item.axisY} className="dashboard-radar-axis" />
                 ))}
                 <polygon points={radarPolygon} className="dashboard-radar-shape" />
-                {radarPoints.map((item) => (
+                {radarPoints.map((item: any) => (
                   <circle key={item.label} cx={item.x} cy={item.y} r="5.5" className="dashboard-radar-point" />
                 ))}
                 <g className="dashboard-radar-center-group">
@@ -200,7 +191,7 @@ export default function DashboardModule(props: any) {
                   <text x={center} y={center - 4} textAnchor="middle" className="dashboard-radar-center-title">綜合評分</text>
                   <text x={center} y={center + 18} textAnchor="middle" className="dashboard-radar-center-score">{averageScore}</text>
                 </g>
-                {radarPoints.map((item) => (
+                {radarPoints.map((item: any) => (
                   <g key={item.label} className="dashboard-radar-label-group">
                     <text x={item.labelX} y={item.labelY + item.labelOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-label">{item.label}</text>
                     <text x={item.labelX} y={item.labelY + item.scoreOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-score">{item.value}</text>
@@ -209,11 +200,11 @@ export default function DashboardModule(props: any) {
               </svg>
             </div>
             <div className="dashboard-tree-score-grid radar-summary-grid">
-              {rankingTree.map((item) => (
+              {rankingTree.map((item: any) => (
                 <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card">
                   <span className="dashboard-tree-label">{item.label}</span>
                   <strong className="dashboard-tree-score">{item.value}</strong>
-                  <small className="dashboard-tree-mini-desc">分數越高，雷達圖越往該能力軸延伸</small>
+                  <small className="dashboard-tree-mini-desc">{evaluationQuarter} 能力得分</small>
                 </div>
               ))}
             </div>
