@@ -6649,42 +6649,49 @@ body {
 .dashboard-tree-card .panel-desc { display: none; }
 
 
-/* 第二十五版修正版：雷達定位 + 模組標題 + 商品圖預覽 */
-.vp-header-kicker,
-.vp-header-watermark.is-module,
-.header-module-desc {
-  color: #a21239 !important;
+/* 第二十五版：雷達置中 + 模組中英標題 + 商品圖先預覽 */
+.module-title-red {
+  color: #a21239;
+  letter-spacing: 0.08em;
 }
-.vp-header-watermark.is-module {
-  letter-spacing: 0.18em;
-}
-.header-module-desc {
-  font-weight: 700;
+.module-title-sub {
+  color: #a21239;
   opacity: 0.9;
 }
-.dashboard-radar-svg {
-  width: 280px;
-  height: 280px;
+.vp-header-kicker {
+  color: #a21239;
 }
 .dashboard-tree-visual.radar-visual {
-  min-height: 380px;
-  padding: 28px 22px 18px;
+  min-height: 388px;
+  padding: 26px;
+}
+.dashboard-radar-svg {
+  width: 272px;
+  height: 272px;
 }
 .dashboard-radar-center-badge {
   width: 96px;
   height: 96px;
 }
+.dashboard-radar-center-badge .dashboard-eval-hub-score {
+  font-size: 34px;
+}
 .dashboard-radar-label {
-  width: 88px;
-  padding: 6px 8px;
+  width: 96px;
+  padding: 8px 8px;
+}
+.dashboard-radar-label .dashboard-tree-label {
+  font-size: 12px;
+}
+.dashboard-radar-label .dashboard-tree-score {
+  font-size: 18px;
 }
 .dashboard-radar-label.is-top { transform: translate(-50%, 0); }
 .dashboard-radar-label.is-right { transform: translate(0, -50%); }
 .dashboard-radar-label.is-bottom { transform: translate(-50%, -100%); }
 .dashboard-radar-label.is-left { transform: translate(-100%, -50%); }
 .upload-preview-image,
-.product-image,
-.vp-brand-logo-image,
-.dashboard-profile-avatar-image {
+.product-image {
+  display: block;
   object-fit: cover;
 }

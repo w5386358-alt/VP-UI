@@ -49,10 +49,10 @@ export default function DashboardModule(props: any) {
   const center = 160;
   const outerRadius = 84;
   const labelPresets = [
-    { className: 'is-top', labelX: center, labelY: 18 },
-    { className: 'is-right', labelX: 252, labelY: center },
-    { className: 'is-bottom', labelX: center, labelY: 258 },
-    { className: 'is-left', labelX: 68, labelY: center },
+    { className: 'is-top', labelX: center, labelY: 34 },
+    { className: 'is-right', labelX: 276, labelY: center },
+    { className: 'is-bottom', labelX: center, labelY: 286 },
+    { className: 'is-left', labelX: 44, labelY: center },
   ];
   const radarPoints = rankingTree.map((item, index) => {
     const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;

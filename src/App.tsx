@@ -1146,6 +1146,18 @@ function getRankClass(rank: string) {
   return 'badge badge-rank-normal';
 }
 
+
+const HEADER_TITLE_MAP: Record<NavKey, { zh: string; en: string }> = {
+  dashboard: { zh: '儀表板', en: 'Dashboard' },
+  orders: { zh: '訂購', en: 'Orders' },
+  inventory: { zh: '倉儲', en: 'Inventory' },
+  accounting: { zh: '會計', en: 'Accounting' },
+  products: { zh: '商品', en: 'Products' },
+  customers: { zh: '客戶', en: 'Customers' },
+  staff: { zh: '人員', en: 'Staff' },
+  profile: { zh: '評鑑', en: 'Evaluation' },
+};
+
 function getSearchPlaceholder(active: NavKey) {
   switch (active) {
     case 'products':
@@ -2641,24 +2653,27 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function handleProductImageUpload(file?: File | null) {
     if (!file) return;
-    const code = (productDraft.code || '').trim() || `draft-${Date.now()}`;
+    const code = (productDraft.code || '').trim();
+    if (!code) {
+      setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
+      return;
+    }
+
+    let previewUrl = '';
     try {
-      const previewUrl = URL.createObjectURL(file);
+      previewUrl = URL.createObjectURL(file);
       setProductDraft((prev) => ({ ...prev, image: previewUrl }));
-      setProductNotice({ text: '圖片預覽載入中…', tone: 'neutral' });
-    } catch {}
+      setProductNotice({ text: '圖片預覽已載入，正在上傳…', tone: 'neutral' });
+    } catch {
+      setProductNotice({ text: '圖片載入中…', tone: 'neutral' });
+    }
+
     try {
       const imageUrl = await uploadFileToFirebase('products', file, code);
       setProductDraft((prev) => ({ ...prev, image: imageUrl }));
       setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
     } catch {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setProductDraft((prev) => ({ ...prev, image: String(reader.result || '') }));
-        setProductNotice({ text: '✅ 商品圖片已載入預覽', tone: 'success' });
-      };
-      reader.onerror = () => setProductNotice({ text: '❌ 商品圖片載入失敗', tone: 'danger' });
-      reader.readAsDataURL(file);
+      setProductNotice({ text: previewUrl ? '⚠️ 已先顯示本地預覽，雲端上傳失敗' : '❌ 商品圖片上傳失敗', tone: previewUrl ? 'neutral' : 'danger' });
     } finally {
       if (productImageInputRef.current) productImageInputRef.current.value = '';
     }
@@ -3032,7 +3047,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           agentPrice,
           generalAgentPrice,
           stock,
-          image: productDraft.image || '',
           enabled: productDraft.enabled,
         };
         setProducts((prev) => [nextProduct, ...prev]);
@@ -3066,7 +3080,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         agentPrice,
         generalAgentPrice,
         stock,
-        image: productDraft.image || '',
         enabled: productDraft.enabled,
       };
 
@@ -3418,6 +3431,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   const activeLabel = visibleNavItems.find((item) => item.key === active)?.label || '受限模組';
+  const currentHeaderTitle = HEADER_TITLE_MAP[active] || HEADER_TITLE_MAP.dashboard;
 
   const notificationItems = useMemo(() => {
     const items: Array<{ id: string; title: string; detail: string; tone: 'danger' | 'warning' | 'neutral' }> = [];
@@ -3727,8 +3741,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             </div>
             <div className="vp-header-branding">
               <div className="vp-header-kicker">{currentHeaderTitle.en}</div>
-              <div className="vp-header-watermark is-module">{currentHeaderTitle.zh}</div>
-              <p className="vp-header-desc header-module-desc">{currentHeaderTitle.zh} · {currentHeaderTitle.en}</p>
+              <div className="vp-header-watermark module-title-red">{currentHeaderTitle.zh}</div>
+              <p className="vp-header-desc module-title-sub">{currentHeaderTitle.zh} / {currentHeaderTitle.en}</p>
             </div>
           </div>
           <div className="vp-header-tools">
