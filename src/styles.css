@@ -6959,3 +6959,67 @@ body {
     letter-spacing: 0.16em;
   }
 }
+
+
+/* ui新板25版 續修：上方縮高、按鈕上移、標題框線移除 */
+.vp-header {
+  align-items: start;
+  padding: 16px 22px;
+}
+
+.vp-header-banner {
+  min-height: 90px;
+  padding: 18px 28px;
+  border: none !important;
+  box-shadow: none;
+}
+
+.vp-header-branding {
+  gap: 4px;
+}
+
+.vp-header-module-title {
+  font-size: 42px;
+  color: var(--primary);
+}
+
+.vp-header-tools {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.vp-search-wrap {
+  width: min(100%, 360px);
+}
+
+.vp-header-action-group,
+.vp-tool-button {
+  align-self: flex-start;
+}
+
+.vp-workspace {
+  padding-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .vp-header {
+    padding: 14px 16px;
+  }
+
+  .vp-header-banner {
+    min-height: 78px;
+    padding: 14px 18px;
+  }
+
+  .vp-header-module-title {
+    font-size: 30px;
+  }
+
+  .vp-header-tools {
+    justify-content: flex-start;
+  }
+}
