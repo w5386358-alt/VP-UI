@@ -7464,3 +7464,136 @@ body {
 .evaluation-hero-card-v2{
   margin-top:0 !important;
 }
+
+/* ui新板25版：間距與抬頭卡片自適應修正 */
+:root {
+  --vp-module-gap: 38px;
+  --vp-header-fixed-height: 112px;
+}
+
+.vp-main > .vp-header,
+.vp-header.card {
+  align-self: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.vp-header {
+  padding: 14px 20px !important;
+  align-items: center !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr) !important;
+}
+
+.vp-header-banner {
+  min-height: var(--vp-header-fixed-height) !important;
+  height: auto !important;
+  align-self: center !important;
+  padding: 18px 24px !important;
+}
+
+.vp-header-tools {
+  align-self: center !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding-top: 0 !important;
+}
+
+.vp-workspace {
+  padding-top: 20px !important;
+}
+
+.vp-module-body {
+  gap: var(--vp-module-gap) !important;
+}
+
+.warehouse-tab-row,
+.accounting-tab-row,
+.dashboard-quarter-row,
+.dashboard-quarter-switch,
+.evaluation-quarter-row,
+.accounting-quarter-row,
+.warehouse-query-mode-row,
+.product-editor-chip-row,
+.vp-workspace-top {
+  gap: 12px !important;
+  margin-bottom: var(--vp-module-gap) !important;
+}
+
+.warehouse-primary-tabs {
+  margin-top: 0 !important;
+}
+
+.warehouse-tab-row + *,
+.accounting-tab-row + *,
+.dashboard-quarter-row + *,
+.dashboard-quarter-switch + *,
+.evaluation-quarter-row + *,
+.accounting-quarter-row + *,
+.warehouse-query-mode-row + *,
+.vp-workspace-top + * {
+  margin-top: 0 !important;
+}
+
+.inventory-shell-v2 > .warehouse-tab-row + section,
+.accounting-shell-v2 > .accounting-tab-row + section,
+.accounting-shell-v2 > .accounting-tab-row + div,
+.inventory-shell-v2 > .warehouse-tab-row + div {
+  margin-top: 0 !important;
+}
+
+.warehouse-layout,
+.warehouse-stack-section,
+.accounting-layout,
+.accounting-shell-v2 section,
+.inventory-shell-v2 section,
+.orders-shell-v2 section,
+.customers-sync-layout > .product-admin-main,
+.product-admin-layout > .product-admin-main,
+.staff-shell > section,
+.profile-shell-v2 > section {
+  gap: 24px !important;
+}
+
+.card.order-panel,
+.accounting-console-card,
+.accounting-proof-card,
+.accounting-queue-card-v2,
+.accounting-console-card-v2,
+.products-board-card,
+.customers-main-card,
+.customers-main-card-full,
+.stock-snapshot-card,
+.warehouse-stock-overview-card,
+.query-result-card,
+.warehouse-filter-shell,
+.warehouse-queue-card,
+.warehouse-side-panel,
+.profile-hero-card,
+.profile-history-panel-v2,
+.profile-quick-panel-v2,
+.ranking-card,
+.board-card {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --vp-module-gap: 22px;
+    --vp-header-fixed-height: 92px;
+  }
+
+  .vp-header {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 12px 14px !important;
+  }
+
+  .vp-header-tools {
+    justify-content: flex-start !important;
+    align-self: start !important;
+  }
+
+  .vp-header-banner {
+    padding: 14px 16px !important;
+  }
+}
