@@ -7025,24 +7025,21 @@ body {
 }
 
 
-/* ui新板25版 客戶區標題欄尺寸對齊商品區：只修客戶區 */
-.customers-shell-clean {
-  margin-top: -94px;
+/* ui新板25版：只修客戶區標題欄高度，對齊商品區 */
+.customers-sync-layout{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:0;
 }
 
-.customers-main-card-full {
-  padding: 24px;
-  border-radius: 30px;
+.customers-sync-layout .product-admin-main{
+  display:block;
 }
 
-@media (max-width: 1200px) {
-  .customers-shell-clean {
-    margin-top: -48px;
-  }
-}
-
-@media (max-width: 900px) {
-  .customers-shell-clean {
-    margin-top: 0;
-  }
+.customers-sync-layout .customers-main-card-full{
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:22px;
 }

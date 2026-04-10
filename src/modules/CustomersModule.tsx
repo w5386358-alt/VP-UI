@@ -12,8 +12,9 @@ export default function CustomersModule(props: any) {
 
   return (
     <>
-      <section className="customers-shell customers-shell-clean">
-        <div className="card customers-main-card customers-main-card-full">
+      <section className="product-admin-layout customers-sync-layout">
+        <div className="product-admin-main">
+          <div className="card order-panel products-board-card customers-main-card customers-main-card-full">
           <div className="customers-main-head">
             <div>
               <div className="panel-title">客戶列表</div>
@@ -64,6 +65,7 @@ export default function CustomersModule(props: any) {
               ))}
             </div>
             <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
+          </div>
           </div>
         </div>
       </section>
