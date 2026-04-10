@@ -6851,3 +6851,75 @@ body {
     max-width: 100%;
   }
 }
+
+
+/* ui新板25版 第二次微調：只保留上方標題、提醒移到重新整理旁、客戶區尺寸對齊 */
+.vp-header-branding {
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.vp-header-module-title {
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.vp-header-module-desc {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-top: 0;
+  line-height: 1.1;
+}
+
+.vp-header-tools {
+  align-items: center;
+}
+
+.vp-header-action-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.vp-workspace {
+  padding-top: 24px;
+}
+
+.vp-module-body {
+  margin-top: 0;
+}
+
+.customers-shell-clean {
+  gap: 0;
+}
+
+.customers-main-card-full {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 20px;
+}
+
+@media (max-width: 900px) {
+  .vp-header-module-title {
+    font-size: 32px;
+  }
+
+  .vp-header-module-desc {
+    font-size: 12px;
+    letter-spacing: 0.16em;
+  }
+
+  .vp-header-tools {
+    gap: 10px;
+  }
+}

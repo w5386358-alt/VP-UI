@@ -3735,8 +3735,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">CURRENT MODULE</div>
-              <div className="vp-header-watermark vp-header-module-title">{currentModuleLabel}</div>
+              <div className="vp-header-module-title">{currentModuleLabel}</div>
               <p className="vp-header-desc vp-header-module-desc">{currentModuleEnglish}</p>
             </div>
           </div>
@@ -3745,21 +3744,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
-            </button>
-          </div>
-        </header>
-
-        <section className="vp-workspace card">
-          <div className="vp-workspace-top">
-            <div className="vp-workspace-title-strip">
-              <div className="vp-workspace-module-title">
-                <span className="vp-workspace-title-cn">{currentModuleLabel}</span>
-                <span className="vp-workspace-title-en">{currentModuleEnglish}</span>
-              </div>
-            </div>
-            <div className="vp-workspace-actions" ref={notificationPanelRef}>
+            <div className="vp-header-action-group" ref={notificationPanelRef}>
               <button
                 type="button"
                 className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
@@ -3796,8 +3781,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 </div>
               )}
             </div>
+            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
+              <RefreshCw className="small-icon" />重新整理
+            </button>
           </div>
+        </header>
 
+        <section className="vp-workspace card">
           {booting ? (
             <div className="card loading-card">
               <div className="spinner" />
