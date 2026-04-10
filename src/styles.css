@@ -7380,3 +7380,22 @@ body {
     padding-left: 0;
   }
 }
+
+
+/* 購物車按鈕修正：恢復右下角小按鈕 */
+.floating-cart-button {
+  position: fixed !important;
+  left: auto !important;
+  top: auto !important;
+  right: 24px !important;
+  bottom: 28px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding: 10px 14px !important;
+  border-radius: 999px !important;
+  transform: none !important;
+}
