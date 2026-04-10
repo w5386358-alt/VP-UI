@@ -6923,3 +6923,39 @@ body {
     gap: 10px;
   }
 }
+
+
+/* 英文補回同一行，避免被吃掉 */
+.vp-header-module-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vp-header-module-slash {
+  color: var(--primary);
+  opacity: 0.7;
+}
+
+.vp-header-module-en-inline {
+  font-size: 0.5em;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.vp-header-module-desc {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .vp-header-module-title {
+    gap: 8px;
+  }
+  .vp-header-module-en-inline {
+    font-size: 0.44em;
+    letter-spacing: 0.16em;
+  }
+}

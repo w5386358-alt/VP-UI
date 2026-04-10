@@ -3735,8 +3735,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-module-title">{currentModuleLabel}</div>
-              <p className="vp-header-desc vp-header-module-desc">{currentModuleEnglish}</p>
+              <div className="vp-header-module-title">{currentModuleLabel} <span className="vp-header-module-slash">/</span> <span className="vp-header-module-en-inline">{currentModuleEnglish}</span></div>
             </div>
           </div>
           <div className="vp-header-tools">
