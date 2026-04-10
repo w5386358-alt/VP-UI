@@ -3731,8 +3731,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">{NAV_ENGLISH_LABEL[active]}</div>
-              <div className="vp-header-title-red">{navItems.find((item) => item.key === active)?.label || '總覽'}</div>
+              <div className="vp-header-kicker">{navItems.find((item) => item.key === active)?.label || '總覽'}</div>
+              <div className="vp-header-title-red">{NAV_ENGLISH_LABEL[active]}</div>
+              <div className="vp-header-subtitle-red">{navItems.find((item) => item.key === active)?.label || '總覽'} / {NAV_ENGLISH_LABEL[active]}</div>
               <div className="vp-header-watermark vp-header-watermark-red">{NAV_ENGLISH_LABEL[active]}</div>
               <p className="vp-header-desc">{SECTION_HINTS[active]?.desc || '依照目前模組顯示對應資料與操作內容。'}</p>
             </div>
