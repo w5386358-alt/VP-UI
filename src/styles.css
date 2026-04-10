@@ -7399,3 +7399,68 @@ body {
   border-radius: 999px !important;
   transform: none !important;
 }
+
+/* ui新板25版：八大區主內容第一張大卡片往上固定 */
+.vp-module-body{
+  align-content:start;
+}
+
+.dashboard-personal-shell,
+.product-admin-layout,
+.customers-sync-layout,
+.staff-shell-v2,
+.staff-layout-v2,
+.orders-workspace-grid,
+.warehouse-layout,
+.accounting-shell-v2,
+.accounting-bonus-layout,
+.accounting-treasury-layout,
+.accounting-stats-layout-v3,
+.accounting-ranking-layout-v2,
+.accounting-evaluation-layout,
+.profile-shell-v2,
+.evaluation-shell-v2{
+  margin-top:-14px !important;
+}
+
+.dashboard-personal-shell > :first-child,
+.product-admin-layout > :first-child,
+.customers-sync-layout > :first-child,
+.staff-shell-v2 > :first-child,
+.staff-layout-v2 > :first-child,
+.orders-workspace-grid > :first-child,
+.warehouse-layout > :first-child,
+.accounting-shell-v2 > :first-child,
+.accounting-bonus-layout > :first-child,
+.accounting-treasury-layout > :first-child,
+.accounting-stats-layout-v3 > :first-child,
+.accounting-ranking-layout-v2 > :first-child,
+.accounting-evaluation-layout > :first-child,
+.profile-shell-v2 > :first-child,
+.evaluation-shell-v2 > :first-child{
+  margin-top:0 !important;
+}
+
+.order-main,
+.product-admin-main,
+.staff-main-v2,
+.warehouse-main,
+.accounting-treasury-main,
+.accounting-bonus-main,
+.profile-main-v2{
+  padding-top:0 !important;
+}
+
+.orders-catalog-panel,
+.products-board-card,
+.customers-main-card,
+.customers-main-card-full,
+.staff-list-card-v2,
+.warehouse-filter-shell,
+.accounting-filter-shell,
+.accounting-bonus-card,
+.accounting-summary-card,
+.profile-hero-card-v2,
+.evaluation-hero-card-v2{
+  margin-top:0 !important;
+}
