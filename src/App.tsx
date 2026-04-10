@@ -39,7 +39,6 @@ import {
   Plus,
   PencilLine,
   Eye,
-  Menu,
   MoreHorizontal,
   X,
 } from 'lucide-react';
@@ -3987,9 +3986,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <main className="vp-main">
         <div className="vp-mobile-topbar card">
           <div className="vp-mobile-topbar-main">
-            <button type="button" className="vp-mobile-menu-btn" onClick={() => setMobileMoreOpen((prev) => !prev)} aria-label="開啟更多模組">
-              {mobileMoreOpen ? <X className="small-icon" /> : <Menu className="small-icon" />}
-            </button>
             <div className="vp-mobile-topbar-copy">
               <div className="vp-mobile-topbar-title">{currentModuleLabel}</div>
               <div className="vp-mobile-topbar-sub">{currentModuleEnglish} · {ROLE_LABEL[user.role]}</div>
@@ -4031,36 +4027,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 )) : (
                   <div className="vp-notification-empty">目前沒有待處理事項</div>
                 )}
-              </div>
-            </div>
-          )}
-          {mobileMoreOpen && (
-            <div className="vp-mobile-more-sheet">
-              <div className="vp-mobile-more-head">
-                <div>
-                  <div className="vp-mobile-more-title">更多功能</div>
-                  <div className="vp-mobile-more-sub">保留手機畫面乾淨，次要模組收進這裡</div>
-                </div>
-                <button type="button" className="ghost-button vp-mobile-more-close" onClick={() => setMobileMoreOpen(false)} aria-label="關閉更多功能">
-                  <X className="small-icon" />
-                </button>
-              </div>
-              <div className="vp-mobile-more-grid">
-                {mobileSecondaryNavItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      className={`vp-mobile-more-item ${active === item.key ? 'active' : ''}`}
-                      onClick={() => setActive(item.key)}
-                    >
-                      <span className="vp-mobile-more-icon"><Icon className="small-icon" /></span>
-                      <span className="vp-mobile-more-label">{item.label}</span>
-                      <span className="vp-mobile-more-en">{NAV_ENGLISH_LABEL[item.key]}</span>
-                    </button>
-                  );
-                })}
               </div>
             </div>
           )}
@@ -4232,6 +4198,43 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             </>
           )}
         </section>
+
+        {mobileMoreOpen && (
+          <>
+            <button type="button" className="vp-mobile-more-backdrop" aria-label="關閉更多功能" onClick={() => setMobileMoreOpen(false)} />
+            <div className="vp-mobile-more-sheet vp-mobile-more-sheet-bottom">
+              <div className="vp-mobile-more-head">
+                <div>
+                  <div className="vp-mobile-more-title">更多功能</div>
+                  <div className="vp-mobile-more-sub">保留手機畫面乾淨，次要模組收進這裡</div>
+                </div>
+                <button type="button" className="ghost-button vp-mobile-more-close" onClick={() => setMobileMoreOpen(false)} aria-label="關閉更多功能">
+                  <X className="small-icon" />
+                </button>
+              </div>
+              <div className="vp-mobile-more-grid">
+                {mobileSecondaryNavItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`vp-mobile-more-item ${active === item.key ? 'active' : ''}`}
+                      onClick={() => {
+                        setActive(item.key);
+                        setMobileMoreOpen(false);
+                      }}
+                    >
+                      <span className="vp-mobile-more-icon"><Icon className="small-icon" /></span>
+                      <span className="vp-mobile-more-label">{item.label}</span>
+                      <span className="vp-mobile-more-en">{NAV_ENGLISH_LABEL[item.key]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="mobile-nav">
           {mobilePrimaryNavItems.map((item) => {
