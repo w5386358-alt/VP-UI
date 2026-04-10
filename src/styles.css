@@ -7810,3 +7810,213 @@ body {
   align-self: stretch !important;
   margin-top: 0 !important;
 }
+
+
+/* 手機UI第一版：手機抬頭＋底部4+1主選單＋更多抽屜 */
+.vp-mobile-topbar{
+  display:none;
+}
+
+.vp-mobile-topbar-main{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.vp-mobile-menu-btn{
+  width:44px;
+  height:44px;
+  border-radius:16px;
+  border:1px solid rgba(204,149,167,.28);
+  background:rgba(255,255,255,.88);
+  display:grid;
+  place-items:center;
+  box-shadow:0 10px 24px rgba(148,95,113,.10);
+}
+
+.vp-mobile-topbar-copy{
+  min-width:0;
+}
+
+.vp-mobile-topbar-title{
+  font-size:18px;
+  font-weight:800;
+  color:#6d4454;
+  line-height:1.2;
+}
+
+.vp-mobile-topbar-sub{
+  margin-top:3px;
+  font-size:11px;
+  letter-spacing:.08em;
+  color:#a77989;
+}
+
+.vp-mobile-topbar-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
+.vp-mobile-notification-sheet,
+.vp-mobile-more-sheet{
+  margin-top:12px;
+  border:1px solid rgba(204,149,167,.22);
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,246,249,.94));
+  border-radius:22px;
+  box-shadow:0 18px 42px rgba(137,83,101,.12);
+}
+
+.vp-mobile-notification-sheet{
+  padding:14px;
+}
+
+.vp-mobile-more-sheet{
+  padding:16px;
+}
+
+.vp-mobile-more-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.vp-mobile-more-title{
+  font-size:16px;
+  font-weight:800;
+  color:#73495a;
+}
+
+.vp-mobile-more-sub{
+  margin-top:4px;
+  font-size:12px;
+  color:#9a7282;
+  line-height:1.45;
+}
+
+.vp-mobile-more-close{
+  min-width:auto;
+  padding:10px;
+}
+
+.vp-mobile-more-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+
+.vp-mobile-more-item{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  padding:14px;
+  border-radius:18px;
+  border:1px solid rgba(210,160,178,.24);
+  background:rgba(255,255,255,.82);
+  text-align:left;
+}
+
+.vp-mobile-more-item.active{
+  background:linear-gradient(135deg, rgba(206,124,156,.14), rgba(255,255,255,.96));
+  border-color:rgba(198,101,139,.38);
+}
+
+.vp-mobile-more-icon{
+  width:36px;
+  height:36px;
+  border-radius:14px;
+  display:grid;
+  place-items:center;
+  background:rgba(255,241,246,.95);
+  color:#b0587a;
+}
+
+.vp-mobile-more-label{
+  font-size:14px;
+  font-weight:700;
+  color:#6d4454;
+}
+
+.vp-mobile-more-en{
+  font-size:11px;
+  color:#a77989;
+  letter-spacing:.08em;
+}
+
+@media (max-width: 900px) {
+  .vp-mobile-topbar{
+    display:block;
+    margin-bottom:14px;
+    padding:12px 14px;
+    position:sticky;
+    top:10px;
+    z-index:30;
+  }
+
+  .vp-sidebar{
+    display:none !important;
+  }
+
+  .vp-header{
+    display:none !important;
+  }
+
+  .vp-main{
+    width:100%;
+    padding-bottom:96px;
+  }
+
+  .vp-shell{
+    display:block;
+    padding:14px 12px 96px;
+  }
+
+  .vp-workspace{
+    border-radius:24px !important;
+    padding:16px 14px 20px !important;
+  }
+
+  .mobile-nav{
+    display:grid !important;
+    grid-template-columns:repeat(5, minmax(0, 1fr));
+    gap:8px;
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:10px;
+    z-index:50;
+    padding:10px;
+    border-radius:24px;
+    background:rgba(255,250,252,.94);
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(204,149,167,.22);
+    box-shadow:0 20px 48px rgba(119,73,89,.18);
+  }
+
+  .mobile-nav-btn{
+    min-width:0;
+    min-height:58px;
+    padding:8px 4px;
+    border-radius:16px;
+    gap:4px;
+    font-size:11px;
+  }
+}
+
+@media (max-width: 520px) {
+  .vp-mobile-topbar-title{
+    font-size:16px;
+  }
+
+  .vp-mobile-topbar-sub{
+    font-size:10px;
+  }
+
+  .vp-mobile-more-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}

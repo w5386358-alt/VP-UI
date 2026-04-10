@@ -39,6 +39,9 @@ import {
   Plus,
   PencilLine,
   Eye,
+  Menu,
+  MoreHorizontal,
+  X,
 } from 'lucide-react';
 import DashboardModule from './modules/DashboardModule';
 import ProductsModule from './modules/ProductsModule';
@@ -1486,6 +1489,7 @@ function PlaceholderCard({ title, desc, bullets }: { title: string; desc: string
 
 export default function App() {
   const [active, setActive] = useState<NavKey>('dashboard');
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [booting, setBooting] = useState(true);
   const [bootMessage, setBootMessage] = useState('初始化中...');
   const [logoImage, setLogoImage] = useState('');
@@ -2839,6 +2843,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const currentModuleLabel = currentNavItem.label;
   const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
 
+  const mobilePrimaryKeys: NavKey[] = ['dashboard', 'orders', 'inventory', 'accounting'];
+  const mobilePrimaryNavItems = visibleNavItems.filter((item) => mobilePrimaryKeys.includes(item.key));
+  const mobileSecondaryNavItems = visibleNavItems.filter((item) => !mobilePrimaryKeys.includes(item.key));
+
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
   const customerScopeLabel = permissionProfile.canViewAllCustomers
     ? '全部客戶完整資料'
@@ -3868,6 +3876,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
+  useEffect(() => {
+    setMobileMoreOpen(false);
+  }, [active]);
+
   return (
     <div className="vp-shell">
       <div className="vp-ornament vp-ornament-a" />
@@ -3973,6 +3985,87 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       </aside>
 
       <main className="vp-main">
+        <div className="vp-mobile-topbar card">
+          <div className="vp-mobile-topbar-main">
+            <button type="button" className="vp-mobile-menu-btn" onClick={() => setMobileMoreOpen((prev) => !prev)} aria-label="開啟更多模組">
+              {mobileMoreOpen ? <X className="small-icon" /> : <Menu className="small-icon" />}
+            </button>
+            <div className="vp-mobile-topbar-copy">
+              <div className="vp-mobile-topbar-title">{currentModuleLabel}</div>
+              <div className="vp-mobile-topbar-sub">{currentModuleEnglish} · {ROLE_LABEL[user.role]}</div>
+            </div>
+          </div>
+          <div className="vp-mobile-topbar-actions">
+            <button
+              type="button"
+              className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
+              onClick={() => setNotificationOpen((prev) => !prev)}
+            >
+              <span className="vp-bell-icon-wrap">
+                <Bell className="small-icon" />
+                {notificationCount > 0 && <span className="vp-bell-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>}
+              </span>
+            </button>
+            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()} aria-label="重新整理">
+              <RefreshCw className="small-icon" />
+            </button>
+          </div>
+          {notificationOpen && (
+            <div className="vp-mobile-notification-sheet">
+              <div className="vp-notification-head">
+                <div>
+                  <div className="vp-notification-title">待辦提醒</div>
+                  <div className="vp-notification-sub">未完成事項會自動顯示在這裡</div>
+                </div>
+                <span className="vp-notification-count">{notificationCount}</span>
+              </div>
+              <div className="vp-notification-list">
+                {notificationItems.length ? notificationItems.map((item) => (
+                  <div key={item.id} className={`vp-notification-item ${item.tone}`}>
+                    <div className="vp-notification-dot" />
+                    <div className="vp-notification-copy">
+                      <div className="vp-notification-item-title">{item.title}</div>
+                      <div className="vp-notification-item-detail">{item.detail}</div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="vp-notification-empty">目前沒有待處理事項</div>
+                )}
+              </div>
+            </div>
+          )}
+          {mobileMoreOpen && (
+            <div className="vp-mobile-more-sheet">
+              <div className="vp-mobile-more-head">
+                <div>
+                  <div className="vp-mobile-more-title">更多功能</div>
+                  <div className="vp-mobile-more-sub">保留手機畫面乾淨，次要模組收進這裡</div>
+                </div>
+                <button type="button" className="ghost-button vp-mobile-more-close" onClick={() => setMobileMoreOpen(false)} aria-label="關閉更多功能">
+                  <X className="small-icon" />
+                </button>
+              </div>
+              <div className="vp-mobile-more-grid">
+                {mobileSecondaryNavItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`vp-mobile-more-item ${active === item.key ? 'active' : ''}`}
+                      onClick={() => setActive(item.key)}
+                    >
+                      <span className="vp-mobile-more-icon"><Icon className="small-icon" /></span>
+                      <span className="vp-mobile-more-label">{item.label}</span>
+                      <span className="vp-mobile-more-en">{NAV_ENGLISH_LABEL[item.key]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         <header className="vp-header card">
           <div className="vp-header-banner">
             <div className="vp-header-visual">
@@ -4141,13 +4234,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </section>
 
         <div className="mobile-nav">
-          {[
-            { key: 'dashboard' as NavKey, label: '儀表板', icon: BarChart3 },
-            { key: 'orders' as NavKey, label: '訂購', icon: ShoppingCart },
-            { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
-            { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
-            { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
-          ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
+          {mobilePrimaryNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -4161,6 +4248,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </button>
             );
           })}
+          <button
+            type="button"
+            className={`mobile-nav-btn ${mobileMoreOpen ? 'active' : ''}`}
+            onClick={() => setMobileMoreOpen((prev) => !prev)}
+          >
+            <MoreHorizontal className="small-icon" />
+            <span>更多</span>
+          </button>
         </div>
       </main>
     </div>
