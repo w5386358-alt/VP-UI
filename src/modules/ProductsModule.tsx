@@ -163,7 +163,7 @@ export default function ProductsModule(props: any) {
                   </div>
                   {productEditorMode !== 'view' && (
                     <>
-                      <input ref={productImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleProductImageUpload(e.target.files?.[0] || null)} />
+                      <input ref={productImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => { handleProductImageUpload(e.target.files?.[0] || null); e.target.value = ""; }} />
                       <div className="upload-action-row">
                         <button type="button" className="ghost-button compact-btn" onClick={() => productImageInputRef?.current?.click()}>
                           <ImageIcon className="small-icon" />上傳商品圖片

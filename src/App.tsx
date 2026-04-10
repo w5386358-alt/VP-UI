@@ -332,18 +332,6 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
-
-const HEADER_TITLE_MAP: Record<NavKey, { zh: string; en: string }> = {
-  dashboard: { zh: '儀表板', en: 'Dashboard' },
-  orders: { zh: '訂購', en: 'Orders' },
-  inventory: { zh: '倉儲', en: 'Inventory' },
-  accounting: { zh: '會計', en: 'Accounting' },
-  products: { zh: '商品', en: 'Products' },
-  customers: { zh: '客戶', en: 'Customers' },
-  staff: { zh: '人員', en: 'Staff' },
-  profile: { zh: '評鑑', en: 'Evaluation' },
-};
-
 const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
   admin: ['dashboard', 'orders', 'inventory', 'accounting', 'products', 'customers', 'staff', 'profile'],
   sales: ['dashboard', 'orders', 'profile'],
@@ -1349,8 +1337,6 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 }
 
 function SummaryCard({ title, value, sub }: { title: string; value: string; sub: string }) {
-  const currentHeaderTitle = HEADER_TITLE_MAP[active] || HEADER_TITLE_MAP.dashboard;
-
   return (
     <div className="card summary-card">
       <div className="summary-title">{title}</div>
@@ -2655,21 +2641,24 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function handleProductImageUpload(file?: File | null) {
     if (!file) return;
-    const code = (productDraft.code || '').trim();
-    if (!code) {
-      setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
-      return;
-    }
-    let previewUrl = '';
+    const code = (productDraft.code || '').trim() || `draft-${Date.now()}`;
     try {
-      previewUrl = URL.createObjectURL(file);
+      const previewUrl = URL.createObjectURL(file);
       setProductDraft((prev) => ({ ...prev, image: previewUrl }));
-      setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
+      setProductNotice({ text: '圖片預覽載入中…', tone: 'neutral' });
+    } catch {}
+    try {
       const imageUrl = await uploadFileToFirebase('products', file, code);
       setProductDraft((prev) => ({ ...prev, image: imageUrl }));
       setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
     } catch {
-      setProductNotice({ text: '❌ 商品圖片上傳失敗', tone: 'danger' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        setProductDraft((prev) => ({ ...prev, image: String(reader.result || '') }));
+        setProductNotice({ text: '✅ 商品圖片已載入預覽', tone: 'success' });
+      };
+      reader.onerror = () => setProductNotice({ text: '❌ 商品圖片載入失敗', tone: 'danger' });
+      reader.readAsDataURL(file);
     } finally {
       if (productImageInputRef.current) productImageInputRef.current.value = '';
     }
@@ -3043,8 +3032,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           agentPrice,
           generalAgentPrice,
           stock,
-          enabled: productDraft.enabled,
           image: productDraft.image || '',
+          enabled: productDraft.enabled,
         };
         setProducts((prev) => [nextProduct, ...prev]);
         setSelectedProductId(nextProduct.code);
@@ -3077,8 +3066,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         agentPrice,
         generalAgentPrice,
         stock,
-        enabled: productDraft.enabled,
         image: productDraft.image || '',
+        enabled: productDraft.enabled,
       };
 
       setProducts((prev) => prev.map((item) => item.id === productDraft.id ? { ...item, ...updatedProduct } : item));
@@ -3737,9 +3726,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">{currentHeaderTitle.zh}</div>
-              <div className="vp-header-watermark">{currentHeaderTitle.en}</div>
-              <p className="vp-header-desc vp-header-desc-title">{currentHeaderTitle.zh}・{currentHeaderTitle.en}</p>
+              <div className="vp-header-kicker">{currentHeaderTitle.en}</div>
+              <div className="vp-header-watermark is-module">{currentHeaderTitle.zh}</div>
+              <p className="vp-header-desc header-module-desc">{currentHeaderTitle.zh} · {currentHeaderTitle.en}</p>
             </div>
           </div>
           <div className="vp-header-tools">
