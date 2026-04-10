@@ -7811,338 +7811,124 @@ body {
   margin-top: 0 !important;
 }
 
-/* 第三十二版：手機底部主選單自適應固定 + 儀表板手機重排 */
-@media (max-width: 760px) {
-  .main-content {
-    padding: 10px 10px 116px !important;
+/* 手機UI第七版：隱藏桌機側欄＋底部主選單滿版固定 */
+@media (max-width: 900px) {
+  html, body, #root {
+    width: 100%;
+    overflow-x: hidden;
   }
 
-  .vp-header {
+  .vp-shell {
+    display: block !important;
     grid-template-columns: 1fr !important;
-    padding: 10px 12px !important;
-    gap: 10px !important;
+    gap: 0 !important;
+    padding: 12px 12px 108px !important;
+    min-height: 100vh;
   }
 
-  .vp-header-banner {
-    min-height: 0 !important;
-    padding: 12px 14px !important;
-    border-radius: 20px !important;
+  .vp-ornament,
+  .vp-sidebar,
+  aside.vp-sidebar {
+    display: none !important;
   }
 
-  .vp-workspace {
-    padding: 12px !important;
-    border-radius: 22px !important;
-  }
-
-  .vp-workspace-top {
-    gap: 8px !important;
-    margin-bottom: 12px !important;
-  }
-
-  .vp-workspace-title-strip {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px !important;
-    width: 100%;
-  }
-
-  .vp-workspace-title-chip {
+  .vp-main {
+    width: 100% !important;
     min-width: 0 !important;
-    width: 100%;
-    padding: 10px 10px !important;
-    border-radius: 16px !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
-  .vp-workspace-title-cn {
-    font-size: 12px !important;
+  .vp-header,
+  .vp-workspace,
+  .section-intro-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 
-  .vp-workspace-title-en {
-    font-size: 9px !important;
-    letter-spacing: 0.05em !important;
+  .vp-header,
+  .vp-workspace {
+    border-radius: 24px !important;
   }
 
   .mobile-nav {
+    display: grid !important;
     position: fixed !important;
-    left: 50% !important;
-    right: auto !important;
-    bottom: max(10px, env(safe-area-inset-bottom)) !important;
-    transform: translateX(-50%);
-    width: min(calc(100vw - 18px), 420px) !important;
-    padding: 8px !important;
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    transform: none !important;
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
     gap: 6px !important;
-    border: 1px solid rgba(229, 205, 214, 0.95) !important;
+    padding: 10px 8px !important;
     border-radius: 22px !important;
-    background: rgba(255, 251, 253, 0.96) !important;
-    box-shadow: 0 10px 26px rgba(160, 88, 112, 0.12) !important;
-    backdrop-filter: blur(18px);
+    background: rgba(255, 250, 252, 0.98) !important;
+    border: 1px solid rgba(232, 190, 206, 0.9) !important;
+    box-shadow: 0 18px 36px rgba(157, 97, 119, 0.18) !important;
+    backdrop-filter: blur(16px) !important;
+    z-index: 999 !important;
     overflow: hidden !important;
   }
 
   .mobile-nav-btn {
     min-width: 0 !important;
-    padding: 8px 4px 7px !important;
-    gap: 4px !important;
+    min-height: 72px !important;
+    padding: 12px 6px !important;
     border-radius: 16px !important;
-    font-size: 10px !important;
-    line-height: 1.1 !important;
-  }
-
-  .mobile-nav-btn .small-icon {
-    width: 15px !important;
-    height: 15px !important;
-  }
-
-  .dashboard-personal-shell {
-    gap: 14px !important;
-  }
-
-  .dashboard-personal-grid,
-  .dashboard-personal-bottom-grid,
-  .dashboard-feature-grid,
-  .dashboard-hero-stat-grid,
-  .dashboard-tree-layout.radar-layout,
-  .dashboard-tree-score-grid.radar-summary-grid {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
-  }
-
-  .dashboard-profile-card,
-  .dashboard-history-card,
-  .dashboard-customer-card,
-  .dashboard-tree-card,
-  .dashboard-growth-card,
-  .dashboard-hero-stat-card {
-    padding: 14px !important;
-    border-radius: 18px !important;
-  }
-
-  .dashboard-profile-art {
-    width: 120px !important;
-    height: 120px !important;
-    top: -18px !important;
-    right: -12px !important;
-  }
-
-  .dashboard-profile-avatar.uploadable-avatar,
-  .dashboard-profile-avatar,
-  .evaluation-avatar {
-    width: 72px !important;
-    height: 72px !important;
-    margin: 4px auto 12px !important;
-    font-size: 28px !important;
-  }
-
-  .dashboard-profile-name {
-    font-size: 22px !important;
-  }
-
-  .dashboard-profile-role {
-    margin-top: 4px !important;
-    font-size: 12px !important;
-  }
-
-  .dashboard-profile-honor {
-    margin: 10px auto 8px !important;
-    min-height: 34px !important;
-    padding: 8px 12px !important;
-    font-size: 12px !important;
-  }
-
-  .dashboard-profile-badges,
-  .dashboard-profile-badges.secondary {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
     gap: 6px !important;
-  }
-
-  .dashboard-profile-card .badge,
-  .dashboard-profile-card [class*='badge-rank-'] {
-    padding: 6px 10px !important;
-    font-size: 10px !important;
-  }
-
-  .dashboard-profile-detail-list {
-    margin-top: 14px !important;
-    padding-top: 12px !important;
-    gap: 8px !important;
-  }
-
-  .dashboard-profile-detail-list div {
-    grid-template-columns: 1fr !important;
-    display: grid !important;
-    gap: 2px !important;
-  }
-
-  .dashboard-profile-detail-list span,
-  .dashboard-profile-detail-list strong {
-    font-size: 12px !important;
-  }
-
-  .dashboard-hero-stat-icon {
-    width: 34px !important;
-    height: 34px !important;
-    border-radius: 12px !important;
-  }
-
-  .dashboard-hero-stat-title {
-    margin-top: 10px !important;
-    font-size: 12px !important;
-  }
-
-  .dashboard-hero-stat-value {
-    margin-top: 6px !important;
-    font-size: 30px !important;
-    line-height: 1 !important;
-  }
-
-  .dashboard-hero-stat-sub,
-  .dashboard-tree-mini-desc,
-  .panel-desc {
-    font-size: 11px !important;
-    line-height: 1.45 !important;
-  }
-
-  .panel-title {
-    font-size: 18px !important;
-  }
-
-  .dashboard-history-list,
-  .dashboard-customer-list {
-    gap: 10px !important;
-    margin-top: 12px !important;
-  }
-
-  .dashboard-history-row,
-  .dashboard-customer-row {
-    grid-template-columns: 1fr !important;
-    gap: 8px !important;
-    padding: 12px !important;
-    border-radius: 18px !important;
-  }
-
-  .dashboard-history-icon {
-    width: 38px !important;
-    height: 38px !important;
-  }
-
-  .dashboard-history-title,
-  .dashboard-customer-name {
     font-size: 13px !important;
+    line-height: 1.1 !important;
+    font-weight: 700 !important;
+    color: var(--text) !important;
+    background: transparent !important;
+    border: 0 !important;
   }
 
-  .dashboard-history-meta,
-  .dashboard-history-status,
-  .dashboard-customer-meta,
-  .dashboard-customer-order-line {
-    margin-top: 4px !important;
-    font-size: 11px !important;
+  .mobile-nav-btn .small-icon,
+  .mobile-nav-btn svg {
+    width: 20px !important;
+    height: 20px !important;
   }
 
-  .dashboard-history-side {
-    font-size: 24px !important;
-    justify-self: flex-start !important;
+  .mobile-nav-btn.active {
+    background: linear-gradient(135deg, var(--primary) 0%, #cb5378 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px rgba(162, 18, 57, 0.18) !important;
   }
 
-  .dashboard-customer-head {
-    align-items: flex-start !important;
-    gap: 8px !important;
-  }
-
-  .dashboard-customer-head .badge {
-    font-size: 10px !important;
-    padding: 5px 9px !important;
-  }
-
-  .dashboard-quarter-row {
-    gap: 8px !important;
-    margin-bottom: 12px !important;
-  }
-
-  .evaluation-quarter-btn {
-    min-width: 0 !important;
-    flex: 1 1 0 !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    padding: 0 10px !important;
+  .mobile-nav-btn span {
+    white-space: nowrap;
     font-size: 12px !important;
-    border-radius: 14px !important;
-  }
-
-  .dashboard-tree-visual.radar-visual {
-    min-height: 280px !important;
-    padding: 10px !important;
-    border-radius: 20px !important;
-  }
-
-  .dashboard-radar-svg {
-    width: min(100%, 240px) !important;
-    height: auto !important;
-  }
-
-  .dashboard-radar-center-title {
-    font-size: 9px !important;
-  }
-
-  .dashboard-radar-center-score {
-    font-size: 18px !important;
-  }
-
-  .dashboard-radar-svg-label {
-    font-size: 10px !important;
-  }
-
-  .dashboard-radar-svg-score {
-    font-size: 16px !important;
-  }
-
-  .dashboard-tree-score-card {
-    padding: 12px !important;
-    border-radius: 16px !important;
-  }
-
-  .dashboard-tree-score-card .dashboard-tree-score {
-    font-size: 24px !important;
-  }
-
-  .dashboard-growth-bars {
-    min-height: 160px !important;
-    gap: 8px !important;
-    padding: 8px 2px 0 !important;
-  }
-
-  .dashboard-growth-item {
-    gap: 6px !important;
-  }
-
-  .dashboard-growth-item span {
-    font-size: 10px !important;
-    letter-spacing: 0.03em !important;
-  }
-
-  .dashboard-growth-bar {
-    min-height: 24px !important;
-    border-radius: 999px 999px 12px 12px !important;
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 640px) {
+  .vp-shell {
+    padding: 10px 10px 110px !important;
+  }
+
   .mobile-nav {
-    width: calc(100vw - 12px) !important;
-    bottom: max(8px, env(safe-area-inset-bottom)) !important;
-    padding: 6px !important;
-    border-radius: 18px !important;
+    left: max(6px, env(safe-area-inset-left)) !important;
+    right: max(6px, env(safe-area-inset-right)) !important;
+    bottom: max(6px, env(safe-area-inset-bottom)) !important;
+    padding: 10px 6px !important;
+    gap: 4px !important;
   }
 
   .mobile-nav-btn {
-    font-size: 9px !important;
-    padding: 7px 2px 6px !important;
+    min-height: 68px !important;
+    padding: 10px 4px !important;
   }
 
-  .vp-workspace-title-strip {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  .dashboard-radar-svg {
-    width: min(100%, 220px) !important;
+  .mobile-nav-btn span {
+    font-size: 11px !important;
   }
 }
