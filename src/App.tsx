@@ -73,10 +73,7 @@ type WarehouseTab = 'shipping' | 'stock' | 'query';
 type WarehouseQueryMode = 'barcode' | 'qr' | 'order';
 type AccountingTab = 'ops' | 'bonus' | 'treasury' | 'stats' | 'ranking' | 'evaluation';
 type EvaluationQuarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
-type EvaluationMetric = 'sales' | 'collaboration' | 'professional' | 'efficiency';
-type EvaluationDraft = { sales: number; collaboration: number; professional: number; efficiency: number; };
-type EvaluationSubmission = { id: string; quarter: EvaluationQuarter; evaluatorLoginId: string; evaluatorName: string; evaluateeLoginId: string; evaluateeName: string; sales: number; collaboration: number; professional: number; efficiency: number; total: number; submittedAt: string; isAnonymous: boolean; };
-type EvaluationResultRow = { loginId: string; name: string; quarter: EvaluationQuarter; sales: number; collaboration: number; professional: number; efficiency: number; total: number; kValue: number; medal: string; submissionCount: number; };
+type HonorBadge = '領航級' | '專業級' | '精進級';
 
 type WorkflowCard = {
   title: string;
@@ -171,6 +168,36 @@ type BonusRecord = {
   operator: string;
 };
 
+type EvaluationScores = {
+  sales: number;
+  collaboration: number;
+  professional: number;
+  efficiency: number;
+};
+
+type EvaluationSubmission = {
+  id: string;
+  quarter: EvaluationQuarter;
+  evaluatorLoginId: string;
+  evaluatorName: string;
+  targetLoginId: string;
+  targetName: string;
+  scores: EvaluationScores;
+  totalScore: number;
+  createdAt: string;
+};
+
+type EvaluationSummary = {
+  quarter: EvaluationQuarter;
+  loginId: string;
+  name: string;
+  averageScores: EvaluationScores;
+  totalScore: number;
+  kValue: number;
+  badge: HonorBadge;
+  submissionCount: number;
+};
+
 type OrderRecord = {
   orderNo: string;
   customer: string;
@@ -218,6 +245,86 @@ type StockSnapshotItem = {
   status: string;
   updated: string;
 };
+
+const EVALUATION_QUARTERS: EvaluationQuarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+const EVALUATION_DIMENSION_MAX = { sales: 40, collaboration: 25, professional: 20, efficiency: 15 } as const;
+
+function clampScore(value: number, max: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(max, Math.round(value)));
+}
+
+function normalizeEvaluationScores(input?: Partial<EvaluationScores>): EvaluationScores {
+  return {
+    sales: clampScore(Number(input?.sales ?? 0), EVALUATION_DIMENSION_MAX.sales),
+    collaboration: clampScore(Number(input?.collaboration ?? 0), EVALUATION_DIMENSION_MAX.collaboration),
+    professional: clampScore(Number(input?.professional ?? 0), EVALUATION_DIMENSION_MAX.professional),
+    efficiency: clampScore(Number(input?.efficiency ?? 0), EVALUATION_DIMENSION_MAX.efficiency),
+  };
+}
+
+function getEvaluationTotal(scores: EvaluationScores) {
+  return scores.sales + scores.collaboration + scores.professional + scores.efficiency;
+}
+
+function getEvaluationBadge(totalScore: number): HonorBadge {
+  if (totalScore >= 90) return '領航級';
+  if (totalScore >= 70) return '專業級';
+  return '精進級';
+}
+
+function getEvaluationKValue(totalScore: number) {
+  if (totalScore >= 90) return 1.2;
+  if (totalScore >= 80) return 1.1;
+  if (totalScore >= 70) return 1.0;
+  if (totalScore >= 60) return 0.95;
+  return 0.9;
+}
+
+function roundOne(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function getCoreEvaluationMembers(staff: Staff[], currentUser: SessionUser) {
+  const coreStaff = staff.filter((item) => item.enabled && String(item.rank || '').includes('核心'));
+  const hasCurrentUser = coreStaff.some((item) => item.loginId === currentUser.loginId);
+  if (currentUser.rankKey === 'core' && !hasCurrentUser) {
+    coreStaff.unshift({
+      id: currentUser.loginId,
+      name: currentUser.name,
+      loginId: currentUser.loginId,
+      role: ROLE_LABEL[currentUser.role],
+      rank: currentUser.rank,
+      enabled: true,
+      permissions: [],
+    });
+  }
+  return coreStaff.sort((a, b) => String(a.loginId).localeCompare(String(b.loginId), 'zh-Hant'));
+}
+
+function buildEvaluationSummary(submissions: EvaluationSubmission[], members: Staff[], quarter: EvaluationQuarter): EvaluationSummary[] {
+  return members.map((member) => {
+    const received = submissions.filter((item) => item.quarter === quarter && item.targetLoginId === member.loginId);
+    const count = received.length;
+    const averageScores: EvaluationScores = count ? {
+      sales: roundOne(received.reduce((sum, item) => sum + item.scores.sales, 0) / count),
+      collaboration: roundOne(received.reduce((sum, item) => sum + item.scores.collaboration, 0) / count),
+      professional: roundOne(received.reduce((sum, item) => sum + item.scores.professional, 0) / count),
+      efficiency: roundOne(received.reduce((sum, item) => sum + item.scores.efficiency, 0) / count),
+    } : { sales: 0, collaboration: 0, professional: 0, efficiency: 0 };
+    const totalScore = roundOne(getEvaluationTotal(averageScores));
+    return {
+      quarter,
+      loginId: member.loginId,
+      name: member.name,
+      averageScores,
+      totalScore,
+      kValue: getEvaluationKValue(totalScore),
+      badge: getEvaluationBadge(totalScore),
+      submissionCount: count,
+    };
+  }).sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name, 'zh-Hant'));
+}
 
 const SAFE_STOCK_MAP: Record<string, number> = {
   E401: 12,
@@ -478,75 +585,6 @@ function getRankToneClass(rankKey: Rank) {
   }
 }
 
-
-
-const EVALUATION_METRIC_META: Array<{ key: EvaluationMetric; label: string; max: number; desc: string }> = [
-  { key: 'sales', label: '業績', max: 40, desc: '專案達成 / 結果導向' },
-  { key: 'collaboration', label: '協作', max: 25, desc: '協作整合 / 團隊效能' },
-  { key: 'professional', label: '專業', max: 20, desc: '資產化貢獻 / 長期價值' },
-  { key: 'efficiency', label: '效率', max: 15, desc: '執行落地 / 時效品質' },
-];
-
-const EVALUATION_QUARTERS: EvaluationQuarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
-
-function makeEvaluationDraft(): EvaluationDraft {
-  return { sales: 32, collaboration: 20, professional: 16, efficiency: 12 };
-}
-
-function calculateEvaluationTotal(scores: EvaluationDraft | EvaluationSubmission) {
-  return Number(scores.sales || 0) + Number(scores.collaboration || 0) + Number(scores.professional || 0) + Number(scores.efficiency || 0);
-}
-
-function getEvaluationMedal(total: number) {
-  if (total >= 90) return '領航級';
-  if (total >= 70) return '專業級';
-  return '精進級';
-}
-
-function getEvaluationK(total: number) {
-  if (total >= 90) return 1.2;
-  if (total >= 80) return 1.1;
-  if (total >= 70) return 1.0;
-  if (total >= 60) return 0.95;
-  return 0.9;
-}
-
-function normalizeRankKeyFromLabel(rank: string): Rank {
-  if (String(rank || '').includes('核心')) return 'core';
-  if (String(rank || '').includes('菁英')) return 'elite';
-  if (String(rank || '').includes('高級')) return 'senior';
-  return 'normal';
-}
-
-function buildSeedEvaluationSubmissions(coreMembers: Array<{ loginId: string; name: string }>): EvaluationSubmission[] {
-  const basePairs = [];
-  for (let i = 0; i < coreMembers.length; i += 1) {
-    for (let j = 0; j < coreMembers.length; j += 1) {
-      if (i === j) continue;
-      const evaluator = coreMembers[i];
-      const evaluatee = coreMembers[j];
-      basePairs.push({ evaluator, evaluatee, quarter: i % 2 === 0 ? 'Q1' : 'Q2' });
-    }
-  }
-  return basePairs.slice(0, Math.min(basePairs.length, 8)).map((pair, index) => {
-    const sales = 30 + ((index * 3) % 9);
-    const collaboration = 18 + ((index * 2) % 6);
-    const professional = 13 + (index % 5);
-    const efficiency = 10 + (index % 4);
-    return {
-      id: `seed-eval-${index + 1}`,
-      quarter: pair.quarter as EvaluationQuarter,
-      evaluatorLoginId: pair.evaluator.loginId,
-      evaluatorName: pair.evaluator.name,
-      evaluateeLoginId: pair.evaluatee.loginId,
-      evaluateeName: pair.evaluatee.name,
-      sales, collaboration, professional, efficiency,
-      total: sales + collaboration + professional + efficiency,
-      submittedAt: `2026-04-0${(index % 8) + 1} 10:${String((index + 1) * 4).padStart(2, '0')}:00`,
-      isAnonymous: true,
-    };
-  });
-}
 
 const shippingQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high', shippingMethod: '宅配', address: '新竹市東區食品路 88 號', trackingNo: '未建立', scanStatus: '待掃碼驗證', qrSummary: 'E401*2 / P301*1' },
@@ -1564,13 +1602,8 @@ export default function App() {
     tone: 'success',
   });
   const [evaluationQuarter, setEvaluationQuarter] = useState<EvaluationQuarter>('Q1');
-  const [selectedEvaluateeLoginId, setSelectedEvaluateeLoginId] = useState('');
-  const [evaluationDraft, setEvaluationDraft] = useState<EvaluationDraft>(() => makeEvaluationDraft());
-  const [evaluationNotice, setEvaluationNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
-    text: '✅ 評鑑系統第一版已啟動，評分採匿名送出。',
-    tone: 'success',
-  });
   const [evaluationSubmissions, setEvaluationSubmissions] = useState<EvaluationSubmission[]>([]);
+  const [evaluationNotice, setEvaluationNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [orderCategory, setOrderCategory] = useState('全部商品');
   const orderCategoryChips = useMemo(() => ['全部商品', ...Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean)))], [products]);
 
@@ -1674,6 +1707,32 @@ export default function App() {
   }
 
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('vp.evaluationSubmissions');
+      if (!cached) return;
+      const parsed = JSON.parse(cached);
+      if (!Array.isArray(parsed)) return;
+      setEvaluationSubmissions(parsed.map((item: any) => ({
+        id: String(item.id || ''),
+        quarter: EVALUATION_QUARTERS.includes(item.quarter) ? item.quarter : 'Q1',
+        evaluatorLoginId: String(item.evaluatorLoginId || ''),
+        evaluatorName: String(item.evaluatorName || ''),
+        targetLoginId: String(item.targetLoginId || ''),
+        targetName: String(item.targetName || ''),
+        scores: normalizeEvaluationScores(item.scores || {}),
+        totalScore: Number(item.totalScore || 0),
+        createdAt: String(item.createdAt || getTaipeiTimestamp()),
+      })));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vp.evaluationSubmissions', JSON.stringify(evaluationSubmissions));
+    } catch {}
+  }, [evaluationSubmissions]);
+
+  useEffect(() => {
     void loadFirebaseData();
   }, []);
 
@@ -1756,114 +1815,6 @@ export default function App() {
     if (!selectedAccountingOrderNo && orderRecords[0]?.orderNo) setSelectedAccountingOrderNo(orderRecords[0].orderNo);
     if (!selectedStaffId && staff[0]?.id) setSelectedStaffId(staff[0].id);
   }, [products, orderRecords, staff, selectedStockCode, selectedProductId, selectedOrderNo, selectedWarehouseOrderNo, selectedAccountingOrderNo, selectedStaffId]);
-
-  const coreMembers = useMemo(() => {
-    const base = staff
-      .filter((item) => normalizeRankKeyFromLabel(item.rank) === 'core' || String(item.rank).includes('核心'))
-      .map((item) => ({ id: item.id, loginId: item.loginId, name: item.name, rank: item.rank }));
-    if (user.rankKey === 'core' && !base.some((item) => item.loginId === user.loginId)) {
-      base.unshift({ id: user.loginId, loginId: user.loginId, name: user.name, rank: user.rank });
-    }
-    return base;
-  }, [staff, user.loginId, user.name, user.rank, user.rankKey]);
-
-  useEffect(() => {
-    if (!selectedEvaluateeLoginId) {
-      const firstTarget = coreMembers.find((item) => item.loginId !== user.loginId);
-      if (firstTarget) setSelectedEvaluateeLoginId(firstTarget.loginId);
-    }
-  }, [coreMembers, selectedEvaluateeLoginId, user.loginId]);
-
-  useEffect(() => {
-    if (!evaluationSubmissions.length && coreMembers.length >= 2) {
-      setEvaluationSubmissions(buildSeedEvaluationSubmissions(coreMembers));
-    }
-  }, [coreMembers, evaluationSubmissions.length]);
-
-  const evaluationTargets = useMemo(() => coreMembers.filter((item) => item.loginId !== user.loginId), [coreMembers, user.loginId]);
-  const selectedEvaluatee = useMemo(() => evaluationTargets.find((item) => item.loginId === selectedEvaluateeLoginId) || evaluationTargets[0] || null, [evaluationTargets, selectedEvaluateeLoginId]);
-  const hasSubmittedSelectedEvaluation = useMemo(() => {
-    if (!selectedEvaluatee) return false;
-    return evaluationSubmissions.some((item) => item.quarter === evaluationQuarter && item.evaluatorLoginId === user.loginId && item.evaluateeLoginId === selectedEvaluatee.loginId);
-  }, [evaluationQuarter, evaluationSubmissions, selectedEvaluatee, user.loginId]);
-
-  const evaluationResults = useMemo(() => {
-    const rows: EvaluationResultRow[] = [];
-    EVALUATION_QUARTERS.forEach((quarter) => {
-      coreMembers.forEach((member) => {
-        const received = evaluationSubmissions.filter((item) => item.quarter === quarter && item.evaluateeLoginId === member.loginId);
-        const sales = received.length ? Math.round(received.reduce((sum, item) => sum + item.sales, 0) / received.length) : 0;
-        const collaboration = received.length ? Math.round(received.reduce((sum, item) => sum + item.collaboration, 0) / received.length) : 0;
-        const professional = received.length ? Math.round(received.reduce((sum, item) => sum + item.professional, 0) / received.length) : 0;
-        const efficiency = received.length ? Math.round(received.reduce((sum, item) => sum + item.efficiency, 0) / received.length) : 0;
-        const total = sales + collaboration + professional + efficiency;
-        rows.push({
-          loginId: member.loginId,
-          name: member.name,
-          quarter,
-          sales, collaboration, professional, efficiency, total,
-          kValue: getEvaluationK(total),
-          medal: getEvaluationMedal(total),
-          submissionCount: received.length,
-        });
-      });
-    });
-    return rows;
-  }, [coreMembers, evaluationSubmissions]);
-
-  const evaluationQuarterResults = useMemo(() => evaluationResults.filter((item) => item.quarter === evaluationQuarter).sort((a, b) => b.total - a.total), [evaluationResults, evaluationQuarter]);
-  const myEvaluationQuarterResult = useMemo(() => evaluationQuarterResults.find((item) => item.loginId === user.loginId) || null, [evaluationQuarterResults, user.loginId]);
-  const dashboardRadarMetrics = useMemo(() => ([
-    { label: '業績', value: myEvaluationQuarterResult?.sales || 0 },
-    { label: '協作', value: myEvaluationQuarterResult?.collaboration || 0 },
-    { label: '專業', value: myEvaluationQuarterResult?.professional || 0 },
-    { label: '效率', value: myEvaluationQuarterResult?.efficiency || 0 },
-  ]), [myEvaluationQuarterResult]);
-
-  const saveEvaluationSubmission = () => {
-    if (user.rankKey !== 'core') {
-      setEvaluationNotice({ text: '❌ 目前只有核心人員可進行評鑑', tone: 'danger' });
-      return;
-    }
-    if (!selectedEvaluatee) {
-      setEvaluationNotice({ text: '❌ 目前沒有可評鑑的核心成員', tone: 'danger' });
-      return;
-    }
-    if (hasSubmittedSelectedEvaluation) {
-      setEvaluationNotice({ text: '⚠️ 此季度你已評過這位核心成員，送出後不可修改', tone: 'neutral' });
-      return;
-    }
-    const metricIssues = EVALUATION_METRIC_META.some((meta) => Number((evaluationDraft as any)[meta.key]) < 0 || Number((evaluationDraft as any)[meta.key]) > meta.max);
-    if (metricIssues) {
-      setEvaluationNotice({ text: '❌ 分數超出可評範圍，請重新確認', tone: 'danger' });
-      return;
-    }
-    const confirmed = window.confirm(`你即將以匿名方式送出 ${evaluationQuarter} 對 ${selectedEvaluatee.name} 的評鑑。送出後將無法修改，是否確認？`);
-    if (!confirmed) return;
-    const nextItem: EvaluationSubmission = {
-      id: `eval-${Date.now()}`,
-      quarter: evaluationQuarter,
-      evaluatorLoginId: user.loginId,
-      evaluatorName: user.name,
-      evaluateeLoginId: selectedEvaluatee.loginId,
-      evaluateeName: selectedEvaluatee.name,
-      sales: Number(evaluationDraft.sales || 0),
-      collaboration: Number(evaluationDraft.collaboration || 0),
-      professional: Number(evaluationDraft.professional || 0),
-      efficiency: Number(evaluationDraft.efficiency || 0),
-      total: calculateEvaluationTotal(evaluationDraft),
-      submittedAt: getTaipeiTimestamp(),
-      isAnonymous: true,
-    };
-    setEvaluationSubmissions((prev) => [nextItem, ...prev]);
-    setEvaluationNotice({ text: `✅ ${selectedEvaluatee.name} 的 ${evaluationQuarter} 評鑑已匿名送出，送出後不可修改`, tone: 'success' });
-  };
-
-  const updateEvaluationDraftField = (field: EvaluationMetric, value: number) => {
-    const meta = EVALUATION_METRIC_META.find((item) => item.key === field);
-    const safeValue = Math.max(0, Math.min(Number(meta?.max || 0), Number(value || 0)));
-    setEvaluationDraft((prev) => ({ ...prev, [field]: safeValue }));
-  };
 
   const filteredProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -3616,6 +3567,48 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
+  const coreEvaluationMembers = useMemo(() => getCoreEvaluationMembers(staff, user), [staff, user]);
+  const evaluationTargets = useMemo(() => coreEvaluationMembers.filter((item) => item.loginId !== user.loginId), [coreEvaluationMembers, user.loginId]);
+  const evaluationSummary = useMemo(() => buildEvaluationSummary(evaluationSubmissions, coreEvaluationMembers, evaluationQuarter), [evaluationSubmissions, coreEvaluationMembers, evaluationQuarter]);
+  const currentUserEvaluationSummary = useMemo(() => evaluationSummary.find((item) => item.loginId === user.loginId) || {
+    quarter: evaluationQuarter, loginId: user.loginId, name: user.name, averageScores: { sales: 0, collaboration: 0, professional: 0, efficiency: 0 }, totalScore: 0, kValue: 0.9, badge: '精進級' as HonorBadge, submissionCount: 0,
+  }, [evaluationSummary, evaluationQuarter, user.loginId, user.name]);
+
+  function submitEvaluation(targetLoginId: string, scores: EvaluationScores) {
+    const target = evaluationTargets.find((item) => item.loginId === targetLoginId);
+    if (!target) {
+      setEvaluationNotice({ text: '找不到可評鑑對象', tone: 'danger' });
+      return false;
+    }
+    if (user.rankKey !== 'core') {
+      setEvaluationNotice({ text: '目前只有核心人員可進行評鑑', tone: 'danger' });
+      return false;
+    }
+    const existed = evaluationSubmissions.some((item) => item.quarter === evaluationQuarter && item.evaluatorLoginId === user.loginId && item.targetLoginId === targetLoginId);
+    if (existed) {
+      setEvaluationNotice({ text: `${evaluationQuarter} 已送出，不能再次修改`, tone: 'danger' });
+      return false;
+    }
+    const normalized = normalizeEvaluationScores(scores);
+    const totalScore = getEvaluationTotal(normalized);
+    if (!window.confirm(`確認送出 ${evaluationQuarter} 對 ${target.name} 的匿名評鑑？送出後不可修改。`)) return false;
+    if (!window.confirm('最後確認：送出後系統將鎖定本次評分，且不提供修改。')) return false;
+    const payload: EvaluationSubmission = {
+      id: `eval-${evaluationQuarter}-${user.loginId}-${target.loginId}`,
+      quarter: evaluationQuarter,
+      evaluatorLoginId: user.loginId,
+      evaluatorName: user.name,
+      targetLoginId: target.loginId,
+      targetName: target.name,
+      scores: normalized,
+      totalScore,
+      createdAt: getTaipeiTimestamp(),
+    };
+    setEvaluationSubmissions((prev) => [...prev, payload]);
+    setEvaluationNotice({ text: `✅ ${evaluationQuarter} 匿名評鑑已送出，送出後不可修改`, tone: 'success' });
+    return true;
+  }
+
   const activeLabel = visibleNavItems.find((item) => item.key === active)?.label || '受限模組';
 
   const notificationItems = useMemo(() => {
@@ -3747,8 +3740,21 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       });
     }
 
+    if (active === 'profile' && user.rankKey === 'core') {
+      evaluationTargets
+        .filter((target) => !evaluationSubmissions.some((item) => item.quarter === evaluationQuarter && item.evaluatorLoginId === user.loginId && item.targetLoginId === target.loginId))
+        .forEach((target) => {
+          items.push({
+            id: `evaluation-${evaluationQuarter}-${target.loginId}`,
+            title: `${target.name} 待評鑑`,
+            detail: `${evaluationQuarter} 尚未完成匿名評分`,
+            tone: 'warning',
+          });
+        });
+    }
+
     return items;
-  }, [active, accountingTab, bonusLogs, bonusTotal, orderRecords, products, staff, stockSnapshot, treasuryQueue, visibleCustomerRecords]);
+  }, [active, accountingTab, bonusLogs, bonusTotal, evaluationQuarter, evaluationSubmissions, evaluationTargets, orderRecords, products, staff, stockSnapshot, treasuryQueue, user.loginId, user.rankKey, visibleCustomerRecords]);
 
   const notificationCount = notificationItems.length;
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
@@ -3994,7 +4000,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
               <div className="vp-module-body">
                 {active === 'dashboard' && (
-                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} dashboardAvatarImage={dashboardAvatarImage} dashboardAvatarInputRef={dashboardAvatarInputRef} handleDashboardAvatarUpload={handleDashboardAvatarUpload} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} />
+                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} dashboardAvatarImage={dashboardAvatarImage} dashboardAvatarInputRef={dashboardAvatarInputRef} handleDashboardAvatarUpload={handleDashboardAvatarUpload} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationSummary={currentUserEvaluationSummary} />
                 )}
                 {active === 'products' && (
                   <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
@@ -4074,12 +4080,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                     SummaryCard={SummaryCard}
                     evaluationQuarter={evaluationQuarter}
                     setEvaluationQuarter={setEvaluationQuarter}
-                    evaluationQuarterResults={evaluationQuarterResults}
-                    evaluationSubmissions={evaluationSubmissions}
+                    evaluationSummary={evaluationSummary}
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} selectedEvaluateeLoginId={selectedEvaluateeLoginId} setSelectedEvaluateeLoginId={setSelectedEvaluateeLoginId} selectedEvaluatee={selectedEvaluatee} evaluationDraft={evaluationDraft} updateEvaluationDraftField={updateEvaluationDraftField} evaluationNotice={evaluationNotice} saveEvaluationSubmission={saveEvaluationSubmission} hasSubmittedSelectedEvaluation={hasSubmittedSelectedEvaluation} evaluationMetricMeta={EVALUATION_METRIC_META} evaluationSubmissions={evaluationSubmissions} />
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissions} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} />
                 )}
               </div>
             </>
