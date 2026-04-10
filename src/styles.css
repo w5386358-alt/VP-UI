@@ -8275,3 +8275,65 @@ body {
     font-size: 20px !important;
   }
 }
+
+
+/* 手機UI第四版：底部主選單上移，避免預覽裁切 */
+@media (max-width: 900px) {
+  .vp-shell {
+    padding: 10px 8px 172px !important;
+  }
+
+  .vp-main {
+    padding-bottom: 172px !important;
+  }
+
+  .vp-workspace {
+    padding-bottom: 28px !important;
+  }
+
+  .mobile-nav {
+    left: 14px !important;
+    right: 14px !important;
+    bottom: calc(28px + env(safe-area-inset-bottom)) !important;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 16px 34px rgba(119,73,89,.14) !important;
+  }
+
+  .mobile-nav-btn {
+    min-height: 56px !important;
+    padding: 6px 4px !important;
+    border-radius: 14px !important;
+    font-size: 10px !important;
+  }
+
+  .vp-mobile-more-sheet-bottom {
+    bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .cart-fab,
+  .floating-cart,
+  .orders-cart-fab {
+    bottom: 118px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .vp-shell {
+    padding-bottom: 178px !important;
+  }
+
+  .vp-main {
+    padding-bottom: 178px !important;
+  }
+
+  .mobile-nav {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: calc(34px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .vp-mobile-more-sheet-bottom {
+    bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+}
