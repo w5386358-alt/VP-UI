@@ -3731,9 +3731,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">brand visual banner</div>
-              <div className="vp-header-watermark">VP ORDER ERP</div>
-              <p className="vp-header-desc">改用柔和光暈、圓弧流線與玻璃霧感，通知集中到右側小鈴鐺。</p>
+              <div className="vp-header-kicker">{NAV_ENGLISH_LABEL[active]}</div>
+              <div className="vp-header-title-red">{navItems.find((item) => item.key === active)?.label || '總覽'}</div>
+              <div className="vp-header-watermark vp-header-watermark-red">{NAV_ENGLISH_LABEL[active]}</div>
+              <p className="vp-header-desc">{SECTION_HINTS[active]?.desc || '依照目前模組顯示對應資料與操作內容。'}</p>
             </div>
           </div>
           <div className="vp-header-tools">
@@ -3749,21 +3750,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
         <section className="vp-workspace card">
           <div className="vp-workspace-top">
-            <div className="vp-workspace-title-strip">
-              {navItems.map((item) => {
-                const isActive = item.key === active;
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`vp-workspace-title-chip ${isActive ? 'active' : ''}`}
-                    onClick={() => setActive(item.key)}
-                  >
-                    <span className="vp-workspace-title-cn">{item.label}</span>
-                    <span className="vp-workspace-title-en">{NAV_ENGLISH_LABEL[item.key]}</span>
-                  </button>
-                );
-              })}
+            <div className="vp-workspace-section-tag">
+              <span className="vp-workspace-section-cn">{navItems.find((item) => item.key === active)?.label || '總覽'}</span>
+              <span className="vp-workspace-section-divider">/</span>
+              <span className="vp-workspace-section-en">{NAV_ENGLISH_LABEL[active]}</span>
             </div>
             <div className="vp-workspace-actions" ref={notificationPanelRef}>
               <button

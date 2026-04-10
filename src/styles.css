@@ -6769,3 +6769,86 @@ body {
   .dashboard-tree-visual.radar-visual{min-height:360px;}
   .dashboard-radar-svg{width:min(100%, 360px);}
 }
+
+
+/* 第二十五版：標題列修正 / 客戶尺寸統一 / 訂購卡距微調 */
+.vp-header-title-red{
+  margin-top: 8px;
+  font-size: clamp(30px, 4.6vw, 44px);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #c93e6e;
+}
+
+.vp-header-watermark-red{
+  margin-top: 10px;
+  color: rgba(201, 62, 110, 0.32);
+  font-size: clamp(16px, 2vw, 22px);
+  letter-spacing: 0.22em;
+}
+
+.vp-header-kicker{
+  color: rgba(201, 62, 110, 0.78);
+}
+
+.vp-workspace-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.vp-workspace-section-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(210, 128, 156, 0.26);
+  box-shadow: 0 10px 24px rgba(211, 161, 180, 0.12);
+}
+
+.vp-workspace-section-cn{
+  font-size: 14px;
+  font-weight: 900;
+  color: #c93e6e;
+}
+
+.vp-workspace-section-divider,
+.vp-workspace-section-en{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(201, 62, 110, 0.72);
+}
+
+.customers-shell-clean{
+  gap: 18px;
+}
+
+.customers-main-card-full{
+  padding: 22px;
+}
+
+.customer-grid.refined{
+  gap: 16px;
+}
+
+.customer-permission-card.refined-card{
+  min-height: 188px;
+  padding: 18px;
+}
+
+.orders-catalog-grid{
+  gap: 38px;
+}
+
+@media (max-width: 900px){
+  .vp-header-title-red{font-size: 28px;}
+  .vp-header-watermark-red{font-size: 14px; letter-spacing: 0.16em;}
+  .vp-workspace-top{align-items:flex-start; flex-direction:column;}
+  .vp-workspace-section-tag{width:100%; justify-content:center;}
+  .orders-catalog-grid{gap: 22px;}
+}
