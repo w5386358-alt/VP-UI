@@ -7045,13 +7045,18 @@ body {
 }
 
 
-/* ui新板25版 客戶區只修標題欄與商品區一致 */
-@media (min-width: 901px) {
-  .customers-sync-layout {
-    margin-top: -96px !important;
-  }
+/* ui新板25版：只修客戶區標題與商品區一致 */
+.customers-sync-layout{
+  margin-top: -118px !important;
+  padding-top: 0 !important;
+  gap: 0 !important;
+}
 
-  .customers-sync-layout .customers-main-card-full {
-    padding-top: 16px !important;
-  }
+.customers-sync-layout .product-admin-main{
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.customers-sync-layout .customers-main-card-full{
+  margin-top: 0 !important;
 }
