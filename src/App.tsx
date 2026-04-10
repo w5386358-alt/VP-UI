@@ -52,6 +52,7 @@ import ProfileModule from './modules/ProfileModule';
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
+type MobileNavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'more';
 
 type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number; sourceDocId?: string };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
@@ -2835,6 +2836,21 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const activeStaff = staff.filter((s) => s.enabled).length;
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const mobilePrimaryNavItems: { key: MobileNavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { key: 'dashboard', label: '儀表板', icon: BarChart3 },
+    { key: 'orders', label: '訂購', icon: ShoppingCart },
+    { key: 'inventory', label: '倉儲', icon: Warehouse },
+    { key: 'accounting', label: '會計', icon: CreditCard },
+    { key: 'more', label: '更多', icon: Boxes },
+  ];
+  const mobileMoreCommonItems = useMemo(() => [
+    { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
+  ].filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const mobileManagementItems = useMemo(() => [
+    { key: 'products' as NavKey, label: '商品管理', icon: Package },
+    { key: 'customers' as NavKey, label: '客戶管理', icon: Users },
+    { key: 'staff' as NavKey, label: '人員管理', icon: UserCog },
+  ].filter((item) => canAccessNav(user.role, item.key)), [user.role]);
   const currentNavItem = navItems.find((item) => item.key === active) || navItems[0];
   const currentModuleLabel = currentNavItem.label;
   const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
@@ -3817,6 +3833,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [shellHint, setShellHint] = useState('');
 
@@ -3867,6 +3884,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   function openProfileCenter(mode: 'profile' | 'password' | 'login') {
     setActive('profile');
     setProfileOpen(false);
+                    setMobileMoreOpen(false);
     if (mode === 'password') setShellHint('已切到個人資料頁，可接續放入變更密碼子頁。');
     else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
   }
@@ -3881,9 +3899,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const target = event.target as Node;
       if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
         setNotificationOpen(false);
+                    setMobileMoreOpen(false);
       }
       if (profilePanelRef.current && !profilePanelRef.current.contains(target)) {
         setProfileOpen(false);
+                    setMobileMoreOpen(false);
       }
     }
     document.addEventListener('mousedown', handleOutside);
@@ -3896,6 +3916,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+
+  useEffect(() => {
+    setMobileMoreOpen(false);
+  }, [active]);
 
   return (
     <div className="vp-shell">
@@ -4019,6 +4044,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   onClick={() => {
                     setNotificationOpen((prev) => !prev);
                     setProfileOpen(false);
+                    setMobileMoreOpen(false);
                   }}
                   aria-label="提醒"
                 >
@@ -4060,6 +4086,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   onClick={() => {
                     setProfileOpen((prev) => !prev);
                     setNotificationOpen(false);
+                    setMobileMoreOpen(false);
                   }}
                   aria-label="個人中心"
                 >
@@ -4096,7 +4123,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                         <button type="button" className="vp-profile-popover-btn primary" onClick={() => openProfileCenter('profile')}>個人設定</button>
                         <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
                         <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('login')}>登入</button>
-                        <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false); triggerShellHint('已登出（UI 示意），後續可接真實登出流程。'); }}>登出</button>
+                        <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false);
+                    setMobileMoreOpen(false); triggerShellHint('已登出（UI 示意），後續可接真實登出流程。'); }}>登出</button>
                       </div>
                     </div>
                   </div>
@@ -4219,20 +4247,24 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </section>
 
         <div className="mobile-nav">
-          {[
-            { key: 'dashboard' as NavKey, label: '儀表板', icon: BarChart3 },
-            { key: 'orders' as NavKey, label: '訂購', icon: ShoppingCart },
-            { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
-            { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
-            { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
-          ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
+          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || canAccessNav(user.role, item.key as NavKey)).map((item) => {
             const Icon = item.icon;
+            const isActive = item.key === 'more' ? mobileMoreOpen : active === item.key;
             return (
               <button
                 key={item.key}
                 type="button"
-                className={`mobile-nav-btn ${active === item.key ? 'active' : ''}`}
-                onClick={() => setActive(item.key)}
+                className={`mobile-nav-btn ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (item.key === 'more') {
+                    setMobileMoreOpen((prev) => !prev);
+                    setNotificationOpen(false);
+                    setProfileOpen(false);
+                  } else {
+                    setActive(item.key as NavKey);
+                    setMobileMoreOpen(false);
+                  }
+                }}
               >
                 <Icon className="small-icon" />
                 <span>{item.label}</span>
@@ -4240,6 +4272,69 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             );
           })}
         </div>
+
+        {mobileMoreOpen && (
+          <>
+            <button type="button" className="mobile-more-overlay" aria-label="關閉更多選單" onClick={() => setMobileMoreOpen(false)} />
+            <div className="mobile-more-sheet card">
+              <div className="mobile-more-head">
+                <div>
+                  <div className="mobile-more-title">更多</div>
+                  <div className="mobile-more-sub">常用延伸功能與系統管理入口</div>
+                </div>
+                <button type="button" className="drawer-close-button" onClick={() => setMobileMoreOpen(false)}>關閉</button>
+              </div>
+
+              <div className="mobile-more-section">
+                <div className="mobile-more-section-title">常用功能</div>
+                <div className="mobile-more-grid">
+                  {mobileMoreCommonItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
+                        onClick={() => {
+                          setActive(item.key);
+                          setMobileMoreOpen(false);
+                        }}
+                      >
+                        <Icon className="small-icon" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {mobileManagementItems.length > 0 && (
+                <div className="mobile-more-section">
+                  <div className="mobile-more-section-title">系統管理</div>
+                  <div className="mobile-more-grid">
+                    {mobileManagementItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
+                          onClick={() => {
+                            setActive(item.key);
+                            setMobileMoreOpen(false);
+                          }}
+                        >
+                          <Icon className="small-icon" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
