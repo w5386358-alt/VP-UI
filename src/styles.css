@@ -8154,3 +8154,304 @@ body {
     width: min(100%, 248px) !important;
   }
 }
+
+
+/* 手機PWA骨架補強：右上角個人中心 / 鈴鐺防裁切 / 儀表板補位 */
+.vp-header-global-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.vp-tool-button.vp-bell-button,
+.vp-tool-button.vp-profile-trigger {
+  min-width: 52px;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vp-profile-trigger {
+  overflow: hidden;
+}
+
+.vp-profile-trigger-image,
+.vp-profile-popover-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vp-profile-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: min(380px, calc(100vw - 72px));
+  border-radius: 24px;
+  border: 1px solid rgba(231, 193, 208, 0.92);
+  background: rgba(255,255,255,0.985);
+  box-shadow: 0 24px 56px rgba(87, 40, 60, 0.18);
+  z-index: 999;
+  overflow: hidden;
+}
+
+.vp-profile-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(231, 193, 208, 0.7);
+  background: linear-gradient(180deg, rgba(255,244,248,0.98) 0%, rgba(255,255,255,0.98) 100%);
+}
+
+.vp-profile-popover-id-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.vp-profile-popover-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  border: 1px solid rgba(229, 198, 210, 0.92);
+  background: linear-gradient(135deg, #f8dbe6 0%, #fff8fb 100%);
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.vp-profile-popover-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #2e1e27;
+}
+
+.vp-profile-popover-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8f7383;
+}
+
+.vp-profile-popover-body {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.vp-profile-qr-card {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(237, 214, 223, 0.95);
+  background: linear-gradient(180deg, #fffafb 0%, #ffffff 100%);
+}
+
+.vp-profile-qr-box {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  border: 1px dashed rgba(213, 147, 173, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fff2f7 0%, #fffafb 100%);
+}
+
+.vp-profile-qr-icon {
+  width: 34px;
+  height: 34px;
+  color: var(--primary);
+}
+
+.vp-profile-qr-copy,
+.vp-profile-meta-item {
+  min-width: 0;
+}
+
+.vp-profile-meta-title,
+.vp-profile-meta-item span {
+  font-size: 12px;
+  color: #8f7383;
+}
+
+.vp-profile-meta-value,
+.vp-profile-meta-item strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: #2e1e27;
+  font-weight: 800;
+}
+
+.vp-profile-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vp-profile-meta-item {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(237, 214, 223, 0.95);
+  background: #fffafb;
+}
+
+.vp-profile-popover-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.vp-profile-popover-btn {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(231, 193, 208, 0.92);
+  background: #fff;
+  color: #5b4150;
+  font-weight: 800;
+}
+
+.vp-profile-popover-btn.primary {
+  background: linear-gradient(135deg, var(--primary) 0%, #cb5378 100%);
+  color: #fff;
+  border-color: transparent;
+}
+
+.vp-profile-popover-btn.danger {
+  color: #bf3353;
+  background: #fff5f8;
+}
+
+.vp-shell-hint {
+  margin: 12px 0 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 248, 250, 0.98);
+  border: 1px solid rgba(235, 198, 211, 0.96);
+  color: #8c5c72;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dashboard-personal-grid-clean,
+.dashboard-feature-grid-clean {
+  grid-template-columns: 1fr !important;
+}
+
+.dashboard-personal-main-full {
+  width: 100%;
+}
+
+.dashboard-hero-stat-grid-clean {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+  .dashboard-hero-stat-grid-clean {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .vp-header-tools {
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+  }
+
+  .vp-search-wrap {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .vp-header-global-tools {
+    gap: 8px;
+  }
+
+  .vp-tool-button.vp-bell-button,
+  .vp-tool-button.vp-profile-trigger {
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .vp-notification-popover,
+  .vp-profile-popover {
+    position: fixed !important;
+    top: 84px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-height: min(62vh, 460px) !important;
+  }
+
+  .vp-profile-popover {
+    max-height: min(72vh, 560px) !important;
+    overflow: auto;
+  }
+
+  .vp-profile-meta-grid,
+  .vp-profile-popover-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-hero-stat-grid-clean {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .vp-header-tools {
+    align-items: center !important;
+  }
+
+  .vp-search-wrap {
+    min-height: 46px;
+  }
+
+  .vp-tool-button.vp-bell-button,
+  .vp-tool-button.vp-profile-trigger {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .vp-notification-popover,
+  .vp-profile-popover {
+    top: 78px !important;
+    left: 10px !important;
+    right: 10px !important;
+  }
+
+  .vp-profile-qr-card {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .vp-profile-qr-box {
+    width: 64px;
+    height: 64px;
+  }
+
+  .dashboard-hero-stat-grid-clean {
+    grid-template-columns: 1fr !important;
+  }
+}

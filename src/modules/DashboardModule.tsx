@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, ShoppingBag, Star } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
-  const { user, getRankClass, priceTierLabel, personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], dashboardAvatarImage = '', dashboardAvatarInputRef, handleDashboardAvatarUpload, evaluationQuarter, setEvaluationQuarter, dashboardRadarMetrics = [], myEvaluationQuarterResult } = props;
+  const { personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], evaluationQuarter, setEvaluationQuarter, dashboardRadarMetrics = [], myEvaluationQuarterResult } = props;
 
   const myCustomerCards = useMemo(() => ownCustomerRecords.map((customer: any) => {
     const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
@@ -26,10 +26,10 @@ export default function DashboardModule(props: any) {
   const totalSales = personalOrders.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
   const averageScore = myEvaluationQuarterResult?.total || 0;
   const medal = myEvaluationQuarterResult?.medal || '精進級';
-  const honorTitle = `榮譽稱號 / ${medal}`;
   const statCards = [
     { title: '我的歷史訂單', value: `${personalOrders.length}`, sub: '沿用原個人資料訂單邏輯', icon: ShoppingBag },
     { title: '我的客戶資料', value: `${myCustomerCards.length}`, sub: '目前由你管理的客戶數', icon: Users },
+    { title: '累積成交金額', value: `$${totalSales.toLocaleString()}`, sub: '沿用歷史訂單累積結果', icon: ShoppingBag },
     { title: '個人評鑑平均', value: `${averageScore}`, sub: `${evaluationQuarter} / ${medal}`, icon: Star },
   ];
   const radarLevels = [1, 0.75, 0.5, 0.25];
@@ -61,32 +61,9 @@ export default function DashboardModule(props: any) {
 
   return (
     <div className="dashboard-personal-shell">
-      <section className="dashboard-personal-grid">
-        <div className="card dashboard-profile-card">
-          <div className="dashboard-profile-art" />
-          <button type="button" className="dashboard-profile-avatar uploadable-avatar" onClick={() => dashboardAvatarInputRef?.current?.click()}>
-            {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="dashboard-profile-avatar-image" /> : '秉'}
-          </button>
-          <input ref={dashboardAvatarInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => { handleDashboardAvatarUpload?.(e.target.files?.[0] || null); e.target.value = ''; }} />
-          <div className="dashboard-profile-name">{user.name}</div>
-          <div className="dashboard-profile-role">VP 訂購 ERP 核心使用者</div>
-          <div className="dashboard-profile-honor">{honorTitle}</div>
-          <div className="dashboard-profile-badges">
-            <span className="badge badge-role">帳號 / {user.loginId}</span>
-            <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
-          </div>
-          <div className="dashboard-profile-badges secondary">
-            <span className="badge badge-neutral">價格層級 / {priceTierLabel}</span>
-          </div>
-          <div className="dashboard-profile-detail-list">
-            <div><span>聯絡方式</span><strong>依原個人資料邏輯載入</strong></div>
-            <div><span>客戶範圍</span><strong>我的客戶 {myCustomerCards.length} 位</strong></div>
-            <div><span>歷史訂單</span><strong>{personalOrders.length} 筆</strong></div>
-          </div>
-        </div>
-
-        <div className="dashboard-personal-main">
-          <div className="dashboard-hero-stat-grid dashboard-hero-stat-grid-v3">
+      <section className="dashboard-personal-grid dashboard-personal-grid-clean">
+        <div className="dashboard-personal-main dashboard-personal-main-full">
+          <div className="dashboard-hero-stat-grid dashboard-hero-stat-grid-v3 dashboard-hero-stat-grid-clean">
             {statCards.map((item) => {
               const Icon = item.icon;
               return (
@@ -100,7 +77,7 @@ export default function DashboardModule(props: any) {
             })}
           </div>
 
-          <div className="dashboard-feature-grid">
+          <div className="dashboard-feature-grid dashboard-feature-grid-clean">
             <div className="card dashboard-history-card compact-card">
               <div className="panel-head">
                 <div>

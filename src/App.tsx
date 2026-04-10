@@ -3809,6 +3809,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   const notificationCount = notificationItems.length;
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
+  const profilePanelRef = useRef<HTMLDivElement | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth <= 900;
@@ -3816,6 +3817,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [shellHint, setShellHint] = useState('');
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3861,11 +3864,26 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     readImageFile(file, setDashboardAvatarImage);
   }
 
+  function openProfileCenter(mode: 'profile' | 'password' | 'login') {
+    setActive('profile');
+    setProfileOpen(false);
+    if (mode === 'password') setShellHint('已切到個人資料頁，可接續放入變更密碼子頁。');
+    else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
+  }
+
+  function triggerShellHint(message: string) {
+    setShellHint(message);
+    if (typeof window !== 'undefined') window.setTimeout(() => setShellHint(''), 2200);
+  }
+
   useEffect(() => {
     function handleOutside(event: MouseEvent) {
-      if (!notificationPanelRef.current) return;
-      if (!notificationPanelRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
         setNotificationOpen(false);
+      }
+      if (profilePanelRef.current && !profilePanelRef.current.contains(target)) {
+        setProfileOpen(false);
       }
     }
     document.addEventListener('mousedown', handleOutside);
@@ -3923,16 +3941,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </div>
 
         <div className="vp-sidebar-stack">
-          <div className="vp-profile-panel card">
-            <div className="vp-panel-label">目前登入</div>
-            <div className="vp-profile-name">{user.name}</div>
-            <div className="vp-profile-id">{ROLE_LABEL[user.role]} · {RANK_DISPLAY[user.rankKey]} · {user.loginId}</div>
-            <div className="vp-pill-row">
-              <span className="badge badge-role">價格 / {getPriceTierLabel(user.rankKey)}</span>
-              <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            </div>
-          </div>
-
           <div className="vp-state-panel card">
             <div className="vp-panel-label">資料來源</div>
             <div className="vp-state-row">
@@ -4003,48 +4011,105 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <div className="vp-header-action-group" ref={notificationPanelRef}>
-              <button
-                type="button"
-                className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
-                onClick={() => setNotificationOpen((prev) => !prev)}
-              >
-                <span className="vp-bell-icon-wrap">
-                  <Bell className="small-icon" />
-                  {notificationCount > 0 && <span className="vp-bell-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>}
-                </span>
-                提醒
-              </button>
-              {notificationOpen && (
-                <div className="vp-notification-popover">
-                  <div className="vp-notification-head">
-                    <div>
-                      <div className="vp-notification-title">待辦提醒</div>
-                      <div className="vp-notification-sub">未完成事項會自動顯示在這裡</div>
+            <div className="vp-header-global-tools">
+              <div className="vp-header-action-group" ref={notificationPanelRef}>
+                <button
+                  type="button"
+                  className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
+                  onClick={() => {
+                    setNotificationOpen((prev) => !prev);
+                    setProfileOpen(false);
+                  }}
+                  aria-label="提醒"
+                >
+                  <span className="vp-bell-icon-wrap">
+                    <Bell className="small-icon" />
+                    {notificationCount > 0 && <span className="vp-bell-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>}
+                  </span>
+                </button>
+                {notificationOpen && (
+                  <div className="vp-notification-popover">
+                    <div className="vp-notification-head">
+                      <div>
+                        <div className="vp-notification-title">待辦提醒</div>
+                        <div className="vp-notification-sub">未完成事項會自動顯示在這裡</div>
+                      </div>
+                      <span className="vp-notification-count">{notificationCount}</span>
                     </div>
-                    <span className="vp-notification-count">{notificationCount}</span>
+                    <div className="vp-notification-list">
+                      {notificationItems.length ? notificationItems.map((item) => (
+                        <div key={item.id} className={`vp-notification-item ${item.tone}`}>
+                          <div className="vp-notification-dot" />
+                          <div className="vp-notification-copy">
+                            <div className="vp-notification-item-title">{item.title}</div>
+                            <div className="vp-notification-item-detail">{item.detail}</div>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="vp-notification-empty">目前沒有待處理事項</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="vp-notification-list">
-                    {notificationItems.length ? notificationItems.map((item) => (
-                      <div key={item.id} className={`vp-notification-item ${item.tone}`}>
-                        <div className="vp-notification-dot" />
-                        <div className="vp-notification-copy">
-                          <div className="vp-notification-item-title">{item.title}</div>
-                          <div className="vp-notification-item-detail">{item.detail}</div>
+                )}
+              </div>
+
+              <div className="vp-header-action-group" ref={profilePanelRef}>
+                <button
+                  type="button"
+                  className={`ghost-button vp-tool-button vp-profile-trigger ${profileOpen ? 'active' : ''}`}
+                  onClick={() => {
+                    setProfileOpen((prev) => !prev);
+                    setNotificationOpen(false);
+                  }}
+                  aria-label="個人中心"
+                >
+                  {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-trigger-image" /> : <User className="small-icon" />}
+                </button>
+                {profileOpen && (
+                  <div className="vp-profile-popover">
+                    <div className="vp-profile-popover-head">
+                      <div className="vp-profile-popover-id-block">
+                        <button type="button" className="vp-profile-popover-avatar" onClick={() => dashboardAvatarInputRef.current?.click()}>
+                          {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-popover-avatar-image" /> : user.name.slice(0, 1)}
+                        </button>
+                        <div>
+                          <div className="vp-profile-popover-name">{user.name}</div>
+                          <div className="vp-profile-popover-sub">{ROLE_LABEL[user.role]} · {RANK_DISPLAY[user.rankKey]}</div>
                         </div>
                       </div>
-                    )) : (
-                      <div className="vp-notification-empty">目前沒有待處理事項</div>
-                    )}
+                      <span className={getRankClass(user.rank)}>{RANK_DISPLAY[user.rankKey]}</span>
+                    </div>
+                    <div className="vp-profile-popover-body">
+                      <div className="vp-profile-qr-card">
+                        <div className="vp-profile-qr-box"><QrCode className="vp-profile-qr-icon" /></div>
+                        <div className="vp-profile-qr-copy">
+                          <div className="vp-profile-meta-title">身份 QR</div>
+                          <div className="vp-profile-meta-value">{user.loginId}</div>
+                        </div>
+                      </div>
+                      <div className="vp-profile-meta-grid">
+                        <div className="vp-profile-meta-item"><span>帳號</span><strong>{user.loginId}</strong></div>
+                        <div className="vp-profile-meta-item"><span>階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
+                        <div className="vp-profile-meta-item"><span>價格身分</span><strong>{getPriceTierLabel(user.rankKey)}</strong></div>
+                      </div>
+                      <div className="vp-profile-popover-actions">
+                        <button type="button" className="vp-profile-popover-btn primary" onClick={() => openProfileCenter('profile')}>個人設定</button>
+                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
+                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('login')}>登入</button>
+                        <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false); triggerShellHint('已登出（UI 示意），後續可接真實登出流程。'); }}>登出</button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
               <RefreshCw className="small-icon" />重新整理
             </button>
           </div>
         </header>
+
+        {shellHint && <div className="vp-shell-hint">{shellHint}</div>}
 
         <section className="vp-workspace card">
           {booting ? (
