@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins, Medal } from 'lucide-react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, UserRound } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -18,9 +18,9 @@ export default function AccountingModule(props: any) {
     selectTreasuryOrder, updateTreasuryDraftField, confirmTreasuryRefund, handleTreasuryProofUpload, treasuryProofInputRef,
     treasuryExpenseDraft, updateTreasuryExpenseField, saveTreasuryExpense, treasuryExpenseLogs, treasuryExpenseCategories, handleTreasuryExpenseProofUpload, treasuryExpenseProofInputRef,
     bonusDraft, updateBonusDraftField, saveBonusEntry, bonusLogs, bonusTotal, user,
+    evaluationQuarter, setEvaluationQuarter, evaluationQuarterResults, evaluationSubmissions,
 
     accountingBoards, accountingTrendBars, salesRanking, hotProductsBoard,
-    evaluationQuarter, setEvaluationQuarter, evaluationSummary = [],
   } = props;
 
   const [accountingPage, setAccountingPage] = useState(1);
@@ -393,40 +393,46 @@ export default function AccountingModule(props: any) {
         </section>
       )}
 
+
       {accountingTab === 'evaluation' && (
-        <section className="accounting-ranking-layout-v2">
+        <section className="accounting-evaluation-layout">
           <div className="card order-panel">
             <div className="panel-head">
-              <div><div className="panel-title">評鑑分數總覽</div><div className="panel-desc">系統依匿名評分結果，自動結算本季總分、K值與榮譽勳章。</div></div>
-              <div className="dashboard-quarter-switch">
-                {['Q1', 'Q2', 'Q3', 'Q4'].map((item) => (
-                  <button key={item} type="button" className={`dashboard-quarter-btn ${evaluationQuarter === item ? 'active' : ''}`} onClick={() => setEvaluationQuarter?.(item)}>{item}</button>
-                ))}
+              <div>
+                <div className="panel-title">核心成員評鑑結果</div>
+                <div className="panel-desc">系統依四大維度平均後，自動結算總分、K值與榮譽勳章。評分者採匿名，不顯示來源。</div>
               </div>
+              <span className="badge badge-soft">匿名 {evaluationSubmissions.length} 份</span>
             </div>
-            <div className="ranking-list-v2">
-              {evaluationSummary.map((item: any, index: number) => (
-                <div key={item.loginId} className="ranking-row-v2 evaluation-result-row">
-                  <div className="ranking-left">
-                    <div className="ranking-index">#{index + 1}</div>
-                    <div>
-                      <div className="ranking-name">{item.name}</div>
-                      <div className="ranking-meta">{item.badge} / 匿名樣本 {item.submissionCount} 筆</div>
-                    </div>
-                  </div>
-                  <div className="ranking-right evaluation-result-right">
-                    <strong>{item.totalScore}</strong>
-                    <span>K {Number(item.kValue || 0).toFixed(2)}</span>
-                  </div>
-                  <div className="evaluation-score-inline">
-                    <span>業績 {item.averageScores.sales}</span>
-                    <span>協作 {item.averageScores.collaboration}</span>
-                    <span>專業 {item.averageScores.professional}</span>
-                    <span>效率 {item.averageScores.efficiency}</span>
-                  </div>
+            <div className="evaluation-quarter-row accounting-quarter-row">
+              {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
+                <button key={quarter} type="button" className={`evaluation-quarter-btn ${evaluationQuarter === quarter ? 'active' : ''}`} onClick={() => setEvaluationQuarter(quarter as any)}>{quarter}</button>
+              ))}
+            </div>
+            <div className="accounting-evaluation-table">
+              <div className="accounting-evaluation-head">
+                <span>核心成員</span>
+                <span>業績</span>
+                <span>協作</span>
+                <span>專業</span>
+                <span>效率</span>
+                <span>總分</span>
+                <span>K值</span>
+                <span>勳章</span>
+              </div>
+              {evaluationQuarterResults.map((item: any) => (
+                <div key={`${item.quarter}-${item.loginId}`} className="accounting-evaluation-row">
+                  <div className="accounting-evaluation-name"><UserRound className="small-icon" />{item.name}</div>
+                  <span>{item.sales}</span>
+                  <span>{item.collaboration}</span>
+                  <span>{item.professional}</span>
+                  <span>{item.efficiency}</span>
+                  <strong>{item.total}</strong>
+                  <span>{item.kValue.toFixed(2)}</span>
+                  <span className="badge badge-neutral">{item.medal}</span>
                 </div>
               ))}
-              {!evaluationSummary.length && <div className="warehouse-empty-state">目前還沒有評鑑結果</div>}
+              {!evaluationQuarterResults.length && <div className="warehouse-empty-state">目前尚無評鑑結果</div>}
             </div>
           </div>
         </section>
