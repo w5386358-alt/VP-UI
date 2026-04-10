@@ -6771,255 +6771,28 @@ body {
 }
 
 
-/* === ui新板25版：第24版穩定底稿小幅修正 === */
-.vp-header-kicker,
-.vp-header-module-desc,
-.vp-workspace-title-cn,
-.vp-workspace-title-en {
-  color: var(--primary);
+/* ui新板25版：客戶區對齊商品區 */
+.customers-stage-layout{
+  margin-top:18px;
+  display:block;
 }
-
-.vp-header-branding {
-  max-width: 620px;
+.customers-main-wrap{
+  display:block;
 }
-
-.vp-header-module-title {
-  letter-spacing: 0.06em;
-  color: rgba(190, 47, 93, 0.18);
+.customers-board-card{
+  width:100%;
+  padding:24px;
+  min-height:auto;
 }
-
-.vp-header-module-desc {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  margin-top: 10px;
+.customers-main-head.panel-head{
+  margin-bottom:18px;
 }
-
-.vp-workspace-title-strip {
-  flex: 1 1 auto;
+.customers-board-card .customer-grid.refined{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
 }
-
-.vp-workspace-module-title {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
-  min-height: 56px;
-  padding: 6px 2px;
-}
-
-.vp-workspace-title-cn {
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-}
-
-.vp-workspace-title-en {
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.customers-main-card-full {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 22px;
-}
-
-.customer-grid.refined {
-  gap: 16px;
-}
-
-.customer-permission-card.refined-card {
-  min-height: 188px;
-  padding: 18px;
-}
-
-.catalog-grid.orders-catalog-grid {
-  gap: 38px;
-}
-
-@media (max-width: 1200px) {
-  .catalog-grid.orders-catalog-grid {
-    gap: 22px;
-  }
-
-  .customers-main-card-full {
-    max-width: 100%;
-  }
-}
-
-
-/* ui新板25版 第二次微調：只保留上方標題、提醒移到重新整理旁、客戶區尺寸對齊 */
-.vp-header-branding {
-  max-width: 620px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
-}
-
-.vp-header-module-title {
-  font-size: 44px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  color: var(--primary);
-  line-height: 1;
-}
-
-.vp-header-module-desc {
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--primary);
-  margin-top: 0;
-  line-height: 1.1;
-}
-
-.vp-header-tools {
-  align-items: center;
-}
-
-.vp-header-action-group {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.vp-workspace {
-  padding-top: 24px;
-}
-
-.vp-module-body {
-  margin-top: 0;
-}
-
-.customers-shell-clean {
-  gap: 0;
-}
-
-.customers-main-card-full {
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 20px;
-}
-
-@media (max-width: 900px) {
-  .vp-header-module-title {
-    font-size: 32px;
-  }
-
-  .vp-header-module-desc {
-    font-size: 12px;
-    letter-spacing: 0.16em;
-  }
-
-  .vp-header-tools {
-    gap: 10px;
-  }
-}
-
-
-/* 英文補回同一行，避免被吃掉 */
-.vp-header-module-title {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.vp-header-module-slash {
-  color: var(--primary);
-  opacity: 0.7;
-}
-
-.vp-header-module-en-inline {
-  font-size: 0.5em;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--primary);
-}
-
-.vp-header-module-desc {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .vp-header-module-title {
-    gap: 8px;
-  }
-  .vp-header-module-en-inline {
-    font-size: 0.44em;
-    letter-spacing: 0.16em;
-  }
-}
-
-
-/* ui新板25版 續修：上方縮高、按鈕上移、標題框線移除 */
-.vp-header {
-  align-items: start;
-  padding: 16px 22px;
-}
-
-.vp-header-banner {
-  min-height: 90px;
-  padding: 18px 28px;
-  border: none !important;
-  box-shadow: none;
-}
-
-.vp-header-branding {
-  gap: 4px;
-}
-
-.vp-header-module-title {
-  font-size: 42px;
-  color: var(--primary);
-}
-
-.vp-header-tools {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-top: 4px;
-}
-
-.vp-search-wrap {
-  width: min(100%, 360px);
-}
-
-.vp-header-action-group,
-.vp-tool-button {
-  align-self: flex-start;
-}
-
-.vp-workspace {
-  padding-top: 16px;
-}
-
-@media (max-width: 900px) {
-  .vp-header {
-    padding: 14px 16px;
-  }
-
-  .vp-header-banner {
-    min-height: 78px;
-    padding: 14px 18px;
-  }
-
-  .vp-header-module-title {
-    font-size: 30px;
-  }
-
-  .vp-header-tools {
-    justify-content: flex-start;
+@media (max-width: 1180px){
+  .customers-board-card .customer-grid.refined{
+    grid-template-columns:1fr;
   }
 }

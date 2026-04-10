@@ -182,6 +182,20 @@ export default function OrdersModule(props: any) {
             </div>
           </div>
 
+          <div className="card orders-brief-panel">
+            <div className="panel-head compact-head">
+              <div>
+                <div className="panel-title">購物摘要</div>
+              </div>
+              <Sparkles className="small-icon" />
+            </div>
+            <div className="orders-brief-grid">
+              <div className="orders-brief-item"><span>商品小計</span><strong>${subtotal}</strong></div>
+              <div className="orders-brief-item"><span>運費</span><strong>${shippingFee}</strong></div>
+              <div className="orders-brief-item"><span>折扣</span><strong>-${discountAmount}</strong></div>
+              <div className="orders-brief-item accent"><span>預估總額</span><strong>${grandTotal}</strong></div>
+            </div>
+          </div>
         </aside>
       </section>
 

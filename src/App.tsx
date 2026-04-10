@@ -2588,10 +2588,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const activeStaff = staff.filter((s) => s.enabled).length;
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
-  const currentNavItem = navItems.find((item) => item.key === active) || navItems[0];
-  const currentModuleLabel = currentNavItem.label;
-  const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
-
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
   const customerScopeLabel = permissionProfile.canViewAllCustomers
     ? '全部客戶完整資料'
@@ -3735,7 +3731,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-module-title">{currentModuleLabel} <span className="vp-header-module-slash">/</span> <span className="vp-header-module-en-inline">{currentModuleEnglish}</span></div>
+              <div className="vp-header-kicker">brand visual banner</div>
+              <div className="vp-header-watermark">VP ORDER ERP</div>
+              <p className="vp-header-desc">改用柔和光暈、圓弧流線與玻璃霧感，通知集中到右側小鈴鐺。</p>
             </div>
           </div>
           <div className="vp-header-tools">
@@ -3743,7 +3741,31 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <Search className="search-icon" />
               <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
             </div>
-            <div className="vp-header-action-group" ref={notificationPanelRef}>
+            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
+              <RefreshCw className="small-icon" />重新整理
+            </button>
+          </div>
+        </header>
+
+        <section className="vp-workspace card">
+          <div className="vp-workspace-top">
+            <div className="vp-workspace-title-strip">
+              {navItems.map((item) => {
+                const isActive = item.key === active;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`vp-workspace-title-chip ${isActive ? 'active' : ''}`}
+                    onClick={() => setActive(item.key)}
+                  >
+                    <span className="vp-workspace-title-cn">{item.label}</span>
+                    <span className="vp-workspace-title-en">{NAV_ENGLISH_LABEL[item.key]}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="vp-workspace-actions" ref={notificationPanelRef}>
               <button
                 type="button"
                 className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
@@ -3780,13 +3802,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 </div>
               )}
             </div>
-            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
-            </button>
           </div>
-        </header>
 
-        <section className="vp-workspace card">
           {booting ? (
             <div className="card loading-card">
               <div className="spinner" />
