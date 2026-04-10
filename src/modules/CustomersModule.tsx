@@ -12,17 +12,16 @@ export default function CustomersModule(props: any) {
 
   return (
     <>
-      <section className="product-admin-layout products-stage-layout customers-stage-layout">
-        <div className="product-admin-main customers-main-wrap">
-          <div className="card order-panel products-board-card customers-board-card customers-main-card customers-main-card-full">
-            <div className="customers-main-head panel-head">
-              <div>
-                <div className="panel-title">客戶列表</div>
-              </div>
-              <span className="badge badge-role">{filteredCustomers.length} 筆</span>
+      <section className="customers-shell customers-shell-clean">
+        <div className="card customers-main-card customers-main-card-full">
+          <div className="customers-main-head">
+            <div>
+              <div className="panel-title">客戶列表</div>
             </div>
+            <span className="badge badge-role">{filteredCustomers.length} 筆</span>
+          </div>
 
-            <section className="record-grid customer-grid refined">
+          <section className="record-grid customer-grid refined">
             {pagedCustomers.map((item: any) => (
               <div key={item.id} className="card data-card customer-permission-card refined-card">
                 <div className="data-card-top">
@@ -56,8 +55,8 @@ export default function CustomersModule(props: any) {
                 </div>
               </div>
             ))}
-            </section>
-            <div className="pagination-row">
+          </section>
+          <div className="pagination-row">
             <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
             <div className="pagination-pages">
               {pageNumbers.map((page) => (
@@ -65,7 +64,6 @@ export default function CustomersModule(props: any) {
               ))}
             </div>
             <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
-            </div>
           </div>
         </div>
       </section>
