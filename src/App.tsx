@@ -332,6 +332,18 @@ const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ classN
 ];
 
 
+
+const HEADER_TITLE_MAP: Record<NavKey, { zh: string; en: string }> = {
+  dashboard: { zh: '儀表板', en: 'Dashboard' },
+  orders: { zh: '訂購', en: 'Orders' },
+  inventory: { zh: '倉儲', en: 'Inventory' },
+  accounting: { zh: '會計', en: 'Accounting' },
+  products: { zh: '商品', en: 'Products' },
+  customers: { zh: '客戶', en: 'Customers' },
+  staff: { zh: '人員', en: 'Staff' },
+  profile: { zh: '評鑑', en: 'Evaluation' },
+};
+
 const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
   admin: ['dashboard', 'orders', 'inventory', 'accounting', 'products', 'customers', 'staff', 'profile'],
   sales: ['dashboard', 'orders', 'profile'],
@@ -1337,6 +1349,8 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 }
 
 function SummaryCard({ title, value, sub }: { title: string; value: string; sub: string }) {
+  const currentHeaderTitle = HEADER_TITLE_MAP[active] || HEADER_TITLE_MAP.dashboard;
+
   return (
     <div className="card summary-card">
       <div className="summary-title">{title}</div>
@@ -2646,7 +2660,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
       return;
     }
+    let previewUrl = '';
     try {
+      previewUrl = URL.createObjectURL(file);
+      setProductDraft((prev) => ({ ...prev, image: previewUrl }));
       setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
       const imageUrl = await uploadFileToFirebase('products', file, code);
       setProductDraft((prev) => ({ ...prev, image: imageUrl }));
@@ -3027,6 +3044,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           generalAgentPrice,
           stock,
           enabled: productDraft.enabled,
+          image: productDraft.image || '',
         };
         setProducts((prev) => [nextProduct, ...prev]);
         setSelectedProductId(nextProduct.code);
@@ -3060,6 +3078,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         generalAgentPrice,
         stock,
         enabled: productDraft.enabled,
+        image: productDraft.image || '',
       };
 
       setProducts((prev) => prev.map((item) => item.id === productDraft.id ? { ...item, ...updatedProduct } : item));
@@ -3718,9 +3737,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
             <div className="vp-header-branding">
-              <div className="vp-header-kicker">brand visual banner</div>
-              <div className="vp-header-watermark">VP ORDER ERP</div>
-              <p className="vp-header-desc">改用柔和光暈、圓弧流線與玻璃霧感，通知集中到右側小鈴鐺。</p>
+              <div className="vp-header-kicker">{currentHeaderTitle.zh}</div>
+              <div className="vp-header-watermark">{currentHeaderTitle.en}</div>
+              <p className="vp-header-desc vp-header-desc-title">{currentHeaderTitle.zh}・{currentHeaderTitle.en}</p>
             </div>
           </div>
           <div className="vp-header-tools">

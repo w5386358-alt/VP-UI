@@ -6647,3 +6647,61 @@ body {
 .dashboard-radar-label.is-bottom { transform: translate(-50%, 0); }
 .dashboard-radar-label.is-left { transform: translate(-100%, -50%); }
 .dashboard-tree-card .panel-desc { display: none; }
+
+
+/* 第二十五版：標題橫幅中文英文 + 雷達置中強化 + 商品圖即時預覽 */
+.vp-header-kicker,
+.vp-header-watermark,
+.vp-header-desc-title {
+  color: var(--primary) !important;
+}
+.vp-header-kicker {
+  font-size: 16px;
+  letter-spacing: 0.18em;
+}
+.vp-header-watermark {
+  letter-spacing: 0.12em;
+}
+.vp-header-desc-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+.dashboard-tree-visual.radar-visual {
+  overflow: visible;
+}
+.dashboard-radar-svg {
+  width: 260px;
+  height: 260px;
+}
+.dashboard-radar-center-badge {
+  width: 96px;
+  height: 96px;
+}
+.dashboard-radar-label {
+  width: 92px;
+  padding: 7px 8px;
+}
+.dashboard-radar-label .dashboard-tree-label {
+  display: block;
+  font-size: 12px;
+  line-height: 1.05;
+}
+.dashboard-radar-label .dashboard-tree-score {
+  margin-top: 4px;
+  font-size: 18px;
+  line-height: 1;
+}
+.dashboard-radar-label.is-top {
+  transform: translate(-50%, 0);
+}
+.dashboard-radar-label.is-right {
+  transform: translate(0, -50%);
+}
+.dashboard-radar-label.is-bottom {
+  transform: translate(-50%, -100%);
+}
+.dashboard-radar-label.is-left {
+  transform: translate(-100%, -50%);
+}
