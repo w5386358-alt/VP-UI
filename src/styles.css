@@ -7691,3 +7691,122 @@ body {
   font-weight: 800;
   letter-spacing: .02em;
 }
+
+/* 第三十一版：榮譽稱號整理 + 所有子頁向上靠齊固定 */
+.dashboard-profile-card {
+  align-items: center !important;
+}
+
+.dashboard-profile-honor {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 40px !important;
+  padding: 10px 18px !important;
+  margin: 14px auto 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(176, 28, 46, 0.16) !important;
+  background: linear-gradient(135deg, rgba(176, 28, 46, 0.08), rgba(255, 255, 255, 0.96)) !important;
+  color: #9f1e33 !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.04em !important;
+  text-align: center !important;
+  max-width: calc(100% - 36px) !important;
+  white-space: normal !important;
+  line-height: 1.35 !important;
+  box-shadow: 0 10px 26px rgba(176, 28, 46, 0.08) !important;
+}
+
+.dashboard-profile-badges,
+.dashboard-profile-badges.secondary {
+  justify-content: center !important;
+  align-items: center !important;
+  row-gap: 10px !important;
+}
+
+.dashboard-profile-badges {
+  margin-top: 0 !important;
+}
+
+.dashboard-profile-badges.secondary {
+  margin-top: 10px !important;
+}
+
+.accounting-shell-v2,
+.inventory-shell-v2,
+.orders-shell-v2,
+.profile-shell-v2,
+.staff-shell,
+.product-admin-layout,
+.customers-sync-layout,
+.evaluation-shell-v2 {
+  align-items: flex-start !important;
+  align-content: flex-start !important;
+}
+
+.accounting-shell-v2 > *,
+.inventory-shell-v2 > *,
+.orders-shell-v2 > *,
+.profile-shell-v2 > *,
+.staff-shell > *,
+.product-admin-layout > *,
+.customers-sync-layout > *,
+.evaluation-shell-v2 > * {
+  align-self: stretch !important;
+}
+
+.accounting-tab-row,
+.accounting-tab-row-v2,
+.warehouse-tab-row,
+.warehouse-primary-tabs,
+.dashboard-quarter-row,
+.dashboard-quarter-switch,
+.evaluation-quarter-row,
+.accounting-quarter-row,
+.warehouse-query-mode-row,
+.products-chip-strip,
+.chip-filter-row,
+.order-toolbar-row,
+.history-toolbar,
+.table-like-head {
+  align-items: flex-start !important;
+  align-content: flex-start !important;
+  min-height: 42px !important;
+}
+
+.accounting-shell-v2 > .accounting-tab-row + section,
+.accounting-shell-v2 > .accounting-tab-row + div,
+.accounting-shell-v2 > .accounting-tab-row-v2 + section,
+.accounting-shell-v2 > .accounting-tab-row-v2 + div,
+.inventory-shell-v2 > .warehouse-tab-row + section,
+.inventory-shell-v2 > .warehouse-tab-row + div,
+.inventory-shell-v2 > .warehouse-primary-tabs + section,
+.inventory-shell-v2 > .warehouse-primary-tabs + div,
+.profile-shell-v2 > .evaluation-quarter-row + section,
+.profile-shell-v2 > .evaluation-quarter-row + div,
+.orders-shell-v2 > .order-toolbar-row + section,
+.orders-shell-v2 > .order-toolbar-row + div,
+.product-admin-layout > .products-chip-strip + section,
+.product-admin-layout > .products-chip-strip + div,
+.customers-sync-layout > .table-like-head + section,
+.customers-sync-layout > .table-like-head + div,
+.staff-shell > .history-toolbar + section,
+.staff-shell > .history-toolbar + div,
+.evaluation-shell-v2 > .evaluation-quarter-row + section,
+.evaluation-shell-v2 > .evaluation-quarter-row + div,
+.evaluation-shell-v2 > .evaluation-quarter-row + .evaluation-target-grid {
+  margin-top: 0 !important;
+}
+
+.accounting-shell-v2 section,
+.inventory-shell-v2 section,
+.orders-shell-v2 section,
+.profile-shell-v2 section,
+.staff-shell section,
+.product-admin-layout section,
+.customers-sync-layout section,
+.evaluation-shell-v2 section {
+  align-self: stretch !important;
+  margin-top: 0 !important;
+}
