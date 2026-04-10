@@ -6852,4 +6852,60 @@ body {
   .vp-workspace-section-tag{width:100%; justify-content:center;}
   .orders-catalog-grid{gap: 22px;}
 }
-\n\n/* ui新板25版_白屏修正版 */\n.vp-header-kicker{\n  color:#c93e6e;\n  font-size:14px;\n  font-weight:900;\n  letter-spacing:.16em;\n  text-transform:none;\n}\n.vp-header-title-red{\n  margin-top:8px;\n  font-size:clamp(34px,4.8vw,52px);\n  line-height:1.02;\n  font-weight:900;\n  letter-spacing:.08em;\n  color:#c93e6e;\n}\n.vp-header-subtitle-red{\n  margin-top:10px;\n  font-size:13px;\n  font-weight:800;\n  letter-spacing:.12em;\n  color:rgba(201,62,110,.78);\n}\n.vp-header-watermark-red{\n  margin-top:12px;\n  color:rgba(201,62,110,.16);\n  font-size:clamp(38px,6vw,68px);\n  line-height:1;\n  letter-spacing:.12em;\n}\n.customers-shell-clean{\n  display:block;\n  max-width:1180px;\n  margin:0 auto;\n}\n.customers-main-card-full{\n  width:100%;\n  padding:18px;\n}\n.customer-grid.refined{\n  gap:14px;\n}\n.customer-permission-card.refined-card{\n  min-height:172px;\n  padding:16px;\n}\n.orders-catalog-grid{\n  gap:40px;\n}\n@media (max-width:900px){\n  .vp-header-title-red{font-size:30px;}\n  .vp-header-subtitle-red{font-size:12px; letter-spacing:.08em;}\n  .vp-header-watermark-red{font-size:34px;}\n  .orders-catalog-grid{gap:24px;}\n}\n
+
+
+/* ui新板25版_白屏修正版 */
+.vp-header-kicker{
+  color:#c93e6e;
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:.16em;
+  text-transform:none;
+}
+.vp-header-title-red{
+  margin-top:8px;
+  font-size:clamp(34px,4.8vw,52px);
+  line-height:1.02;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#c93e6e;
+}
+.vp-header-subtitle-red{
+  margin-top:10px;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.12em;
+  color:rgba(201,62,110,.78);
+}
+.vp-header-watermark-red{
+  margin-top:12px;
+  color:rgba(201,62,110,.16);
+  font-size:clamp(38px,6vw,68px);
+  line-height:1;
+  letter-spacing:.12em;
+}
+.customers-shell-clean{
+  display:block;
+  max-width:1180px;
+  margin:0 auto;
+}
+.customers-main-card-full{
+  width:100%;
+  padding:18px;
+}
+.customer-grid.refined{
+  gap:14px;
+}
+.customer-permission-card.refined-card{
+  min-height:172px;
+  padding:16px;
+}
+.orders-catalog-grid{
+  gap:40px;
+}
+@media (max-width:900px){
+  .vp-header-title-red{font-size:30px;}
+  .vp-header-subtitle-red{font-size:12px; letter-spacing:.08em;}
+  .vp-header-watermark-red{font-size:34px;}
+  .orders-catalog-grid{gap:24px;}
+}
