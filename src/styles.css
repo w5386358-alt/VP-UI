@@ -7597,3 +7597,97 @@ body {
     padding: 14px 16px !important;
   }
 }
+
+
+/* 第三十版：子頁按鈕固定對齊 / LOGO斜線移除 / 儀表板間距補強 / 榮譽稱號 */
+.vp-brand-logo-slot::before {
+  display: none !important;
+}
+
+.accounting-tab-row,
+.accounting-tab-row-v2,
+.warehouse-tab-row,
+.warehouse-primary-tabs,
+.order-toolbar-row,
+.history-toolbar,
+.table-like-head,
+.dashboard-quarter-row,
+.evaluation-quarter-row,
+.accounting-quarter-row,
+.warehouse-query-mode-row,
+.products-chip-strip,
+.chip-filter-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  align-content: flex-start !important;
+  gap: 12px !important;
+  row-gap: 12px !important;
+  min-height: 44px !important;
+  margin-top: 0 !important;
+  margin-bottom: 38px !important;
+}
+
+.accounting-tab,
+.warehouse-tab,
+.evaluation-quarter-btn,
+.warehouse-query-chip,
+.filter-chip,
+.product-editor-chip,
+.ghost-button.compact-btn,
+.shortcut-button {
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 16px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+}
+
+.accounting-shell-v2 > .accounting-tab-row + section,
+.accounting-shell-v2 > .accounting-tab-row + div,
+.inventory-shell-v2 > .warehouse-tab-row + section,
+.inventory-shell-v2 > .warehouse-tab-row + div,
+.inventory-shell-v2 > .warehouse-primary-tabs + section,
+.inventory-shell-v2 > .warehouse-primary-tabs + div {
+  margin-top: 0 !important;
+}
+
+.dashboard-personal-main {
+  gap: 38px !important;
+}
+
+.dashboard-feature-grid {
+  align-items: start !important;
+  gap: 38px !important;
+  margin-bottom: 38px !important;
+}
+
+.dashboard-customer-card,
+.dashboard-growth-card {
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+.dashboard-growth-card {
+  margin-top: 0 !important;
+}
+
+.dashboard-profile-honor {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(183,46,98,0.12), rgba(255,236,243,0.92));
+  border: 1px solid rgba(183,46,98,0.16);
+  color: #9f2b57;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}

@@ -26,6 +26,7 @@ export default function DashboardModule(props: any) {
   const totalSales = personalOrders.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
   const averageScore = myEvaluationQuarterResult?.total || 0;
   const medal = myEvaluationQuarterResult?.medal || '精進級';
+  const honorTitle = `榮譽稱號 / ${medal}`;
   const statCards = [
     { title: '我的歷史訂單', value: `${personalOrders.length}`, sub: '沿用原個人資料訂單邏輯', icon: ShoppingBag },
     { title: '我的客戶資料', value: `${myCustomerCards.length}`, sub: '目前由你管理的客戶數', icon: Users },
@@ -69,6 +70,7 @@ export default function DashboardModule(props: any) {
           <input ref={dashboardAvatarInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => { handleDashboardAvatarUpload?.(e.target.files?.[0] || null); e.target.value = ''; }} />
           <div className="dashboard-profile-name">{user.name}</div>
           <div className="dashboard-profile-role">VP 訂購 ERP 核心使用者</div>
+          <div className="dashboard-profile-honor">{honorTitle}</div>
           <div className="dashboard-profile-badges">
             <span className="badge badge-role">帳號 / {user.loginId}</span>
             <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
