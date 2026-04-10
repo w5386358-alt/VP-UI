@@ -8773,3 +8773,56 @@ body {
     border-radius: 16px;
   }
 }
+
+/* === 手機購物車入口最終修正：固定顯示在底部主選單上方 === */
+@media (max-width: 900px) {
+  .floating-cart-button {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important;
+    z-index: 95 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+    border-radius: 18px !important;
+    background: linear-gradient(135deg, var(--primary) 0%, #bf3e62 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 16px 36px rgba(162, 18, 57, 0.26) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+  }
+
+  .floating-cart-text {
+    display: inline-flex !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    letter-spacing: .02em !important;
+  }
+
+  .floating-cart-count {
+    min-width: 28px !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .floating-cart-button {
+    left: 10px !important;
+    right: 10px !important;
+    width: calc(100vw - 20px) !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 88px) !important;
+    padding: 13px 14px !important;
+    border-radius: 16px !important;
+  }
+}
