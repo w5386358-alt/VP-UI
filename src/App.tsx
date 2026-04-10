@@ -3812,7 +3812,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [isMobileViewport, setIsMobileViewport] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 900 : false));
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3869,16 +3868,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   return (
-    <div className={`vp-shell ${isMobileViewport ? 'mobile-layout' : ''}`}>
+    <div className="vp-shell">
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 
