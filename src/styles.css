@@ -7045,57 +7045,92 @@ body {
 }
 
 
-/* ui新板25版：統一七區與儀表板標題欄外層參數 */
-:root {
-  --vp-module-top-gap: 18px;
+/* ui新板25版：只修客戶區標題與商品區一致 */
+.customers-sync-layout{
+  margin-top: -118px !important;
+  padding-top: 0 !important;
+  gap: 0 !important;
+}
+
+.customers-sync-layout .product-admin-main{
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.customers-sync-layout .customers-main-card-full{
+  margin-top: 0 !important;
+}
+
+
+/* ui新板25版：八大區標題卡與模組起始區統一參數 */
+.vp-module-body > * {
+  width: 100%;
 }
 
 .dashboard-personal-shell,
-.orders-workspace-grid,
+.products-hero-grid,
 .product-admin-layout,
-.customers-sync-layout,
-.warehouse-command-layout,
-.accounting-warehouse-layout,
-.staff-layout-v2,
-.staff-layout-v3,
-.evaluation-shell {
-  margin-top: var(--vp-module-top-gap) !important;
-  align-items: start !important;
-}
-
-.product-admin-layout,
-.customers-sync-layout,
-.warehouse-command-layout,
-.accounting-warehouse-layout,
-.staff-layout-v2,
-.staff-layout-v3 {
-  gap: 18px !important;
-}
-
+.staff-overview-grid,
+.orders-shell-v2,
+.inventory-shell-v2,
+.accounting-shell-v2,
+.profile-shell-v2,
 .customers-sync-layout {
-  grid-template-columns: minmax(0, 1fr) !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
-.customers-sync-layout .product-admin-main {
-  display: block !important;
-  align-self: start !important;
+.product-admin-layout,
+.customers-sync-layout {
+  align-items: start;
 }
 
-.customers-sync-layout .customers-main-card-full {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 24px !important;
+.dashboard-personal-shell,
+.products-shell,
+.product-admin-layout,
+.customers-sync-layout,
+.staff-shell,
+.orders-shell-v2,
+.inventory-shell-v2,
+.accounting-shell-v2,
+.profile-shell-v2 {
+  display: block;
+  width: 100%;
 }
 
-.vp-module-body > .dashboard-personal-shell:first-child,
-.vp-module-body > .orders-workspace-grid:first-child,
-.vp-module-body > .product-admin-layout:first-child,
-.vp-module-body > .customers-sync-layout:first-child,
-.vp-module-body > .warehouse-command-layout:first-child,
-.vp-module-body > .accounting-warehouse-layout:first-child,
-.vp-module-body > .staff-layout-v2:first-child,
-.vp-module-body > .staff-layout-v3:first-child,
-.vp-module-body > .evaluation-shell:first-child {
-  margin-top: var(--vp-module-top-gap) !important;
+.dashboard-personal-shell > :first-child,
+.products-shell > :first-child,
+.product-admin-layout > :first-child,
+.customers-sync-layout > :first-child,
+.staff-shell > :first-child,
+.orders-shell-v2 > :first-child,
+.inventory-shell-v2 > :first-child,
+.accounting-shell-v2 > :first-child,
+.profile-shell-v2 > :first-child {
+  margin-top: 0 !important;
+}
+
+.customers-sync-layout .product-admin-main,
+.product-admin-layout .product-admin-main {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.customers-sync-layout .customers-main-card,
+.customers-sync-layout .customers-main-card-full,
+.product-admin-layout .products-board-card,
+.product-admin-layout .order-panel.products-board-card {
+  margin-top: 0 !important;
+  min-height: auto !important;
+}
+
+.customers-main-head,
+.panel-head,
+.orders-panel-head,
+.warehouse-card-head,
+.accounting-console-head,
+.profile-panel-head,
+.staff-panel-head {
+  min-height: 56px;
+  align-items: center;
 }
