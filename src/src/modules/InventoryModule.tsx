@@ -1,4 +1,6 @@
-import { Truck, Boxes, Search, QrCode, FileText, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { scanWithCamera } from '../utils/nativeScanner';
+import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -21,8 +23,6 @@ export default function InventoryModule(props: any) {
     setWarehouseDateStart,
     warehouseDateEnd,
     setWarehouseDateEnd,
-    shippingChecklist,
-    warehouseSopPoints,
     warehouseReminderItems,
     handleWarehouseShip,
     handleWarehouseReturn,
@@ -39,7 +39,6 @@ export default function InventoryModule(props: any) {
     warehouseExpectedScan,
     warehouseScanValidation,
     handleWarehousePrint,
-    inventoryFlow,
     stockSnapshot,
     selectedStockCode,
     setSelectedStockCode,
@@ -57,43 +56,73 @@ export default function InventoryModule(props: any) {
     SectionIntro,
   } = props;
 
+  const [shippingPage, setShippingPage] = useState(1);
+  const shippingPageSize = 10;
+  const shippingTotalPages = Math.max(1, Math.ceil(filteredWarehouseQueue.length / shippingPageSize));
+  const shippingSafePage = Math.min(shippingPage, shippingTotalPages);
+  const pagedWarehouseQueue = useMemo(() => filteredWarehouseQueue.slice((shippingSafePage - 1) * shippingPageSize, shippingSafePage * shippingPageSize), [filteredWarehouseQueue, shippingSafePage]);
+  const shippingPageNumbers = Array.from({ length: shippingTotalPages }, (_, index) => index + 1);
+
+  async function handleScanBarcodeLaunch() {
+    const value = await scanWithCamera({ title: '倉儲條碼掃描', fallbackLabel: '商品條碼' });
+    if (value) setWarehouseScanBarcode(value.toUpperCase());
+  }
+
+  async function handleScanQrLaunch() {
+    const value = await scanWithCamera({ title: '倉儲 QR 掃描', fallbackLabel: 'QR 身分識別' });
+    if (value) setWarehouseScanQr(value.toUpperCase());
+  }
+
+  async function handleInboundQrLaunch() {
+    const value = await scanWithCamera({ title: '入庫 QR 掃描', fallbackLabel: '入庫 QR' });
+    if (value) setWarehouseInboundQr(value.toUpperCase());
+  }
+
+  async function handleQueryScanLaunch() {
+    const value = await scanWithCamera({ title: '查詢掃碼', fallbackLabel: '查詢條件' });
+    if (value) setWarehouseQueryInput(value.toUpperCase());
+  }
+
   return (
     <>
-      <SectionIntro
-        title="倉儲中心"
-        desc="出貨、庫存與查詢集中在同一區。"
-        stats={[`待出貨 ${shippingQueue.length}`, `低庫存 ${lowStockCount}`, '防超賣 + QR 邏輯']}
-      />
 
-      <div className="warehouse-tab-row">
+      <div className="warehouse-tab-row warehouse-primary-tabs">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
         <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}><Boxes className="small-icon" />庫存區</button>
         <button type="button" className={`warehouse-tab ${warehouseTab === 'query' ? 'active' : ''}`} onClick={() => setWarehouseTab('query')}><Search className="small-icon" />查詢區</button>
       </div>
 
-
       {warehouseTab === 'shipping' && (
-        <section className="warehouse-layout">
+        <section className="warehouse-layout warehouse-command-layout">
           <div className="warehouse-main warehouse-stack">
-            <div className="card order-panel">
+            <div className="card order-panel warehouse-filter-shell">
               <div className="panel-head">
                 <div>
-                  <div className="panel-title">待出貨訂單</div>
-                  <div className="panel-desc">出貨前先檢查收款狀態，再依 inventory_logs 可用數量扣減。</div>
+                  <div className="panel-title">訂單清單篩選</div>
+                  <div className="panel-desc">確認收款與庫存後進行出貨。</div>
                 </div>
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
               </div>
 
-              <div className="accounting-filter-grid warehouse-filter-grid">
-                <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶</span><input value={warehouseKeyword} onChange={(e) => setWarehouseKeyword(e.target.value)} placeholder="輸入訂單編號、客戶姓名、收款狀態、出貨狀態" /></label>
+              <div className="accounting-filter-grid warehouse-filter-grid warehouse-filter-shell-grid">
+                <label className="field-card field-span-2 scanner-inline-card"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶</span><div className="scanner-input-wrap"><input value={warehouseKeyword} onChange={(e) => setWarehouseKeyword(e.target.value)} placeholder="輸入訂單編號、客戶姓名、收款狀態、出貨狀態" /><button type="button" className="scan-inline-icon-btn" onClick={handleQueryScanLaunch} aria-label="掃描搜尋訂單"><QrCode className="small-icon" /></button></div></label>
                 <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />開始日期</span><input type="date" value={warehouseDateStart} onChange={(e) => setWarehouseDateStart(e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />結束日期</span><input type="date" value={warehouseDateEnd} onChange={(e) => setWarehouseDateEnd(e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />收款狀態</span><select value={warehousePaymentFilter} onChange={(e) => setWarehousePaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
                 <label className="field-card"><span className="field-label"><Truck className="small-icon" />出貨狀態</span><select value={warehouseShippingFilter} onChange={(e) => setWarehouseShippingFilter(e.target.value)}><option value="全部">全部</option><option value="待出貨">待出貨</option><option value="理貨中">理貨中</option><option value="已出貨">已出貨</option><option value="換貨待出庫">換貨待出庫</option><option value="已退貨">已退貨</option></select></label>
               </div>
+            </div>
 
+            <div className="card order-panel warehouse-queue-card">
+              <div className="panel-head compact-head">
+                <div>
+                  <div className="panel-title">訂單清單</div>
+                  <div className="panel-desc">查看訂單後完成驗證與出貨。</div>
+                </div>
+                <Layers3 className="small-icon" />
+              </div>
               <div className="shipping-queue">
-                {filteredWarehouseQueue.map((item: any) => (
+                {pagedWarehouseQueue.map((item: any) => (
                   <button key={item.orderNo} type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
                     <div>
                       <div className="shipping-order">{item.orderNo}</div>
@@ -106,14 +135,22 @@ export default function InventoryModule(props: any) {
                     </div>
                   </button>
                 ))}
-                {!filteredWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
+                {!pagedWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
+              </div>
+              <div className="pagination-row">
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setShippingPage((page) => Math.max(1, page - 1))} disabled={shippingSafePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+                <div className="pagination-pages">
+                  {shippingPageNumbers.map((page) => (
+                    <button key={page} type="button" className={`pagination-page ${shippingSafePage === page ? 'active' : ''}`} onClick={() => setShippingPage(page)}>{page}</button>
+                  ))}
+                </div>
+                <button type="button" className="ghost-button pagination-btn" onClick={() => setShippingPage((page) => Math.min(shippingTotalPages, page + 1))} disabled={shippingSafePage === shippingTotalPages}>下一頁<ChevronRight className="small-icon" /></button>
               </div>
             </div>
-
           </div>
 
           <div className="warehouse-side warehouse-stack">
-            <div className="card order-panel sticky-panel warehouse-side-panel">
+            <div className="card order-panel sticky-panel warehouse-side-panel warehouse-command-panel">
               <div className="warehouse-side-section">
                 <div className="warehouse-card-head">
                   <div>
@@ -134,13 +171,13 @@ export default function InventoryModule(props: any) {
                   </div>
                 </div>
 
-                <div className="warehouse-form-grid">
+                <div className="warehouse-form-grid warehouse-command-fields">
                   <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '未選擇'}</strong></div>
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
                   <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
                   <div className="fake-field"><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
-                  <div className="fake-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /></strong></div>
-                  <div className="fake-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /></strong></div>
+                  <div className="fake-field scanner-inline-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /><button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcodeLaunch} aria-label="掃描商品條碼"><QrCode className="small-icon" /></button></strong></div>
+                  <div className="fake-field scanner-inline-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /><button type="button" className="scan-inline-icon-btn" onClick={handleScanQrLaunch} aria-label="掃描 QR 身分識別"><QrCode className="small-icon" /></button></strong></div>
                   <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
                 </div>
 
@@ -169,32 +206,13 @@ export default function InventoryModule(props: any) {
                 </div>
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
-
-              <div className="warehouse-side-section warehouse-reminder-panel">
-                <div className="panel-head compact-head">
-                  <div>
-                    <div className="panel-title">出貨狀態</div>
-                    <div className="panel-desc">查看本次出貨狀態。</div>
-                  </div>
-                  <BellRing className="small-icon" />
-                </div>
-                <div className="stack-list compact warehouse-reminder-stack">
-                  {warehouseReminderItems.map((item: any, index: number) => (
-                    <div key={`${item.text}-${index}`} className={`warehouse-reminder-item tone-${item.tone}`}>
-                      <BellRing className="small-icon" />
-                      <span>{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="warehouse-reminder-footer">請依狀態完成作業。</div>
-              </div>
             </div>
           </div>
         </section>
       )}
 
       {warehouseTab === 'stock' && (
-        <section className="warehouse-stack-section">
+        <section className="warehouse-stack-section warehouse-stock-shell">
           <div className="card order-panel warehouse-stock-overview-card">
             <div className="panel-head compact-head">
               <div>
@@ -203,7 +221,7 @@ export default function InventoryModule(props: any) {
               <span className="badge badge-soft">共 {stockSnapshot.length} 項</span>
             </div>
 
-            <div className="warehouse-stock-grid compact">
+            <div className="warehouse-stock-grid compact warehouse-stock-card-grid">
               {stockSnapshot.map((item: any) => (
                 <button key={item.code} type="button" className={`card stock-snapshot-card compact accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
                   <div className="stock-card-top compact">
@@ -229,7 +247,7 @@ export default function InventoryModule(props: any) {
             </div>
           </div>
 
-          <div className="card warehouse-tool-card">
+          <div className="card warehouse-tool-card warehouse-inbound-card">
             <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><Boxes className="small-icon" /></div>
             <div className="warehouse-form-grid">
               <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
@@ -237,7 +255,7 @@ export default function InventoryModule(props: any) {
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
-              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /></strong></div>
+              <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
               <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
               <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
             </div>
@@ -248,7 +266,7 @@ export default function InventoryModule(props: any) {
             {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
           </div>
 
-          <div className="card order-panel">
+          <div className="card order-panel warehouse-log-shell">
             <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div></div></div>
             <div className="warehouse-log-list">
               {warehouseRecentLogs.map((item: any) => (
@@ -263,26 +281,21 @@ export default function InventoryModule(props: any) {
       )}
 
       {warehouseTab === 'query' && (
-        <section className="warehouse-stack-section">
-          <div className="warehouse-query-grid">
+        <section className="warehouse-stack-section warehouse-query-shell">
+          <div className="warehouse-query-grid warehouse-query-examples-grid">
             {queryExamples.map((item: any) => <div key={item.label} className="card query-card"><div className="query-label">{item.label}</div><div className="query-value">{item.value}</div></div>)}
           </div>
 
-          <div className="warehouse-tool-grid">
+          <div className="warehouse-tool-grid warehouse-query-panels">
             <div className="card warehouse-tool-card">
               <div className="warehouse-card-head"><div><div className="flow-title">庫存查詢</div></div><Search className="small-icon" /></div>
-              <div className="warehouse-tab-row warehouse-query-mode-row">
-                <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'barcode' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('barcode')}>商品條碼</button>
-                <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'qr' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('qr')}>QR 身分識別</button>
-                <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'order' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('order')}>訂單編號</button>
-              </div>
+
               <div className="warehouse-form-grid">
-                <div className="fake-field wide"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /></strong></div>
+                <div className="fake-field wide scanner-inline-field"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR 身分識別 / 訂單編號" /><button type="button" className="scan-inline-icon-btn" onClick={handleQueryScanLaunch} aria-label="掃描查詢條件"><QrCode className="small-icon" /></button></strong></div>
               </div>
               <div className="accounting-action-row">
                 <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>
-                <button type="button" className="ghost-button" onClick={handleWarehouseScanFill}><QrCode className="small-icon" />掃碼帶入</button>
-              </div>
+                              </div>
               {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
             </div>
 

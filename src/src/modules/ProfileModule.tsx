@@ -1,107 +1,291 @@
-import { QrCode, RefreshCw, Search, CalendarRange, Phone, User2, ClipboardList } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
+const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
 
 export default function ProfileModule(props: any) {
-  const { personalOrders, personalSummary, profileQuickActions, user, getRankClass, keyword, setKeyword, priceTierLabel, SectionIntro, SummaryCard, ownCustomerRecords = [], allOrderRecords = [] } = props;
+  const {
+    user, getRankClass, priceTierLabel,
+    evaluationQuarter, setEvaluationQuarter,
+    evaluationTargets = [], evaluationSubmissions = [], evaluationNotice, submitEvaluation,
+    dashboardRadarMetrics = [], myEvaluationQuarterResult, evaluationResults = [],
+  } = props;
 
-  const myCustomerCards = ownCustomerRecords.map((customer: any) => {
-    const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
-    const latestOrder = relatedOrders[0];
+  const [selectedTargetId, setSelectedTargetId] = useState('');
+  const [draft, setDraft] = useState({ sales: 32, collaboration: 20, professional: 16, efficiency: 12 });
+
+  const selectedTarget = useMemo(
+    () => evaluationTargets.find((item: any) => item.loginId === selectedTargetId) || evaluationTargets[0] || null,
+    [evaluationTargets, selectedTargetId]
+  );
+
+  const selectedTargetIdSafe = selectedTarget?.loginId || '';
+  const submittedTargetMap = useMemo(() => new Set(
+    evaluationSubmissions
+      .filter((item: any) => item.quarter === evaluationQuarter && item.evaluatorLoginId === user.loginId)
+      .map((item: any) => item.targetLoginId)
+  ), [evaluationSubmissions, evaluationQuarter, user.loginId]);
+
+  function updateField(key: 'sales' | 'collaboration' | 'professional' | 'efficiency', value: string, max: number) {
+    const next = Number(value || 0);
+    setDraft((prev) => ({ ...prev, [key]: Math.max(0, Math.min(max, Math.round(next))) }));
+  }
+
+  function handleSubmit() {
+    if (!selectedTargetIdSafe) return;
+    const ok = submitEvaluation?.(selectedTargetIdSafe, draft);
+    if (ok) {
+      setDraft({ sales: 32, collaboration: 20, professional: 16, efficiency: 12 });
+    }
+  }
+
+  const canEvaluate = user.rankKey === 'core';
+  const rankingTree = dashboardRadarMetrics.length ? dashboardRadarMetrics : [
+    { label: '業績', value: 0 },
+    { label: '協作', value: 0 },
+    { label: '專業', value: 0 },
+    { label: '效率', value: 0 },
+  ];
+  const averageScore = myEvaluationQuarterResult?.total || 0;
+  const medal = myEvaluationQuarterResult?.medal || '精進級';
+
+  const quarterIndex = quarterOptions.indexOf(evaluationQuarter);
+  const previousQuarter = quarterIndex > 0 ? quarterOptions[quarterIndex - 1] : null;
+  const previousQuarterResult = useMemo(
+    () => previousQuarter ? evaluationResults.find((item: any) => item.quarter === previousQuarter && item.loginId === user.loginId) || null : null,
+    [evaluationResults, previousQuarter, user.loginId]
+  );
+  const radarLevels = [1, 0.75, 0.5, 0.25];
+  const svgSize = 360;
+  const center = svgSize / 2;
+  const outerRadius = 92;
+  const labelRadius = 136;
+  const radarPoints = rankingTree.map((item: any, index: number) => {
+    const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
+    const radius = outerRadius * ((item.value || 0) / 100);
+    const axisX = center + Math.cos(angle) * outerRadius;
+    const axisY = center + Math.sin(angle) * outerRadius;
+    const labelX = center + Math.cos(angle) * labelRadius;
+    const labelY = center + Math.sin(angle) * labelRadius;
     return {
-      ...customer,
-      orderCount: relatedOrders.length,
-      latestOrderNo: latestOrder?.orderNo || '尚無訂單',
-      latestOrderStatus: latestOrder ? `${latestOrder.paymentStatus} / ${latestOrder.shippingStatus}` : '尚無訂單',
+      ...item,
+      x: center + Math.cos(angle) * radius,
+      y: center + Math.sin(angle) * radius,
+      axisX,
+      axisY,
+      labelX,
+      labelY,
+      textAnchor: index === 1 ? 'start' : index === 3 ? 'end' : 'middle',
+      labelOffsetY: index === 0 ? -8 : index === 2 ? 10 : -2,
+      scoreOffsetY: index === 0 ? 18 : index === 2 ? 36 : 20,
     };
   });
+  const radarPolygon = radarPoints.map((item: any) => `${item.x},${item.y}`).join(' ');
 
   return (
-    <>
-      <SectionIntro
-        title="個人資料"
-        desc="個人資料、業績、歷史訂單與客戶資料。"
-        stats={[`歷史訂單 ${personalOrders.length} 筆`, `我的客戶 ${myCustomerCards.length} 位`, '掃碼與刷新']}
-      />
-
-      <section className="summary-grid">
-        {personalSummary.map((item: any) => <SummaryCard key={item.title} title={item.title} value={item.value} sub={item.sub} />)}
-      </section>
-
-      <section className="profile-action-grid">
-        {profileQuickActions.map((item: any) => {
-          const Icon = item.icon;
-          return <div key={item.title} className="card profile-action-card"><div className="profile-action-icon"><Icon className="small-icon" /></div><div className="profile-action-title">{item.title}</div><div className="profile-action-desc">{item.desc}</div></div>;
-        })}
-      </section>
-
-      <section className="two-column-grid profile-top-grid">
-        <div className="card order-panel">
-          <div className="panel-head"><div><div className="panel-title">個人資料</div><div className="panel-desc">查看個人資訊。</div></div><span className="badge badge-role">個人資料</span></div>
-          <div className="profile-identity-card">
-            <div className="profile-avatar">秉</div>
-            <div className="profile-main">
-              <div className="profile-name">{user.name}</div>
-              <div className="profile-id-row">員工編號：VP001 / 登入 ID：{user.loginId}</div>
-              <div className="data-chip-row"><span className="badge badge-role">角色 / 管理</span><span className={getRankClass(user.rank)}>階級 / {user.rank}</span><span className="badge badge-neutral">價格層級 / {priceTierLabel}</span></div>
-            </div>
-            <div className="profile-qr-box"><QrCode className="profile-qr-icon" /><span>員編 QR</span></div>
-          </div>
+    <section className="evaluation-shell evaluation-shell-v2">
+      <div className="card evaluation-hero-card evaluation-hero-card-v2">
+        <div>
+          <div className="evaluation-kicker">評鑑系統</div>
+          <div className="evaluation-title">核心夥伴季度匿名評鑑</div>
+          <div className="evaluation-desc">雷達能力圖已移到評鑑專區，目前只開放核心人員查看與送出評鑑。</div>
         </div>
-
-        <div className="card order-panel">
-          <div className="panel-head compact-head"><div><div className="panel-title">我的累積業績</div><div className="panel-desc">查看業績與排名。</div></div></div>
-          <div className="profile-performance-grid">
-            <div className="metric-box large"><span>累積業績</span><strong>$128,600</strong></div>
-            <div className="metric-box large"><span>完成訂單數</span><strong>86</strong></div>
-            <div className="metric-box large"><span>目前排名</span><strong>#3</strong></div>
-            <div className="metric-box large"><span>退款扣回影響</span><strong>-$1,240</strong></div>
-          </div>
-          <div className="profile-note-list"><div className="profile-note-item">本月主力商品：女神酵素液 / 美妍X關鍵賦活飲</div><div className="profile-note-item">待追蹤：1 筆待收款、2 筆待出貨、1 筆換貨處理</div></div>
-        </div>
-      </section>
-
-      <section className="card order-panel profile-customer-panel">
-        <div className="panel-head">
+        <div className="evaluation-identity">
+          <div className="evaluation-avatar">評</div>
           <div>
-            <div className="panel-title">客戶資料</div>
-            <div className="panel-desc">只顯示自己負責的客戶資料。</div>
+            <div className="evaluation-user">{user.name}</div>
+            <div className="data-chip-row wrap">
+              <span className="badge badge-role">帳號 / {user.loginId}</span>
+              <span className={getRankClass(user.rank)}>{user.rank}</span>
+              <span className="badge badge-neutral">價格層級 / {priceTierLabel}</span>
+            </div>
           </div>
-          <span className="badge badge-neutral">姓名 / 電話 / 訂單</span>
         </div>
+      </div>
 
-        <div className="profile-customer-grid">
-          {myCustomerCards.map((item: any) => (
-            <div key={item.id} className="profile-customer-card">
-              <div className="profile-customer-head">
-                <div className="profile-customer-name"><User2 className="small-icon" />{item.name}</div>
-                <span className="badge badge-soft">{item.orderCount} 筆</span>
+      {!canEvaluate && (
+        <div className="card evaluation-lock-card evaluation-lock-card-wide">
+          <Lock className="small-icon" />
+          <div>
+            <div className="evaluation-card-title">目前僅核心人員可進入評鑑專區</div>
+            <div className="evaluation-card-subtitle">非核心身分會自動隱藏評鑑入口，避免誤進與誤操作。</div>
+          </div>
+        </div>
+      )}
+
+      {canEvaluate && (
+        <>
+          <div className="evaluation-quarter-row">
+            {quarterOptions.map((item) => (
+              <button key={item} type="button" className={`dashboard-quarter-btn ${evaluationQuarter === item ? 'active' : ''}`} onClick={() => setEvaluationQuarter?.(item)}>{item}</button>
+            ))}
+          </div>
+
+          <div className="evaluation-radar-shell">
+            <div className="card evaluation-radar-card">
+              <div className="panel-head">
+                <div>
+                  <div className="panel-title">個人評鑑雷達能力圖</div>
+                  <div className="panel-desc">能力項目已整合為業績、協作、專業、效率，直接集中在評鑑模組查看。</div>
+                </div>
+                <span className="badge badge-soft">{evaluationQuarter}</span>
               </div>
-              <div className="profile-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
-              <div className="profile-customer-order">
-                <div className="profile-customer-order-no"><ClipboardList className="small-icon" />{item.latestOrderNo}</div>
-                <div className="profile-customer-order-status">{item.latestOrderStatus}</div>
+              <div className="dashboard-tree-layout radar-layout evaluation-radar-layout">
+                <div className="dashboard-tree-visual radar-visual">
+                  <svg className="dashboard-radar-svg" viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="個人評鑑雷達能力圖">
+                    {radarLevels.map((level) => {
+                      const points = rankingTree.map((_: any, index: number) => {
+                        const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
+                        const radius = outerRadius * level;
+                        const x = center + Math.cos(angle) * radius;
+                        const y = center + Math.sin(angle) * radius;
+                        return `${x},${y}`;
+                      }).join(' ');
+                      return <polygon key={level} points={points} className="dashboard-radar-grid" />;
+                    })}
+                    {radarPoints.map((item: any) => (
+                      <line key={item.label} x1={center} y1={center} x2={item.axisX} y2={item.axisY} className="dashboard-radar-axis" />
+                    ))}
+                    <polygon points={radarPolygon} className="dashboard-radar-shape" />
+                    {radarPoints.map((item: any) => (
+                      <circle key={item.label} cx={item.x} cy={item.y} r="5.5" className="dashboard-radar-point" />
+                    ))}
+                    <g className="dashboard-radar-center-group">
+                      <circle cx={center} cy={center} r="30" className="dashboard-radar-center-disc" />
+                      <text x={center} y={center - 4} textAnchor="middle" className="dashboard-radar-center-title">綜合評分</text>
+                      <text x={center} y={center + 18} textAnchor="middle" className="dashboard-radar-center-score">{averageScore}</text>
+                    </g>
+                    {radarPoints.map((item: any) => (
+                      <g key={item.label} className="dashboard-radar-label-group">
+                        <text x={item.labelX} y={item.labelY + item.labelOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-label">{item.label}</text>
+                        <text x={item.labelX} y={item.labelY + item.scoreOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-score">{item.value}</text>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+                <div className="dashboard-tree-score-grid radar-summary-grid evaluation-radar-summary-grid">
+                  {rankingTree.map((item: any) => {
+                    const previousValue = previousQuarterResult
+                      ? (item.label === '業績' ? previousQuarterResult.sales : item.label === '協作' ? previousQuarterResult.collaboration : item.label === '專業' ? previousQuarterResult.professional : previousQuarterResult.efficiency)
+                      : null;
+                    const delta = previousValue === null ? null : item.value - previousValue;
+                    const improved = delta !== null && delta >= 0;
+                    return (
+                      <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card evaluation-radar-summary-card">
+                        <span className="dashboard-tree-label">{item.label}</span>
+                        <strong className="dashboard-tree-score">{item.value}</strong>
+                        <small className="dashboard-tree-mini-desc">{evaluationQuarter} 能力得分</small>
+                        <div className={`evaluation-delta-row ${delta === null ? 'neutral' : improved ? 'up' : 'down'}`}>
+                          {delta === null ? (
+                            <span>尚無前季資料</span>
+                          ) : improved ? (
+                            <>
+                              <ArrowUpRight className="tiny-icon" />
+                              <span>比 {previousQuarter} +{delta}</span>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownRight className="tiny-icon" />
+                              <span>比 {previousQuarter} {delta}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          ))}
-          {!myCustomerCards.length && <div className="warehouse-empty-state">沒有屬於你的客戶資料</div>}
-        </div>
-      </section>
 
-      <section className="card order-panel profile-history-panel">
-        <div className="panel-head"><div><div className="panel-title">我的歷史訂單</div><div className="panel-desc">可搜尋、掃碼與重新整理。</div></div><div className="history-toolbar"><button type="button" className="ghost-button compact-btn"><QrCode className="small-icon" />掃碼</button><button type="button" className="ghost-button compact-btn"><RefreshCw className="small-icon" />重新整理</button></div></div>
-        <div className="history-filter-row"><div className="search-wrap inline-search"><Search className="search-icon" /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="搜尋訂單編號 / 狀態 / 日期" /></div><button type="button" className="primary-button compact-primary">搜尋</button></div>
-        <div className="history-list">
-          {personalOrders.filter((item: any) => !keyword.trim() || `${item.orderNo} ${item.date} ${item.paymentStatus} ${item.shippingStatus} ${item.mainStatus}`.toLowerCase().includes(keyword.trim().toLowerCase())).map((item: any) => (
-            <div key={item.orderNo} className="history-row">
-              <div className="history-main">
-                <div className="history-order">{item.orderNo}</div>
-                <div className="history-meta"><CalendarRange className="small-icon" />{item.date}</div>
-                <div className="history-statuses"><span className={`badge ${item.paymentStatus.includes('已收款') ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span><span className={`badge ${item.shippingStatus.includes('已出貨') || item.shippingStatus.includes('理貨') ? 'badge-success' : item.shippingStatus.includes('換貨') ? 'badge-neutral' : 'badge-danger'}`}>{item.shippingStatus}</span><span className="badge badge-soft">{item.mainStatus}</span></div>
+            <div className="card evaluation-radar-side-card">
+              <div className="evaluation-card-head"><Radar className="small-icon" /><span>本季總覽</span></div>
+              <div className="evaluation-bullets">
+                <div>季度：{evaluationQuarter}</div>
+                <div>綜合評分：{averageScore}</div>
+                <div>榮譽稱號：{medal}</div>
+                <div>評鑑對象：{evaluationTargets.length} 位核心人員</div>
               </div>
-              <div className="history-side"><div className="history-amount">${item.amount}</div><button type="button" className="ghost-button compact-btn history-detail-btn">查看詳情</button></div>
             </div>
-          ))}
-        </div>
-      </section>
-    </>
+          </div>
+
+          <div className="evaluation-target-grid">
+            {evaluationTargets.map((item: any) => {
+              const submitted = submittedTargetMap.has(item.loginId);
+              return (
+                <button
+                  key={item.loginId}
+                  type="button"
+                  className={`card evaluation-target-card ${selectedTargetIdSafe === item.loginId ? 'active' : ''}`}
+                  onClick={() => setSelectedTargetId(item.loginId)}
+                >
+                  <div className="evaluation-target-top">
+                    <div className="evaluation-target-name"><UserRound className="tiny-icon" />{item.name}</div>
+                    <span className={`badge ${submitted ? 'badge-success' : 'badge-soft'}`}>{submitted ? '已送出' : '待評鑑'}</span>
+                  </div>
+                  <div className="evaluation-target-meta">{item.loginId} / {item.role || '核心夥伴'}</div>
+                </button>
+              );
+            })}
+            {!evaluationTargets.length && <div className="card evaluation-empty-card">目前抓不到其他核心成員，請先確認人員資料。</div>}
+          </div>
+
+          <div className="evaluation-grid evaluation-form-grid-v2">
+            <div className="card evaluation-card evaluation-form-card">
+              <div className="evaluation-card-head"><Vote className="small-icon" /><span>匿名評分</span></div>
+              <div className="evaluation-form-head">
+                <div>
+                  <div className="evaluation-card-title">評鑑對象：{selectedTarget?.name || '請先選擇'}</div>
+                  <div className="evaluation-card-subtitle">本季：{evaluationQuarter} / 測試期間可重複送出</div>
+                </div>
+                <span className="badge badge-role">匿名制</span>
+              </div>
+              <div className="evaluation-score-grid">
+                <label className="field-card"><span className="field-label">業績（0-40）</span><input type="number" min="0" max="40" value={draft.sales} onChange={(e) => updateField('sales', e.target.value, 40)} disabled={!selectedTarget} /></label>
+                <label className="field-card"><span className="field-label">協作（0-25）</span><input type="number" min="0" max="25" value={draft.collaboration} onChange={(e) => updateField('collaboration', e.target.value, 25)} disabled={!selectedTarget} /></label>
+                <label className="field-card"><span className="field-label">專業（0-20）</span><input type="number" min="0" max="20" value={draft.professional} onChange={(e) => updateField('professional', e.target.value, 20)} disabled={!selectedTarget} /></label>
+                <label className="field-card"><span className="field-label">效率（0-15）</span><input type="number" min="0" max="15" value={draft.efficiency} onChange={(e) => updateField('efficiency', e.target.value, 15)} disabled={!selectedTarget} /></label>
+              </div>
+              <div className="evaluation-submit-row">
+                <div className="evaluation-total-box">
+                  <span>總分</span>
+                  <strong>{draft.sales + draft.collaboration + draft.professional + draft.efficiency}</strong>
+                </div>
+                <button type="button" className="primary-button" disabled={!selectedTarget} onClick={handleSubmit}><Send className="small-icon" />送出評鑑</button>
+              </div>
+              {evaluationNotice && <div className={`inline-action-notice ${evaluationNotice.tone}`}><strong>{evaluationNotice.text}</strong></div>}
+            </div>
+
+            <div className="card evaluation-card">
+              <div className="evaluation-card-head"><ClipboardCheck className="small-icon" /><span>本季規則</span></div>
+              <div className="evaluation-bullets">
+                <div>只有核心人員可進行評鑑</div>
+                <div>目前只評其他核心人員，不可自評</div>
+                <div>匿名送出，但系統保留送出紀錄用於防重覆</div>
+                <div>測試期間暫時解除鎖定，可重複送出驗證流程</div>
+              </div>
+            </div>
+
+            <div className="card evaluation-card">
+              <div className="evaluation-card-head"><BarChart3 className="small-icon" /><span>能力維度</span></div>
+              <div className="evaluation-bullets">
+                <div>業績：結果導向與回款效率</div>
+                <div>協作：跨部支援與團隊整合</div>
+                <div>專業：SOP、知識沉澱、避險能力</div>
+                <div>效率：追蹤、落地、時效與品質</div>
+              </div>
+            </div>
+
+            <div className="card evaluation-card accent">
+              <div className="evaluation-card-head"><Medal className="small-icon" /><span>榮譽稱號</span></div>
+              <div className="evaluation-bullets">
+                <div>領航級：90-100 分</div>
+                <div>專業級：70-89 分</div>
+                <div>精進級：0-69 分</div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
   );
 }

@@ -1,12 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Bell,
-  LogOut,
-  Search,
   RefreshCw,
+  LogOut,
   Database,
   Wifi,
   WifiOff,
@@ -27,7 +26,6 @@ import {
   Store,
   MapPin,
   Phone,
-  User,
   Wallet,
   BadgePercent,
   FileText,
@@ -49,9 +47,17 @@ import InventoryModule from './modules/InventoryModule';
 import AccountingModule from './modules/AccountingModule';
 import ProfileModule from './modules/ProfileModule';
 
+
+type BeforeInstallPromptEvent = Event & {
+  readonly platforms?: string[];
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
+
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
+type MobileNavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'more';
 
 type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number; sourceDocId?: string };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
@@ -71,7 +77,12 @@ type ShippingMethod = '宅配' | '店到店' | '自取';
 type CartItem = Product & { qty: number };
 type WarehouseTab = 'shipping' | 'stock' | 'query';
 type WarehouseQueryMode = 'barcode' | 'qr' | 'order';
-type AccountingTab = 'ops' | 'stats' | 'ranking';
+type AccountingTab = 'ops' | 'bonus' | 'treasury' | 'stats' | 'ranking' | 'evaluation';
+type EvaluationQuarter = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+type EvaluationMetric = 'sales' | 'collaboration' | 'professional' | 'efficiency';
+type EvaluationDraft = { sales: number; collaboration: number; professional: number; efficiency: number; };
+type EvaluationSubmission = { id: string; quarter: EvaluationQuarter; evaluatorLoginId: string; evaluatorName: string; evaluateeLoginId: string; evaluateeName: string; sales: number; collaboration: number; professional: number; efficiency: number; total: number; submittedAt: string; isAnonymous: boolean; };
+type EvaluationResultRow = { loginId: string; name: string; quarter: EvaluationQuarter; sales: number; collaboration: number; professional: number; efficiency: number; total: number; kValue: number; medal: string; submissionCount: number; };
 
 type WorkflowCard = {
   title: string;
@@ -120,6 +131,50 @@ type AccountingDraft = {
   paymentMethod: string;
   invoiceNo: string;
   proof: string;
+};
+
+type TreasuryDraft = {
+  orderNo: string;
+  customer: string;
+  refundAmount: string;
+  payoutMethod: string;
+  proof: string;
+  note: string;
+};
+
+type TreasuryExpenseDraft = {
+  category: string;
+  amount: string;
+  referenceNo: string;
+  note: string;
+  proof: string;
+};
+
+type TreasuryExpenseRecord = {
+  id: string;
+  category: string;
+  amount: number;
+  referenceNo: string;
+  note: string;
+  proof: string;
+  createdAt: string;
+  operator: string;
+};
+
+type BonusDraft = {
+  date: string;
+  time: string;
+  amount: string;
+  note: string;
+};
+
+type BonusRecord = {
+  id: string;
+  date: string;
+  time: string;
+  amount: number;
+  note: string;
+  operator: string;
 };
 
 type OrderRecord = {
@@ -277,15 +332,26 @@ function buildRecentWarehouseLogs(logs: InventoryLog[]) {
 }
 
 const navItems: { key: NavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { key: 'dashboard', label: '總覽', icon: BarChart3 },
+  { key: 'dashboard', label: '儀表板', icon: BarChart3 },
   { key: 'orders', label: '訂購', icon: ShoppingCart },
   { key: 'inventory', label: '倉儲', icon: Warehouse },
-  { key: 'accounting', label: '會計中心', icon: CreditCard },
+  { key: 'accounting', label: '會計', icon: CreditCard },
   { key: 'products', label: '商品', icon: Package },
   { key: 'customers', label: '客戶', icon: Users },
   { key: 'staff', label: '人員', icon: UserCog },
-  { key: 'profile', label: '個人資料', icon: ClipboardList },
+  { key: 'profile', label: '評鑑', icon: ClipboardList },
 ];
+
+const NAV_ENGLISH_LABEL: Record<NavKey, string> = {
+  dashboard: 'Dashboard',
+  orders: 'Orders',
+  inventory: 'Warehouse',
+  accounting: 'Accounting',
+  products: 'Products',
+  customers: 'Customers',
+  staff: 'Staff',
+  profile: 'Evaluation',
+};
 
 
 const ROLE_NAV_ACCESS: Record<Role, NavKey[]> = {
@@ -345,6 +411,14 @@ function getTierPrice(product: Product, rankKey: Rank) {
 
 function canAccessNav(role: Role, key: NavKey) {
   return ROLE_NAV_ACCESS[role].includes(key);
+}
+
+function canAccessEvaluation(user: SessionUser) {
+  return user.rankKey === 'core' && canAccessNav(user.role, 'profile');
+}
+
+function getProfileTriggerLabel(name: string) {
+  return name?.trim()?.charAt(1) || name?.trim()?.charAt(0) || '我';
 }
 
 function getPermissionProfile(role: Role, rankKey: Rank): PermissionProfile {
@@ -418,6 +492,75 @@ function getRankToneClass(rankKey: Rank) {
   }
 }
 
+
+
+const EVALUATION_METRIC_META: Array<{ key: EvaluationMetric; label: string; max: number; desc: string }> = [
+  { key: 'sales', label: '業績', max: 40, desc: '專案達成 / 結果導向' },
+  { key: 'collaboration', label: '協作', max: 25, desc: '協作整合 / 團隊效能' },
+  { key: 'professional', label: '專業', max: 20, desc: '資產化貢獻 / 長期價值' },
+  { key: 'efficiency', label: '效率', max: 15, desc: '執行落地 / 時效品質' },
+];
+
+const EVALUATION_QUARTERS: EvaluationQuarter[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+function makeEvaluationDraft(): EvaluationDraft {
+  return { sales: 32, collaboration: 20, professional: 16, efficiency: 12 };
+}
+
+function calculateEvaluationTotal(scores: EvaluationDraft | EvaluationSubmission) {
+  return Number(scores.sales || 0) + Number(scores.collaboration || 0) + Number(scores.professional || 0) + Number(scores.efficiency || 0);
+}
+
+function getEvaluationMedal(total: number) {
+  if (total >= 90) return '領航級';
+  if (total >= 70) return '專業級';
+  return '精進級';
+}
+
+function getEvaluationK(total: number) {
+  if (total >= 90) return 1.2;
+  if (total >= 80) return 1.1;
+  if (total >= 70) return 1.0;
+  if (total >= 60) return 0.95;
+  return 0.9;
+}
+
+function normalizeRankKeyFromLabel(rank: string): Rank {
+  if (String(rank || '').includes('核心')) return 'core';
+  if (String(rank || '').includes('菁英')) return 'elite';
+  if (String(rank || '').includes('高級')) return 'senior';
+  return 'normal';
+}
+
+function buildSeedEvaluationSubmissions(coreMembers: Array<{ loginId: string; name: string }>): EvaluationSubmission[] {
+  const basePairs = [];
+  for (let i = 0; i < coreMembers.length; i += 1) {
+    for (let j = 0; j < coreMembers.length; j += 1) {
+      if (i === j) continue;
+      const evaluator = coreMembers[i];
+      const evaluatee = coreMembers[j];
+      basePairs.push({ evaluator, evaluatee, quarter: i % 2 === 0 ? 'Q1' : 'Q2' });
+    }
+  }
+  return basePairs.slice(0, Math.min(basePairs.length, 8)).map((pair, index) => {
+    const sales = 30 + ((index * 3) % 9);
+    const collaboration = 18 + ((index * 2) % 6);
+    const professional = 13 + (index % 5);
+    const efficiency = 10 + (index % 4);
+    return {
+      id: `seed-eval-${index + 1}`,
+      quarter: pair.quarter as EvaluationQuarter,
+      evaluatorLoginId: pair.evaluator.loginId,
+      evaluatorName: pair.evaluator.name,
+      evaluateeLoginId: pair.evaluatee.loginId,
+      evaluateeName: pair.evaluatee.name,
+      sales, collaboration, professional, efficiency,
+      total: sales + collaboration + professional + efficiency,
+      submittedAt: `2026-04-0${(index % 8) + 1} 10:${String((index + 1) * 4).padStart(2, '0')}:00`,
+      isAnonymous: true,
+    };
+  });
+}
 
 const shippingQueue = [
   { orderNo: 'VP20260331-001', customer: '王小美', paymentStatus: '已收款', shippingStatus: '待出貨', itemCount: 3, urgency: 'high', shippingMethod: '宅配', address: '新竹市東區食品路 88 號', trackingNo: '未建立', scanStatus: '待掃碼驗證', qrSummary: 'E401*2 / P301*1' },
@@ -597,7 +740,7 @@ const workflowCards: WorkflowCard[] = [
     bullets: ['商品列表 / 分類 / 搜尋', '客戶資料 / 配送欄位', '訂單主檔 / 訂單明細'],
   },
   {
-    title: '會計中心',
+    title: '會計',
     desc: '收款、退款與報表。',
     accent: 'gold',
     icon: CreditCard,
@@ -611,8 +754,8 @@ const workflowCards: WorkflowCard[] = [
     bullets: ['出貨 / 庫存 / 查詢', '商品條碼 / QR 身分識別', '入庫 / 出貨 / 退貨 / 換貨'],
   },
   {
-    title: '個人資料',
-    desc: '個人資料、訂單與業績。',
+    title: '評鑑',
+    desc: '評鑑與後續投票機制。',
     accent: 'lavender',
     icon: ClipboardList,
     bullets: ['歷史訂單', '累積業績 / 排名', '身分 / 階級 / 價格層級'],
@@ -621,14 +764,11 @@ const workflowCards: WorkflowCard[] = [
 
 const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : ({} as Record<string, string>);
 
-const firebaseProjectId = env.VITE_FIREBASE_PROJECT_ID || '';
-const firebaseStorageBucket = env.VITE_FIREBASE_STORAGE_BUCKET || (firebaseProjectId ? `${firebaseProjectId}.firebasestorage.app` : '');
-
 const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY || '',
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: firebaseProjectId,
-  storageBucket: firebaseStorageBucket,
+  projectId: env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: env.VITE_FIREBASE_APP_ID || '',
 };
@@ -651,7 +791,7 @@ function getDb() {
 function getStorageService() {
   const app = getFirebaseAppInstance();
   if (!app || !firebaseConfig.storageBucket) return null;
-  return getStorage(app, `gs://${firebaseConfig.storageBucket}`);
+  return getStorage(app);
 }
 
 function normalizeProduct(id: string, data: any): Product {
@@ -1163,6 +1303,7 @@ function getActualReceived(untaxedAmount: number, taxRate: number, shippingFee: 
   return untaxedAmount + getTaxAmount(untaxedAmount, taxRate) + shippingFee;
 }
 
+
 function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
   if (!record) {
     return {
@@ -1194,9 +1335,42 @@ function makeAccountingDraft(record?: OrderRecord | null): AccountingDraft {
     taxRate: String(taxRate),
     shippingFee: String(shippingFee),
     actualReceived: String(actualReceived),
-    paymentMethod: record.paymentMethod || (record.paymentStatus === '已收款' ? '銀行轉帳' : '待確認'),
-    invoiceNo: record.invoiceNo || (record.paymentStatus.includes('退款') ? '退款單' : '待補'),
-    proof: record.proof || (record.paymentStatus === '已收款' ? '已上傳' : record.paymentStatus.includes('退款') ? '退款流程中' : '待上傳'),
+    paymentMethod: record.paymentMethod || '待確認',
+    invoiceNo: record.invoiceNo || '待補',
+    proof: record.proof || '待上傳',
+  };
+}
+
+function makeTreasuryDraft(record?: OrderRecord | null): TreasuryDraft {
+  return {
+    orderNo: record?.orderNo || '',
+    customer: record?.customer || '',
+    refundAmount: String(typeof record?.actualReceived === 'number' ? record.actualReceived : record?.amount || 0),
+    payoutMethod: record?.paymentMethod || '原路退回',
+    proof: record?.proof || '待上傳',
+    note: record?.paymentStatus === '退款處理中' ? '退款進行中，待出納撥款完成。' : '',
+  };
+}
+
+function makeTreasuryExpenseDraft(): TreasuryExpenseDraft {
+  return {
+    category: '進貨支出',
+    amount: '',
+    referenceNo: '',
+    note: '',
+    proof: '待上傳',
+  };
+}
+
+function makeBonusDraft(): BonusDraft {
+  const now = new Date();
+  const date = now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+  const time = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hour12: false });
+  return {
+    date,
+    time,
+    amount: '',
+    note: '',
   };
 }
 
@@ -1296,18 +1470,12 @@ function WorkflowModule({ card }: { card: WorkflowCard }) {
   );
 }
 
-function SectionIntro({ title, desc, stats = [] }: { title: string; desc: string; stats?: string[] }) {
+function SectionIntro({ title, desc }: { title: string; desc: string; stats?: string[] }) {
   return (
-    <section className="section-intro card">
-      <div className="section-intro-copy">
-        <div className="page-kicker">Velvet Pulse Workspace</div>
+    <section className="section-intro-shell section-intro-shell-minimal">
+      <div className="section-intro-main">
         <h2 className="section-intro-title">{title}</h2>
-        <p className="section-intro-desc">{desc}</p>
-      </div>
-      <div className="section-intro-stats">
-        {stats.map((item) => (
-          <div key={item} className="section-intro-stat">{item}</div>
-        ))}
+        {desc ? <p className="section-intro-desc">{desc}</p> : null}
       </div>
     </section>
   );
@@ -1334,6 +1502,8 @@ export default function App() {
   const [active, setActive] = useState<NavKey>('dashboard');
   const [booting, setBooting] = useState(true);
   const [bootMessage, setBootMessage] = useState('初始化中...');
+  const [logoImage, setLogoImage] = useState('');
+  const [dashboardAvatarImage, setDashboardAvatarImage] = useState('');
   const [keyword, setKeyword] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -1341,6 +1511,8 @@ export default function App() {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const productImageInputRef = useRef<HTMLInputElement | null>(null);
   const accountingProofInputRef = useRef<HTMLInputElement | null>(null);
+  const treasuryProofInputRef = useRef<HTMLInputElement | null>(null);
+  const treasuryExpenseProofInputRef = useRef<HTMLInputElement | null>(null);
   const [dataMode, setDataMode] = useState<'firebase' | 'offline'>('offline');
   const [userRoleView, setUserRoleView] = useState<Role>('admin');
   const [userRankView, setUserRankView] = useState<Rank>('core');
@@ -1358,7 +1530,7 @@ export default function App() {
   const [customerName, setCustomerName] = useState('王小美');
   const [customerPhone, setCustomerPhone] = useState('0912345678');
   const [customerAddress, setCustomerAddress] = useState('新竹市東區食品路 88 號');
-  const [remark, setRemark] = useState('晚上可收件，若自取請先通知。');
+  const [remark, setRemark] = useState('晚上可收件，若自取請先提醒。');
   const [discountMode, setDiscountMode] = useState<'無' | '固定金額'>('無');
   const [discountValue, setDiscountValue] = useState(0);
   const [warehouseTab, setWarehouseTab] = useState<WarehouseTab>('shipping');
@@ -1395,6 +1567,24 @@ export default function App() {
     text: '✅ 會計頁已重補，可直接切換訂單與操作提示',
     tone: 'success',
   });
+  const [selectedTreasuryOrderNo, setSelectedTreasuryOrderNo] = useState('');
+  const [treasuryDraft, setTreasuryDraft] = useState<TreasuryDraft>(() => makeTreasuryDraft(null));
+  const [treasuryExpenseDraft, setTreasuryExpenseDraft] = useState<TreasuryExpenseDraft>(() => makeTreasuryExpenseDraft());
+  const [treasuryExpenseLogs, setTreasuryExpenseLogs] = useState<TreasuryExpenseRecord[]>([]);
+  const [bonusDraft, setBonusDraft] = useState<BonusDraft>(() => makeBonusDraft());
+  const [bonusLogs, setBonusLogs] = useState<BonusRecord[]>([]);
+  const [treasuryNotice, setTreasuryNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
+    text: '✅ 出納子頁已啟動，可接手退款撥款與支出登記',
+    tone: 'success',
+  });
+  const [evaluationQuarter, setEvaluationQuarter] = useState<EvaluationQuarter>('Q1');
+  const [selectedEvaluateeLoginId, setSelectedEvaluateeLoginId] = useState('');
+  const [evaluationDraft, setEvaluationDraft] = useState<EvaluationDraft>(() => makeEvaluationDraft());
+  const [evaluationNotice, setEvaluationNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
+    text: '✅ 評鑑系統第一版已啟動，評分採匿名送出。',
+    tone: 'success',
+  });
+  const [evaluationSubmissions, setEvaluationSubmissions] = useState<EvaluationSubmission[]>([]);
   const [orderCategory, setOrderCategory] = useState('全部商品');
   const orderCategoryChips = useMemo(() => ['全部商品', ...Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean)))], [products]);
 
@@ -1580,6 +1770,171 @@ export default function App() {
     if (!selectedAccountingOrderNo && orderRecords[0]?.orderNo) setSelectedAccountingOrderNo(orderRecords[0].orderNo);
     if (!selectedStaffId && staff[0]?.id) setSelectedStaffId(staff[0].id);
   }, [products, orderRecords, staff, selectedStockCode, selectedProductId, selectedOrderNo, selectedWarehouseOrderNo, selectedAccountingOrderNo, selectedStaffId]);
+
+  const coreMembers = useMemo(() => {
+    const base = staff
+      .filter((item) => normalizeRankKeyFromLabel(item.rank) === 'core' || String(item.rank).includes('核心'))
+      .map((item) => ({ id: item.id, loginId: item.loginId, name: item.name, rank: item.rank }));
+    if (user.rankKey === 'core' && !base.some((item) => item.loginId === user.loginId)) {
+      base.unshift({ id: user.loginId, loginId: user.loginId, name: user.name, rank: user.rank });
+    }
+    return base;
+  }, [staff, user.loginId, user.name, user.rank, user.rankKey]);
+
+  useEffect(() => {
+    if (!selectedEvaluateeLoginId) {
+      const firstTarget = coreMembers.find((item) => item.loginId !== user.loginId);
+      if (firstTarget) setSelectedEvaluateeLoginId(firstTarget.loginId);
+    }
+  }, [coreMembers, selectedEvaluateeLoginId, user.loginId]);
+
+  useEffect(() => {
+    if (!evaluationSubmissions.length && coreMembers.length >= 2) {
+      setEvaluationSubmissions(buildSeedEvaluationSubmissions(coreMembers));
+    }
+  }, [coreMembers, evaluationSubmissions.length]);
+
+  const evaluationTargets = useMemo(() => coreMembers.filter((item) => item.loginId !== user.loginId), [coreMembers, user.loginId]);
+  const selectedEvaluatee = useMemo(() => evaluationTargets.find((item) => item.loginId === selectedEvaluateeLoginId) || evaluationTargets[0] || null, [evaluationTargets, selectedEvaluateeLoginId]);
+  const hasSubmittedSelectedEvaluation = useMemo(() => {
+    if (!selectedEvaluatee) return false;
+    return evaluationSubmissions.some((item) => item.quarter === evaluationQuarter && item.evaluatorLoginId === user.loginId && item.evaluateeLoginId === selectedEvaluatee.loginId);
+  }, [evaluationQuarter, evaluationSubmissions, selectedEvaluatee, user.loginId]);
+
+  const evaluationResults = useMemo(() => {
+    const rows: EvaluationResultRow[] = [];
+    EVALUATION_QUARTERS.forEach((quarter) => {
+      coreMembers.forEach((member) => {
+        const received = evaluationSubmissions.filter((item) => item.quarter === quarter && item.evaluateeLoginId === member.loginId);
+        const sales = received.length ? Math.round(received.reduce((sum, item) => sum + item.sales, 0) / received.length) : 0;
+        const collaboration = received.length ? Math.round(received.reduce((sum, item) => sum + item.collaboration, 0) / received.length) : 0;
+        const professional = received.length ? Math.round(received.reduce((sum, item) => sum + item.professional, 0) / received.length) : 0;
+        const efficiency = received.length ? Math.round(received.reduce((sum, item) => sum + item.efficiency, 0) / received.length) : 0;
+        const total = sales + collaboration + professional + efficiency;
+        rows.push({
+          loginId: member.loginId,
+          name: member.name,
+          quarter,
+          sales, collaboration, professional, efficiency, total,
+          kValue: getEvaluationK(total),
+          medal: getEvaluationMedal(total),
+          submissionCount: received.length,
+        });
+      });
+    });
+    return rows;
+  }, [coreMembers, evaluationSubmissions]);
+
+  const evaluationQuarterResults = useMemo(() => evaluationResults.filter((item) => item.quarter === evaluationQuarter).sort((a, b) => b.total - a.total), [evaluationResults, evaluationQuarter]);
+  const myEvaluationQuarterResult = useMemo(() => evaluationQuarterResults.find((item) => item.loginId === user.loginId) || null, [evaluationQuarterResults, user.loginId]);
+  const dashboardRadarMetrics = useMemo(() => ([
+    { label: '業績', value: myEvaluationQuarterResult?.sales || 0 },
+    { label: '協作', value: myEvaluationQuarterResult?.collaboration || 0 },
+    { label: '專業', value: myEvaluationQuarterResult?.professional || 0 },
+    { label: '效率', value: myEvaluationQuarterResult?.efficiency || 0 },
+  ]), [myEvaluationQuarterResult]);
+
+  const evaluationSubmissionsForProfile = useMemo(() => evaluationSubmissions.map((item) => ({
+    ...item,
+    targetLoginId: item.evaluateeLoginId,
+    targetName: item.evaluateeName,
+  })), [evaluationSubmissions]);
+
+  const evaluationSummaryForAccounting = useMemo(() => evaluationQuarterResults.map((item) => ({
+    quarter: evaluationQuarter,
+    loginId: item.loginId,
+    name: item.name,
+    averageScores: {
+      sales: item.sales,
+      collaboration: item.collaboration,
+      professional: item.professional,
+      efficiency: item.efficiency,
+    },
+    totalScore: item.total,
+    kValue: item.kValue,
+    badge: item.medal,
+    submissionCount: item.submissionCount,
+  })), [evaluationQuarter, evaluationQuarterResults]);
+
+  const submitEvaluation = (targetLoginId: string, draft: { sales: number; collaboration: number; professional: number; efficiency: number; }) => {
+    if (user.rankKey !== 'core') {
+      setEvaluationNotice({ text: '❌ 目前只有核心人員可進行評鑑', tone: 'danger' });
+      return false;
+    }
+    const target = evaluationTargets.find((item) => item.loginId === targetLoginId) || null;
+    if (!target) {
+      setEvaluationNotice({ text: '❌ 目前沒有可評鑑的核心成員', tone: 'danger' });
+      return false;
+    }
+    const safeDraft = {
+      sales: Math.max(0, Math.min(40, Math.round(Number(draft.sales || 0)))),
+      collaboration: Math.max(0, Math.min(25, Math.round(Number(draft.collaboration || 0)))),
+      professional: Math.max(0, Math.min(20, Math.round(Number(draft.professional || 0)))),
+      efficiency: Math.max(0, Math.min(15, Math.round(Number(draft.efficiency || 0)))),
+    };
+    if (!window.confirm(`確認送出 ${evaluationQuarter} 對 ${target.name} 的匿名評鑑？目前為測試模式，可重複送出。`)) return false;
+    const nextItem: EvaluationSubmission = {
+      id: `eval-${Date.now()}`,
+      quarter: evaluationQuarter,
+      evaluatorLoginId: user.loginId,
+      evaluatorName: user.name,
+      evaluateeLoginId: target.loginId,
+      evaluateeName: target.name,
+      sales: safeDraft.sales,
+      collaboration: safeDraft.collaboration,
+      professional: safeDraft.professional,
+      efficiency: safeDraft.efficiency,
+      total: safeDraft.sales + safeDraft.collaboration + safeDraft.professional + safeDraft.efficiency,
+      submittedAt: getTaipeiTimestamp(),
+      isAnonymous: true,
+    };
+    setEvaluationSubmissions((prev) => [nextItem, ...prev]);
+    setEvaluationNotice({ text: `✅ ${evaluationQuarter} 匿名評鑑已送出，目前為測試模式，可再次送出`, tone: 'success' });
+    return true;
+  };
+
+  const saveEvaluationSubmission = () => {
+    if (user.rankKey !== 'core') {
+      setEvaluationNotice({ text: '❌ 目前只有核心人員可進行評鑑', tone: 'danger' });
+      return;
+    }
+    if (!selectedEvaluatee) {
+      setEvaluationNotice({ text: '❌ 目前沒有可評鑑的核心成員', tone: 'danger' });
+      return;
+    }
+    if (hasSubmittedSelectedEvaluation) {
+    }
+    const metricIssues = EVALUATION_METRIC_META.some((meta) => Number((evaluationDraft as any)[meta.key]) < 0 || Number((evaluationDraft as any)[meta.key]) > meta.max);
+    if (metricIssues) {
+      setEvaluationNotice({ text: '❌ 分數超出可評範圍，請重新確認', tone: 'danger' });
+      return;
+    }
+    const confirmed = window.confirm(`你即將以匿名方式送出 ${evaluationQuarter} 對 ${selectedEvaluatee.name} 的評鑑。測試期間可重複送出，是否確認？`);
+    if (!confirmed) return;
+    const nextItem: EvaluationSubmission = {
+      id: `eval-${Date.now()}`,
+      quarter: evaluationQuarter,
+      evaluatorLoginId: user.loginId,
+      evaluatorName: user.name,
+      evaluateeLoginId: selectedEvaluatee.loginId,
+      evaluateeName: selectedEvaluatee.name,
+      sales: Number(evaluationDraft.sales || 0),
+      collaboration: Number(evaluationDraft.collaboration || 0),
+      professional: Number(evaluationDraft.professional || 0),
+      efficiency: Number(evaluationDraft.efficiency || 0),
+      total: calculateEvaluationTotal(evaluationDraft),
+      submittedAt: getTaipeiTimestamp(),
+      isAnonymous: true,
+    };
+    setEvaluationSubmissions((prev) => [nextItem, ...prev]);
+    setEvaluationNotice({ text: `✅ ${selectedEvaluatee.name} 的 ${evaluationQuarter} 評鑑已匿名送出，測試期間可重複送出`, tone: 'success' });
+  };
+
+  const updateEvaluationDraftField = (field: EvaluationMetric, value: number) => {
+    const meta = EVALUATION_METRIC_META.find((item) => item.key === field);
+    const safeValue = Math.max(0, Math.min(Number(meta?.max || 0), Number(value || 0)));
+    setEvaluationDraft((prev) => ({ ...prev, [field]: safeValue }));
+  };
 
   const filteredProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -1937,7 +2292,7 @@ export default function App() {
     }
   }, [stockSnapshot, selectedStockCode]);
 
-  const runWarehouseQuery = (input = warehouseQueryInput, mode = warehouseQueryMode) => {
+  const runWarehouseQuery = (input = warehouseQueryInput) => {
     const value = input.trim();
     if (!value) {
       setWarehouseNotice({ text: '❌ 請先輸入查詢條件', tone: 'danger' });
@@ -1946,30 +2301,20 @@ export default function App() {
 
     const normalized = value.toUpperCase();
 
-    if (mode === 'barcode') {
-      const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
-      if (!matched) {
-        setWarehouseQueryResult([{ title: '查無商品條碼', desc: `找不到 ${value} 的商品資料`, meta: ['請改掃 QR 或訂單編號'] }]);
-        setWarehouseNotice({ text: '❌ 商品條碼查無資料', tone: 'danger' });
-        return;
-      }
-      setSelectedStockCode(matched.code);
+    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
+    if (matchedOrder) {
+      setSelectedWarehouseOrderNo(matchedOrder.orderNo);
       setWarehouseQueryResult([{
-        title: matched.name,
-        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
-        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
+        title: matchedOrder.orderNo,
+        desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
+        meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
       }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
+      setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
       return;
     }
 
-    if (mode === 'qr') {
-      const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
-      if (!matchedLogs.length) {
-        setWarehouseQueryResult([{ title: '查無 QR 身分識別', desc: `找不到 ${value} 的 QR 記錄`, meta: ['請確認是否已入庫'] }]);
-        setWarehouseNotice({ text: '❌ QR 身分識別查無資料', tone: 'danger' });
-        return;
-      }
+    const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
+    if (matchedLogs.length) {
       const latest = [...matchedLogs].sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))[0];
       const balance = matchedLogs.reduce((sum, item) => sum + (item.type === '入庫' ? item.qty : -item.qty), 0);
       setWarehouseQueryResult([{
@@ -1981,19 +2326,24 @@ export default function App() {
       return;
     }
 
-    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
-    if (!matchedOrder) {
-      setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
-      setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
+    const matched = stockSnapshot.find((item) =>
+      item.code.toUpperCase().includes(normalized) ||
+      (item.name || '').toUpperCase().includes(normalized) ||
+      String((products.find((p) => p.code === item.code)?.barcode) || '').toUpperCase().includes(normalized)
+    );
+    if (matched) {
+      setSelectedStockCode(matched.code);
+      setWarehouseQueryResult([{
+        title: matched.name,
+        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
+        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
+      }]);
+      setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
       return;
     }
-    setSelectedWarehouseOrderNo(matchedOrder.orderNo);
-    setWarehouseQueryResult([{
-      title: matchedOrder.orderNo,
-      desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
-      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
-    }]);
-    setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
+
+    setWarehouseQueryResult([{ title: '查無資料', desc: `找不到 ${value} 的庫存 / QR / 訂單資料`, meta: ['請確認商品條碼、QR 身分識別或訂單編號'] }]);
+    setWarehouseNotice({ text: '❌ 查無資料', tone: 'danger' });
   };
 
   const handleWarehouseShip = async () => {
@@ -2383,7 +2733,95 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const accountingTaxAmount = getTaxAmount(accountingUntaxedAmount, accountingTaxRateNumber);
   const accountingActualReceived = getActualReceived(accountingUntaxedAmount, accountingTaxRateNumber, accountingShippingFeeNumber);
 
+
+  const treasuryQueue = useMemo(
+    () => orderRecords
+      .filter((item) => item.paymentStatus === '退款處理中' || item.paymentStatus === '已退款')
+      .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date) || b.orderNo.localeCompare(a.orderNo)),
+    [orderRecords],
+  );
+
+  useEffect(() => {
+    if (!treasuryQueue.length) return;
+    if (!treasuryQueue.some((item) => item.orderNo === selectedTreasuryOrderNo)) {
+      setSelectedTreasuryOrderNo(treasuryQueue[0].orderNo);
+    }
+  }, [treasuryQueue, selectedTreasuryOrderNo]);
+
+  const selectedTreasuryRecord = useMemo(
+    () => treasuryQueue.find((item) => item.orderNo === selectedTreasuryOrderNo) || treasuryQueue[0] || null,
+    [treasuryQueue, selectedTreasuryOrderNo],
+  );
+
+  useEffect(() => {
+    setTreasuryDraft(makeTreasuryDraft(selectedTreasuryRecord));
+  }, [selectedTreasuryRecord?.orderNo, orderRecords]);
+
+  const treasuryReminderCount = useMemo(
+    () => treasuryQueue.filter((item) => item.paymentStatus === '退款處理中' && (!item.proof || item.proof === '待上傳')).length,
+    [treasuryQueue],
+  );
+
+  const treasuryPendingAmount = useMemo(
+    () => treasuryQueue
+      .filter((item) => item.paymentStatus === '退款處理中')
+      .reduce((sum, item) => sum + (typeof item.actualReceived === 'number' ? item.actualReceived : item.amount), 0),
+    [treasuryQueue],
+  );
+
+  const treasuryPaidAmount = useMemo(
+    () => treasuryQueue
+      .filter((item) => item.paymentStatus === '已退款')
+      .reduce((sum, item) => sum + (typeof item.actualReceived === 'number' ? item.actualReceived : item.amount), 0),
+    [treasuryQueue],
+  );
+
+  const treasuryExpenseTotal = useMemo(
+    () => treasuryExpenseLogs.reduce((sum, item) => sum + item.amount, 0),
+    [treasuryExpenseLogs],
+  );
+
+  const bonusTotal = useMemo(
+    () => bonusLogs.reduce((sum, item) => sum + item.amount, 0),
+    [bonusLogs],
+  );
+
+  const treasuryReminders = useMemo(
+    () => treasuryQueue
+      .filter((item) => item.paymentStatus === '退款處理中')
+      .map((item) => ({
+        orderNo: item.orderNo,
+        customer: item.customer,
+        missingProof: !item.proof || item.proof === '待上傳',
+        amount: typeof item.actualReceived === 'number' ? item.actualReceived : item.amount,
+      })),
+    [treasuryQueue],
+  );
+
+  const treasurySummary = useMemo(() => ([
+    { title: '退款進行中', value: `$${treasuryPendingAmount.toLocaleString()}`, sub: `待出納處理 ${treasuryQueue.filter((item) => item.paymentStatus === '退款處理中').length} 筆` },
+    { title: '已完成退款', value: `$${treasuryPaidAmount.toLocaleString()}`, sub: '已完成實際撥款' },
+    { title: '提醒中', value: String(treasuryReminderCount), sub: '缺退款證明將持續提醒' },
+    { title: '支出總額', value: `$${treasuryExpenseTotal.toLocaleString()}`, sub: '目前為前端暫存紀錄' },
+  ]), [treasuryPendingAmount, treasuryQueue, treasuryPaidAmount, treasuryReminderCount, treasuryExpenseTotal]);
+
+  const treasuryExpenseCategories = ['進貨支出', '運費支出', '雜項支出', '請款撥付'];
+
   const accountingOpsTotal = filteredAccountingQueue.reduce((sum, item) => sum + item.amount, 0);
+
+  const accountingBoardsView = useMemo(() => ([
+    { title: '已收款總額', value: `$${orderRecords.filter((item) => item.paymentStatus === '已收款').reduce((sum, item) => sum + (item.actualReceived ?? item.amount), 0).toLocaleString()}`, sub: '訂單入帳總覽' },
+    { title: '退款總額', value: `$${treasuryPaidAmount.toLocaleString()}`, sub: '出納完成撥款' },
+    { title: '支出總額', value: `$${treasuryExpenseTotal.toLocaleString()}`, sub: '採購 / 運費 / 雜支' },
+    { title: '獎金入帳', value: `$${bonusTotal.toLocaleString()}`, sub: `共 ${bonusLogs.length} 筆獎金入帳` },
+  ]), [orderRecords, treasuryPaidAmount, treasuryExpenseTotal, bonusTotal, bonusLogs.length]);
+
+  const accountingTrendBarsView = useMemo(() => {
+    const maxValue = Math.max(...accountingTrendBars.map((item) => item.value), bonusTotal || 0, 1);
+    const base = accountingTrendBars.map((item) => ({ ...item, width: Math.round((item.value / maxValue) * 100) }));
+    if (!bonusTotal) return base;
+    return [...base, { label: '獎金', value: bonusTotal, width: Math.round((bonusTotal / maxValue) * 100) }];
+  }, [bonusTotal]);
 
   const profilePersonalOrders = useMemo(() => orderRecords.map((item) => ({
     orderNo: item.orderNo,
@@ -2405,7 +2843,26 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
 
-  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
+  const mobilePrimaryNavItems: { key: MobileNavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { key: 'dashboard', label: '儀表板', icon: BarChart3 },
+    { key: 'orders', label: '訂購', icon: ShoppingCart },
+    { key: 'inventory', label: '倉儲', icon: Warehouse },
+    { key: 'accounting', label: '會計', icon: CreditCard },
+    { key: 'more', label: '更多', icon: Boxes },
+  ];
+  const mobileMoreCommonItems = useMemo(() => [
+    { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
+  ].filter((item) => canAccessNav(user.role, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
+  const mobileManagementItems = useMemo(() => [
+    { key: 'products' as NavKey, label: '商品管理', icon: Package },
+    { key: 'customers' as NavKey, label: '客戶管理', icon: Users },
+    { key: 'staff' as NavKey, label: '人員管理', icon: UserCog },
+  ].filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const currentNavItem = navItems.find((item) => item.key === active) || navItems[0];
+  const currentModuleLabel = currentNavItem.label;
+  const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
+
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
   const customerScopeLabel = permissionProfile.canViewAllCustomers
     ? '全部客戶完整資料'
@@ -2416,10 +2873,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         : '無客戶權限';
 
   useEffect(() => {
-    if (!canAccessNav(user.role, active)) {
+    const blockedByRole = !canAccessNav(user.role, active);
+    const blockedEvaluation = active === 'profile' && !canAccessEvaluation(user);
+    if (blockedByRole || blockedEvaluation) {
       setActive(ROLE_NAV_ACCESS[user.role][0]);
     }
-  }, [user.role, active]);
+  }, [user, active]);
 
   function addToCart(item: Product) {
     if (!item.enabled || item.stock <= 0) return;
@@ -2458,63 +2917,30 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return `VPP${String(next).padStart(3, '0')}`;
   }
 
-  async function uploadFileToFirebase(folder: 'products' | 'accounting', file: File, targetKey: string) {
+  async function uploadFileToFirebase(folder: 'products' | 'accounting' | 'treasury', file: File, targetKey: string) {
     const storage = getStorageService();
     if (!storage) throw new Error('storage_not_ready');
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const path = `${folder}/${safeFirestoreDocId(targetKey, folder)}/${Date.now()}_${safeName}`;
     const fileRef = storageRef(storage, path);
-    await uploadBytes(fileRef, file, { contentType: file.type || undefined });
+    await uploadBytes(fileRef, file);
     return await getDownloadURL(fileRef);
-  }
-
-  function getUploadErrorMessage(error: unknown, targetLabel: string) {
-    const code = typeof error === 'object' && error && 'code' in error ? String((error as any).code || '') : '';
-    if (code.includes('storage/unauthorized')) return `❌ ${targetLabel}上傳失敗：Storage 權限不足`;
-    if (code.includes('storage/canceled')) return `❌ ${targetLabel}上傳已取消`;
-    if (code.includes('storage/unknown')) return `❌ ${targetLabel}上傳失敗：Storage 未正確連線`;
-    return `❌ ${targetLabel}上傳失敗`;
   }
 
   async function handleProductImageUpload(file?: File | null) {
     if (!file) return;
-    const draftCode = (productDraft.code || '').trim() || getNextProductCode();
-    const draftBarcode = (productDraft.barcode || draftCode).trim() || draftCode;
-    if (!(productDraft.code || '').trim()) {
-      setProductDraft((prev) => ({ ...prev, code: draftCode, barcode: prev.barcode || draftCode }));
+    const code = (productDraft.code || '').trim();
+    if (!code) {
+      setProductNotice({ text: '❌ 請先填商品編號', tone: 'danger' });
+      return;
     }
     try {
       setProductNotice({ text: '圖片上傳中…', tone: 'neutral' });
-      const imageUrl = await uploadFileToFirebase('products', file, draftCode);
-      setProductDraft((prev) => ({ ...prev, code: prev.code || draftCode, barcode: prev.barcode || draftCode, image: imageUrl }));
-
-      const existingProduct = products.find((item) => item.id === productDraft.id) || products.find((item) => item.code === draftCode) || null;
-      if (existingProduct) {
-        const updatedProduct: Product = {
-          ...existingProduct,
-          id: draftCode,
-          sourceDocId: existingProduct.sourceDocId || existingProduct.id,
-          code: draftCode,
-          barcode: draftBarcode,
-          name: productDraft.name.trim() || existingProduct.name,
-          category: productDraft.category.trim() || existingProduct.category,
-          price: Number(productDraft.price || existingProduct.price || 0),
-          vipPrice: Number(productDraft.vipPrice || existingProduct.vipPrice || existingProduct.price || 0),
-          agentPrice: Number(productDraft.agentPrice || existingProduct.agentPrice || existingProduct.price || 0),
-          generalAgentPrice: Number(productDraft.generalAgentPrice || existingProduct.generalAgentPrice || existingProduct.price || 0),
-          stock: Number(productDraft.stock || existingProduct.stock || 0),
-          enabled: typeof productDraft.enabled === 'boolean' ? productDraft.enabled : existingProduct.enabled,
-          image: imageUrl,
-        };
-        setProducts((prev) => prev.map((item) => item.id === existingProduct.id ? { ...item, ...updatedProduct } : item));
-        await syncProductToFirebase(updatedProduct, updatedProduct.stock);
-        setProductNotice({ text: '✅ 商品圖片已上傳並寫入商品資料', tone: 'success' });
-      } else {
-        setProductNotice({ text: '✅ 商品圖片已上傳，儲存商品後即會顯示', tone: 'success' });
-      }
-    } catch (error) {
-      console.error('product image upload failed', error);
-      setProductNotice({ text: getUploadErrorMessage(error, '商品圖片'), tone: 'danger' });
+      const imageUrl = await uploadFileToFirebase('products', file, code);
+      setProductDraft((prev) => ({ ...prev, image: imageUrl }));
+      setProductNotice({ text: '✅ 商品圖片已上傳', tone: 'success' });
+    } catch {
+      setProductNotice({ text: '❌ 商品圖片上傳失敗', tone: 'danger' });
     } finally {
       if (productImageInputRef.current) productImageInputRef.current.value = '';
     }
@@ -2533,15 +2959,150 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const saved = await saveAccountingDraft();
       if (saved) {
         setAccountingNotice({ text: '✅ 收款證明已上傳', tone: 'success' });
-      } else {
-        setAccountingNotice({ text: '✅ 附件已上傳，待寫入訂單', tone: 'success' });
       }
-    } catch (error) {
-      console.error('accounting proof upload failed', error);
-      setAccountingNotice({ text: getUploadErrorMessage(error, '收款證明'), tone: 'danger' });
+    } catch {
+      setAccountingNotice({ text: '❌ 收款證明上傳失敗', tone: 'danger' });
     } finally {
       if (accountingProofInputRef.current) accountingProofInputRef.current.value = '';
     }
+  }
+
+
+  function updateTreasuryDraftField(field: keyof TreasuryDraft, value: string) {
+    setTreasuryDraft((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function updateTreasuryExpenseField(field: keyof TreasuryExpenseDraft, value: string) {
+    setTreasuryExpenseDraft((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleTreasuryProofUpload(file?: File | null) {
+    if (!file) return;
+    if (!selectedTreasuryRecord && !treasuryExpenseDraft.category) {
+      setTreasuryNotice({ text: '❌ 請先選擇退款單或支出項目', tone: 'danger' });
+      return;
+    }
+    try {
+      setTreasuryNotice({ text: '附件上傳中…', tone: 'neutral' });
+      const targetKey = selectedTreasuryRecord?.orderNo || `expense-${Date.now()}`;
+      const proofUrl = await uploadFileToFirebase('treasury', file, targetKey);
+      if (selectedTreasuryRecord) {
+        setTreasuryDraft((prev) => ({ ...prev, proof: proofUrl }));
+      } else {
+        setTreasuryExpenseDraft((prev) => ({ ...prev, proof: proofUrl }));
+      }
+      setTreasuryNotice({ text: '✅ 出納證明已上傳', tone: 'success' });
+    } catch {
+      setTreasuryNotice({ text: '❌ 出納證明上傳失敗', tone: 'danger' });
+    } finally {
+      if (treasuryProofInputRef.current) treasuryProofInputRef.current.value = '';
+    }
+  }
+
+
+  async function handleTreasuryExpenseProofUpload(file?: File | null) {
+    if (!file) return;
+    try {
+      setTreasuryNotice({ text: '附件上傳中…', tone: 'neutral' });
+      const proofUrl = await uploadFileToFirebase('treasury', file, `expense-${Date.now()}`);
+      setTreasuryExpenseDraft((prev) => ({ ...prev, proof: proofUrl }));
+      setTreasuryNotice({ text: '✅ 支出證明已上傳', tone: 'success' });
+    } catch {
+      setTreasuryNotice({ text: '❌ 支出證明上傳失敗', tone: 'danger' });
+    } finally {
+      if (treasuryExpenseProofInputRef.current) treasuryExpenseProofInputRef.current.value = '';
+    }
+  }
+
+  async function confirmTreasuryRefund() {
+    if (!selectedTreasuryRecord) {
+      setTreasuryNotice({ text: '❌ 尚未選擇退款訂單', tone: 'danger' });
+      return;
+    }
+    if (selectedTreasuryRecord.paymentStatus === '已退款') {
+      setTreasuryNotice({ text: '❌ 此訂單已完成退款', tone: 'danger' });
+      return;
+    }
+    if (!treasuryDraft.proof || treasuryDraft.proof === '待上傳') {
+      setTreasuryNotice({ text: '❌ 請先補上退款證明，否則不能完成撥款', tone: 'danger' });
+      return;
+    }
+    if (!confirmAction(`確認由出納完成退款：${selectedTreasuryRecord.orderNo}？`)) {
+      setTreasuryNotice({ text: '已取消出納退款', tone: 'neutral' });
+      return;
+    }
+
+    const currentOrder = orderRecords.find((item) => item.orderNo === selectedTreasuryRecord.orderNo) || selectedTreasuryRecord;
+    const refundAmount = Number(treasuryDraft.refundAmount || currentOrder.actualReceived || currentOrder.amount || 0);
+    const nextOrder = {
+      ...currentOrder,
+      amount: refundAmount,
+      actualReceived: refundAmount,
+      paymentStatus: '已退款',
+      shippingStatus: currentOrder.shippingStatus === '已出貨' ? '已出貨' : '已退款',
+      mainStatus: '已完成',
+      paymentMethod: treasuryDraft.payoutMethod || currentOrder.paymentMethod || '原路退回',
+      proof: treasuryDraft.proof,
+      remark: [currentOrder.remark, `出納完成退款：${user.loginId}`].filter(Boolean).join('｜'),
+    };
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === selectedTreasuryRecord.orderNo ? nextOrder : item)));
+    await syncOrderBundleToFirebase(nextOrder, { paymentMode: 'refund' });
+    await syncRefundRecordToFirebase(nextOrder);
+    setTreasuryNotice({ text: `✅ 出納已完成退款：${selectedTreasuryRecord.orderNo}`, tone: 'success' });
+    setAccountingNotice({ text: `✅ 出納已完成退款：${selectedTreasuryRecord.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 訂單退款完成：${selectedTreasuryRecord.orderNo}`, tone: 'success' });
+  }
+
+  function saveTreasuryExpense() {
+    const amount = Number(treasuryExpenseDraft.amount || 0);
+    if (!treasuryExpenseDraft.category.trim()) {
+      setTreasuryNotice({ text: '❌ 請選擇支出分類', tone: 'danger' });
+      return;
+    }
+    if (!amount || Number.isNaN(amount) || amount < 0) {
+      setTreasuryNotice({ text: '❌ 支出金額格式錯誤', tone: 'danger' });
+      return;
+    }
+    const nextRecord: TreasuryExpenseRecord = {
+      id: `expense-${Date.now()}`,
+      category: treasuryExpenseDraft.category.trim(),
+      amount,
+      referenceNo: treasuryExpenseDraft.referenceNo.trim() || '未填寫',
+      note: treasuryExpenseDraft.note.trim() || '—',
+      proof: treasuryExpenseDraft.proof || '待上傳',
+      createdAt: getTaipeiTimestamp(),
+      operator: user.loginId,
+    };
+    setTreasuryExpenseLogs((prev) => [nextRecord, ...prev]);
+    setTreasuryExpenseDraft(makeTreasuryExpenseDraft());
+    setTreasuryNotice({ text: `✅ 已新增支出：${nextRecord.category}`, tone: 'success' });
+  }
+
+  function updateBonusDraftField(field: keyof BonusDraft, value: string) {
+    setBonusDraft((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function saveBonusEntry() {
+    const amount = Number(bonusDraft.amount || 0);
+    if (!bonusDraft.date || !bonusDraft.time) {
+      setAccountingNotice({ text: '❌ 請先補齊入帳日期與時間', tone: 'danger' });
+      return;
+    }
+    if (!amount || Number.isNaN(amount) || amount < 0) {
+      setAccountingNotice({ text: '❌ 獎金金額格式錯誤', tone: 'danger' });
+      return;
+    }
+    const nextRecord: BonusRecord = {
+      id: `bonus-${Date.now()}`,
+      date: bonusDraft.date,
+      time: bonusDraft.time,
+      amount,
+      note: bonusDraft.note.trim() || '獎金入帳',
+      operator: user.loginId,
+    };
+    setBonusLogs((prev) => [nextRecord, ...prev]);
+    setBonusDraft(makeBonusDraft());
+    setAccountingNotice({ text: `✅ 已加入獎金入帳：$${amount.toLocaleString()}`, tone: 'success' });
   }
 
   async function syncProductToFirebase(product: Product, stockValue?: number) {
@@ -2753,7 +3314,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           agentPrice,
           generalAgentPrice,
           stock,
-          image: (productDraft.image || '').trim(),
+          image: productDraft.image || '',
           enabled: productDraft.enabled,
         };
         setProducts((prev) => [nextProduct, ...prev]);
@@ -2787,7 +3348,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         agentPrice,
         generalAgentPrice,
         stock,
-        image: (productDraft.image || '').trim(),
+        image: productDraft.image || '',
         enabled: productDraft.enabled,
       };
 
@@ -3069,6 +3630,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setAccountingNotice({ text: `✅ 已切換 ${orderNo}`, tone: 'neutral' });
   }
 
+  function selectTreasuryOrder(orderNo: string) {
+    setSelectedTreasuryOrderNo(orderNo);
+    setTreasuryNotice({ text: `✅ 出納已切換 ${orderNo}`, tone: 'neutral' });
+  }
+
   async function triggerAccountingAction(action: 'pay' | 'refund') {
     if (!selectedAccountingRecord) return;
     if (!await saveAccountingDraft()) return;
@@ -3125,224 +3691,677 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       mainStatus: '退款處理',
     };
     setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === selectedAccountingRecord.orderNo ? refundOrder : item)));
+    setSelectedTreasuryOrderNo(selectedAccountingRecord.orderNo);
     await syncOrderBundleToFirebase(refundOrder, { paymentMode: 'refund' });
     await syncRefundRecordToFirebase(refundOrder);
-    setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}`, tone: 'success' });
+    setAccountingNotice({ text: `✅ 已送出退款確認：${selectedAccountingRecord.orderNo}，等待出納撥款`, tone: 'success' });
+    setTreasuryNotice({ text: `✅ 已接收退款單：${selectedAccountingRecord.orderNo}`, tone: 'success' });
     setOrderNotice({ text: `✅ 會計已同步退款：${selectedAccountingRecord.orderNo}`, tone: 'success' });
   }
 
+  const activeLabel = visibleNavItems.find((item) => item.key === active)?.label || '受限模組';
+
+  const notificationItems = useMemo(() => {
+    const items: Array<{ id: string; title: string; detail: string; tone: 'danger' | 'warning' | 'neutral' }> = [];
+
+    if (active === 'orders') {
+      orderRecords
+        .filter((item) => item.paymentStatus === '未收款')
+        .slice(0, 6)
+        .forEach((item) => {
+          items.push({
+            id: `payment-${item.orderNo}` ,
+            title: `${item.orderNo} 待收款`,
+            detail: `${item.customer}｜應收 $${item.amount.toLocaleString()}`,
+            tone: 'neutral',
+          });
+        });
+    }
+
+    if (active === 'inventory') {
+      orderRecords
+        .filter((item) => item.paymentStatus === '已收款' && item.shippingStatus !== '已出貨')
+        .slice(0, 6)
+        .forEach((item) => {
+          items.push({
+            id: `shipping-${item.orderNo}` ,
+            title: `${item.orderNo} 待出貨`,
+            detail: `${item.customer}｜已收款待倉儲處理`,
+            tone: 'warning',
+          });
+        });
+      stockSnapshot
+        .filter((item) => item.stock <= item.safe)
+        .slice(0, 4)
+        .forEach((item) => {
+          items.push({
+            id: `stock-${item.code}`,
+            title: `${item.name} 低庫存`,
+            detail: `${item.code}｜目前 ${item.stock} / 安全值 ${item.safe}`,
+            tone: 'danger',
+          });
+        });
+    }
+
+    if (active === 'accounting') {
+      if (accountingTab === 'ops') {
+        orderRecords
+          .filter((item) => item.paymentStatus === '未收款')
+          .slice(0, 6)
+          .forEach((item) => {
+            items.push({
+              id: `accounting-pay-${item.orderNo}`,
+              title: `${item.orderNo} 待會計收款`,
+              detail: `${item.customer}｜待確認入帳`,
+              tone: 'neutral',
+            });
+          });
+        if (bonusLogs.length) {
+          items.push({
+            id: 'bonus-summary',
+            title: '獎金入帳已更新',
+            detail: `目前累計 ${bonusLogs.length} 筆 / $${bonusTotal.toLocaleString()}`,
+            tone: 'warning',
+          });
+        }
+      }
+      if (accountingTab === 'treasury') {
+        treasuryQueue
+          .filter((item) => item.paymentStatus === '退款處理中')
+          .forEach((item) => {
+            items.push({
+              id: `refund-${item.orderNo}`,
+              title: `${item.orderNo} 待出納退款`,
+              detail: `${item.customer}｜退款金額 $${(typeof item.actualReceived === 'number' ? item.actualReceived : item.amount).toLocaleString()}`,
+              tone: 'danger',
+            });
+          });
+        treasuryQueue
+          .filter((item) => item.paymentStatus === '退款處理中' && (!item.proof || item.proof === '待上傳'))
+          .forEach((item) => {
+            items.push({
+              id: `proof-${item.orderNo}`,
+              title: `${item.orderNo} 待補退款證明`,
+              detail: `${item.customer}｜未上傳退款證明`,
+              tone: 'warning',
+            });
+          });
+      }
+      if (accountingTab === 'stats' && bonusLogs.length) {
+        items.push({
+          id: 'stats-bonus',
+          title: '營運報表已含獎金入帳',
+          detail: `目前獎金合計 $${bonusTotal.toLocaleString()}`,
+          tone: 'neutral',
+        });
+      }
+    }
+
+    if (active === 'products') {
+      products.filter((item) => !item.enabled).slice(0, 6).forEach((item) => {
+        items.push({
+          id: `product-${item.id}`,
+          title: `${item.name} 尚未啟用`,
+          detail: `${item.code}｜可切換啟用狀態`,
+          tone: 'warning',
+        });
+      });
+    }
+
+    if (active === 'customers') {
+      visibleCustomerRecords.filter((item) => !item.phone || item.phone.trim() === '').slice(0, 6).forEach((item) => {
+        items.push({
+          id: `customer-${item.id}`,
+          title: `${item.name} 待補資料`,
+          detail: '缺少聯絡電話',
+          tone: 'warning',
+        });
+      });
+    }
+
+    if (active === 'staff') {
+      staff.filter((item) => !item.enabled).slice(0, 6).forEach((item) => {
+        items.push({
+          id: `staff-${item.id}`,
+          title: `${item.name} 尚未啟用`,
+          detail: `${item.loginId}｜可於人員模組開啟使用權`,
+          tone: 'warning',
+        });
+      });
+    }
+
+    return items;
+  }, [active, accountingTab, bonusLogs, bonusTotal, orderRecords, products, staff, stockSnapshot, treasuryQueue, visibleCustomerRecords]);
+
+  const notificationCount = notificationItems.length;
+  const notificationPanelRef = useRef<HTMLDivElement | null>(null);
+  const profilePanelRef = useRef<HTMLDivElement | null>(null);
+  const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 900;
+  });
+  const logoImageInputRef = useRef<HTMLInputElement | null>(null);
+  const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [shellHint, setShellHint] = useState('');
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandaloneMode, setIsStandaloneMode] = useState(false);
+
+  useEffect(() => {
+    setLogoImage(localStorage.getItem('vp.logoImage') || '');
+    setDashboardAvatarImage(localStorage.getItem('vp.dashboardAvatarImage') || '');
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (logoImage && !logoImage.startsWith('blob:')) localStorage.setItem('vp.logoImage', logoImage);
+      else if (!logoImage) localStorage.removeItem('vp.logoImage');
+    } catch (error) {
+      console.warn('logo image cache skipped', error);
+    }
+  }, [logoImage]);
+
+  useEffect(() => {
+    try {
+      if (dashboardAvatarImage && !dashboardAvatarImage.startsWith('blob:')) localStorage.setItem('vp.dashboardAvatarImage', dashboardAvatarImage);
+      else if (!dashboardAvatarImage) localStorage.removeItem('vp.dashboardAvatarImage');
+    } catch (error) {
+      console.warn('avatar image cache skipped', error);
+    }
+  }, [dashboardAvatarImage]);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(display-mode: standalone)');
+    const updateStandalone = () => setIsStandaloneMode(media.matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
+    const handleOnline = () => {
+      setIsOnline(true);
+      triggerShellHint('✅ 網路已恢復，PWA 外殼可繼續連線。');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      triggerShellHint('⚠️ 目前離線中，仍可保留基本外殼畫面。');
+    };
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event as BeforeInstallPromptEvent);
+    };
+    const handleAppInstalled = () => {
+      setInstallPromptEvent(null);
+      setIsStandaloneMode(true);
+      triggerShellHint('✅ 已加入主畫面，可用 App 方式開啟。');
+    };
+
+    updateStandalone();
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    media.addEventListener?.('change', updateStandalone);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      media.removeEventListener?.('change', updateStandalone);
+    };
+  }, []);
+
+  async function handleInstallApp() {
+    if (!installPromptEvent) {
+      triggerShellHint(isStandaloneMode ? '✅ 目前已是主畫面模式。' : '目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
+      return;
+    }
+    try {
+      await installPromptEvent.prompt();
+      const choice = await installPromptEvent.userChoice;
+      if (choice.outcome === 'accepted') {
+        triggerShellHint('✅ 已送出安裝指令，完成後可從主畫面開啟。');
+      } else {
+        triggerShellHint('已取消加入主畫面。');
+      }
+      setInstallPromptEvent(null);
+    } catch (error) {
+      console.warn('install prompt failed', error);
+      triggerShellHint('安裝提示啟動失敗，請改用瀏覽器加入主畫面。');
+    }
+  }
+
+  function readImageFile(file: File | null, onDone: (value: string) => void) {
+    if (!file) return;
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      onDone(previewUrl);
+    } catch (error) {
+      console.warn('preview url failed', error);
+    }
+    const reader = new FileReader();
+    reader.onload = () => onDone(String(reader.result || ''));
+    reader.readAsDataURL(file);
+  }
+
+  function handleLogoImageUpload(file: File | null) {
+    readImageFile(file, setLogoImage);
+  }
+
+  function handleDashboardAvatarUpload(file: File | null) {
+    readImageFile(file, setDashboardAvatarImage);
+  }
+
+  function openProfileCenter(mode: 'profile' | 'password' | 'login') {
+    setProfileOpen(false);
+    setMobileMoreOpen(false);
+    if (!canAccessEvaluation(user)) {
+      if (mode === 'password') setShellHint('變更密碼入口已預留，後續可接真實子頁。');
+      else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
+      else setShellHint('目前評鑑專區僅核心人員可進入。');
+      return;
+    }
+    setActive('profile');
+    if (mode === 'password') setShellHint('已切到評鑑頁，可接續放入變更密碼子頁。');
+    else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
+  }
+
+  function triggerShellHint(message: string) {
+    setShellHint(message);
+    if (typeof window !== 'undefined') window.setTimeout(() => setShellHint(''), 2200);
+  }
+
+  useEffect(() => {
+    function handleOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
+        setNotificationOpen(false);
+      }
+      if (profilePanelRef.current && !profilePanelRef.current.contains(target)) {
+        setProfileOpen(false);
+      }
+      if (mobileMoreSheetRef.current && !mobileMoreSheetRef.current.contains(target)) {
+        const element = target as HTMLElement | null;
+        if (!element?.closest('.mobile-nav')) {
+          setMobileMoreOpen(false);
+        }
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+
+  useEffect(() => {
+    setMobileMoreOpen(false);
+  }, [active]);
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand card">
-          <div className="brand-kicker">VP SYSTEM</div>
-          <div className="brand-title">Velvet Pulse</div>
-          <div className="brand-subtitle">真實資料營運後台</div>
-        </div>
+    <div className="vp-shell">
+      <div className="vp-ornament vp-ornament-a" />
+      <div className="vp-ornament vp-ornament-b" />
 
-        <div className="card user-card">
-          <div className="muted-label">登入帳號</div>
-          <div className="user-name">{user.name}</div>
-          <div className="user-id">ID：{user.loginId}</div>
-          <div className="badge-row">
-            <span className="badge badge-role">角色 / {ROLE_LABEL[user.role]}</span>
-            <span className={getRankClass(user.rank)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-          </div>
-        </div>
-
-        <div className="card source-card">
-          <div>
-            <div className="muted-label">資料來源</div>
-            <div className="source-value">{dataMode === 'firebase' ? 'Firebase' : 'Offline'}</div>
-          </div>
-          {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
-        </div>
-
-        <div className="card role-preview-card">
-          <div className="muted-label">權限切換</div>
-          <div className="role-preview-title">目前角色：{ROLE_LABEL[user.role]}</div>
-          <div className="role-switch-group">
-            <div className="role-switch-label">角色</div>
-            <div className="role-switch-row">
-              {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
-                <button
-                  key={role}
-                  type="button"
-                  className={`role-switch-btn ${user.role === role ? 'active' : ''}`}
-                  onClick={() => setUserRoleView(role)}
-                >
-                  {ROLE_LABEL[role]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="role-switch-group">
-            <div className="role-switch-label">階級</div>
-            <div className="rank-switch-row">
-              {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
-                <button
-                  key={rank}
-                  type="button"
-                  className={`rank-switch-btn ${rank} ${user.rankKey === rank ? 'active' : ''}`}
-                  onClick={() => setUserRankView(rank)}
-                >
-                  {RANK_DISPLAY[rank]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="permission-chip-row">
-            <span className={getRankToneClass(user.rankKey)}>階級 / {RANK_DISPLAY[user.rankKey]}</span>
-            <span className="badge badge-neutral">價格層級 / {getPriceTierLabel(user.rankKey)}</span>
-            <span className="badge badge-neutral">客戶範圍 / {customerScopeLabel}</span>
-            <span className="badge badge-neutral">退款 / {permissionProfile.canRefund ? '可執行' : '受限'}</span>
-          </div>
-          <div className="role-preview-desc">切換角色與階級查看畫面。</div>
-        </div>
-
-        <div className="nav-group-title">主功能選單</div>
-        <div className="nav-list">
-          {visibleNavItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setActive(item.key)}
-                className={`nav-button ${active === item.key ? 'active' : ''}`}
-              >
-                <Icon className="nav-icon" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {canAccessNav(user.role, 'accounting') && (
-        <div className="card accounting-shortcut">
-          <div className="shortcut-title">快捷入口</div>
-          <button
-            type="button"
-            onClick={() => setActive('accounting')}
-            className={`shortcut-button ${active === 'accounting' ? 'active' : ''}`}
-          >
-            <CreditCard className="small-icon" />會計中心
+      {!isMobileViewport && (
+      <aside className="vp-sidebar">
+        <div className="vp-brand-panel card">
+          <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
+            {logoImage ? <img src={logoImage} alt="品牌 Logo" className="vp-brand-logo-image" /> : <span>LOGO</span>}
           </button>
+          <input ref={logoImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e: ChangeEvent<HTMLInputElement>) => { handleLogoImageUpload(e.target.files?.[0] || null); e.target.value = ''; }} />
+          <div>
+            <div className="vp-brand-kicker">Velvet Pulse</div>
+            <div className="vp-brand-title">VP訂購ERP</div>
+            <div className="vp-brand-desc">點擊 Logo 區即可上傳品牌圖。</div>
+          </div>
         </div>
-        )}
 
-        <div className="sidebar-tip card">
-          <div className="sidebar-tip-title">系統狀態</div>
-          <div className="sidebar-tip-desc">維持真資料與既有功能邏輯，逐步重整整體版型。</div>
+        <div className="vp-nav-panel card">
+          <div className="vp-panel-label">主選單</div>
+          <div className="vp-nav-list">
+            {visibleNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setActive(item.key)}
+                  className={`vp-nav-button ${active === item.key ? 'active' : ''}`}
+                >
+                  <span className="vp-nav-icon-wrap"><Icon className="nav-icon" /></span>
+                  <span className="vp-nav-copy">
+                    <span className="vp-nav-title">{item.label}</span>
+                    <span className="vp-nav-sub">功能入口</span>
+                  </span>
+                  <ChevronRight className="small-icon vp-nav-arrow" />
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="sidebar-actions">
-          <button type="button" className="ghost-button"><Bell className="small-icon" />通知</button>
-          <button type="button" className="ghost-button"><LogOut className="small-icon" />登出</button>
+        <div className="vp-sidebar-stack">
+          <div className="vp-state-panel card">
+            <div className="vp-panel-label">資料來源</div>
+            <div className="vp-state-row">
+              <div>
+                <div className="vp-state-title">{dataMode === 'firebase' ? 'Firebase' : 'Offline Mock'}</div>
+                <div className="vp-state-desc">{firebaseReady ? '連線中，可逐步回接資料。' : '目前以白紙版 UI 驗收為主。'}</div>
+              </div>
+              {firebaseReady ? <Wifi className="status-icon ok" /> : <WifiOff className="status-icon bad" />}
+            </div>
+          </div>
+
+          <div className="vp-switch-panel card">
+            <div className="vp-panel-label">預覽切換</div>
+            <div className="vp-clean-toggle-group">
+              <div className="clean-toggle-head">角色</div>
+              <div className="clean-toggle-grid">
+                {(['admin', 'sales', 'accounting', 'warehouse'] as Role[]).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className={`clean-mode-chip ${user.role === role ? 'active' : ''}`}
+                    onClick={() => setUserRoleView(role)}
+                    aria-pressed={user.role === role}
+                  >
+                    <span className="clean-mode-dot" />
+                    <span>{ROLE_LABEL[role]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="vp-clean-toggle-group">
+              <div className="clean-toggle-head">階級</div>
+              <div className="clean-toggle-grid clean-toggle-grid-rank">
+                {(['core', 'elite', 'senior', 'normal'] as Rank[]).map((rank) => (
+                  <button
+                    key={rank}
+                    type="button"
+                    className={`clean-mode-chip rank-${rank} ${user.rankKey === rank ? 'active' : ''}`}
+                    onClick={() => setUserRankView(rank)}
+                    aria-pressed={user.rankKey === rank}
+                  >
+                    <span className="clean-mode-dot" />
+                    <span>{RANK_DISPLAY[rank]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
+      )}
 
-      <main className="main-content">
-        <div className="topbar">
-          <div>
-            <div className="section-tag">{visibleNavItems.find((item) => item.key === active)?.label || '受限模組'}</div>
-            <div className="topbar-title">{visibleNavItems.find((item) => item.key === active)?.label || '操作區'}</div>
-            <div className="topbar-subtitle">真資料顯示 · 版型重構中</div>
-          </div>
-          <div className="toolbar">
-            <div className="search-wrap">
-              <Search className="search-icon" />
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
+      <main className="vp-main">
+        <header className="vp-header card">
+          <div className="vp-header-banner">
+            <div className="vp-header-visual">
+              <span className="vp-visual-orb vp-visual-orb-a" />
+              <span className="vp-visual-orb vp-visual-orb-b" />
+              <span className="vp-visual-curve vp-visual-curve-a" />
+              <span className="vp-visual-curve vp-visual-curve-b" />
             </div>
-            <button type="button" className="primary-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
-            </button>
+            <div className="vp-header-branding">
+              <div className="vp-header-module-title">{currentModuleLabel} <span className="vp-header-module-slash">/</span> <span className="vp-header-module-en-inline">{currentModuleEnglish}</span></div>
+            </div>
           </div>
-        </div>
+          <div className="vp-header-tools vp-header-tools-compact">
+            <div className="vp-header-global-tools vp-header-global-tools-top">
+              <div className="vp-header-pwa-strip">
+                <button
+                  type="button"
+                  className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
+                  onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
+                >
+                  {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                  <span>{isOnline ? '連線中' : '離線中'}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
+                  onClick={handleInstallApp}
+                >
+                  <Plus className="small-icon" />
+                  <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
+                </button>
+              </div>
 
-        {booting ? (
-          <div className="card loading-card">
-            <div className="spinner" />
-            <div className="loading-title">{bootMessage}</div>
-            <div className="loading-desc">正在載入資料</div>
+              <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
+                <button
+                  type="button"
+                  className={`vp-icon-only-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
+                  onClick={() => {
+                    setNotificationOpen((prev) => !prev);
+                    setProfileOpen(false);
+                    setMobileMoreOpen(false);
+                  }}
+                  aria-label="提醒"
+                >
+                  <span className="vp-bell-icon-wrap">
+                    <Bell className="small-icon" />
+                    {notificationCount > 0 && <span className="vp-bell-badge">{notificationCount > 99 ? '99+' : notificationCount}</span>}
+                  </span>
+                </button>
+                {notificationOpen && (
+                  <div className="vp-notification-popover">
+                    <div className="vp-notification-head">
+                      <div>
+                        <div className="vp-notification-title">待辦提醒</div>
+                        <div className="vp-notification-sub">未完成事項會自動顯示在這裡</div>
+                      </div>
+                      <span className="vp-notification-count">{notificationCount}</span>
+                    </div>
+                    <div className="vp-notification-list">
+                      {notificationItems.length ? notificationItems.map((item) => (
+                        <div key={item.id} className={`vp-notification-item ${item.tone}`}>
+                          <div className="vp-notification-dot" />
+                          <div className="vp-notification-copy">
+                            <div className="vp-notification-item-title">{item.title}</div>
+                            <div className="vp-notification-item-detail">{item.detail}</div>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="vp-notification-empty">目前沒有待處理事項</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="vp-header-action-group vp-header-action-group-profile" ref={profilePanelRef}>
+                <button
+                  type="button"
+                  className={`vp-profile-trigger-circle ${profileOpen ? 'active' : ''}`}
+                  onClick={() => {
+                    setProfileOpen((prev) => !prev);
+                    setNotificationOpen(false);
+                    setMobileMoreOpen(false);
+                  }}
+                  aria-label="個人中心"
+                >
+                  {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-trigger-image" /> : <span className="vp-profile-trigger-letter">{getProfileTriggerLabel(user.name)}</span>}
+                </button>
+                {profileOpen && (
+                  <div className="vp-profile-popover">
+                    <div className="vp-profile-popover-head">
+                      <div className="vp-profile-popover-id-block">
+                        <button type="button" className="vp-profile-popover-avatar" onClick={() => dashboardAvatarInputRef.current?.click()}>
+                          {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-popover-avatar-image" /> : getProfileTriggerLabel(user.name)}
+                        </button>
+                        <div>
+                          <div className="vp-profile-popover-name">{user.name}</div>
+                          <div className="vp-profile-popover-sub">{ROLE_LABEL[user.role]} · {RANK_DISPLAY[user.rankKey]}</div>
+                        </div>
+                      </div>
+                      <span className={getRankClass(user.rank)}>{RANK_DISPLAY[user.rankKey]}</span>
+                    </div>
+                    <div className="vp-profile-popover-body">
+                      <div className="vp-profile-qr-card">
+                        <div className="vp-profile-qr-box"><QrCode className="vp-profile-qr-icon" /></div>
+                        <div className="vp-profile-qr-copy">
+                          <div className="vp-profile-meta-title">身份 QR</div>
+                          <div className="vp-profile-meta-value">{user.loginId}</div>
+                        </div>
+                      </div>
+                      <div className="vp-profile-meta-grid">
+                        <div className="vp-profile-meta-item"><span>帳號</span><strong>{user.loginId}</strong></div>
+                        <div className="vp-profile-meta-item"><span>階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
+                        <div className="vp-profile-meta-item"><span>價格身分</span><strong>{getPriceTierLabel(user.rankKey)}</strong></div>
+                        <div className="vp-profile-meta-item"><span>榮譽稱號</span><strong>{myEvaluationQuarterResult?.medal || '精進級'}</strong></div>
+                      </div>
+                      <div className="vp-profile-popover-upload-note">點擊頭像可上傳圖片，未上傳時會自動顯示姓名第 2 個字。</div>
+                      <div className="vp-profile-popover-actions">
+                        <button type="button" className="vp-profile-popover-btn primary" onClick={() => openProfileCenter('profile')}>個人設定</button>
+                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
+                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('login')}>登入</button>
+                        <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false);
+                    setMobileMoreOpen(false); triggerShellHint('已登出（UI 示意），後續可接真實登出流程。'); }}>登出</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        ) : (
-          <>
-            <div className={`card banner-card ${firebaseReady ? 'success' : 'warning'}`}>
-              {firebaseReady ? <ShieldCheck className="small-icon" /> : <Database className="small-icon" />}
-              <div>
-                <div className="banner-title">{bootMessage}</div>
-                <div className="banner-desc">
-                  {firebaseReady
-                    ? '已讀取商品、客戶與人員資料。'
-                    : '目前使用本地資料。'}
+        </header>
+
+        {shellHint && <div className="vp-shell-hint">{shellHint}</div>}
+
+        <section className="vp-workspace card">
+          {booting ? (
+            <div className="card loading-card">
+              <div className="spinner" />
+              <div className="loading-title">{bootMessage}</div>
+              <div className="loading-desc">正在載入系統畫面</div>
+            </div>
+          ) : (
+            <>
+              {!canAccessNav(user.role, active) && (
+                <div className="card access-denied-card">
+                  <div className="access-denied-title">此角色不可進入此頁</div>
+                  <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
                 </div>
+              )}
+
+              <div className="vp-module-body">
+                {active === 'dashboard' && (
+                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} dashboardAvatarImage={dashboardAvatarImage} dashboardAvatarInputRef={dashboardAvatarInputRef} handleDashboardAvatarUpload={handleDashboardAvatarUpload} evaluationQuarter={evaluationQuarter} myEvaluationQuarterResult={myEvaluationQuarterResult} />
+                )}
+                {active === 'products' && (
+                  <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
+                )}
+                {active === 'customers' && (
+                  <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
+                )}
+                {active === 'staff' && (
+                  <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
+                )}
+                {active === 'orders' && (
+                  <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
+                )}
+                {active === 'inventory' && (
+                  <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+                )}
+                {active === 'accounting' && (
+                  
+<AccountingModule
+                    paymentQueue={paymentQueue}
+                    accountingSummary={accountingSummary}
+                    accountingTab={accountingTab}
+                    setAccountingTab={setAccountingTab}
+                    filteredAccountingQueue={filteredAccountingQueue}
+                    accountingOpsTotal={accountingOpsTotal}
+                    accountingKeyword={accountingKeyword}
+                    setAccountingKeyword={setAccountingKeyword}
+                    accountingPaymentFilter={accountingPaymentFilter}
+                    setAccountingPaymentFilter={setAccountingPaymentFilter}
+                    accountingShippingFilter={accountingShippingFilter}
+                    setAccountingShippingFilter={setAccountingShippingFilter}
+                    accountingDateStart={accountingDateStart}
+                    setAccountingDateStart={setAccountingDateStart}
+                    accountingDateEnd={accountingDateEnd}
+                    setAccountingDateEnd={setAccountingDateEnd}
+                    accountingNotice={accountingNotice}
+                    selectedAccountingRecord={selectedAccountingRecord}
+                    selectedAccountingSourceRecord={selectedAccountingSourceRecord}
+                    accountingDraft={accountingDraft}
+                    accountingTaxAmount={accountingTaxAmount}
+                    accountingActualReceived={accountingActualReceived}
+                    updateAccountingDraftField={updateAccountingDraftField}
+                    saveAccountingDraft={saveAccountingDraft}
+                    triggerAccountingAction={triggerAccountingAction}
+                    selectAccountingOrder={selectAccountingOrder}
+                    handleAccountingProofUpload={handleAccountingProofUpload}
+                    accountingProofInputRef={accountingProofInputRef}
+                    treasuryQueue={treasuryQueue}
+                    treasurySummary={treasurySummary}
+                    treasuryReminders={treasuryReminders}
+                    selectedTreasuryRecord={selectedTreasuryRecord}
+                    treasuryDraft={treasuryDraft}
+                    treasuryNotice={treasuryNotice}
+                    selectTreasuryOrder={selectTreasuryOrder}
+                    updateTreasuryDraftField={updateTreasuryDraftField}
+                    confirmTreasuryRefund={confirmTreasuryRefund}
+                    handleTreasuryProofUpload={handleTreasuryProofUpload}
+                    treasuryProofInputRef={treasuryProofInputRef}
+                    treasuryExpenseDraft={treasuryExpenseDraft}
+                    updateTreasuryExpenseField={updateTreasuryExpenseField}
+                    saveTreasuryExpense={saveTreasuryExpense}
+                    treasuryExpenseLogs={treasuryExpenseLogs}
+                    treasuryExpenseCategories={treasuryExpenseCategories}
+                    handleTreasuryExpenseProofUpload={handleTreasuryExpenseProofUpload}
+                    treasuryExpenseProofInputRef={treasuryExpenseProofInputRef}
+                    bonusDraft={bonusDraft}
+                    updateBonusDraftField={updateBonusDraftField}
+                    saveBonusEntry={saveBonusEntry}
+                    bonusLogs={bonusLogs}
+                    bonusTotal={bonusTotal}
+                    user={user}
+                    accountingBoards={accountingBoardsView}
+                    accountingTrendBars={accountingTrendBarsView}
+                    salesRanking={salesRanking}
+                    hotProductsBoard={hotProductsBoard}
+                    SectionIntro={SectionIntro}
+                    SummaryCard={SummaryCard}
+                    evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationSummary={evaluationSummaryForAccounting}
+                  />
+                )}
+                {active === 'profile' && (
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} />
+                )}
               </div>
-            </div>
-
-
-            {!canAccessNav(user.role, active) && (
-              <div className="card access-denied-card">
-                <div className="access-denied-title">此角色不可進入此頁</div>
-                <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
-              </div>
-            )}
-
-            {active === 'dashboard' && (
-              <DashboardModule workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} />
-            )}
-            {active === 'products' && (
-              <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
-            )}
-            {active === 'customers' && (
-              <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
-            )}
-            {active === 'staff' && (
-              <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
-            )}
-            {active === 'orders' && (
-              <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]}  orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
-            )}
-            {active === 'inventory' && (
-              <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
-            )}
-            {active === 'accounting' && (
-              <AccountingModule paymentQueue={paymentQueue} accountingSummary={accountingSummary} accountingTab={accountingTab} setAccountingTab={setAccountingTab} filteredAccountingQueue={filteredAccountingQueue} accountingOpsTotal={accountingOpsTotal} accountingKeyword={accountingKeyword} setAccountingKeyword={setAccountingKeyword} accountingPaymentFilter={accountingPaymentFilter} setAccountingPaymentFilter={setAccountingPaymentFilter} accountingShippingFilter={accountingShippingFilter} setAccountingShippingFilter={setAccountingShippingFilter} accountingDateStart={accountingDateStart} setAccountingDateStart={setAccountingDateStart} accountingDateEnd={accountingDateEnd} setAccountingDateEnd={setAccountingDateEnd} accountingNotice={accountingNotice} selectedAccountingRecord={selectedAccountingRecord} selectedAccountingSourceRecord={selectedAccountingSourceRecord} accountingDraft={accountingDraft} accountingTaxAmount={accountingTaxAmount} accountingActualReceived={accountingActualReceived} updateAccountingDraftField={updateAccountingDraftField} saveAccountingDraft={saveAccountingDraft} triggerAccountingAction={triggerAccountingAction} selectAccountingOrder={selectAccountingOrder} handleAccountingProofUpload={handleAccountingProofUpload} accountingProofInputRef={accountingProofInputRef} accountingBoards={accountingBoards} accountingTrendBars={accountingTrendBars} salesRanking={salesRanking} hotProductsBoard={hotProductsBoard} SectionIntro={SectionIntro} SummaryCard={SummaryCard} />
-            )}
-            {active === 'profile' && (
-              <ProfileModule
-                personalOrders={profilePersonalOrders}
-                personalSummary={personalSummary}
-                profileQuickActions={profileQuickActions}
-                user={user}
-                getRankClass={getRankClass}
-                keyword={keyword}
-                setKeyword={setKeyword}
-                priceTierLabel={getPriceTierLabel(user.rankKey)}
-                SectionIntro={SectionIntro}
-                SummaryCard={SummaryCard}
-                ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)}
-                allOrderRecords={orderRecords}
-              />
-            )}
-          </>
-        )}
+            </>
+          )}
+        </section>
 
         <div className="mobile-nav">
-          {[
-            { key: 'dashboard' as NavKey, label: '總覽', icon: BarChart3 },
-            { key: 'orders' as NavKey, label: '訂購', icon: ShoppingCart },
-            { key: 'inventory' as NavKey, label: '倉儲', icon: Warehouse },
-            { key: 'accounting' as NavKey, label: '會計', icon: CreditCard },
-            { key: 'profile' as NavKey, label: '我的', icon: ClipboardList },
-          ].filter((item) => canAccessNav(user.role, item.key)).map((item) => {
+          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user.role, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
             const Icon = item.icon;
+            const isActive = item.key === 'more' ? mobileMoreOpen : (!mobileMoreOpen && active === item.key);
             return (
               <button
                 key={item.key}
                 type="button"
-                className={`mobile-nav-btn ${active === item.key ? 'active' : ''}`}
-                onClick={() => setActive(item.key)}
+                className={`mobile-nav-btn ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (item.key === 'more') {
+                    setMobileMoreOpen((prev) => !prev);
+                    setNotificationOpen(false);
+                    setProfileOpen(false);
+                  } else {
+                    setActive(item.key as NavKey);
+                    setMobileMoreOpen(false);
+                  }
+                }}
               >
                 <Icon className="small-icon" />
                 <span>{item.label}</span>
@@ -3350,6 +4369,69 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             );
           })}
         </div>
+
+        {mobileMoreOpen && (
+          <>
+            <button type="button" className="mobile-more-overlay" aria-label="關閉更多選單" onClick={() => setMobileMoreOpen(false)} />
+            <div ref={mobileMoreSheetRef} className="mobile-more-sheet card">
+              <div className="mobile-more-head">
+                <div>
+                  <div className="mobile-more-title">更多</div>
+                  <div className="mobile-more-sub">常用延伸功能與系統管理入口</div>
+                </div>
+                <button type="button" className="drawer-close-button" onClick={() => setMobileMoreOpen(false)}>關閉</button>
+              </div>
+
+              <div className="mobile-more-section">
+                <div className="mobile-more-section-title">常用功能</div>
+                <div className="mobile-more-grid">
+                  {mobileMoreCommonItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
+                        onClick={() => {
+                          setActive(item.key);
+                          setMobileMoreOpen(false);
+                        }}
+                      >
+                        <Icon className="small-icon" />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {mobileManagementItems.length > 0 && (
+                <div className="mobile-more-section">
+                  <div className="mobile-more-section-title">系統管理</div>
+                  <div className="mobile-more-grid">
+                    {mobileManagementItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
+                          onClick={() => {
+                            setActive(item.key);
+                            setMobileMoreOpen(false);
+                          }}
+                        >
+                          <Icon className="small-icon" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

@@ -1,4 +1,6 @@
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { scanWithCamera } from '../utils/nativeScanner';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3, ChevronLeft, ChevronRight, ScanLine } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -23,37 +25,38 @@ export default function ProductsModule(props: any) {
     StatusBadge,
   } = props;
 
+  const disabledProducts = products.length - enabledProducts;
+  const topProducts = filteredProducts.slice(0, 3);
+  const [productPage, setProductPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+  const safePage = Math.min(productPage, totalPages);
+  const pagedProducts = useMemo(() => filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredProducts, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  async function handleScanBarcode() {
+    const value = await scanWithCamera({ title: '商品條碼掃描', fallbackLabel: '商品條碼' });
+    if (value) setProductDraft((prev: any) => ({ ...prev, barcode: value }));
+  }
+
   return (
     <>
-      <SectionIntro
-        title="商品管理"
-        desc="商品資料、價格、庫存與狀態。"
-        stats={[`總數 ${products.length}`, `啟用 ${enabledProducts}`, `停用 ${products.length - enabledProducts}`]}
-      />
 
-
-      <section className="product-admin-layout">
+      <section className="product-admin-layout products-stage-layout">
         <div className="product-admin-main">
-          <div className="card order-panel">
+          <div className="card order-panel products-board-card">
             <div className="panel-head">
               <div>
                 <div className="panel-title">商品列表</div>
-                <div className="panel-desc">查看商品、價格、庫存與狀態。</div>
               </div>
               <button type="button" className="primary-button" onClick={openCreateProduct}>
                 <Package className="small-icon" />新增商品
               </button>
             </div>
 
-            <div className="product-editor-chip-row">
-              <span className="badge badge-neutral">商品列表</span>
-              <span className="badge badge-soft">卡片檢視</span>
-              <span className="badge badge-soft">編輯面板</span>
-            </div>
-
-            <div className="product-admin-grid">
-              {filteredProducts.map((item: any) => (
-                <div key={item.id} className={`card data-card product-admin-card ${selectedProductId === item.id ? 'selected' : ''}`}>
+            <div className="product-admin-grid products-card-grid">
+              {pagedProducts.map((item: any) => (
+                <div key={item.id} className={`card data-card product-admin-card products-feature-card ${selectedProductId === item.id ? 'selected' : ''}`}>
                   <div className="data-card-top">
                     <span className="data-code">{item.code}</span>
                     <StatusBadge enabled={item.enabled} />
@@ -70,12 +73,12 @@ export default function ProductsModule(props: any) {
                   </div>
                   <div className="data-card-title">{item.name}</div>
                   <div className="data-card-subtitle">{item.category} / 條碼 {item.barcode || '未設定'}</div>
-                  <div className="metric-row three">
+                  <div className="metric-row three products-metric-grid">
                     <div className="metric-box"><span>原價</span><strong>${item.price}</strong></div>
                     <div className="metric-box"><span>VIP價</span><strong>${item.vipPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>代理價</span><strong>${item.agentPrice ?? item.price}</strong></div>
                   </div>
-                  <div className="metric-row three product-stock-row">
+                  <div className="metric-row three product-stock-row products-metric-grid">
                     <div className="metric-box"><span>總代理價</span><strong>${item.generalAgentPrice ?? item.price}</strong></div>
                     <div className="metric-box"><span>庫存</span><strong>{item.stock}</strong></div>
                     <div className="metric-box"><span>狀態</span><strong>{item.enabled ? '啟用' : '停用'}</strong></div>
@@ -88,23 +91,31 @@ export default function ProductsModule(props: any) {
                     <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
                       <PencilLine className="small-icon" />編輯
                     </button>
-                    <button type="button" className={`ghost-button compact-btn ${item.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => toggleProductEnabled(item)}>
-                      {item.enabled ? '停用' : '啟用'}
+                    <button type="button" className={`ui-switch ${item.enabled ? 'on' : 'off'}`} onClick={() => toggleProductEnabled(item)} aria-label={item.enabled ? '停用商品' : '啟用商品'} aria-pressed={item.enabled}>
+                      <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
                     </button>
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+              <div className="pagination-pages">
+                {pageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
+                ))}
+              </div>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>
         </div>
 
         <aside className="product-admin-side">
-          <div className="card order-panel sticky-panel product-editor-panel">
+          <div className="card order-panel sticky-panel product-editor-panel products-editor-shell">
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                <div className="panel-desc">在這裡編輯商品資料。</div>
               </div>
               <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
             </div>
@@ -122,9 +133,12 @@ export default function ProductsModule(props: any) {
                   ))}
                 </select>
               </label>
-              <label className="field-card">
+              <label className="field-card scanner-inline-card">
                 <span className="field-label"><FileText className="small-icon" />商品條碼</span>
-                <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
+                <div className="scanner-input-wrap">
+                  <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
+                  {productEditorMode !== 'view' && <button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcode} aria-label="掃描商品條碼"><ScanLine className="small-icon" /></button>}
+                </div>
               </label>
               <label className="field-card field-span-2">
                 <span className="field-label"><FileText className="small-icon" />商品名稱</span>
@@ -171,11 +185,11 @@ export default function ProductsModule(props: any) {
               </div>
             </div>
 
-            <div className="product-editor-status">
+            <div className="product-editor-status product-editor-status-clean">
               <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
               {productEditorMode !== 'view' && (
-                <button type="button" className={`ghost-button compact-btn ${productDraft.enabled ? 'danger-ghost' : 'success-ghost'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))}>
-                  {productDraft.enabled ? '切換停用' : '切換啟用'}
+                <button type="button" className={`ui-switch ${productDraft.enabled ? 'on' : 'off'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-label={productDraft.enabled ? '停用商品' : '啟用商品'} aria-pressed={productDraft.enabled}>
+                  <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
                 </button>
               )}
             </div>
