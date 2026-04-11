@@ -2335,12 +2335,208 @@ export default function App() {
     setWarehouseNotice({ text: '❌ 查無資料', tone: 'danger' });
   };
 
+  const handleWarehouseShip = async () => {
+    if (!selectedWarehouseOrder) return;
+    const isExchangeOrder = selectedWarehouseOrder.orderNo.startsWith('EX') || selectedWarehouseOrder.shippingStatus.includes('換貨');
+    if (selectedWarehouseOrder.paymentStatus !== '已收款' && selectedWarehouseOrder.paymentStatus !== '免收款' && !isExchangeOrder) {
+      setWarehouseNotice({ text: '❌ 未收款不可出貨', tone: 'danger' });
+      return;
+    }
+    if (!warehouseScanValidation.allOk) {
+      setWarehouseNotice({ text: '❌ 請先完成商品條碼與 QR 身分識別驗證', tone: 'danger' });
+      return;
+    }
+
+    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!order) {
+      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
+      return;
+    }
+
+    const allocations: InventoryLog[] = [];
+    const timestamp = getTaipeiTimestamp();
+
+    for (const entry of order.items) {
+      const buckets = findAvailableQrBuckets(inventoryLogs, entry.code);
+      const totalAvailable = buckets.reduce((sum, item) => sum + item.qty, 0);
+      if (totalAvailable < entry.qty) {
+        setWarehouseNotice({ text: `❌ ${entry.code} 可出貨數量不足，目前只剩 ${totalAvailable}`, tone: 'danger' });
+        return;
+      }
+
+      let remaining = entry.qty;
+      for (const bucket of buckets) {
+        if (remaining <= 0) break;
+        const picked = Math.min(bucket.qty, remaining);
+        allocations.push({
+          id: safeFirestoreDocId(`out_${order.orderNo}_${entry.code}_${bucket.qr}_${picked}`, 'inventory_log'),
+          createdAt: timestamp,
+          type: '出庫',
+          code: entry.code,
+          name: entry.name,
+          qty: picked,
+          qr: bucket.qr,
+          operator: user.loginId,
+          orderNo: order.orderNo,
+          note: `${order.orderNo} 完成出貨，${entry.code} ${entry.name} 出庫 ${picked} 件（${bucket.qr}）`,
+        });
+        remaining -= picked;
+      }
+    }
+
+    const inventoryAfterMap = allocations.reduce((acc, item) => {
+      const baseStock = stockSnapshot.find((entry) => entry.code === item.code)?.stock
+        ?? products.find((entry) => entry.code === item.code)?.stock
+        ?? 0;
+      const current = typeof acc[item.code] === 'number' ? acc[item.code] : baseStock;
+      acc[item.code] = Math.max(0, current - item.qty);
+      return acc;
+    }, {} as Record<string, number>);
+    const shippedOrder = {
+      ...order,
+      shippingStatus: '已出貨',
+      mainStatus: '已完成',
+    };
+    setInventoryLogs((prev) => [...prev, ...allocations]);
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === order.orderNo ? shippedOrder : item)));
+    await syncOrderBundleToFirebase(shippedOrder, { shippingAllocations: allocations, inventoryAfterMap, inventoryLogType: '出貨' });
+    setWarehouseNotice({ text: `✅ 已依 inventory_logs 完成出貨：${order.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 訂單已同步出貨：${order.orderNo}`, tone: 'success' });
+    setWarehouseQueryResult([{ title: order.orderNo, desc: `${order.customer} / 已出貨 / ${order.shippingMethod}`, meta: ['已寫入 inventory_logs', `出貨筆數：${allocations.length}`, `商品：${order.items.map((item) => `${item.code}*${item.qty}`).join(' / ')}`] }]);
+    setWarehouseScanBarcode('');
+    setWarehouseScanQr('');
+  };
+
+
+  const handleWarehouseReturn = async () => {
+    if (!selectedWarehouseOrder) {
+      setWarehouseNotice({ text: '❌ 請先選擇訂單', tone: 'danger' });
+      return;
+    }
+    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!order) {
+      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
+      return;
+    }
+    if (order.shippingStatus === '已退貨') {
+      setWarehouseNotice({ text: '❌ 此訂單已退貨', tone: 'danger' });
+      return;
+    }
+    const timestamp = getTaipeiTimestamp();
+    const inboundLogs: InventoryLog[] = order.items.map((entry, index) => ({
+      id: safeFirestoreDocId(`return_${order.orderNo}_${entry.code}_${index + 1}`, 'inventory_log'),
+      createdAt: timestamp,
+      type: '入庫',
+      code: entry.code,
+      name: entry.name,
+      qty: entry.qty,
+      qr: `RET-${entry.code}`,
+      operator: user.loginId,
+      orderNo: order.orderNo,
+      note: `${order.orderNo} 退貨回補，${entry.code} ${entry.name} 回庫 ${entry.qty} 件`,
+    }));
+    const inventoryAfterMap = inboundLogs.reduce((acc, item) => {
+      const baseStock = stockSnapshot.find((entry) => entry.code === item.code)?.stock
+        ?? products.find((entry) => entry.code === item.code)?.stock
+        ?? 0;
+      const current = typeof acc[item.code] === 'number' ? acc[item.code] : baseStock;
+      acc[item.code] = current + item.qty;
+      return acc;
+    }, {} as Record<string, number>);
+    const returnedOrder = {
+      ...order,
+      shippingStatus: '已退貨',
+      mainStatus: '退貨處理',
+      paymentStatus: order.paymentStatus === '已收款' ? '退款處理中' : order.paymentStatus,
+    };
+    setInventoryLogs((prev) => [...prev, ...inboundLogs]);
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === order.orderNo ? returnedOrder : item)));
+    await syncOrderBundleToFirebase(returnedOrder, { paymentMode: returnedOrder.paymentStatus.includes('退款') ? 'refund' : undefined, shippingAllocations: inboundLogs, inventoryAfterMap, inventoryLogType: '退貨回庫' });
+    setWarehouseNotice({ text: `✅ 已完成退貨回補：${order.orderNo}`, tone: 'success' });
+    setAccountingNotice({ text: `✅ 倉儲已送回退貨狀態：${order.orderNo}`, tone: 'success' });
+  };
+
+  const handleWarehouseExchange = async () => {
+    if (!selectedWarehouseOrder) {
+      setWarehouseNotice({ text: '❌ 請先選擇訂單', tone: 'danger' });
+      return;
+    }
+    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!order) {
+      setWarehouseNotice({ text: '❌ 找不到對應訂單', tone: 'danger' });
+      return;
+    }
+    if (order.shippingStatus === '換貨待出庫') {
+      setWarehouseNotice({ text: '❌ 此訂單已在換貨流程', tone: 'danger' });
+      return;
+    }
+    const exchangeOrder = {
+      ...order,
+      shippingStatus: '換貨待出庫',
+      mainStatus: '換貨處理',
+    };
+    setOrderRecords((prev) => sortOrderRecords(prev.map((item) => item.orderNo === order.orderNo ? exchangeOrder : item)));
+    await syncOrderBundleToFirebase(exchangeOrder);
+    setSelectedWarehouseOrderNo(order.orderNo);
+    setWarehouseNotice({ text: `✅ 已切入換貨流程：${order.orderNo}`, tone: 'success' });
+    setOrderNotice({ text: `✅ 倉儲已標記換貨待出庫：${order.orderNo}`, tone: 'success' });
+  };
+
+  const handleWarehouseInbound = async () => {
+    if (!selectedStockItem) {
+      setWarehouseNotice({ text: '❌ 請先選擇商品再入庫', tone: 'danger' });
+      return;
+    }
+    if (!warehouseInboundQr.trim()) {
+      setWarehouseNotice({ text: '❌ 入庫必須填寫 QR 身分識別', tone: 'danger' });
+      return;
+    }
+    if (warehouseInboundQty <= 0) {
+      setWarehouseNotice({ text: '❌ 入庫數量必須大於 0', tone: 'danger' });
+      return;
+    }
+
+    const productRef = products.find((item) => item.code === selectedStockItem.code);
+    if (!productRef) {
+      setWarehouseNotice({ text: '❌ 找不到對應商品，無法同步入庫', tone: 'danger' });
+      return;
+    }
+
+    const timestamp = getTaipeiTimestamp();
+    const cleanQr = warehouseInboundQr.trim().toUpperCase();
+    const newLog: InventoryLog = {
+      id: safeFirestoreDocId(`in_${selectedStockItem.code}_${cleanQr}_${timestamp}`, 'inventory_log'),
+      createdAt: timestamp,
+      type: '入庫',
+      code: selectedStockItem.code,
+      name: selectedStockItem.name,
+      qty: warehouseInboundQty,
+      qr: cleanQr,
+      operator: user.loginId,
+      note: `${selectedStockItem.code} ${selectedStockItem.name} 入庫 ${warehouseInboundQty} 件（${cleanQr}）`,
+    };
+
+    const nextStock = selectedStockItem.stock + warehouseInboundQty;
+    setInventoryLogs((prev) => [...prev, newLog]);
+    setProducts((prev) => prev.map((item) => item.id === productRef.id ? { ...item, stock: nextStock } : item));
+
+    try {
+      const synced = await appendInventoryInboundToFirebase(newLog, { ...productRef, stock: nextStock }, nextStock);
+      setWarehouseNotice({ text: synced ? `✅ 已入庫並同步 Firebase：${selectedStockItem.code} +${warehouseInboundQty}` : `✅ 已寫入入庫紀錄：${selectedStockItem.code} +${warehouseInboundQty}`, tone: 'success' });
+    } catch (error) {
+      console.error(error);
+      setWarehouseNotice({ text: '❌ 入庫已寫畫面，但 Firebase 同步失敗', tone: 'danger' });
+    }
+    setWarehouseQueryResult([{ title: cleanQr, desc: `${selectedStockItem.name} / 已入庫 ${warehouseInboundQty} 件`, meta: [`商品條碼：${selectedStockItem.code}`, `操作人員：${user.loginId}`, '已寫入 inventory_logs'] }]);
+    setWarehouseInboundQty(1);
+    setWarehouseInboundQr('');
+  };
+
   const handleWarehouseScanFill = () => {
-    const next = warehouseQueryMode === 'barcode'
-      ? (selectedStockItem?.code || 'P301')
-      : warehouseQueryMode === 'qr'
-        ? (findAvailableQrBuckets(inventoryLogs, selectedStockItem?.code || 'E401')[0]?.qr || 'QR(P1)')
-        : (selectedWarehouseOrder?.orderNo || 'VP20260331-002');
+    const next = selectedWarehouseOrder?.orderNo
+      || selectedStockItem?.code
+      || (findAvailableQrBuckets(inventoryLogs, selectedStockItem?.code || 'E401')[0]?.qr)
+      || 'VP20260331-002';
     setWarehouseQueryInput(next);
     setWarehouseNotice({ text: `✅ 已帶入 ${next}`, tone: 'neutral' });
   };
