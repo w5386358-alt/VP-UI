@@ -10636,7 +10636,7 @@ body.standalone-body .vp-workspace {
 }
 
 
-/* === 第三十六版：Android standalone 主容器捲動重建修正 === */
+/* === 第三十七版：Android standalone 改為單一主滾動容器 === */
 @media (max-width: 900px) {
   html.mobile-device-html,
   html.standalone-html,
@@ -10668,18 +10668,34 @@ body.standalone-body .vp-workspace {
   }
 
   .vp-main {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
     height: 100% !important;
     min-height: 0 !important;
+    overflow: hidden !important;
+    padding: max(10px, env(safe-area-inset-top)) 0 0 !important;
+    touch-action: auto !important;
+  }
+
+  .vp-main > .vp-header,
+  .vp-main > .vp-shell-hint {
+    flex: 0 0 auto !important;
+  }
+
+  .vp-workspace {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
-    padding: max(10px, env(safe-area-inset-top)) 0 calc(12px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important;
     touch-action: pan-y !important;
   }
 
-  .vp-workspace,
+  .vp-module-body,
   .vp-module-shell,
   .section-intro-shell {
     overflow: visible !important;

@@ -44,3 +44,5 @@
 - 新增 mobile-device-html / standalone-html 類別，統一由 CSS 接管 Android standalone 捲動容器。
 - 目標：修正 Android 從主畫面開啟後首頁與各模組無法上下滑動的問題。
 - 專案包清理：移除分階段 TXT，節點統一收斂至本檔。
+
+[2026-04-12] 第三十七版：針對 Android 主畫面模式滑動問題，改為單一主滾動容器架構。手機/PWA 模式下不再讓 vp-main 本身承擔整頁滾動，改由 vp-workspace 作為唯一垂直滾動容器；header 與提示列固定留在上方，更多彈窗與底部導覽維持浮層，不再碰全域 body scroll lock。
