@@ -82,7 +82,7 @@ export default function InventoryModule(props: any) {
   }
 
   return (
-    <>
+    <div className="inventory-shell-v2 warehouse-shell-restored">
 
       <div className="warehouse-tab-row warehouse-primary-tabs">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
@@ -311,6 +311,6 @@ export default function InventoryModule(props: any) {
           </div>
         </section>
       )}
-    </>
+    </div>
   );
 }

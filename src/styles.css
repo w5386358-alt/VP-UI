@@ -10325,3 +10325,57 @@ body {
 .warehouse-command-layout .shipping-row.selected {
   background: rgba(255,240,246,0.95) !important;
 }
+
+
+/* v24 warehouse restore */
+.warehouse-shell-restored {
+  display: grid;
+  gap: 18px;
+}
+
+.warehouse-shell-restored .warehouse-tab-row {
+  margin-top: 0 !important;
+}
+
+.warehouse-shell-restored .warehouse-layout,
+.warehouse-shell-restored .warehouse-stack-section {
+  background: transparent !important;
+}
+
+.warehouse-shell-restored .warehouse-filter-shell,
+.warehouse-shell-restored .warehouse-queue-card,
+.warehouse-shell-restored .warehouse-side-panel,
+.warehouse-shell-restored .warehouse-stock-overview-card,
+.warehouse-shell-restored .warehouse-inbound-card,
+.warehouse-shell-restored .warehouse-log-shell,
+.warehouse-shell-restored .query-result-card,
+.warehouse-shell-restored .warehouse-query-panel,
+.warehouse-shell-restored .warehouse-tool-card,
+.warehouse-shell-restored .stock-snapshot-card {
+  background: linear-gradient(180deg, rgba(255,245,249,0.98) 0%, rgba(255,250,252,0.95) 100%) !important;
+  border-color: rgba(233, 196, 211, 0.95) !important;
+  box-shadow: 0 18px 44px rgba(218, 171, 189, 0.18) !important;
+}
+
+.warehouse-shell-restored .field-card,
+.warehouse-shell-restored .fake-field,
+.warehouse-shell-restored .warehouse-log-item,
+.warehouse-shell-restored .shipping-row,
+.warehouse-shell-restored .stock-inline-block,
+.warehouse-shell-restored .warehouse-empty-state,
+.warehouse-shell-restored .warehouse-scan-hint,
+.warehouse-shell-restored .warehouse-issue-item {
+  background: rgba(255,255,255,0.88) !important;
+}
+
+.warehouse-shell-restored .shipping-row.selected,
+.warehouse-shell-restored .stock-snapshot-card.selected {
+  background: linear-gradient(180deg, rgba(255,238,245,0.98) 0%, rgba(255,247,250,0.95) 100%) !important;
+}
+
+.warehouse-shell-restored .warehouse-stock-grid.compact,
+.warehouse-shell-restored .warehouse-log-list,
+.warehouse-shell-restored .warehouse-form-grid,
+.warehouse-shell-restored .shipping-queue {
+  background: transparent !important;
+}
