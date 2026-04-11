@@ -3834,6 +3834,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const notificationCount = notificationItems.length;
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
   const profilePanelRef = useRef<HTMLDivElement | null>(null);
+  const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.innerWidth <= 900;
@@ -3913,11 +3914,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       const target = event.target as Node;
       if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
         setNotificationOpen(false);
-                    setMobileMoreOpen(false);
       }
       if (profilePanelRef.current && !profilePanelRef.current.contains(target)) {
         setProfileOpen(false);
-                    setMobileMoreOpen(false);
+      }
+      if (mobileMoreSheetRef.current && !mobileMoreSheetRef.current.contains(target)) {
+        const element = target as HTMLElement | null;
+        if (!element?.closest('.mobile-nav')) {
+          setMobileMoreOpen(false);
+        }
       }
     }
     document.addEventListener('mousedown', handleOutside);
@@ -4128,6 +4133,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                         <div className="vp-profile-meta-item"><span>帳號</span><strong>{user.loginId}</strong></div>
                         <div className="vp-profile-meta-item"><span>階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
                         <div className="vp-profile-meta-item"><span>價格身分</span><strong>{getPriceTierLabel(user.rankKey)}</strong></div>
+                        <div className="vp-profile-meta-item"><span>榮譽稱號</span><strong>{myEvaluationQuarterResult?.medal || '精進級'}</strong></div>
                       </div>
                       <div className="vp-profile-popover-upload-note">點擊頭像可上傳圖片，未上傳時會自動顯示姓名第 2 個字。</div>
                       <div className="vp-profile-popover-actions">
@@ -4247,7 +4253,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} />
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} />
                 )}
               </div>
             </>
@@ -4284,7 +4290,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         {mobileMoreOpen && (
           <>
             <button type="button" className="mobile-more-overlay" aria-label="關閉更多選單" onClick={() => setMobileMoreOpen(false)} />
-            <div className="mobile-more-sheet card">
+            <div ref={mobileMoreSheetRef} className="mobile-more-sheet card">
               <div className="mobile-more-head">
                 <div>
                   <div className="mobile-more-title">更多</div>

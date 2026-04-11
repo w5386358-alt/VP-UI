@@ -1,4 +1,4 @@
-import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -8,7 +8,7 @@ export default function ProfileModule(props: any) {
     user, getRankClass, priceTierLabel,
     evaluationQuarter, setEvaluationQuarter,
     evaluationTargets = [], evaluationSubmissions = [], evaluationNotice, submitEvaluation,
-    dashboardRadarMetrics = [], myEvaluationQuarterResult,
+    dashboardRadarMetrics = [], myEvaluationQuarterResult, evaluationResults = [],
   } = props;
 
   const [selectedTargetId, setSelectedTargetId] = useState('');
@@ -48,6 +48,13 @@ export default function ProfileModule(props: any) {
   ];
   const averageScore = myEvaluationQuarterResult?.total || 0;
   const medal = myEvaluationQuarterResult?.medal || '精進級';
+
+  const quarterIndex = quarterOptions.indexOf(evaluationQuarter);
+  const previousQuarter = quarterIndex > 0 ? quarterOptions[quarterIndex - 1] : null;
+  const previousQuarterResult = useMemo(
+    () => previousQuarter ? evaluationResults.find((item: any) => item.quarter === previousQuarter && item.loginId === user.loginId) || null : null,
+    [evaluationResults, previousQuarter, user.loginId]
+  );
   const radarLevels = [1, 0.75, 0.5, 0.25];
   const svgSize = 360;
   const center = svgSize / 2;
@@ -156,14 +163,36 @@ export default function ProfileModule(props: any) {
                     ))}
                   </svg>
                 </div>
-                <div className="dashboard-tree-score-grid radar-summary-grid">
-                  {rankingTree.map((item: any) => (
-                    <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card">
-                      <span className="dashboard-tree-label">{item.label}</span>
-                      <strong className="dashboard-tree-score">{item.value}</strong>
-                      <small className="dashboard-tree-mini-desc">{evaluationQuarter} 能力得分</small>
-                    </div>
-                  ))}
+                <div className="dashboard-tree-score-grid radar-summary-grid evaluation-radar-summary-grid">
+                  {rankingTree.map((item: any) => {
+                    const previousValue = previousQuarterResult
+                      ? (item.label === '業績' ? previousQuarterResult.sales : item.label === '協作' ? previousQuarterResult.collaboration : item.label === '專業' ? previousQuarterResult.professional : previousQuarterResult.efficiency)
+                      : null;
+                    const delta = previousValue === null ? null : item.value - previousValue;
+                    const improved = delta !== null && delta >= 0;
+                    return (
+                      <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card evaluation-radar-summary-card">
+                        <span className="dashboard-tree-label">{item.label}</span>
+                        <strong className="dashboard-tree-score">{item.value}</strong>
+                        <small className="dashboard-tree-mini-desc">{evaluationQuarter} 能力得分</small>
+                        <div className={`evaluation-delta-row ${delta === null ? 'neutral' : improved ? 'up' : 'down'}`}>
+                          {delta === null ? (
+                            <span>尚無前季資料</span>
+                          ) : improved ? (
+                            <>
+                              <ArrowUpRight className="tiny-icon" />
+                              <span>比 {previousQuarter} +{delta}</span>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDownRight className="tiny-icon" />
+                              <span>比 {previousQuarter} {delta}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -173,7 +202,7 @@ export default function ProfileModule(props: any) {
               <div className="evaluation-bullets">
                 <div>季度：{evaluationQuarter}</div>
                 <div>綜合評分：{averageScore}</div>
-                <div>榮譽等級：{medal}</div>
+                <div>榮譽稱號：{medal}</div>
                 <div>評鑑對象：{evaluationTargets.length} 位核心人員</div>
               </div>
             </div>
@@ -247,7 +276,7 @@ export default function ProfileModule(props: any) {
             </div>
 
             <div className="card evaluation-card accent">
-              <div className="evaluation-card-head"><Medal className="small-icon" /><span>榮譽勳章</span></div>
+              <div className="evaluation-card-head"><Medal className="small-icon" /><span>榮譽稱號</span></div>
               <div className="evaluation-bullets">
                 <div>領航級：90-100 分</div>
                 <div>專業級：70-89 分</div>
