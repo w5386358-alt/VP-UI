@@ -4086,7 +4086,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;
 
   return (
-    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
+    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''} ${mobileMoreOpen ? 'mobile-more-open' : ''}`}>
       {showAppLaunch && (
         <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`}>
           <div className="vp-launch-card">

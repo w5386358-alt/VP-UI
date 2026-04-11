@@ -91,12 +91,14 @@ export default function OrdersModule(props: any) {
 
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     window.addEventListener('pointerup', handlePointerUp, { passive: true });
     window.addEventListener('pointercancel', handlePointerUp, { passive: true });
     return () => {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
@@ -216,7 +218,7 @@ export default function OrdersModule(props: any) {
         onPointerDown={handleCartFabPointerDown}
         onPointerMove={handleCartFabPointerMove}
         onPointerUp={handleCartFabPointerUp}
-        onPointerCancel={() => { dragStateRef.current.dragging = false; }}
+        onPointerCancel={() => { dragStateRef.current.dragging = false; touchStateRef.current.dragging = false; setDraggingFab(false); }}
         onTouchStart={handleCartFabTouchStart}
         onTouchMove={handleCartFabTouchMove}
         onTouchEnd={handleCartFabTouchEnd}
