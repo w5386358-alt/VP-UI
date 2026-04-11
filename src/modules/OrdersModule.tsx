@@ -25,6 +25,7 @@ export default function OrdersModule(props: any) {
   const touchStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const [cartFabPosition, setCartFabPosition] = useState({ x: 0, y: 0, ready: false });
   const [draggingFab, setDraggingFab] = useState(false);
+  const disableFabDrag = typeof window !== 'undefined' && window.innerWidth <= 900 && (window.matchMedia?.('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
   const pageSize = 10;
   const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
   const safeProductPage = Math.min(productPage, totalProductPages);
@@ -45,10 +46,10 @@ export default function OrdersModule(props: any) {
       y: window.innerHeight - size - 112,
       ready: true,
     });
-  }, [cartFabPosition.ready]);
+  }, [cartFabPosition.ready, disableFabDrag]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || disableFabDrag) return;
 
     function handleTouchMove(event: TouchEvent) {
       const state = touchStateRef.current;
@@ -121,7 +122,7 @@ export default function OrdersModule(props: any) {
   }
 
   function handleCartFabPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
-    if (typeof window !== 'undefined' && window.innerWidth > 900) return;
+    if (typeof window !== 'undefined' && (window.innerWidth > 900 || disableFabDrag)) return;
     const currentX = cartFabPosition.ready ? cartFabPosition.x : event.clientX;
     const currentY = cartFabPosition.ready ? cartFabPosition.y : event.clientY;
     dragStateRef.current = {
@@ -210,19 +211,19 @@ export default function OrdersModule(props: any) {
       <button
         ref={cartButtonRef}
         type="button"
-        className={`floating-cart-button ${cartOpen ? 'open' : ''} ${cartFabPosition.ready ? 'is-draggable' : ''} ${draggingFab ? 'dragging' : ''}`}
+        className={`floating-cart-button ${cartOpen ? 'open' : ''} ${cartFabPosition.ready && !disableFabDrag ? 'is-draggable' : ''} ${draggingFab ? 'dragging' : ''}`}
         onClick={() => {
-          if (typeof window !== 'undefined' && window.innerWidth <= 900) return;
+          if (typeof window !== 'undefined' && window.innerWidth <= 900 && !disableFabDrag) return;
           setCartOpen(true);
         }}
-        onPointerDown={handleCartFabPointerDown}
-        onPointerMove={handleCartFabPointerMove}
-        onPointerUp={handleCartFabPointerUp}
-        onPointerCancel={() => { dragStateRef.current.dragging = false; touchStateRef.current.dragging = false; setDraggingFab(false); }}
-        onTouchStart={handleCartFabTouchStart}
-        onTouchMove={handleCartFabTouchMove}
-        onTouchEnd={handleCartFabTouchEnd}
-        style={cartFabPosition.ready ? { left: `${cartFabPosition.x}px`, top: `${cartFabPosition.y}px`, right: 'auto', bottom: 'auto' } : undefined}
+        onPointerDown={disableFabDrag ? undefined : handleCartFabPointerDown}
+        onPointerMove={disableFabDrag ? undefined : handleCartFabPointerMove}
+        onPointerUp={disableFabDrag ? undefined : handleCartFabPointerUp}
+        onPointerCancel={disableFabDrag ? undefined : (() => { dragStateRef.current.dragging = false; touchStateRef.current.dragging = false; setDraggingFab(false); })}
+        onTouchStart={disableFabDrag ? undefined : handleCartFabTouchStart}
+        onTouchMove={disableFabDrag ? undefined : handleCartFabTouchMove}
+        onTouchEnd={disableFabDrag ? undefined : handleCartFabTouchEnd}
+        style={cartFabPosition.ready && !disableFabDrag ? { left: `${cartFabPosition.x}px`, top: `${cartFabPosition.y}px`, right: 'auto', bottom: 'auto' } : undefined}
         aria-label="開啟購物車"
       >
         <ShoppingCart className="small-icon" />
