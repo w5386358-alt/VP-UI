@@ -9199,3 +9199,178 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* === 第十四版：評鑑 / Header / 手機導覽調整 === */
+.dashboard-personal-bottom-grid-single {
+  grid-template-columns: 1fr !important;
+}
+
+.vp-header {
+  align-items: start;
+}
+
+.vp-header-tools-compact {
+  align-self: start;
+  gap: 0;
+}
+
+.vp-header-global-tools-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+}
+
+.vp-icon-only-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--primary) 0%, #d86f97 100%);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(179, 75, 116, 0.22);
+}
+
+.vp-icon-only-button:hover,
+.vp-profile-trigger-circle:hover {
+  transform: translateY(-1px);
+}
+
+.vp-bell-button {
+  min-width: 48px !important;
+}
+
+.vp-bell-button .small-icon {
+  width: 19px;
+  height: 19px;
+}
+
+.vp-profile-trigger-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f7d6e1 0%, #ffffff 100%);
+  color: var(--primary-strong);
+  box-shadow: 0 12px 24px rgba(94, 64, 78, 0.14);
+}
+
+.vp-profile-trigger-circle.active {
+  outline: 2px solid rgba(179, 75, 116, 0.22);
+}
+
+.vp-profile-trigger-letter {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.vp-profile-trigger-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vp-profile-popover-upload-note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.evaluation-radar-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.evaluation-radar-card,
+.evaluation-radar-side-card {
+  min-height: 100%;
+}
+
+.evaluation-radar-layout {
+  align-items: center;
+}
+
+.evaluation-lock-card-wide {
+  padding: 24px;
+}
+
+@media (max-width: 1180px) {
+  .evaluation-radar-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .vp-shell {
+    padding-top: 4px;
+  }
+
+  .vp-header {
+    padding-top: 2px;
+    margin-top: -10px;
+  }
+
+  .vp-header-banner {
+    padding-top: 0;
+  }
+
+  .vp-header-module-title {
+    margin-top: -6px;
+  }
+
+  .vp-header-global-tools-top {
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .vp-icon-only-button,
+  .vp-profile-trigger-circle {
+    width: 42px;
+    height: 42px;
+  }
+
+  .mobile-nav {
+    bottom: 10px;
+    width: min(560px, calc(100% - 20px));
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    border-radius: 999px;
+    background: rgba(255,255,255,0.93);
+  }
+
+  .mobile-nav-btn {
+    min-height: 56px;
+    border-radius: 999px !important;
+    transition: transform .18s ease, opacity .18s ease, background .18s ease;
+  }
+
+  .mobile-nav-btn .small-icon {
+    transition: transform .18s ease;
+  }
+
+  .mobile-nav-btn span {
+    font-size: 11px;
+  }
+
+  .mobile-nav-btn.active {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 18px rgba(179, 75, 116, 0.22);
+  }
+
+  .mobile-nav-btn.active .small-icon {
+    transform: scale(1.18);
+  }
+}

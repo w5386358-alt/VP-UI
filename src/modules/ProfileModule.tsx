@@ -1,4 +1,4 @@
-import { ClipboardCheck, Sparkles, Vote, ShieldCheck, Lock, Medal, Send, UserRound, BarChart3 } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -8,6 +8,7 @@ export default function ProfileModule(props: any) {
     user, getRankClass, priceTierLabel,
     evaluationQuarter, setEvaluationQuarter,
     evaluationTargets = [], evaluationSubmissions = [], evaluationNotice, submitEvaluation,
+    dashboardRadarMetrics = [], myEvaluationQuarterResult,
   } = props;
 
   const [selectedTargetId, setSelectedTargetId] = useState('');
@@ -39,6 +40,40 @@ export default function ProfileModule(props: any) {
   }
 
   const canEvaluate = user.rankKey === 'core';
+  const rankingTree = dashboardRadarMetrics.length ? dashboardRadarMetrics : [
+    { label: '業績', value: 0 },
+    { label: '協作', value: 0 },
+    { label: '專業', value: 0 },
+    { label: '效率', value: 0 },
+  ];
+  const averageScore = myEvaluationQuarterResult?.total || 0;
+  const medal = myEvaluationQuarterResult?.medal || '精進級';
+  const radarLevels = [1, 0.75, 0.5, 0.25];
+  const svgSize = 360;
+  const center = svgSize / 2;
+  const outerRadius = 92;
+  const labelRadius = 136;
+  const radarPoints = rankingTree.map((item: any, index: number) => {
+    const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
+    const radius = outerRadius * ((item.value || 0) / 100);
+    const axisX = center + Math.cos(angle) * outerRadius;
+    const axisY = center + Math.sin(angle) * outerRadius;
+    const labelX = center + Math.cos(angle) * labelRadius;
+    const labelY = center + Math.sin(angle) * labelRadius;
+    return {
+      ...item,
+      x: center + Math.cos(angle) * radius,
+      y: center + Math.sin(angle) * radius,
+      axisX,
+      axisY,
+      labelX,
+      labelY,
+      textAnchor: index === 1 ? 'start' : index === 3 ? 'end' : 'middle',
+      labelOffsetY: index === 0 ? -8 : index === 2 ? 10 : -2,
+      scoreOffsetY: index === 0 ? 18 : index === 2 ? 36 : 20,
+    };
+  });
+  const radarPolygon = radarPoints.map((item: any) => `${item.x},${item.y}`).join(' ');
 
   return (
     <section className="evaluation-shell evaluation-shell-v2">
@@ -46,7 +81,7 @@ export default function ProfileModule(props: any) {
         <div>
           <div className="evaluation-kicker">評鑑系統</div>
           <div className="evaluation-title">核心夥伴季度匿名評鑑</div>
-          <div className="evaluation-desc">目前僅開放核心人員，且只能評鑑除自己以外的其他核心人員。測試期間暫時開放重複送出。</div>
+          <div className="evaluation-desc">雷達能力圖已移到評鑑專區，目前只開放核心人員查看與送出評鑑。</div>
         </div>
         <div className="evaluation-identity">
           <div className="evaluation-avatar">評</div>
@@ -54,31 +89,96 @@ export default function ProfileModule(props: any) {
             <div className="evaluation-user">{user.name}</div>
             <div className="data-chip-row wrap">
               <span className="badge badge-role">帳號 / {user.loginId}</span>
-              <span className={getRankClass(user.rank)}>階級 / {user.rank}</span>
+              <span className={getRankClass(user.rank)}>{user.rank}</span>
               <span className="badge badge-neutral">價格層級 / {priceTierLabel}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="evaluation-quarter-row">
-        {quarterOptions.map((item) => (
-          <button key={item} type="button" className={`dashboard-quarter-btn ${evaluationQuarter === item ? 'active' : ''}`} onClick={() => setEvaluationQuarter?.(item)}>{item}</button>
-        ))}
-      </div>
-
       {!canEvaluate && (
-        <div className="card evaluation-lock-card">
+        <div className="card evaluation-lock-card evaluation-lock-card-wide">
           <Lock className="small-icon" />
           <div>
-            <div className="evaluation-card-title">目前僅核心人員可評鑑</div>
-            <div className="evaluation-card-subtitle">系統會依登入身分自動判斷，未來可再擴充其他階級。</div>
+            <div className="evaluation-card-title">目前僅核心人員可進入評鑑專區</div>
+            <div className="evaluation-card-subtitle">非核心身分會自動隱藏評鑑入口，避免誤進與誤操作。</div>
           </div>
         </div>
       )}
 
       {canEvaluate && (
         <>
+          <div className="evaluation-quarter-row">
+            {quarterOptions.map((item) => (
+              <button key={item} type="button" className={`dashboard-quarter-btn ${evaluationQuarter === item ? 'active' : ''}`} onClick={() => setEvaluationQuarter?.(item)}>{item}</button>
+            ))}
+          </div>
+
+          <div className="evaluation-radar-shell">
+            <div className="card evaluation-radar-card">
+              <div className="panel-head">
+                <div>
+                  <div className="panel-title">個人評鑑雷達能力圖</div>
+                  <div className="panel-desc">能力項目已整合為業績、協作、專業、效率，直接集中在評鑑模組查看。</div>
+                </div>
+                <span className="badge badge-soft">{evaluationQuarter}</span>
+              </div>
+              <div className="dashboard-tree-layout radar-layout evaluation-radar-layout">
+                <div className="dashboard-tree-visual radar-visual">
+                  <svg className="dashboard-radar-svg" viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="個人評鑑雷達能力圖">
+                    {radarLevels.map((level) => {
+                      const points = rankingTree.map((_: any, index: number) => {
+                        const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
+                        const radius = outerRadius * level;
+                        const x = center + Math.cos(angle) * radius;
+                        const y = center + Math.sin(angle) * radius;
+                        return `${x},${y}`;
+                      }).join(' ');
+                      return <polygon key={level} points={points} className="dashboard-radar-grid" />;
+                    })}
+                    {radarPoints.map((item: any) => (
+                      <line key={item.label} x1={center} y1={center} x2={item.axisX} y2={item.axisY} className="dashboard-radar-axis" />
+                    ))}
+                    <polygon points={radarPolygon} className="dashboard-radar-shape" />
+                    {radarPoints.map((item: any) => (
+                      <circle key={item.label} cx={item.x} cy={item.y} r="5.5" className="dashboard-radar-point" />
+                    ))}
+                    <g className="dashboard-radar-center-group">
+                      <circle cx={center} cy={center} r="30" className="dashboard-radar-center-disc" />
+                      <text x={center} y={center - 4} textAnchor="middle" className="dashboard-radar-center-title">綜合評分</text>
+                      <text x={center} y={center + 18} textAnchor="middle" className="dashboard-radar-center-score">{averageScore}</text>
+                    </g>
+                    {radarPoints.map((item: any) => (
+                      <g key={item.label} className="dashboard-radar-label-group">
+                        <text x={item.labelX} y={item.labelY + item.labelOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-label">{item.label}</text>
+                        <text x={item.labelX} y={item.labelY + item.scoreOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-score">{item.value}</text>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+                <div className="dashboard-tree-score-grid radar-summary-grid">
+                  {rankingTree.map((item: any) => (
+                    <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card">
+                      <span className="dashboard-tree-label">{item.label}</span>
+                      <strong className="dashboard-tree-score">{item.value}</strong>
+                      <small className="dashboard-tree-mini-desc">{evaluationQuarter} 能力得分</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="card evaluation-radar-side-card">
+              <div className="evaluation-card-head"><Radar className="small-icon" /><span>本季總覽</span></div>
+              <div className="evaluation-bullets">
+                <div>季度：{evaluationQuarter}</div>
+                <div>綜合評分：{averageScore}</div>
+                <div>榮譽等級：{medal}</div>
+                <div>評鑑對象：{evaluationTargets.length} 位核心人員</div>
+              </div>
+            </div>
+          </div>
+
           <div className="evaluation-target-grid">
             {evaluationTargets.map((item: any) => {
               const submitted = submittedTargetMap.has(item.loginId);

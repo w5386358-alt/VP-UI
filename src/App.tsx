@@ -4,9 +4,8 @@ import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, 
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Bell,
-  LogOut,
-  Search,
   RefreshCw,
+  LogOut,
   Database,
   Wifi,
   WifiOff,
@@ -27,7 +26,6 @@ import {
   Store,
   MapPin,
   Phone,
-  User,
   Wallet,
   BadgePercent,
   FileText,
@@ -406,6 +404,14 @@ function getTierPrice(product: Product, rankKey: Rank) {
 
 function canAccessNav(role: Role, key: NavKey) {
   return ROLE_NAV_ACCESS[role].includes(key);
+}
+
+function canAccessEvaluation(user: SessionUser) {
+  return user.rankKey === 'core' && canAccessNav(user.role, 'profile');
+}
+
+function getProfileTriggerLabel(name: string) {
+  return name?.trim()?.charAt(1) || name?.trim()?.charAt(0) || '我';
 }
 
 function getPermissionProfile(role: Role, rankKey: Rank): PermissionProfile {
@@ -2865,10 +2871,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         : '無客戶權限';
 
   useEffect(() => {
-    if (!canAccessNav(user.role, active)) {
+    const blockedByRole = !canAccessNav(user.role, active);
+    const blockedEvaluation = active === 'profile' && !canAccessEvaluation(user);
+    if (blockedByRole || blockedEvaluation) {
       setActive(ROLE_NAV_ACCESS[user.role][0]);
     }
-  }, [user.role, active]);
+  }, [user, active]);
 
   function addToCart(item: Product) {
     if (!item.enabled || item.stock <= 0) return;
@@ -3882,10 +3890,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   function openProfileCenter(mode: 'profile' | 'password' | 'login') {
-    setActive('profile');
     setProfileOpen(false);
-                    setMobileMoreOpen(false);
-    if (mode === 'password') setShellHint('已切到個人資料頁，可接續放入變更密碼子頁。');
+    setMobileMoreOpen(false);
+    if (!canAccessEvaluation(user)) {
+      if (mode === 'password') setShellHint('變更密碼入口已預留，後續可接真實子頁。');
+      else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
+      else setShellHint('目前評鑑專區僅核心人員可進入。');
+      return;
+    }
+    setActive('profile');
+    if (mode === 'password') setShellHint('已切到評鑑頁，可接續放入變更密碼子頁。');
     else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
   }
 
@@ -4031,16 +4045,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <div className="vp-header-module-title">{currentModuleLabel} <span className="vp-header-module-slash">/</span> <span className="vp-header-module-en-inline">{currentModuleEnglish}</span></div>
             </div>
           </div>
-          <div className="vp-header-tools">
-            <div className="search-wrap vp-search-wrap">
-              <Search className="search-icon" />
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={getSearchPlaceholder(active)} />
-            </div>
-            <div className="vp-header-global-tools">
+          <div className="vp-header-tools vp-header-tools-compact">
+            <div className="vp-header-global-tools vp-header-global-tools-top">
               <div className="vp-header-action-group" ref={notificationPanelRef}>
                 <button
                   type="button"
-                  className={`ghost-button vp-tool-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
+                  className={`vp-icon-only-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
                   onClick={() => {
                     setNotificationOpen((prev) => !prev);
                     setProfileOpen(false);
@@ -4082,7 +4092,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               <div className="vp-header-action-group" ref={profilePanelRef}>
                 <button
                   type="button"
-                  className={`ghost-button vp-tool-button vp-profile-trigger ${profileOpen ? 'active' : ''}`}
+                  className={`vp-profile-trigger-circle ${profileOpen ? 'active' : ''}`}
                   onClick={() => {
                     setProfileOpen((prev) => !prev);
                     setNotificationOpen(false);
@@ -4090,14 +4100,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   }}
                   aria-label="個人中心"
                 >
-                  {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-trigger-image" /> : <User className="small-icon" />}
+                  {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-trigger-image" /> : <span className="vp-profile-trigger-letter">{getProfileTriggerLabel(user.name)}</span>}
                 </button>
                 {profileOpen && (
                   <div className="vp-profile-popover">
                     <div className="vp-profile-popover-head">
                       <div className="vp-profile-popover-id-block">
                         <button type="button" className="vp-profile-popover-avatar" onClick={() => dashboardAvatarInputRef.current?.click()}>
-                          {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-popover-avatar-image" /> : user.name.slice(0, 1)}
+                          {dashboardAvatarImage ? <img src={dashboardAvatarImage} alt={user.name} className="vp-profile-popover-avatar-image" /> : getProfileTriggerLabel(user.name)}
                         </button>
                         <div>
                           <div className="vp-profile-popover-name">{user.name}</div>
@@ -4119,6 +4129,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                         <div className="vp-profile-meta-item"><span>階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
                         <div className="vp-profile-meta-item"><span>價格身分</span><strong>{getPriceTierLabel(user.rankKey)}</strong></div>
                       </div>
+                      <div className="vp-profile-popover-upload-note">點擊頭像可上傳圖片，未上傳時會自動顯示姓名第 2 個字。</div>
                       <div className="vp-profile-popover-actions">
                         <button type="button" className="vp-profile-popover-btn primary" onClick={() => openProfileCenter('profile')}>個人設定</button>
                         <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
@@ -4131,9 +4142,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 )}
               </div>
             </div>
-            <button type="button" className="ghost-button vp-tool-button" onClick={() => void loadFirebaseData()}>
-              <RefreshCw className="small-icon" />重新整理
-            </button>
           </div>
         </header>
 
@@ -4157,7 +4165,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
               <div className="vp-module-body">
                 {active === 'dashboard' && (
-                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} dashboardAvatarImage={dashboardAvatarImage} dashboardAvatarInputRef={dashboardAvatarInputRef} handleDashboardAvatarUpload={handleDashboardAvatarUpload} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} />
+                  <DashboardModule user={user} getRankClass={getRankClass} priceTierLabel={getPriceTierLabel(user.rankKey)} personalOrders={profilePersonalOrders} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} workflowCards={workflowCards} WorkflowModule={WorkflowModule} itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} dashboardAvatarImage={dashboardAvatarImage} dashboardAvatarInputRef={dashboardAvatarInputRef} handleDashboardAvatarUpload={handleDashboardAvatarUpload} evaluationQuarter={evaluationQuarter} myEvaluationQuarterResult={myEvaluationQuarterResult} />
                 )}
                 {active === 'products' && (
                   <ProductsModule products={products} enabledProducts={enabledProducts} productNotice={productNotice} selectedProductId={selectedProductId} filteredProducts={filteredProducts} openCreateProduct={openCreateProduct} openViewProduct={openViewProduct} openEditProduct={openEditProduct} toggleProductEnabled={toggleProductEnabled} productEditorMode={productEditorMode} productDraft={productDraft} setProductDraft={setProductDraft} saveProductDraft={saveProductDraft} selectedProduct={selectedProduct} productCategories={productCategories} handleProductImageUpload={handleProductImageUpload} productImageInputRef={productImageInputRef} SectionIntro={SectionIntro} StatusBadge={StatusBadge} />
@@ -4239,7 +4247,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} />
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} />
                 )}
               </div>
             </>
@@ -4247,7 +4255,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </section>
 
         <div className="mobile-nav">
-          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || canAccessNav(user.role, item.key as NavKey)).map((item) => {
+          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user.role, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
             const Icon = item.icon;
             const isActive = item.key === 'more' ? mobileMoreOpen : active === item.key;
             return (

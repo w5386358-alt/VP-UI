@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, ShoppingBag, Star } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
-  const { personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], evaluationQuarter, setEvaluationQuarter, dashboardRadarMetrics = [], myEvaluationQuarterResult } = props;
+  const { personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], evaluationQuarter, myEvaluationQuarterResult } = props;
 
   const myCustomerCards = useMemo(() => ownCustomerRecords.map((customer: any) => {
     const relatedOrders = allOrderRecords.filter((item: any) => item.customer === customer.name);
@@ -17,12 +17,6 @@ export default function DashboardModule(props: any) {
 
   const latestOrders = personalOrders.slice(0, 4);
   const latestCustomers = myCustomerCards.slice(0, 4);
-  const rankingTree = dashboardRadarMetrics.length ? dashboardRadarMetrics : [
-    { label: '業績', value: 0 },
-    { label: '協作', value: 0 },
-    { label: '專業', value: 0 },
-    { label: '效率', value: 0 },
-  ];
   const totalSales = personalOrders.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
   const averageScore = myEvaluationQuarterResult?.total || 0;
   const medal = myEvaluationQuarterResult?.medal || '精進級';
@@ -32,32 +26,6 @@ export default function DashboardModule(props: any) {
     { title: '累積成交金額', value: `$${totalSales.toLocaleString()}`, sub: '沿用歷史訂單累積結果', icon: ShoppingBag },
     { title: '個人評鑑平均', value: `${averageScore}`, sub: `${evaluationQuarter} / ${medal}`, icon: Star },
   ];
-  const radarLevels = [1, 0.75, 0.5, 0.25];
-  const svgSize = 360;
-  const center = svgSize / 2;
-  const outerRadius = 92;
-  const labelRadius = 136;
-  const radarPoints = rankingTree.map((item: any, index: number) => {
-    const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
-    const radius = outerRadius * ((item.value || 0) / 100);
-    const axisX = center + Math.cos(angle) * outerRadius;
-    const axisY = center + Math.sin(angle) * outerRadius;
-    const labelX = center + Math.cos(angle) * labelRadius;
-    const labelY = center + Math.sin(angle) * labelRadius;
-    return {
-      ...item,
-      x: center + Math.cos(angle) * radius,
-      y: center + Math.sin(angle) * radius,
-      axisX,
-      axisY,
-      labelX,
-      labelY,
-      textAnchor: index === 1 ? 'start' : index === 3 ? 'end' : 'middle',
-      labelOffsetY: index === 0 ? -8 : index === 2 ? 10 : -2,
-      scoreOffsetY: index === 0 ? 18 : index === 2 ? 36 : 20,
-    };
-  });
-  const radarPolygon = radarPoints.map((item: any) => `${item.x},${item.y}`).join(' ');
 
   return (
     <div className="dashboard-personal-shell">
@@ -131,65 +99,7 @@ export default function DashboardModule(props: any) {
         </div>
       </section>
 
-      <section className="dashboard-personal-bottom-grid">
-        <div className="card dashboard-tree-card compact-card">
-          <div className="panel-head">
-            <div>
-              <div className="panel-title">個人評鑑雷達能力圖</div>
-              <div className="panel-desc">四個季度可切換查看，能力項目已改為業績、協作、專業、效率。</div>
-            </div>
-            <span className="badge badge-soft">{evaluationQuarter}</span>
-          </div>
-          <div className="evaluation-quarter-row dashboard-quarter-row">
-            {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => (
-              <button key={quarter} type="button" className={`evaluation-quarter-btn ${evaluationQuarter === quarter ? 'active' : ''}`} onClick={() => setEvaluationQuarter(quarter)}>{quarter}</button>
-            ))}
-          </div>
-          <div className="dashboard-tree-layout radar-layout">
-            <div className="dashboard-tree-visual radar-visual">
-              <svg className="dashboard-radar-svg" viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="個人評鑑雷達能力圖">
-                {radarLevels.map((level) => {
-                  const points = rankingTree.map((_: any, index: number) => {
-                    const angle = (-90 + index * (360 / rankingTree.length)) * Math.PI / 180;
-                    const radius = outerRadius * level;
-                    const x = center + Math.cos(angle) * radius;
-                    const y = center + Math.sin(angle) * radius;
-                    return `${x},${y}`;
-                  }).join(' ');
-                  return <polygon key={level} points={points} className="dashboard-radar-grid" />;
-                })}
-                {radarPoints.map((item: any) => (
-                  <line key={item.label} x1={center} y1={center} x2={item.axisX} y2={item.axisY} className="dashboard-radar-axis" />
-                ))}
-                <polygon points={radarPolygon} className="dashboard-radar-shape" />
-                {radarPoints.map((item: any) => (
-                  <circle key={item.label} cx={item.x} cy={item.y} r="5.5" className="dashboard-radar-point" />
-                ))}
-                <g className="dashboard-radar-center-group">
-                  <circle cx={center} cy={center} r="30" className="dashboard-radar-center-disc" />
-                  <text x={center} y={center - 4} textAnchor="middle" className="dashboard-radar-center-title">綜合評分</text>
-                  <text x={center} y={center + 18} textAnchor="middle" className="dashboard-radar-center-score">{averageScore}</text>
-                </g>
-                {radarPoints.map((item: any) => (
-                  <g key={item.label} className="dashboard-radar-label-group">
-                    <text x={item.labelX} y={item.labelY + item.labelOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-label">{item.label}</text>
-                    <text x={item.labelX} y={item.labelY + item.scoreOffsetY} textAnchor={item.textAnchor as any} className="dashboard-radar-svg-score">{item.value}</text>
-                  </g>
-                ))}
-              </svg>
-            </div>
-            <div className="dashboard-tree-score-grid radar-summary-grid">
-              {rankingTree.map((item: any) => (
-                <div key={item.label} className="dashboard-tree-score-card summary-card-lite radar-summary-card">
-                  <span className="dashboard-tree-label">{item.label}</span>
-                  <strong className="dashboard-tree-score">{item.value}</strong>
-                  <small className="dashboard-tree-mini-desc">{evaluationQuarter} 能力得分</small>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
+      <section className="dashboard-personal-bottom-grid dashboard-personal-bottom-grid-single">
         <div className="card dashboard-growth-card compact-card">
           <div className="panel-head">
             <div>
