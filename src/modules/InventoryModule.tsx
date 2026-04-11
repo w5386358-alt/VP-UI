@@ -105,7 +105,7 @@ export default function InventoryModule(props: any) {
               </div>
 
               <div className="accounting-filter-grid warehouse-filter-grid warehouse-filter-shell-grid">
-                <label className="field-card field-span-2"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶</span><input value={warehouseKeyword} onChange={(e) => setWarehouseKeyword(e.target.value)} placeholder="輸入訂單編號、客戶姓名、收款狀態、出貨狀態" /></label>
+                <label className="field-card field-span-2 scanner-inline-card"><span className="field-label"><Search className="small-icon" />搜尋訂單 / 客戶</span><div className="scanner-input-wrap"><input value={warehouseKeyword} onChange={(e) => setWarehouseKeyword(e.target.value)} placeholder="輸入訂單編號、客戶姓名、收款狀態、出貨狀態" /><button type="button" className="scan-inline-icon-btn" onClick={handleQueryScanLaunch} aria-label="掃描搜尋訂單"><QrCode className="small-icon" /></button></div></label>
                 <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />開始日期</span><input type="date" value={warehouseDateStart} onChange={(e) => setWarehouseDateStart(e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CalendarRange className="small-icon" />結束日期</span><input type="date" value={warehouseDateEnd} onChange={(e) => setWarehouseDateEnd(e.target.value)} /></label>
                 <label className="field-card"><span className="field-label"><CreditCard className="small-icon" />收款狀態</span><select value={warehousePaymentFilter} onChange={(e) => setWarehousePaymentFilter(e.target.value)}><option value="全部">全部</option><option value="待收款">待收款</option><option value="已收款">已收款</option><option value="退款處理中">退款處理中</option></select></label>
@@ -176,8 +176,8 @@ export default function InventoryModule(props: any) {
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
                   <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
                   <div className="fake-field"><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
-                  <div className="fake-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleScanBarcodeLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
-                  <div className="fake-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleScanQrLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
+                  <div className="fake-field scanner-inline-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /><button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcodeLaunch} aria-label="掃描商品條碼"><QrCode className="small-icon" /></button></strong></div>
+                  <div className="fake-field scanner-inline-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /><button type="button" className="scan-inline-icon-btn" onClick={handleScanQrLaunch} aria-label="掃描 QR 身分識別"><QrCode className="small-icon" /></button></strong></div>
                   <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
                 </div>
 
@@ -255,7 +255,7 @@ export default function InventoryModule(props: any) {
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
-              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleInboundQrLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
+              <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
               <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
               <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
             </div>
@@ -295,7 +295,7 @@ export default function InventoryModule(props: any) {
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'order' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('order')}>訂單編號</button>
               </div>
               <div className="warehouse-form-grid">
-                <div className="fake-field wide"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleQueryScanLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
+                <div className="fake-field wide scanner-inline-field"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /><button type="button" className="scan-inline-icon-btn" onClick={handleQueryScanLaunch} aria-label="掃描查詢條件"><QrCode className="small-icon" /></button></strong></div>
               </div>
               <div className="accounting-action-row">
                 <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>

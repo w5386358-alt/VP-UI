@@ -133,10 +133,12 @@ export default function ProductsModule(props: any) {
                   ))}
                 </select>
               </label>
-              <label className="field-card">
+              <label className="field-card scanner-inline-card">
                 <span className="field-label"><FileText className="small-icon" />商品條碼</span>
-                <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
-                {productEditorMode !== 'view' && <button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleScanBarcode}><span className="scan-launch-emoji">▣</span>啟動掃碼</button>}
+                <div className="scanner-input-wrap">
+                  <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
+                  {productEditorMode !== 'view' && <button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcode} aria-label="掃描商品條碼"><span className="scan-launch-emoji">▣</span></button>}
+                </div>
               </label>
               <label className="field-card field-span-2">
                 <span className="field-label"><FileText className="small-icon" />商品名稱</span>

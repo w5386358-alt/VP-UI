@@ -24,6 +24,7 @@ export default function OrdersModule(props: any) {
   const dragStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const touchStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const [cartFabPosition, setCartFabPosition] = useState({ x: 0, y: 0, ready: false });
+  const [draggingFab, setDraggingFab] = useState(false);
   const pageSize = 10;
   const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
   const safeProductPage = Math.min(productPage, totalProductPages);
@@ -44,6 +45,62 @@ export default function OrdersModule(props: any) {
       y: window.innerHeight - size - 112,
       ready: true,
     });
+  }, [cartFabPosition.ready]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    function handleTouchMove(event: TouchEvent) {
+      const state = touchStateRef.current;
+      if (!state.dragging) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      const dx = touch.clientX - state.startX;
+      const dy = touch.clientY - state.startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
+      const next = clampFabPosition(state.originX + dx, state.originY + dy);
+      setCartFabPosition({ x: next.x, y: next.y, ready: true });
+      event.preventDefault();
+    }
+
+    function handleTouchEnd() {
+      const state = touchStateRef.current;
+      if (!state.dragging) return;
+      touchStateRef.current.dragging = false;
+      setDraggingFab(false);
+      if (!state.moved) setCartOpen(true);
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      const state = dragStateRef.current;
+      if (!state.dragging) return;
+      const dx = event.clientX - state.startX;
+      const dy = event.clientY - state.startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
+      const next = clampFabPosition(state.originX + dx, state.originY + dy);
+      setCartFabPosition({ x: next.x, y: next.y, ready: true });
+    }
+
+    function handlePointerUp() {
+      const state = dragStateRef.current;
+      if (!state.dragging) return;
+      dragStateRef.current.dragging = false;
+      setDraggingFab(false);
+      if (!state.moved) setCartOpen(true);
+    }
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerup', handlePointerUp, { passive: true });
+    window.addEventListener('pointercancel', handlePointerUp, { passive: true });
+    return () => {
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
   }, [cartFabPosition.ready]);
 
   function clampFabPosition(nextX: number, nextY: number) {
@@ -73,25 +130,16 @@ export default function OrdersModule(props: any) {
       originX: currentX,
       originY: currentY,
     };
+    setDraggingFab(true);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   }
 
-  function handleCartFabPointerMove(event: React.PointerEvent<HTMLButtonElement>) {
-    const state = dragStateRef.current;
-    if (!state.dragging) return;
-    const dx = event.clientX - state.startX;
-    const dy = event.clientY - state.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
-    const next = clampFabPosition(state.originX + dx, state.originY + dy);
-    setCartFabPosition({ x: next.x, y: next.y, ready: true });
+  function handleCartFabPointerMove(_event: React.PointerEvent<HTMLButtonElement>) {
+    return;
   }
 
   function handleCartFabPointerUp(event: React.PointerEvent<HTMLButtonElement>) {
-    const state = dragStateRef.current;
-    if (!state.dragging) return;
-    dragStateRef.current.dragging = false;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
-    if (!state.moved) setCartOpen(true);
   }
 
 
@@ -103,26 +151,15 @@ export default function OrdersModule(props: any) {
     const currentX = cartFabPosition.ready ? cartFabPosition.x : touch.clientX;
     const currentY = cartFabPosition.ready ? cartFabPosition.y : touch.clientY;
     touchStateRef.current = { dragging: true, moved: false, startX: touch.clientX, startY: touch.clientY, originX: currentX, originY: currentY };
+    setDraggingFab(true);
   }
 
-  function handleCartFabTouchMove(event: any) {
-    const state = touchStateRef.current;
-    if (!state.dragging) return;
-    const touch = event.touches[0];
-    if (!touch) return;
-    const dx = touch.clientX - state.startX;
-    const dy = touch.clientY - state.startY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
-    const next = clampFabPosition(state.originX + dx, state.originY + dy);
-    setCartFabPosition({ x: next.x, y: next.y, ready: true });
-    event.preventDefault();
+  function handleCartFabTouchMove(_event: any) {
+    return;
   }
 
   function handleCartFabTouchEnd() {
-    const state = touchStateRef.current;
-    if (!state.dragging) return;
-    touchStateRef.current.dragging = false;
-    if (!state.moved) setCartOpen(true);
+    return;
   }
 
   function runAddToCartFx(sourceEl: HTMLElement, item: any) {
@@ -171,7 +208,7 @@ export default function OrdersModule(props: any) {
       <button
         ref={cartButtonRef}
         type="button"
-        className={`floating-cart-button ${cartOpen ? 'open' : ''} ${cartFabPosition.ready ? 'is-draggable' : ''}`}
+        className={`floating-cart-button ${cartOpen ? 'open' : ''} ${cartFabPosition.ready ? 'is-draggable' : ''} ${draggingFab ? 'dragging' : ''}`}
         onClick={() => {
           if (typeof window !== 'undefined' && window.innerWidth <= 900) return;
           setCartOpen(true);
