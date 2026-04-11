@@ -4047,7 +4047,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              <div className="vp-header-action-group" ref={notificationPanelRef}>
+              <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
                 <button
                   type="button"
                   className={`vp-icon-only-button vp-bell-button ${notificationOpen ? 'active' : ''}`}
@@ -4089,7 +4089,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 )}
               </div>
 
-              <div className="vp-header-action-group" ref={profilePanelRef}>
+              <div className="vp-header-action-group vp-header-action-group-profile" ref={profilePanelRef}>
                 <button
                   type="button"
                   className={`vp-profile-trigger-circle ${profileOpen ? 'active' : ''}`}
@@ -4257,7 +4257,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         <div className="mobile-nav">
           {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user.role, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
             const Icon = item.icon;
-            const isActive = item.key === 'more' ? mobileMoreOpen : active === item.key;
+            const isActive = item.key === 'more' ? mobileMoreOpen : (!mobileMoreOpen && active === item.key);
             return (
               <button
                 key={item.key}
