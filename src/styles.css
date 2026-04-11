@@ -10235,6 +10235,116 @@ body {
 }
 
 
+
+.vp-pwa-floating-card {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 42;
+  padding: 16px 16px 14px;
+  border-radius: 24px;
+  border: 1px solid rgba(236, 198, 213, 0.95);
+  background: linear-gradient(145deg, rgba(255,252,253,0.98) 0%, rgba(255,243,247,0.97) 100%);
+  box-shadow: 0 18px 44px rgba(126, 28, 66, 0.22);
+  backdrop-filter: blur(16px);
+}
+
+.vp-pwa-floating-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #b65579;
+}
+
+.vp-pwa-floating-title {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.35;
+  color: #8f123f;
+}
+
+.vp-pwa-floating-desc {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #7b6471;
+}
+
+.vp-pwa-floating-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.vp-pwa-floating-primary,
+.vp-pwa-floating-ghost,
+.vp-pwa-floating-close {
+  border: 0;
+  cursor: pointer;
+}
+
+.vp-pwa-floating-primary {
+  flex: 1 1 0;
+  min-height: 42px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary) 0%, #d6527d 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 14px 26px rgba(170, 39, 89, 0.24);
+}
+
+.vp-pwa-floating-ghost {
+  min-width: 88px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.86);
+  color: #8d5e72;
+  font-size: 13px;
+  font-weight: 800;
+  border: 1px solid rgba(231, 193, 208, 0.92);
+}
+
+.vp-pwa-floating-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.78);
+  color: #8b6677;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+@media (min-width: 901px) {
+  .vp-pwa-floating-card {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .vp-pwa-floating-card {
+    left: 12px;
+    right: 12px;
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    padding: 14px 14px 12px;
+    border-radius: 22px;
+  }
+
+  .vp-pwa-floating-title {
+    font-size: 16px;
+  }
+
+  .vp-pwa-floating-desc {
+    font-size: 12px;
+  }
+}
+
 .vp-header-pwa-strip {
   display: inline-flex;
   align-items: center;

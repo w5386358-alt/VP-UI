@@ -3850,6 +3850,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
+  const [pwaPromptDismissed, setPwaPromptDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('vp.pwaPromptDismissed.v1') === '1';
+  });
   const [showAppLaunch, setShowAppLaunch] = useState(() => {
     if (typeof window === 'undefined') return false;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
@@ -3899,6 +3903,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const handleAppInstalled = () => {
       setInstallPromptEvent(null);
       setIsStandaloneMode(true);
+      persistPwaPromptDismissed(true);
       triggerShellHint('✅ 已加入主畫面，可用 App 方式開啟。');
     };
 
@@ -3919,14 +3924,32 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, []);
 
   useEffect(() => {
+    if (!isStandaloneMode) return;
+    persistPwaPromptDismissed(true);
+  }, [isStandaloneMode]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
     return () => window.clearTimeout(timer);
   }, []);
 
+  function persistPwaPromptDismissed(value: boolean) {
+    setPwaPromptDismissed(value);
+    if (typeof window === 'undefined') return;
+    if (value) window.localStorage.setItem('vp.pwaPromptDismissed.v1', '1');
+    else window.localStorage.removeItem('vp.pwaPromptDismissed.v1');
+  }
+
+  function dismissPwaPrompt() {
+    persistPwaPromptDismissed(true);
+    triggerShellHint('已先隱藏加入主畫面提示。');
+  }
+
   async function handleInstallApp() {
     if (!installPromptEvent) {
+      if (isStandaloneMode) persistPwaPromptDismissed(true);
       triggerShellHint(isStandaloneMode ? '✅ 目前已是主畫面模式。' : '目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
       return;
     }
@@ -3934,6 +3957,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       await installPromptEvent.prompt();
       const choice = await installPromptEvent.userChoice;
       if (choice.outcome === 'accepted') {
+        persistPwaPromptDismissed(true);
         triggerShellHint('✅ 已送出安裝指令，完成後可從主畫面開啟。');
       } else {
         triggerShellHint('已取消加入主畫面。');
@@ -4017,6 +4041,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setMobileMoreOpen(false);
   }, [active]);
 
+  const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
+
   return (
     <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
       {showAppLaunch && (
@@ -4036,6 +4062,19 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
+
+      {showFloatingInstallPrompt && (
+        <div className="vp-pwa-floating-card" role="dialog" aria-label="加入主畫面提示">
+          <button type="button" className="vp-pwa-floating-close" onClick={dismissPwaPrompt} aria-label="關閉加入主畫面提示">稍後</button>
+          <div className="vp-pwa-floating-kicker">App 提示</div>
+          <div className="vp-pwa-floating-title">可加入主畫面，開啟會更像 App</div>
+          <div className="vp-pwa-floating-desc">加入後這個提示會自動消失，不會一直擋住頁面。</div>
+          <div className="vp-pwa-floating-actions">
+            <button type="button" className="vp-pwa-floating-ghost" onClick={dismissPwaPrompt}>先隱藏</button>
+            <button type="button" className="vp-pwa-floating-primary" onClick={handleInstallApp}>加入主畫面</button>
+          </div>
+        </div>
+      )}
 
       {!isMobileViewport && (
       <aside className="vp-sidebar">
@@ -4143,24 +4182,26 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              <div className="vp-header-pwa-strip">
-                <button
-                  type="button"
-                  className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
-                  onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
-                >
-                  {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
-                  <span>{isOnline ? '連線中' : '離線中'}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
-                  onClick={handleInstallApp}
-                >
-                  <Plus className="small-icon" />
-                  <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
-                </button>
-              </div>
+              {!isMobileViewport && (
+                <div className="vp-header-pwa-strip">
+                  <button
+                    type="button"
+                    className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
+                    onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
+                  >
+                    {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                    <span>{isOnline ? '連線中' : '離線中'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
+                    onClick={handleInstallApp}
+                  >
+                    <Plus className="small-icon" />
+                    <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
+                  </button>
+                </div>
+              )}
 
               <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
                 <button
