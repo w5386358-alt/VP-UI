@@ -1,0 +1,12 @@
+第六階段：App化視覺強化版
+
+已補內容：
+1. 重做 PWA / 主畫面 Icon，改為正式 VP 品牌感圖示。
+2. 補 Apple Touch Icon，提高 iPhone 加入主畫面後的視覺完整度。
+3. 將 title / app 名稱統一為「VP 系統」。
+4. 新增 App 啟動畫面風格 Overlay，降低從主畫面開啟時的網頁感。
+5. 補 safe-area 與 standalone class，讓手機主畫面模式更像 App 殼。
+
+本階段目標：
+- 不只是可加入主畫面
+- 而是從圖示、命名、開啟瞬間都更接近正式 App 感

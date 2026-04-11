@@ -1,0 +1,23 @@
+VP 系統｜第四階段：PWA 外殼
+
+本階段已補內容：
+1. manifest.webmanifest
+2. 手機主畫面 icon（192 / 512）
+3. 基本 service worker（先做外殼快取）
+4. Header 加入連線狀態 / 加入主畫面按鈕
+5. 支援 beforeinstallprompt / appinstalled / online / offline 事件
+
+目前定位：
+- 先讓新版 UI 可往手機 Web App / PWA 路線前進
+- 不破壞既有 Firebase 主線與第三階段 GAS 同步中心骨架
+- 先做安裝體驗與基本離線殼，不直接做深層離線資料同步
+
+本階段注意：
+- iPhone Safari 不一定會跳原生安裝提示，需用「分享 → 加入主畫面」
+- Android / Chrome 較容易出現安裝提示
+- service worker 目前為保守版，只快取基本外殼檔案
+
+下一步建議：
+- 第五階段：手機實測與 PWA 細節校正
+- 針對 iPhone / Android 各自補安裝提示文案
+- 視需要再補離線頁 / 更新提示 / 版本號顯示

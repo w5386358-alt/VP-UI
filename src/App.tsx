@@ -47,6 +47,13 @@ import InventoryModule from './modules/InventoryModule';
 import AccountingModule from './modules/AccountingModule';
 import ProfileModule from './modules/ProfileModule';
 
+
+type BeforeInstallPromptEvent = Event & {
+  readonly platforms?: string[];
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
+
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
@@ -3840,6 +3847,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [shellHint, setShellHint] = useState('');
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandaloneMode, setIsStandaloneMode] = useState(false);
+  const [showAppLaunch, setShowAppLaunch] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+    return standalone || window.innerWidth <= 900;
+  });
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3863,6 +3878,72 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       console.warn('avatar image cache skipped', error);
     }
   }, [dashboardAvatarImage]);
+
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(display-mode: standalone)');
+    const updateStandalone = () => setIsStandaloneMode(media.matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
+    const handleOnline = () => {
+      setIsOnline(true);
+      triggerShellHint('✅ 網路已恢復，PWA 外殼可繼續連線。');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      triggerShellHint('⚠️ 目前離線中，仍可保留基本外殼畫面。');
+    };
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event as BeforeInstallPromptEvent);
+    };
+    const handleAppInstalled = () => {
+      setInstallPromptEvent(null);
+      setIsStandaloneMode(true);
+      triggerShellHint('✅ 已加入主畫面，可用 App 方式開啟。');
+    };
+
+    updateStandalone();
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    media.addEventListener?.('change', updateStandalone);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      media.removeEventListener?.('change', updateStandalone);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  async function handleInstallApp() {
+    if (!installPromptEvent) {
+      triggerShellHint(isStandaloneMode ? '✅ 目前已是主畫面模式。' : '目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
+      return;
+    }
+    try {
+      await installPromptEvent.prompt();
+      const choice = await installPromptEvent.userChoice;
+      if (choice.outcome === 'accepted') {
+        triggerShellHint('✅ 已送出安裝指令，完成後可從主畫面開啟。');
+      } else {
+        triggerShellHint('已取消加入主畫面。');
+      }
+      setInstallPromptEvent(null);
+    } catch (error) {
+      console.warn('install prompt failed', error);
+      triggerShellHint('安裝提示啟動失敗，請改用瀏覽器加入主畫面。');
+    }
+  }
 
   function readImageFile(file: File | null, onDone: (value: string) => void) {
     if (!file) return;
@@ -3937,7 +4018,22 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, [active]);
 
   return (
-    <div className="vp-shell">
+    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
+      {showAppLaunch && (
+        <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`}>
+          <div className="vp-launch-card">
+            <div className="vp-launch-mark-wrap">
+              <div className="vp-launch-mark">VP</div>
+              <span className="vp-launch-ring vp-launch-ring-a" />
+              <span className="vp-launch-ring vp-launch-ring-b" />
+            </div>
+            <div className="vp-launch-kicker">Velvet Pulse</div>
+            <div className="vp-launch-title">VP 系統</div>
+            <div className="vp-launch-desc">訂購 × 倉儲 × 會計 × 同步中心</div>
+          </div>
+        </div>
+      )}
+
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 
@@ -4047,6 +4143,25 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
+              <div className="vp-header-pwa-strip">
+                <button
+                  type="button"
+                  className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
+                  onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
+                >
+                  {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                  <span>{isOnline ? '連線中' : '離線中'}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
+                  onClick={handleInstallApp}
+                >
+                  <Plus className="small-icon" />
+                  <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
+                </button>
+              </div>
+
               <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
                 <button
                   type="button"
