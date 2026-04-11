@@ -4064,37 +4064,23 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     if (typeof document === 'undefined') return;
     const body = document.body;
     const html = document.documentElement;
-    const mobileStandalone = isMobileViewport || isStandaloneMode;
 
     body.classList.toggle('standalone-body', isStandaloneMode);
     body.classList.toggle('mobile-device-body', isMobileViewport);
+    html.classList.toggle('standalone-html', isStandaloneMode);
+    html.classList.toggle('mobile-device-html', isMobileViewport);
 
-    if (mobileStandalone) {
-      html.style.overflowY = 'auto';
-      body.style.overflowY = 'auto';
-      body.style.overflowX = 'hidden';
-      body.style.position = 'relative';
-      body.style.touchAction = 'pan-y';
-      body.style.webkitOverflowScrolling = 'touch';
-    } else {
-      html.style.overflowY = '';
-      body.style.overflowY = '';
-      body.style.overflowX = '';
-      body.style.position = '';
-      body.style.touchAction = '';
-      body.style.webkitOverflowScrolling = '';
+    if (isStandaloneMode && typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      });
     }
 
     return () => {
       body.classList.remove('standalone-body', 'mobile-device-body');
-      html.style.overflowY = '';
-      body.style.overflowY = '';
-      body.style.overflowX = '';
-      body.style.position = '';
-      body.style.touchAction = '';
-      body.style.webkitOverflowScrolling = '';
+      html.classList.remove('standalone-html', 'mobile-device-html');
     };
-  }, [isMobileViewport, isStandaloneMode, active, mobileMoreOpen]);
+  }, [isMobileViewport, isStandaloneMode]);
 
   const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
   const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;

@@ -36,3 +36,11 @@
 [補修] 第六階段補修完成：手機端「加入主畫面」提示改為浮動彈窗，已加入主畫面或手動關閉後會自動隱藏，不再占用頁首空間。
 
 第七階段補修：修正手機誤判造成的上方提示列殘留，並補 iPhone 加入主畫面手動指引。
+
+
+[第三十五版節點]
+- 以第三十三版為檢查基底，鎖定 Android 加入主畫面後無法滑動問題。
+- 本次修正方向：取消對 html/body 的 inline overflow、position、touchAction 強制寫法，改為 class 控制。
+- 新增 mobile-device-html / standalone-html 類別，統一由 CSS 接管 Android standalone 捲動容器。
+- 目標：修正 Android 從主畫面開啟後首頁與各模組無法上下滑動的問題。
+- 專案包清理：移除分階段 TXT，節點統一收斂至本檔。

@@ -10582,3 +10582,55 @@ body.standalone-body .vp-workspace {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+
+/* === 第三十五版：Android standalone 捲動容器重置修正 === */
+html.mobile-device-html,
+html.standalone-html,
+body.mobile-device-body,
+body.standalone-body {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  position: static !important;
+  overscroll-behavior-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+body.mobile-device-body,
+body.standalone-body {
+  touch-action: auto !important;
+}
+
+body.mobile-device-body #root,
+body.standalone-body #root,
+body.mobile-device-body .vp-shell,
+body.standalone-body .vp-shell,
+body.mobile-device-body .vp-main,
+body.standalone-body .vp-main,
+body.mobile-device-body .vp-workspace,
+body.standalone-body .vp-workspace {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 900px) {
+  html.mobile-device-html,
+  html.standalone-html,
+  body.mobile-device-body,
+  body.standalone-body {
+    width: 100%;
+  }
+
+  .vp-shell.standalone-mode {
+    display: block !important;
+    min-height: 100dvh !important;
+  }
+
+  .vp-main {
+    min-height: auto !important;
+  }
+}
