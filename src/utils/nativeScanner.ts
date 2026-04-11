@@ -93,9 +93,21 @@ export async function scanWithCamera(options?: {
           };
           void tick();
         } catch (_error) {
-          cleanup();
-          const value = await scanFromImageFile(title, fallbackLabel, formats);
-          resolve(value);
+          const actions = overlay.querySelector('.scanner-live-actions') as HTMLDivElement | null;
+          if (actions) {
+            actions.innerHTML = '<button type="button" class="scanner-live-secondary">改用照片</button><button type="button" class="scanner-live-secondary scanner-live-manual">手動輸入</button>';
+            const photoFallback = actions.querySelector('.scanner-live-secondary') as HTMLButtonElement | null;
+            const manualFallback = actions.querySelector('.scanner-live-manual') as HTMLButtonElement | null;
+            photoFallback?.addEventListener('click', () => { void fallbackPhoto(); }, { once: true });
+            manualFallback?.addEventListener('click', () => {
+              cleanup();
+              const manual = window.prompt(`${title}
+相機暫時無法啟動，請手動輸入${fallbackLabel}：`, '');
+              resolve(manual ? manual.trim() : null);
+            }, { once: true });
+          }
+          const tip = overlay.querySelector('.scanner-live-tip') as HTMLDivElement | null;
+          if (tip) tip.textContent = '目前裝置無法維持即時掃描，可改用照片或手動輸入。';
         }
       })();
     });
@@ -150,6 +162,15 @@ async function scanFromImageFile(title: string, fallbackLabel: string, formats: 
       }
     };
 
-    input.click();
+    const openPicker = () => {
+      const anyInput = input as HTMLInputElement & { showPicker?: () => void };
+      try {
+        if (typeof anyInput.showPicker === 'function') anyInput.showPicker();
+        else input.click();
+      } catch (_error) {
+        input.click();
+      }
+    };
+    window.setTimeout(openPicker, 20);
   });
 }

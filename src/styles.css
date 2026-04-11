@@ -10277,3 +10277,51 @@ body {
   display: flex;
   justify-content: center;
 }
+
+
+/* === 第二十三版：倉儲起始畫面修正 / 掃碼欄位穩定 / 商品區右側微調 === */
+.scanner-inline-field strong,
+.scanner-input-wrap {
+  min-height: 58px;
+}
+
+.scan-inline-icon-btn {
+  flex: 0 0 42px;
+  transition: opacity .16s ease, color .16s ease, background-color .16s ease !important;
+  will-change: auto !important;
+}
+
+.scan-inline-icon-btn .small-icon {
+  width: 23px !important;
+  height: 23px !important;
+}
+
+@media (min-width: 901px) {
+  .product-admin-layout.products-stage-layout {
+    grid-template-columns: minmax(0, 1.42fr) minmax(340px, 0.78fr) !important;
+  }
+
+  .product-admin-layout.products-stage-layout > .product-admin-side {
+    justify-self: end !important;
+    width: 100% !important;
+    max-width: 380px !important;
+  }
+}
+
+.warehouse-command-layout .warehouse-filter-shell,
+.warehouse-command-layout .warehouse-queue-card,
+.warehouse-command-layout .warehouse-detail-card,
+.warehouse-command-layout .warehouse-log-shell {
+  background: linear-gradient(180deg, rgba(255,245,249,0.98) 0%, rgba(255,250,252,0.95) 100%) !important;
+}
+
+.warehouse-command-layout .field-card,
+.warehouse-command-layout .fake-field,
+.warehouse-command-layout .warehouse-log-item,
+.warehouse-command-layout .shipping-row {
+  background: rgba(255,255,255,0.82) !important;
+}
+
+.warehouse-command-layout .shipping-row.selected {
+  background: rgba(255,240,246,0.95) !important;
+}

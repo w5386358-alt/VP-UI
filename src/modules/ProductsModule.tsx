@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3, ChevronLeft, ChevronRight, QrCode } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -137,7 +137,7 @@ export default function ProductsModule(props: any) {
                 <span className="field-label"><FileText className="small-icon" />商品條碼</span>
                 <div className="scanner-input-wrap">
                   <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
-                  {productEditorMode !== 'view' && <button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcode} aria-label="掃描商品條碼"><Package className="small-icon" /></button>}
+                  {productEditorMode !== 'view' && <button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcode} aria-label="掃描商品條碼"><QrCode className="small-icon" /></button>}
                 </div>
               </label>
               <label className="field-card field-span-2">
