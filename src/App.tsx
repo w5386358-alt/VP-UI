@@ -2285,7 +2285,7 @@ export default function App() {
     }
   }, [stockSnapshot, selectedStockCode]);
 
-  const runWarehouseQuery = (input = warehouseQueryInput, mode = warehouseQueryMode) => {
+  const runWarehouseQuery = (input = warehouseQueryInput) => {
     const value = input.trim();
     if (!value) {
       setWarehouseNotice({ text: '❌ 請先輸入查詢條件', tone: 'danger' });
@@ -2294,30 +2294,20 @@ export default function App() {
 
     const normalized = value.toUpperCase();
 
-    if (mode === 'barcode') {
-      const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
-      if (!matched) {
-        setWarehouseQueryResult([{ title: '查無商品條碼', desc: `找不到 ${value} 的商品資料`, meta: ['請改掃 QR 或訂單編號'] }]);
-        setWarehouseNotice({ text: '❌ 商品條碼查無資料', tone: 'danger' });
-        return;
-      }
-      setSelectedStockCode(matched.code);
+    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
+    if (matchedOrder) {
+      setSelectedWarehouseOrderNo(matchedOrder.orderNo);
       setWarehouseQueryResult([{
-        title: matched.name,
-        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
-        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
+        title: matchedOrder.orderNo,
+        desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
+        meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
       }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
+      setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
       return;
     }
 
-    if (mode === 'qr') {
-      const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
-      if (!matchedLogs.length) {
-        setWarehouseQueryResult([{ title: '查無 QR 身分識別', desc: `找不到 ${value} 的 QR 記錄`, meta: ['請確認是否已入庫'] }]);
-        setWarehouseNotice({ text: '❌ QR 身分識別查無資料', tone: 'danger' });
-        return;
-      }
+    const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
+    if (matchedLogs.length) {
       const latest = [...matchedLogs].sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))[0];
       const balance = matchedLogs.reduce((sum, item) => sum + (item.type === '入庫' ? item.qty : -item.qty), 0);
       setWarehouseQueryResult([{
@@ -2329,19 +2319,24 @@ export default function App() {
       return;
     }
 
-    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
-    if (!matchedOrder) {
-      setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
-      setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
+    const matched = stockSnapshot.find((item) =>
+      item.code.toUpperCase().includes(normalized) ||
+      (item.name || '').toUpperCase().includes(normalized) ||
+      String((products.find((p) => p.code === item.code)?.barcode) || '').toUpperCase().includes(normalized)
+    );
+    if (matched) {
+      setSelectedStockCode(matched.code);
+      setWarehouseQueryResult([{
+        title: matched.name,
+        desc: `商品條碼 ${matched.code} / 目前庫存 ${matched.stock} / 安全庫存 ${matched.safe}`,
+        meta: [matched.qr, matched.updated, `狀態：${matched.status}`],
+      }]);
+      setWarehouseNotice({ text: `✅ 已查到 ${matched.code}`, tone: 'success' });
       return;
     }
-    setSelectedWarehouseOrderNo(matchedOrder.orderNo);
-    setWarehouseQueryResult([{
-      title: matchedOrder.orderNo,
-      desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
-      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
-    }]);
-    setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
+
+    setWarehouseQueryResult([{ title: '查無資料', desc: `找不到 ${value} 的庫存 / QR / 訂單資料`, meta: ['請確認商品條碼、QR 身分識別或訂單編號'] }]);
+    setWarehouseNotice({ text: '❌ 查無資料', tone: 'danger' });
   };
 
   const handleWarehouseShip = async () => {

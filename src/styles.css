@@ -10146,3 +10146,61 @@ body {
     height: 40px;
   }
 }
+
+/* 第二十五版重製：只修商品右側 / 掃碼固定 / 倉儲查詢整合 */
+.scan-inline-icon-btn,
+.scan-inline-icon-btn:hover,
+.scan-inline-icon-btn:focus,
+.scan-inline-icon-btn:active {
+  transform: none !important;
+  translate: none !important;
+  top: 50% !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.scan-inline-icon-btn {
+  flex: 0 0 42px !important;
+}
+
+.scanner-input-wrap,
+.scanner-inline-field strong {
+  min-height: 48px !important;
+}
+
+@media (min-width: 901px) {
+  .product-admin-layout.products-stage-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.72fr) !important;
+    align-items: start !important;
+  }
+
+  .product-admin-main {
+    grid-column: 1 !important;
+  }
+
+  .product-admin-side {
+    grid-column: 2 !important;
+    align-self: start !important;
+    justify-self: end !important;
+    width: 100% !important;
+    max-width: 360px !important;
+  }
+
+  .product-editor-panel.products-editor-shell {
+    position: sticky !important;
+    top: 20px !important;
+  }
+}
+
+.warehouse-query-shell .warehouse-form-grid {
+  gap: 14px !important;
+}
+
+.warehouse-query-shell .accounting-action-row {
+  justify-content: flex-start !important;
+}
+
+.warehouse-query-shell .primary-button {
+  min-width: 132px !important;
+}
