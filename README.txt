@@ -47,3 +47,15 @@ Firebase 既有主集合
 3. Framework Preset 選 Vite
 4. 補齊 Firebase 環境變數
 5. 部署後以手機與桌機實測
+
+
+第二階段已落地內容
+- 新增 src/firebase/collections.ts：統一主線集合名稱
+- 新增 src/firebase/env.ts：統一 Firebase 環境變數讀取
+- 新增 src/firebase/mainline.ts：主線集合、主鍵規則、同步優先順序
+- 本階段先整理主線規則，不主動改動既有 UI 與操作流程
+
+第二階段目標
+- 先固定 Firebase 主線資料規則
+- 後續方便接「新試算表同步中心」
+- 暫不新增評鑑 / 出納 / 請款等新集合，避免與主線混線

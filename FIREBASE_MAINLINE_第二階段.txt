@@ -1,0 +1,31 @@
+VP 系統｜第二階段 Firebase 主線整理
+
+本階段只整理既有主線集合，不新增新模組集合。
+
+主線集合順序
+1. products
+2. customers
+3. staff
+4. orders
+5. order_items
+6. inventory
+7. inventory_logs
+8. payments
+9. shipping
+10. refunds
+11. sales_report
+12. sync_meta
+
+主線原則
+- products 文件 ID = 商品編號
+- inventory 文件 ID = 商品編號
+- orders 文件 ID = 訂單編號
+- order_items 文件 ID = 訂單編號 + 商品編號 + 序號
+- inventory_logs 以 eventId 或規則化流水號防重
+- inventory 為結果，inventory_logs 為事實來源
+- 同步來源後續以「新試算表」為準，不沿用舊版試算表
+
+下一步
+- 設計 GAS 同步中心按鈕
+- 建立新試算表欄位 mapping
+- 再接回 App 內的 Firebase 主線讀寫整理
