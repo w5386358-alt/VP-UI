@@ -195,10 +195,10 @@ export default function OrdersModule(props: any) {
                     <div className="catalog-name">{item.name}</div>
                     <div className="catalog-desc">{item.category} / {priceTierLabel}</div>
                     <div className="catalog-footer">
-                      <div>
-                        <div className="mini-label">原價 ${item.originalPrice ?? item.price}</div>
-                        <div className="catalog-price">${item.price}</div>
-                        <div className="mini-label">{priceTierLabel}</div>
+                      <div className="orders-price-stack">
+                        <div className="mini-label orders-tier-price">{priceTierLabel} ${item.price}</div>
+                        <div className="catalog-price">${item.originalPrice ?? item.price}</div>
+                        <div className="mini-label orders-price-caption">主顯示原價 / 次顯示 {priceTierLabel}</div>
                       </div>
                       <button
                         type="button"

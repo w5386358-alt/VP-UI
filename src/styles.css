@@ -9759,3 +9759,57 @@ body {
     transition: box-shadow .18s ease, transform .18s ease;
   }
 }
+
+/* === 第十八版：評鑑總覽間距 / 訂購價格主次 / 手機商品圖微調 === */
+.evaluation-radar-side-card {
+  padding: 22px;
+}
+
+.evaluation-radar-side-card .evaluation-card-head {
+  margin-bottom: 4px;
+}
+
+.evaluation-radar-side-card .evaluation-bullets {
+  margin-top: 18px;
+  gap: 14px;
+}
+
+.evaluation-radar-side-card .evaluation-bullets div {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 252, 253, 0.9);
+  border: 1px solid rgba(238, 211, 221, 0.9);
+}
+
+.orders-price-stack {
+  display: grid;
+  gap: 2px;
+}
+
+.orders-tier-price {
+  color: #8f7d86;
+  font-weight: 700;
+}
+
+.orders-price-caption {
+  color: #b16b84;
+}
+
+@media (max-width: 900px) {
+  .orders-product-card.full-bleed-card .catalog-image {
+    object-position: calc(50% + 38px) center;
+  }
+
+  .evaluation-radar-side-card {
+    padding: 18px;
+  }
+
+  .evaluation-radar-side-card .evaluation-bullets {
+    margin-top: 16px;
+    gap: 12px;
+  }
+
+  .evaluation-radar-side-card .evaluation-bullets div {
+    padding: 12px 14px;
+  }
+}
