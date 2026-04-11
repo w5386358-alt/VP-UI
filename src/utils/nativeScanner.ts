@@ -149,13 +149,11 @@ export async function scanWithCamera(options?: ScanOptions): Promise<string | nu
         const raw = await detectFromImage(blob, options?.formats);
         if (raw) finish(raw);
         else {
-          const manual = promptManual(title + '
-未能自動辨識', fallbackLabel);
+          const manual = promptManual(title + '\n未能自動辨識', fallbackLabel);
           finish(manual);
         }
       } catch {
-        const manual = promptManual(title + '
-拍照辨識失敗', fallbackLabel);
+        const manual = promptManual(title + '\n拍照辨識失敗', fallbackLabel);
         finish(manual);
       }
     };
@@ -172,11 +170,9 @@ export async function scanWithCamera(options?: ScanOptions): Promise<string | nu
       try {
         const raw = await detectFromImage(file, options?.formats);
         if (raw) finish(raw);
-        else finish(promptManual(title + '
-未能自動辨識', fallbackLabel));
+        else finish(promptManual(title + '\n未能自動辨識', fallbackLabel));
       } catch {
-        finish(promptManual(title + '
-圖片辨識失敗', fallbackLabel));
+        finish(promptManual(title + '\n圖片辨識失敗', fallbackLabel));
       }
     };
 
