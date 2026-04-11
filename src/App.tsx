@@ -54,22 +54,6 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
-function detectMobileLikeDevice() {
-  if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent || '';
-  const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
-  const touchPoints = typeof navigator !== 'undefined' ? navigator.maxTouchPoints || 0 : 0;
-  const shortSide = Math.min(window.innerWidth, window.innerHeight);
-  const standalone = typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || coarse || touchPoints > 1 || shortSide <= 1024 || standalone;
-}
-
-function detectIosDevice() {
-  if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent || '';
-  return /iPhone|iPad|iPod/i.test(ua);
-}
-
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
@@ -3853,8 +3837,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
   const profilePanelRef = useRef<HTMLDivElement | null>(null);
   const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
-  const [isMobileViewport, setIsMobileViewport] = useState(() => detectMobileLikeDevice());
-  const [isIosDevice, setIsIosDevice] = useState(() => detectIosDevice());
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 900;
+  });
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -3866,7 +3852,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
   const [pwaPromptDismissed, setPwaPromptDismissed] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('vp.pwaPromptDismissed.v2') === '1';
+    return window.localStorage.getItem('vp.pwaPromptDismissed.v1') === '1';
   });
   const [showAppLaunch, setShowAppLaunch] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -3952,8 +3938,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   function persistPwaPromptDismissed(value: boolean) {
     setPwaPromptDismissed(value);
     if (typeof window === 'undefined') return;
-    if (value) window.localStorage.setItem('vp.pwaPromptDismissed.v2', '1');
-    else window.localStorage.removeItem('vp.pwaPromptDismissed.v2');
+    if (value) window.localStorage.setItem('vp.pwaPromptDismissed.v1', '1');
+    else window.localStorage.removeItem('vp.pwaPromptDismissed.v1');
   }
 
   function dismissPwaPrompt() {
@@ -3963,14 +3949,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function handleInstallApp() {
     if (!installPromptEvent) {
-      if (isStandaloneMode) {
-        persistPwaPromptDismissed(true);
-        triggerShellHint('✅ 目前已是主畫面模式。');
-      } else if (isIosDevice) {
-        triggerShellHint('iPhone 請用 Safari → 分享 → 加入主畫面。');
-      } else {
-        triggerShellHint('目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
-      }
+      if (isStandaloneMode) persistPwaPromptDismissed(true);
+      triggerShellHint(isStandaloneMode ? '✅ 目前已是主畫面模式。' : '目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
       return;
     }
     try {
@@ -4050,10 +4030,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, []);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handleResize = () => {
-      setIsMobileViewport(detectMobileLikeDevice());
-      setIsIosDevice(detectIosDevice());
-    };
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -4061,43 +4038,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const body = document.body;
-    const html = document.documentElement;
-    const mobileStandalone = isMobileViewport || isStandaloneMode;
-
-    body.classList.toggle('standalone-body', isStandaloneMode);
-    body.classList.toggle('mobile-device-body', isMobileViewport);
-
-    if (mobileStandalone) {
-      html.style.overflowY = 'auto';
-      body.style.overflowY = 'auto';
-      body.style.overflowX = 'hidden';
-      body.style.position = 'relative';
-      body.style.touchAction = 'pan-y';
-      body.style.webkitOverflowScrolling = 'touch';
-    } else {
-      html.style.overflowY = '';
-      body.style.overflowY = '';
-      body.style.overflowX = '';
-      body.style.position = '';
-      body.style.touchAction = '';
-      body.style.webkitOverflowScrolling = '';
-    }
-
-    return () => {
-      body.classList.remove('standalone-body', 'mobile-device-body');
-      html.style.overflowY = '';
-      body.style.overflowY = '';
-      body.style.overflowX = '';
-      body.style.position = '';
-      body.style.touchAction = '';
-      body.style.webkitOverflowScrolling = '';
-    };
-  }, [isMobileViewport, isStandaloneMode, active, mobileMoreOpen]);
+    setMobileMoreOpen(false);
+  }, [active]);
 
   const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
-  const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;
 
   return (
     <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
@@ -4121,18 +4065,18 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
       {showFloatingInstallPrompt && (
         <div className="vp-pwa-floating-card" role="dialog" aria-label="加入主畫面提示">
-          <button type="button" className="vp-pwa-floating-close" onClick={dismissPwaPrompt} aria-label="關閉加入主畫面提示">✕</button>
+          <button type="button" className="vp-pwa-floating-close" onClick={dismissPwaPrompt} aria-label="關閉加入主畫面提示">稍後</button>
           <div className="vp-pwa-floating-kicker">App 提示</div>
-          <div className="vp-pwa-floating-title">{isIosDevice ? 'iPhone 可手動加入主畫面' : '可加入主畫面，開啟會更像 App'}</div>
-          <div className="vp-pwa-floating-desc">{isIosDevice ? '請用 Safari 開啟，點分享，再選「加入主畫面」。完成後這個提示會自動消失。' : '加入後這個提示會自動消失，不會一直擋住頁面。'}</div>
+          <div className="vp-pwa-floating-title">可加入主畫面，開啟會更像 App</div>
+          <div className="vp-pwa-floating-desc">加入後這個提示會自動消失，不會一直擋住頁面。</div>
           <div className="vp-pwa-floating-actions">
             <button type="button" className="vp-pwa-floating-ghost" onClick={dismissPwaPrompt}>先隱藏</button>
-            <button type="button" className="vp-pwa-floating-primary" onClick={handleInstallApp}>{isIosDevice ? '知道了' : '加入主畫面'}</button>
+            <button type="button" className="vp-pwa-floating-primary" onClick={handleInstallApp}>加入主畫面</button>
           </div>
         </div>
       )}
 
-      {showDesktopPwaStrip && (
+      {!isMobileViewport && (
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
           <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
@@ -4238,7 +4182,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              {showDesktopPwaStrip && (
+              {!isMobileViewport && (
                 <div className="vp-header-pwa-strip">
                   <button
                     type="button"
