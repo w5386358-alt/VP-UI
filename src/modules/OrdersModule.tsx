@@ -22,6 +22,7 @@ export default function OrdersModule(props: any) {
   const [quickCustomerPage, setQuickCustomerPage] = useState(1);
   const cartButtonRef = useRef<HTMLButtonElement | null>(null);
   const dragStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
+  const touchStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
   const [cartFabPosition, setCartFabPosition] = useState({ x: 0, y: 0, ready: false });
   const pageSize = 10;
   const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
@@ -93,6 +94,37 @@ export default function OrdersModule(props: any) {
     if (!state.moved) setCartOpen(true);
   }
 
+
+
+  function handleCartFabTouchStart(event: any) {
+    if (typeof window !== 'undefined' && window.innerWidth > 900) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const currentX = cartFabPosition.ready ? cartFabPosition.x : touch.clientX;
+    const currentY = cartFabPosition.ready ? cartFabPosition.y : touch.clientY;
+    touchStateRef.current = { dragging: true, moved: false, startX: touch.clientX, startY: touch.clientY, originX: currentX, originY: currentY };
+  }
+
+  function handleCartFabTouchMove(event: any) {
+    const state = touchStateRef.current;
+    if (!state.dragging) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    const dx = touch.clientX - state.startX;
+    const dy = touch.clientY - state.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
+    const next = clampFabPosition(state.originX + dx, state.originY + dy);
+    setCartFabPosition({ x: next.x, y: next.y, ready: true });
+    event.preventDefault();
+  }
+
+  function handleCartFabTouchEnd() {
+    const state = touchStateRef.current;
+    if (!state.dragging) return;
+    touchStateRef.current.dragging = false;
+    if (!state.moved) setCartOpen(true);
+  }
+
   function runAddToCartFx(sourceEl: HTMLElement, item: any) {
     const cartButton = cartButtonRef.current;
     if (!cartButton) return;
@@ -148,6 +180,9 @@ export default function OrdersModule(props: any) {
         onPointerMove={handleCartFabPointerMove}
         onPointerUp={handleCartFabPointerUp}
         onPointerCancel={() => { dragStateRef.current.dragging = false; }}
+        onTouchStart={handleCartFabTouchStart}
+        onTouchMove={handleCartFabTouchMove}
+        onTouchEnd={handleCartFabTouchEnd}
         style={cartFabPosition.ready ? { left: `${cartFabPosition.x}px`, top: `${cartFabPosition.y}px`, right: 'auto', bottom: 'auto' } : undefined}
         aria-label="開啟購物車"
       >

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { scanWithCamera } from '../utils/nativeScanner';
 import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
@@ -61,6 +62,26 @@ export default function InventoryModule(props: any) {
   const shippingSafePage = Math.min(shippingPage, shippingTotalPages);
   const pagedWarehouseQueue = useMemo(() => filteredWarehouseQueue.slice((shippingSafePage - 1) * shippingPageSize, shippingSafePage * shippingPageSize), [filteredWarehouseQueue, shippingSafePage]);
   const shippingPageNumbers = Array.from({ length: shippingTotalPages }, (_, index) => index + 1);
+
+  async function handleScanBarcodeLaunch() {
+    const value = await scanWithCamera({ title: '倉儲條碼掃描', fallbackLabel: '商品條碼' });
+    if (value) setWarehouseScanBarcode(value.toUpperCase());
+  }
+
+  async function handleScanQrLaunch() {
+    const value = await scanWithCamera({ title: '倉儲 QR 掃描', fallbackLabel: 'QR 身分識別' });
+    if (value) setWarehouseScanQr(value.toUpperCase());
+  }
+
+  async function handleInboundQrLaunch() {
+    const value = await scanWithCamera({ title: '入庫 QR 掃描', fallbackLabel: '入庫 QR' });
+    if (value) setWarehouseInboundQr(value.toUpperCase());
+  }
+
+  async function handleQueryScanLaunch() {
+    const value = await scanWithCamera({ title: '查詢掃碼', fallbackLabel: '查詢條件' });
+    if (value) setWarehouseQueryInput(value.toUpperCase());
+  }
 
   return (
     <>
@@ -155,8 +176,8 @@ export default function InventoryModule(props: any) {
                   <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
                   <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
                   <div className="fake-field"><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
-                  <div className="fake-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /></strong></div>
-                  <div className="fake-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /></strong></div>
+                  <div className="fake-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleScanBarcodeLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
+                  <div className="fake-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleScanQrLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
                   <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
                 </div>
 
@@ -234,7 +255,7 @@ export default function InventoryModule(props: any) {
               <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
               <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
               <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
-              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /></strong></div>
+              <div className="fake-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleInboundQrLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
               <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
               <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
             </div>
@@ -274,7 +295,7 @@ export default function InventoryModule(props: any) {
                 <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'order' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('order')}>訂單編號</button>
               </div>
               <div className="warehouse-form-grid">
-                <div className="fake-field wide"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /></strong></div>
+                <div className="fake-field wide"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleQueryScanLaunch}><QrCode className="small-icon" />啟動掃碼</button></div>
               </div>
               <div className="accounting-action-row">
                 <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>

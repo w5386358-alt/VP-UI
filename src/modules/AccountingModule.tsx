@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins, Medal } from 'lucide-react';
+import { scanWithCamera } from '../utils/nativeScanner';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -32,6 +33,16 @@ export default function AccountingModule(props: any) {
     [filteredAccountingQueue, safePage]
   );
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  async function handleAccountingInvoiceScan() {
+    const value = await scanWithCamera({ title: '會計單號掃描', fallbackLabel: '發票 / 單號' });
+    if (value) updateAccountingDraftField('invoiceNo', value);
+  }
+
+  async function handleTreasuryReferenceScan() {
+    const value = await scanWithCamera({ title: '出納參考號掃描', fallbackLabel: '單號 / 參考號' });
+    if (value) updateTreasuryExpenseField('referenceNo', value);
+  }
 
   return (
     <section className="accounting-shell-v2">
@@ -119,7 +130,7 @@ export default function AccountingModule(props: any) {
                   <div className="fake-field"><span>未稅價</span><strong>{accountingDraft?.untaxedAmount || '-'}</strong></div>
                   <div className="fake-field"><span>實收總額</span><strong>${accountingActualReceived || 0}</strong></div>
                   <div className="fake-field"><span>收款方式</span><strong><select value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)}><option value="待確認">待確認</option><option value="銀行轉帳">銀行轉帳</option><option value="LINE Pay">LINE Pay</option><option value="現金">現金</option><option value="信用卡">信用卡</option><option value="其他">其他</option></select></strong></div>
-                  <div className="fake-field"><span>發票 / 單號</span><strong><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="輸入發票或退款單號" /></strong></div>
+                  <div className="fake-field"><span>發票 / 單號</span><strong><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="輸入發票或退款單號" /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleAccountingInvoiceScan}><QrCode className="small-icon" />啟動掃碼</button></div>
                   <div className="fake-field"><span>稅率 %</span><strong><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" placeholder="輸入稅率" /></strong></div>
                   <div className="fake-field"><span>應稅金額</span><strong>{String(accountingTaxAmount || 0)}</strong></div>
                   <div className="fake-field"><span>運費</span><strong><input value={accountingDraft?.shippingFee || ''} onChange={(e) => updateAccountingDraftField('shippingFee', e.target.value)} inputMode="decimal" placeholder="輸入運費" /></strong></div>
@@ -273,7 +284,7 @@ export default function AccountingModule(props: any) {
               <div className="warehouse-form-grid warehouse-command-fields treasury-expense-grid">
                 <div className="fake-field"><span>分類</span><strong><select value={treasuryExpenseDraft.category} onChange={(e) => updateTreasuryExpenseField('category', e.target.value)}>{treasuryExpenseCategories.map((item: string) => <option key={item} value={item}>{item}</option>)}</select></strong></div>
                 <div className="fake-field"><span>金額</span><strong><input value={treasuryExpenseDraft.amount} onChange={(e) => updateTreasuryExpenseField('amount', e.target.value)} inputMode="decimal" placeholder="輸入金額" /></strong></div>
-                <div className="fake-field"><span>單號 / 參考號</span><strong><input value={treasuryExpenseDraft.referenceNo} onChange={(e) => updateTreasuryExpenseField('referenceNo', e.target.value)} placeholder="輸入參考號碼" /></strong></div>
+                <div className="fake-field"><span>單號 / 參考號</span><strong><input value={treasuryExpenseDraft.referenceNo} onChange={(e) => updateTreasuryExpenseField('referenceNo', e.target.value)} placeholder="輸入參考號碼" /></strong><button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleTreasuryReferenceScan}><QrCode className="small-icon" />啟動掃碼</button></div>
                 <div className="fake-field wide"><span>備註</span><strong><textarea rows={3} value={treasuryExpenseDraft.note} onChange={(e) => updateTreasuryExpenseField('note', e.target.value)} placeholder="輸入支出說明" /></strong></div>
                 <div className="fake-field wide"><span>支出證明</span><strong>{treasuryExpenseDraft.proof || '待上傳'}</strong></div>
               </div>

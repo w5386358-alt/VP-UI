@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { scanWithCamera } from '../utils/nativeScanner';
 import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
@@ -32,6 +33,11 @@ export default function ProductsModule(props: any) {
   const safePage = Math.min(productPage, totalPages);
   const pagedProducts = useMemo(() => filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredProducts, safePage]);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  async function handleScanBarcode() {
+    const value = await scanWithCamera({ title: '商品條碼掃描', fallbackLabel: '商品條碼' });
+    if (value) setProductDraft((prev: any) => ({ ...prev, barcode: value }));
+  }
 
   return (
     <>
@@ -130,6 +136,7 @@ export default function ProductsModule(props: any) {
               <label className="field-card">
                 <span className="field-label"><FileText className="small-icon" />商品條碼</span>
                 <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
+                {productEditorMode !== 'view' && <button type="button" className="ghost-button compact-btn scan-launch-btn" onClick={handleScanBarcode}><span className="scan-launch-emoji">▣</span>啟動掃碼</button>}
               </label>
               <label className="field-card field-span-2">
                 <span className="field-label"><FileText className="small-icon" />商品名稱</span>
