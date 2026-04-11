@@ -9374,3 +9374,122 @@ body {
     transform: scale(1.18);
   }
 }
+
+
+/* === 第十五版：鈴鐺實心 / 評鑑權限 / 手機抬頭與輪盤底導覽修正 === */
+.vp-icon-only-button.vp-bell-button {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--primary) !important;
+}
+
+.vp-bell-icon-wrap {
+  display: inline-grid;
+  place-items: center;
+}
+
+.vp-bell-button .small-icon {
+  width: 24px !important;
+  height: 24px !important;
+  stroke-width: 1.9 !important;
+}
+
+.vp-bell-button .small-icon path,
+.vp-bell-button .small-icon line,
+.vp-bell-button .small-icon polyline {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.vp-bell-button.active,
+.vp-bell-button:hover {
+  color: #bb295a !important;
+}
+
+.vp-header-action-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .vp-header {
+    margin-top: -18px !important;
+    padding-top: 6px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .vp-header-banner {
+    min-height: 68px !important;
+    padding: 6px 12px 4px !important;
+    align-items: flex-start !important;
+  }
+
+  .vp-header-branding {
+    align-self: flex-start !important;
+  }
+
+  .vp-header-module-title {
+    margin-top: -8px !important;
+    line-height: 1.05 !important;
+  }
+
+  .vp-header-tools,
+  .vp-header-tools-compact {
+    margin-top: -8px !important;
+    padding-top: 0 !important;
+  }
+
+  .mobile-nav {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 8px !important;
+    width: min(430px, calc(100% - 30px)) !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    padding: 5px 6px calc(5px + env(safe-area-inset-bottom)) !important;
+    border-radius: 44px 44px 24px 24px !important;
+    background: rgba(255, 251, 253, 0.96) !important;
+    box-shadow: 0 14px 28px rgba(179, 75, 116, 0.16) !important;
+    overflow: visible !important;
+  }
+
+  .mobile-nav::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: -10px;
+    height: 24px;
+    border-radius: 999px 999px 0 0;
+    background: rgba(255, 251, 253, 0.92);
+    z-index: -1;
+  }
+
+  .mobile-nav-btn {
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 4px 2px 3px !important;
+    border-radius: 999px !important;
+    gap: 2px !important;
+  }
+
+  .mobile-nav-btn .small-icon {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .mobile-nav-btn span {
+    font-size: 9.5px !important;
+    line-height: 1 !important;
+  }
+
+  .mobile-nav-btn.active {
+    transform: translateY(-5px) scale(1.08) !important;
+    box-shadow: 0 10px 18px rgba(179, 75, 116, 0.2) !important;
+  }
+}

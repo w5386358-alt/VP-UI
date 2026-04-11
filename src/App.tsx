@@ -2841,7 +2841,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
 
-  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
   const mobilePrimaryNavItems: { key: MobileNavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: 'dashboard', label: '儀表板', icon: BarChart3 },
     { key: 'orders', label: '訂購', icon: ShoppingCart },
@@ -2851,7 +2851,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   ];
   const mobileMoreCommonItems = useMemo(() => [
     { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
-  ].filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  ].filter((item) => canAccessNav(user.role, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
   const mobileManagementItems = useMemo(() => [
     { key: 'products' as NavKey, label: '商品管理', icon: Package },
     { key: 'customers' as NavKey, label: '客戶管理', icon: Users },
