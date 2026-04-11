@@ -21,11 +21,8 @@ export default function OrdersModule(props: any) {
   const [productPage, setProductPage] = useState(1);
   const [quickCustomerPage, setQuickCustomerPage] = useState(1);
   const cartButtonRef = useRef<HTMLButtonElement | null>(null);
-  const dragStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
-  const touchStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
-  const [cartFabPosition, setCartFabPosition] = useState({ x: 0, y: 0, ready: false });
-  const [draggingFab, setDraggingFab] = useState(false);
-  const disableFabDrag = typeof window !== 'undefined' && window.innerWidth <= 900 && (window.matchMedia?.('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
+  const [cartFabPosition] = useState({ x: 0, y: 0, ready: false });
+  const [draggingFab] = useState(false);
   const pageSize = 10;
   const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
   const safeProductPage = Math.min(productPage, totalProductPages);
@@ -46,10 +43,10 @@ export default function OrdersModule(props: any) {
       y: window.innerHeight - size - 112,
       ready: true,
     });
-  }, [cartFabPosition.ready, disableFabDrag]);
+  }, [cartFabPosition.ready]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || disableFabDrag) return;
+    if (typeof window === 'undefined') return;
 
     function handleTouchMove(event: TouchEvent) {
       const state = touchStateRef.current;
@@ -92,79 +89,17 @@ export default function OrdersModule(props: any) {
 
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     window.addEventListener('pointerup', handlePointerUp, { passive: true });
     window.addEventListener('pointercancel', handlePointerUp, { passive: true });
     return () => {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
-      window.removeEventListener('touchcancel', handleTouchEnd);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
   }, [cartFabPosition.ready]);
-
-  function clampFabPosition(nextX: number, nextY: number) {
-    if (typeof window === 'undefined') return { x: nextX, y: nextY };
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const size = 56;
-    const minX = 8;
-    const maxX = Math.max(8, width - size - 8);
-    const minY = 72;
-    const maxY = Math.max(72, height - size - 88);
-    return {
-      x: Math.min(maxX, Math.max(minX, nextX)),
-      y: Math.min(maxY, Math.max(minY, nextY)),
-    };
-  }
-
-  function handleCartFabPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
-    if (typeof window !== 'undefined' && (window.innerWidth > 900 || disableFabDrag)) return;
-    const currentX = cartFabPosition.ready ? cartFabPosition.x : event.clientX;
-    const currentY = cartFabPosition.ready ? cartFabPosition.y : event.clientY;
-    dragStateRef.current = {
-      dragging: true,
-      moved: false,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: currentX,
-      originY: currentY,
-    };
-    setDraggingFab(true);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  }
-
-  function handleCartFabPointerMove(_event: React.PointerEvent<HTMLButtonElement>) {
-    return;
-  }
-
-  function handleCartFabPointerUp(event: React.PointerEvent<HTMLButtonElement>) {
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-  }
-
-
-
-  function handleCartFabTouchStart(event: any) {
-    if (typeof window !== 'undefined' && window.innerWidth > 900) return;
-    const touch = event.touches[0];
-    if (!touch) return;
-    const currentX = cartFabPosition.ready ? cartFabPosition.x : touch.clientX;
-    const currentY = cartFabPosition.ready ? cartFabPosition.y : touch.clientY;
-    touchStateRef.current = { dragging: true, moved: false, startX: touch.clientX, startY: touch.clientY, originX: currentX, originY: currentY };
-    setDraggingFab(true);
-  }
-
-  function handleCartFabTouchMove(_event: any) {
-    return;
-  }
-
-  function handleCartFabTouchEnd() {
-    return;
-  }
-
   function runAddToCartFx(sourceEl: HTMLElement, item: any) {
     const cartButton = cartButtonRef.current;
     if (!cartButton) return;
@@ -211,19 +146,19 @@ export default function OrdersModule(props: any) {
       <button
         ref={cartButtonRef}
         type="button"
-        className={`floating-cart-button ${cartOpen ? 'open' : ''} ${cartFabPosition.ready && !disableFabDrag ? 'is-draggable' : ''} ${draggingFab ? 'dragging' : ''}`}
+        className={`floating-cart-button ${cartOpen ? 'open' : ''}`}
         onClick={() => {
-          if (typeof window !== 'undefined' && window.innerWidth <= 900 && !disableFabDrag) return;
+          if (typeof window !== 'undefined' && window.innerWidth <= 900) return;
           setCartOpen(true);
         }}
-        onPointerDown={disableFabDrag ? undefined : handleCartFabPointerDown}
-        onPointerMove={disableFabDrag ? undefined : handleCartFabPointerMove}
-        onPointerUp={disableFabDrag ? undefined : handleCartFabPointerUp}
-        onPointerCancel={disableFabDrag ? undefined : (() => { dragStateRef.current.dragging = false; touchStateRef.current.dragging = false; setDraggingFab(false); })}
-        onTouchStart={disableFabDrag ? undefined : handleCartFabTouchStart}
-        onTouchMove={disableFabDrag ? undefined : handleCartFabTouchMove}
-        onTouchEnd={disableFabDrag ? undefined : handleCartFabTouchEnd}
-        style={cartFabPosition.ready && !disableFabDrag ? { left: `${cartFabPosition.x}px`, top: `${cartFabPosition.y}px`, right: 'auto', bottom: 'auto' } : undefined}
+       
+       
+       
+       
+       
+       
+       
+        
         aria-label="開啟購物車"
       >
         <ShoppingCart className="small-icon" />

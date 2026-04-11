@@ -10584,136 +10584,54 @@ body.standalone-body .vp-workspace {
 }
 
 
-/* === 第三十五版：Android standalone 捲動容器重置修正 === */
-html.mobile-device-html,
-html.standalone-html,
-body.mobile-device-body,
-body.standalone-body {
+/* === 第三十九版：Android 滑動架構清洗版 === */
+html, body, #root {
+  max-width: 100%;
+}
+
+body.android-standalone-body,
+body.android-standalone-body #root {
   height: auto !important;
-  min-height: 100% !important;
+  min-height: 100dvh !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   position: static !important;
-  overscroll-behavior-y: auto !important;
+  touch-action: auto !important;
   -webkit-overflow-scrolling: touch !important;
 }
 
-body.mobile-device-body,
-body.standalone-body {
+body.android-standalone-body .vp-shell,
+body.android-standalone-body .vp-main,
+body.android-standalone-body .vp-workspace,
+body.android-standalone-body .vp-content,
+body.android-standalone-body .vp-content-shell {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  position: static !important;
   touch-action: auto !important;
 }
 
-body.mobile-device-body #root,
-body.standalone-body #root,
-body.mobile-device-body .vp-shell,
-body.standalone-body .vp-shell,
-body.mobile-device-body .vp-main,
-body.standalone-body .vp-main,
-body.mobile-device-body .vp-workspace,
-body.standalone-body .vp-workspace {
-  height: auto !important;
-  min-height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-
 @media (max-width: 900px) {
-  html.mobile-device-html,
-  html.standalone-html,
-  body.mobile-device-body,
-  body.standalone-body {
-    width: 100%;
-  }
-
-  .vp-shell.standalone-mode {
-    display: block !important;
-    min-height: 100dvh !important;
-  }
-
-  .vp-main {
-    min-height: auto !important;
-  }
-}
-
-
-/* === 第三十七版：Android standalone 改為單一主滾動容器 === */
-@media (max-width: 900px) {
-  html.mobile-device-html,
-  html.standalone-html,
-  body.mobile-device-body,
-  body.standalone-body {
-    height: 100% !important;
-    min-height: 100% !important;
-    overflow: hidden !important;
-  }
-
-  body.mobile-device-body #root,
-  body.standalone-body #root {
-    height: 100% !important;
-    min-height: 100% !important;
-    overflow: hidden !important;
-  }
-
-  .vp-shell,
-  .vp-shell.standalone-mode {
-    display: block !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    overflow: hidden !important;
-    padding: 12px 12px calc(90px + env(safe-area-inset-bottom)) !important;
-  }
-
-  .vp-sidebar {
-    display: none !important;
-  }
-
-  .vp-main {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    padding: max(10px, env(safe-area-inset-top)) 0 0 !important;
+  .floating-cart-button,
+  .floating-cart-button.is-draggable,
+  .floating-cart-button.dragging {
     touch-action: auto !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
   }
 
-  .vp-main > .vp-header,
-  .vp-main > .vp-shell-hint {
-    flex: 0 0 auto !important;
+  .floating-cart-button {
+    right: 16px !important;
+    bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+    left: auto !important;
+    top: auto !important;
   }
+}
 
-  .vp-workspace {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain !important;
-    padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important;
-    touch-action: pan-y !important;
-  }
-
-  .vp-module-body,
-  .vp-module-shell,
-  .section-intro-shell {
-    overflow: visible !important;
-  }
-
-  .mobile-nav {
-    z-index: 200 !important;
-  }
-
-  .mobile-more-overlay {
-    z-index: 260 !important;
-  }
-
-  .mobile-more-sheet {
-    z-index: 261 !important;
-  }
-
-  .vp-launch-screen.hide {
-    display: none !important;
-  }
+body.android-standalone-body .cart-drawer-overlay,
+body.android-standalone-body .mobile-more-overlay,
+body.android-standalone-body .vp-launch-screen {
+  touch-action: auto !important;
 }

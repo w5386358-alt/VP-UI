@@ -4051,8 +4051,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handleResize = () => {
+      const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
       setIsMobileViewport(detectMobileLikeDevice());
       setIsIosDevice(detectIosDevice());
+      setIsAndroidDevice(/Android/i.test(ua));
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -4064,29 +4066,45 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     if (typeof document === 'undefined') return;
     const body = document.body;
     const html = document.documentElement;
+    const mobileStandalone = isMobileViewport || isStandaloneMode;
+    const androidStandalone = isAndroidDevice && isStandaloneMode;
 
     body.classList.toggle('standalone-body', isStandaloneMode);
     body.classList.toggle('mobile-device-body', isMobileViewport);
-    html.classList.toggle('standalone-html', isStandaloneMode);
-    html.classList.toggle('mobile-device-html', isMobileViewport);
+    body.classList.toggle('android-standalone-body', androidStandalone);
 
-    if (isStandaloneMode && typeof window !== 'undefined') {
-      window.requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      });
+    html.style.overflow = '';
+    html.style.overflowY = '';
+    body.style.overflow = '';
+    body.style.overflowY = '';
+    body.style.overflowX = '';
+    body.style.position = '';
+    body.style.touchAction = '';
+    body.style.webkitOverflowScrolling = '';
+
+    if (mobileStandalone) {
+      html.style.overflowX = 'hidden';
+      body.style.overflowX = 'hidden';
     }
 
     return () => {
-      body.classList.remove('standalone-body', 'mobile-device-body');
-      html.classList.remove('standalone-html', 'mobile-device-html');
+      body.classList.remove('standalone-body', 'mobile-device-body', 'android-standalone-body');
+      html.style.overflow = '';
+      html.style.overflowY = '';
+      body.style.overflow = '';
+      body.style.overflowY = '';
+      body.style.overflowX = '';
+      body.style.position = '';
+      body.style.touchAction = '';
+      body.style.webkitOverflowScrolling = '';
     };
-  }, [isMobileViewport, isStandaloneMode]);
+  }, [isMobileViewport, isStandaloneMode, isAndroidDevice]);
 
   const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
   const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;
 
   return (
-    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''} ${mobileMoreOpen ? 'mobile-more-open' : ''}`}>
+    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
       {showAppLaunch && (
         <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`}>
           <div className="vp-launch-card">
