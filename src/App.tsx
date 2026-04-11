@@ -2285,7 +2285,7 @@ export default function App() {
     }
   }, [stockSnapshot, selectedStockCode]);
 
-  const runWarehouseQuery = (input = warehouseQueryInput) => {
+  const runWarehouseQuery = (input = warehouseQueryInput, mode = warehouseQueryMode) => {
     const value = input.trim();
     if (!value) {
       setWarehouseNotice({ text: '❌ 請先輸入查詢條件', tone: 'danger' });
@@ -2294,33 +2294,13 @@ export default function App() {
 
     const normalized = value.toUpperCase();
 
-    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
-    if (matchedOrder) {
-      setSelectedWarehouseOrderNo(matchedOrder.orderNo);
-      setWarehouseQueryResult([{
-        title: matchedOrder.orderNo,
-        desc: `${matchedOrder.customer} / ${matchedOrder.itemCount} 件 / ${matchedOrder.shippingStatus}`,
-        meta: [matchedOrder.paymentStatus, matchedOrder.date, `地址：${matchedOrder.address || '未填寫'}`],
-      }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${matchedOrder.orderNo}`, tone: 'success' });
-      return;
-    }
-
-    const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
-    if (matchedLogs.length) {
-      const latest = [...matchedLogs].sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))[0];
-      const balance = matchedLogs.reduce((sum, item) => sum + (item.type === '入庫' ? item.qty : -item.qty), 0);
-      setWarehouseQueryResult([{
-        title: latest.qr,
-        desc: `${latest.name} / 目前庫存 ${balance} / 最近異動 ${formatDateTime(latest.createdAt)}`,
-        meta: [latest.code, `操作員：${latest.operator}`, `最新類型：${latest.type}`],
-      }]);
-      setWarehouseNotice({ text: `✅ 已查到 ${latest.qr}`, tone: 'success' });
-      return;
-    }
-
-    const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
-    if (matched) {
+    if (mode === 'barcode') {
+      const matched = stockSnapshot.find((item) => item.code.toUpperCase().includes(normalized) || item.name.includes(value));
+      if (!matched) {
+        setWarehouseQueryResult([{ title: '查無商品條碼', desc: `找不到 ${value} 的商品資料`, meta: ['請改掃 QR 或訂單編號'] }]);
+        setWarehouseNotice({ text: '❌ 商品條碼查無資料', tone: 'danger' });
+        return;
+      }
       setSelectedStockCode(matched.code);
       setWarehouseQueryResult([{
         title: matched.name,
@@ -2331,8 +2311,37 @@ export default function App() {
       return;
     }
 
-    setWarehouseQueryResult([{ title: '查無資料', desc: `找不到 ${value} 的商品條碼 / QR 身分識別 / 訂單編號`, meta: ['請確認輸入是否正確'] }]);
-    setWarehouseNotice({ text: '❌ 查無資料', tone: 'danger' });
+    if (mode === 'qr') {
+      const matchedLogs = inventoryLogs.filter((item) => item.qr.toUpperCase().includes(normalized));
+      if (!matchedLogs.length) {
+        setWarehouseQueryResult([{ title: '查無 QR 身分識別', desc: `找不到 ${value} 的 QR 記錄`, meta: ['請確認是否已入庫'] }]);
+        setWarehouseNotice({ text: '❌ QR 身分識別查無資料', tone: 'danger' });
+        return;
+      }
+      const latest = [...matchedLogs].sort((a, b) => parseDateValue(b.createdAt) - parseDateValue(a.createdAt))[0];
+      const balance = matchedLogs.reduce((sum, item) => sum + (item.type === '入庫' ? item.qty : -item.qty), 0);
+      setWarehouseQueryResult([{
+        title: latest.qr,
+        desc: `${latest.name} / 目前庫存 ${balance} / 最近異動 ${formatDateTime(latest.createdAt)}`,
+        meta: [`入庫人員：${latest.operator}`, `商品條碼：${latest.code}`, `狀態：${balance > 0 ? '可出貨' : '已出清'}`],
+      }]);
+      setWarehouseNotice({ text: `✅ 已查到 ${latest.qr}`, tone: 'success' });
+      return;
+    }
+
+    const matchedOrder = orderRecords.find((item) => item.orderNo.toUpperCase().includes(normalized));
+    if (!matchedOrder) {
+      setWarehouseQueryResult([{ title: '查無訂單', desc: `找不到 ${value} 的出貨資料`, meta: ['請確認訂單編號格式'] }]);
+      setWarehouseNotice({ text: '❌ 訂單查無資料', tone: 'danger' });
+      return;
+    }
+    setSelectedWarehouseOrderNo(matchedOrder.orderNo);
+    setWarehouseQueryResult([{
+      title: matchedOrder.orderNo,
+      desc: `${matchedOrder.customer} / ${matchedOrder.shippingStatus} / ${matchedOrder.shippingMethod}`,
+      meta: [`${matchedOrder.paymentStatus}`, `出貨內容：${matchedOrder.items.map((entry) => `${entry.code}*${entry.qty}`).join(' / ')}`, `地址：${matchedOrder.address}`],
+    }]);
+    setWarehouseNotice({ text: `✅ 已切到 ${matchedOrder.orderNo}`, tone: 'success' });
   };
 
   const handleWarehouseShip = async () => {
@@ -2532,11 +2541,118 @@ export default function App() {
     setWarehouseInboundQr('');
   };
 
+  const handleWarehousePrint = () => {
+    if (!selectedWarehouseOrder) return;
+    const order = orderRecords.find((item) => item.orderNo === selectedWarehouseOrder.orderNo);
+    if (!order) return;
+
+    const shippingFeeValue = order.shippingFeeOverride ?? getShippingFee(order.shippingMethod);
+    const actualReceivedValue = order.actualReceived ?? order.amount;
+    const taxRateValue = order.taxRate ?? 0;
+    const untaxedBase = Math.max(actualReceivedValue - shippingFeeValue, 0);
+    const taxAmountValue = taxRateValue > 0 ? Math.round(untaxedBase * (taxRateValue / 100)) : 0;
+    const qrContent = order.orderNo;
+    const itemSummary = order.items.map((item) => `${item.code} × ${item.qty}`).join(' / ');
+    const lines = order.items.map((item) => `
+      <tr>
+        <td>${item.code}</td>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>$${item.price.toLocaleString()}</td>
+        <td>$${(item.price * item.qty).toLocaleString()}</td>
+      </tr>`).join('');
+    const html = `<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<title>${order.orderNo} 出貨單 PDF 預覽</title>
+<style>
+@page{size:A4;margin:14mm}
+body{font-family:Arial,"Microsoft JhengHei",sans-serif;padding:18px;color:#24324b;background:#f5f7fb}
+.sheet{max-width:920px;margin:0 auto;background:#fff;border:1px solid #e6d8df;border-radius:20px;padding:28px;box-shadow:0 10px 30px rgba(30,41,59,.08)}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px}
+.title{font-size:30px;font-weight:800;margin:0 0 6px}
+.sub{color:#6b7280;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.box{background:#faf7f8;border:1px solid #ecd9e1;border-radius:14px;padding:12px}
+.box span{display:block;font-size:12px;color:#8a6b78;margin-bottom:6px}
+.box strong{font-size:16px;word-break:break-word}
+.qr-box{border:1px dashed #d78ba8;border-radius:18px;padding:16px;background:#fff8fb;text-align:center;min-width:180px}
+.qr-code{font-size:20px;font-weight:800;letter-spacing:0.08em;margin-top:10px}
+.qr-note{margin-top:8px;font-size:12px;color:#8a6b78}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+th,td{border-bottom:1px solid #eee;padding:12px;text-align:left;font-size:14px;vertical-align:top}
+th{background:#fdf2f6;color:#874b61}
+.actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}
+.print{background:#ef5b96;color:#fff}
+.close{background:#eef2f7;color:#334155}
+.note{margin-top:18px;color:#64748b;font-size:13px;line-height:1.7}
+@media print{body{background:#fff;padding:0}.sheet{box-shadow:none;border:none;padding:0}.actions{display:none}}
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="head">
+      <div>
+        <div class="title">出貨單 / PDF 預覽</div>
+        <div class="sub">${order.orderNo} ・ 依 GAS 邏輯顯示可列印內容</div>
+        <div class="sub">建立時間：${order.date}</div>
+      </div>
+      <div class="qr-box">
+        <div><strong>QR 內容</strong></div>
+        <div class="qr-code">${qrContent}</div>
+        <div class="qr-note">列印時可作為出貨單辨識內容</div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="box"><span>訂單編號</span><strong>${order.orderNo}</strong></div>
+      <div class="box"><span>客戶姓名</span><strong>${order.customer}</strong></div>
+      <div class="box"><span>款項狀態</span><strong>${order.paymentStatus}</strong></div>
+      <div class="box"><span>商品狀態</span><strong>${order.shippingStatus}</strong></div>
+      <div class="box"><span>配送方式</span><strong>${order.shippingMethod}</strong></div>
+      <div class="box"><span>配送地址</span><strong>${order.address || '—'}</strong></div>
+      <div class="box"><span>商品摘要</span><strong>${itemSummary}</strong></div>
+      <div class="box"><span>備註</span><strong>${order.remark || '—'}</strong></div>
+    </div>
+    <table>
+      <thead><tr><th>商品編號</th><th>商品名稱</th><th>數量</th><th>單價</th><th>小計</th></tr></thead>
+      <tbody>${lines}</tbody>
+    </table>
+    <div class="grid-3">
+      <div class="box"><span>未稅價</span><strong>$${untaxedBase.toLocaleString()}</strong></div>
+      <div class="box"><span>稅率 / 稅額</span><strong>${taxRateValue}% / $${taxAmountValue.toLocaleString()}</strong></div>
+      <div class="box"><span>運費</span><strong>$${shippingFeeValue.toLocaleString()}</strong></div>
+      <div class="box"><span>實收總額</span><strong>$${actualReceivedValue.toLocaleString()}</strong></div>
+      <div class="box"><span>商品條碼</span><strong>${order.items.map((item) => item.code).join(' / ')}</strong></div>
+      <div class="box"><span>身分識別提示</span><strong>請依出貨區掃碼驗證後再列印</strong></div>
+    </div>
+    <div class="actions">
+      <button class="close" onclick="window.close()">關閉</button>
+      <button class="print" onclick="window.print()">列印 / 另存 PDF</button>
+    </div>
+    <div class="note">此頁可直接使用瀏覽器列印，或選擇另存為 PDF。若訂單含應稅條件，會同步顯示未稅、稅率、稅額與實收總額。</div>
+  </div>
+</body>
+</html>`;
+    const previewWindow = window.open('', '_blank', 'width=1024,height=920');
+    if (previewWindow) {
+      previewWindow.document.open();
+      previewWindow.document.write(html);
+      previewWindow.document.close();
+      setWarehouseNotice({ text: `✅ 已開啟出貨單 PDF 預覽：${selectedWarehouseOrder.orderNo}`, tone: 'success' });
+      return;
+    }
+    setWarehouseNotice({ text: '❌ 無法開啟列印視窗，請確認瀏覽器是否阻擋彈窗', tone: 'danger' });
+  };
+
   const handleWarehouseScanFill = () => {
-    const next = selectedWarehouseOrder?.orderNo
-      || selectedStockItem?.code
-      || (findAvailableQrBuckets(inventoryLogs, selectedStockItem?.code || 'E401')[0]?.qr)
-      || 'VP20260331-002';
+    const next = warehouseQueryMode === 'barcode'
+      ? (selectedStockItem?.code || 'P301')
+      : warehouseQueryMode === 'qr'
+        ? (findAvailableQrBuckets(inventoryLogs, selectedStockItem?.code || 'E401')[0]?.qr || 'QR(P1)')
+        : (selectedWarehouseOrder?.orderNo || 'VP20260331-002');
     setWarehouseQueryInput(next);
     setWarehouseNotice({ text: `✅ 已帶入 ${next}`, tone: 'neutral' });
   };

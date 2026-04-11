@@ -5,118 +5,7 @@ export async function scanWithCamera(options?: {
 }): Promise<string | null> {
   const title = options?.title || '啟動掃碼';
   const fallbackLabel = options?.fallbackLabel || '掃碼結果';
-  const formats = options?.formats || ['qr_code', 'code_128', 'ean_13', 'ean_8', 'code_39', 'upc_a', 'upc_e'];
 
-  const DetectorCtor = (window as any).BarcodeDetector;
-  const hasLiveCamera = !!(navigator.mediaDevices?.getUserMedia && DetectorCtor);
-
-  if (hasLiveCamera) {
-    return new Promise((resolve) => {
-      const overlay = document.createElement('div');
-      overlay.className = 'scanner-live-overlay';
-      overlay.innerHTML = `
-        <div class="scanner-live-panel">
-          <div class="scanner-live-head">
-            <strong>${title}</strong>
-            <button type="button" class="scanner-live-close" aria-label="關閉">✕</button>
-          </div>
-          <div class="scanner-live-view">
-            <video playsinline autoplay muted></video>
-            <div class="scanner-live-frame"></div>
-          </div>
-          <div class="scanner-live-tip">請將條碼或 QR Code 對準框內</div>
-          <div class="scanner-live-actions">
-            <button type="button" class="scanner-live-secondary">改用照片</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-
-      const video = overlay.querySelector('video') as HTMLVideoElement | null;
-      const closeBtn = overlay.querySelector('.scanner-live-close') as HTMLButtonElement | null;
-      const photoBtn = overlay.querySelector('.scanner-live-secondary') as HTMLButtonElement | null;
-      let stopped = false;
-      let stream: MediaStream | null = null;
-      let rafId = 0;
-
-      const cleanup = () => {
-        stopped = true;
-        if (rafId) cancelAnimationFrame(rafId);
-        stream?.getTracks().forEach((track) => track.stop());
-        overlay.remove();
-      };
-
-      const fallbackPhoto = async () => {
-        cleanup();
-        const value = await scanFromImageFile(title, fallbackLabel, formats);
-        resolve(value);
-      };
-
-      closeBtn?.addEventListener('click', () => {
-        cleanup();
-        resolve(null);
-      });
-      photoBtn?.addEventListener('click', () => { void fallbackPhoto(); });
-      overlay.addEventListener('click', (event) => {
-        if (event.target === overlay) {
-          cleanup();
-          resolve(null);
-        }
-      });
-
-      (async () => {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' } },
-            audio: false,
-          });
-          if (!video) {
-            cleanup();
-            resolve(null);
-            return;
-          }
-          video.srcObject = stream;
-          await video.play();
-          const detector = new DetectorCtor({ formats });
-
-          const tick = async () => {
-            if (stopped || !video) return;
-            try {
-              const codes = await detector.detect(video);
-              const raw = codes?.[0]?.rawValue;
-              if (raw) {
-                cleanup();
-                resolve(String(raw));
-                return;
-              }
-            } catch (_error) {}
-            rafId = requestAnimationFrame(() => { void tick(); });
-          };
-          void tick();
-        } catch (_error) {
-          const actions = overlay.querySelector('.scanner-live-actions') as HTMLDivElement | null;
-          if (actions) {
-            actions.innerHTML = '<button type="button" class="scanner-live-secondary">改用照片</button><button type="button" class="scanner-live-secondary scanner-live-manual">手動輸入</button>';
-            const photoFallback = actions.querySelector('.scanner-live-secondary') as HTMLButtonElement | null;
-            const manualFallback = actions.querySelector('.scanner-live-manual') as HTMLButtonElement | null;
-            photoFallback?.addEventListener('click', () => { void fallbackPhoto(); }, { once: true });
-            manualFallback?.addEventListener('click', () => {
-              cleanup();
-              const manual = window.prompt(`${title}
-相機暫時無法啟動，請手動輸入${fallbackLabel}：`, '');
-              resolve(manual ? manual.trim() : null);
-            }, { once: true });
-          }
-          const tip = overlay.querySelector('.scanner-live-tip') as HTMLDivElement | null;
-          if (tip) tip.textContent = '目前裝置無法維持即時掃描，可改用照片或手動輸入。';
-        }
-      })();
-    });
-  }
-
-  return scanFromImageFile(title, fallbackLabel, formats);
-}
-
-async function scanFromImageFile(title: string, fallbackLabel: string, formats: string[]): Promise<string | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -142,7 +31,9 @@ async function scanFromImageFile(title: string, fallbackLabel: string, formats: 
       try {
         const DetectorCtor = (window as any).BarcodeDetector;
         if (DetectorCtor) {
-          const detector = new DetectorCtor({ formats });
+          const detector = new DetectorCtor({
+            formats: options?.formats || ['qr_code', 'code_128', 'ean_13', 'ean_8', 'code_39', 'upc_a', 'upc_e'],
+          });
           const bitmap = await createImageBitmap(file);
           const codes = await detector.detect(bitmap);
           const raw = codes?.[0]?.rawValue;
@@ -162,15 +53,6 @@ async function scanFromImageFile(title: string, fallbackLabel: string, formats: 
       }
     };
 
-    const openPicker = () => {
-      const anyInput = input as HTMLInputElement & { showPicker?: () => void };
-      try {
-        if (typeof anyInput.showPicker === 'function') anyInput.showPicker();
-        else input.click();
-      } catch (_error) {
-        input.click();
-      }
-    };
-    window.setTimeout(openPicker, 20);
+    input.click();
   });
 }
