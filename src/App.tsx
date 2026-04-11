@@ -70,6 +70,12 @@ function detectIosDevice() {
   return /iPhone|iPad|iPod/i.test(ua);
 }
 
+function detectAndroidDevice() {
+  if (typeof window === 'undefined') return false;
+  const ua = window.navigator.userAgent || '';
+  return /Android/i.test(ua);
+}
+
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
@@ -3855,6 +3861,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(() => detectMobileLikeDevice());
   const [isIosDevice, setIsIosDevice] = useState(() => detectIosDevice());
+  const [isAndroidDevice, setIsAndroidDevice] = useState(() => detectAndroidDevice());
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -4053,6 +4060,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const handleResize = () => {
       setIsMobileViewport(detectMobileLikeDevice());
       setIsIosDevice(detectIosDevice());
+      setIsAndroidDevice(detectAndroidDevice());
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -4066,38 +4074,78 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const html = document.documentElement;
     const mobileStandalone = isMobileViewport || isStandaloneMode;
 
+    const root = document.getElementById('root');
+
     body.classList.toggle('standalone-body', isStandaloneMode);
     body.classList.toggle('mobile-device-body', isMobileViewport);
+    body.classList.toggle('android-device-body', isAndroidDevice);
+    html.classList.toggle('mobile-scroll-ready', mobileStandalone || isAndroidDevice);
+    body.classList.toggle('mobile-scroll-ready', mobileStandalone || isAndroidDevice);
 
-    if (mobileStandalone) {
+    if (mobileStandalone || isAndroidDevice) {
+      html.style.height = 'auto';
+      html.style.minHeight = '100%';
       html.style.overflowY = 'auto';
+      body.style.height = 'auto';
+      body.style.minHeight = '100%';
       body.style.overflowY = 'auto';
       body.style.overflowX = 'hidden';
       body.style.position = 'relative';
       body.style.touchAction = 'pan-y';
       body.style.webkitOverflowScrolling = 'touch';
+      if (root) {
+        root.style.height = 'auto';
+        root.style.minHeight = '100%';
+        root.style.overflow = 'visible';
+      }
     } else {
+      html.style.height = '';
+      html.style.minHeight = '';
       html.style.overflowY = '';
+      body.style.height = '';
+      body.style.minHeight = '';
       body.style.overflowY = '';
       body.style.overflowX = '';
       body.style.position = '';
       body.style.touchAction = '';
       body.style.webkitOverflowScrolling = '';
+      if (root) {
+        root.style.height = '';
+        root.style.minHeight = '';
+        root.style.overflow = '';
+      }
     }
 
+    const kickScrollBack = window.setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+      document.documentElement.scrollTop = document.documentElement.scrollTop;
+      document.body.scrollTop = document.body.scrollTop;
+    }, 120);
+
     return () => {
-      body.classList.remove('standalone-body', 'mobile-device-body');
+      window.clearTimeout(kickScrollBack);
+      body.classList.remove('standalone-body', 'mobile-device-body', 'android-device-body', 'mobile-scroll-ready');
+      html.classList.remove('mobile-scroll-ready');
+      html.style.height = '';
+      html.style.minHeight = '';
       html.style.overflowY = '';
+      body.style.height = '';
+      body.style.minHeight = '';
       body.style.overflowY = '';
       body.style.overflowX = '';
       body.style.position = '';
       body.style.touchAction = '';
       body.style.webkitOverflowScrolling = '';
+      if (root) {
+        root.style.height = '';
+        root.style.minHeight = '';
+        root.style.overflow = '';
+      }
     };
-  }, [isMobileViewport, isStandaloneMode, active, mobileMoreOpen]);
+  }, [isMobileViewport, isStandaloneMode, isAndroidDevice, active, mobileMoreOpen]);
 
-  const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
-  const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;
+  const showFloatingInstallPrompt = (isMobileViewport || isAndroidDevice) && !isStandaloneMode && !pwaPromptDismissed;
+  const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode && !isAndroidDevice;
 
   return (
     <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
