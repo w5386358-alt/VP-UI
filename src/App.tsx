@@ -4116,24 +4116,26 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              <div className="vp-header-pwa-strip">
-                <button
-                  type="button"
-                  className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
-                  onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
-                >
-                  {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
-                  <span>{isOnline ? '連線中' : '離線中'}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
-                  onClick={handleInstallApp}
-                >
-                  <Plus className="small-icon" />
-                  <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
-                </button>
-              </div>
+              {!isStandaloneMode && (
+                <div className="vp-header-pwa-strip">
+                  <button
+                    type="button"
+                    className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
+                    onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
+                  >
+                    {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                    <span>{isOnline ? '連線中' : '離線中'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="vp-pwa-chip install"
+                    onClick={handleInstallApp}
+                  >
+                    <Plus className="small-icon" />
+                    <span>加入主畫面</span>
+                  </button>
+                </div>
+              )}
 
               <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
                 <button
