@@ -44,8 +44,6 @@ export default function InventoryModule(props: any) {
     setSelectedStockCode,
     selectedStockItem,
     queryExamples,
-    warehouseQueryMode,
-    setWarehouseQueryMode,
     warehouseQueryInput,
     setWarehouseQueryInput,
     runWarehouseQuery,
@@ -289,17 +287,11 @@ export default function InventoryModule(props: any) {
           <div className="warehouse-tool-grid warehouse-query-panels">
             <div className="card warehouse-tool-card">
               <div className="warehouse-card-head"><div><div className="flow-title">庫存查詢</div></div><Search className="small-icon" /></div>
-              <div className="warehouse-tab-row warehouse-query-mode-row">
-                <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'barcode' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('barcode')}>商品條碼</button>
-                <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'qr' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('qr')}>QR 身分識別</button>
-                <button type="button" className={`warehouse-tab ${warehouseQueryMode === 'order' ? 'active' : ''}`} onClick={() => setWarehouseQueryMode('order')}>訂單編號</button>
-              </div>
               <div className="warehouse-form-grid">
-                <div className="fake-field wide scanner-inline-field"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR / 訂單編號" /><button type="button" className="scan-inline-icon-btn" onClick={handleQueryScanLaunch} aria-label="掃描查詢條件"><QrCode className="small-icon" /></button></strong></div>
+                <div className="fake-field wide scanner-inline-field"><span>查詢條件</span><strong><input value={warehouseQueryInput} onChange={(e) => setWarehouseQueryInput(e.target.value)} placeholder="輸入商品條碼 / QR 身分識別 / 訂單編號" /><button type="button" className="scan-inline-icon-btn" onClick={handleQueryScanLaunch} aria-label="掃描查詢條件"><QrCode className="small-icon" /></button></strong></div>
               </div>
               <div className="accounting-action-row">
                 <button type="button" className="primary-button" onClick={() => runWarehouseQuery()}><Search className="small-icon" />立即查詢</button>
-                <button type="button" className="ghost-button" onClick={handleWarehouseScanFill}><QrCode className="small-icon" />掃碼帶入</button>
               </div>
               {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
             </div>
