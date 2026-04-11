@@ -10635,3 +10635,17 @@ body.android-standalone-body .mobile-more-overlay,
 body.android-standalone-body .vp-launch-screen {
   touch-action: auto !important;
 }
+
+
+.vp-launch-screen.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+body.standalone-body .vp-launch-screen,
+body.android-standalone-body .vp-launch-screen,
+body.mobile-device-body .vp-launch-screen {
+  position: fixed !important;
+  inset: 0 !important;
+}

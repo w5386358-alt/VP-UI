@@ -3873,6 +3873,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
     return standalone || window.innerWidth <= 900;
   });
+  const launchTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3944,10 +3945,41 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
-    return () => window.clearTimeout(timer);
-  }, []);
+
+    const canShowLaunch = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      return standalone || window.innerWidth <= 900;
+    };
+
+    const hideLaunchLater = () => {
+      if (launchTimerRef.current) {
+        window.clearTimeout(launchTimerRef.current);
+      }
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      launchTimerRef.current = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 700 : 1850);
+    };
+
+    if (canShowLaunch()) {
+      setShowAppLaunch(true);
+      hideLaunchLater();
+    } else {
+      setShowAppLaunch(false);
+    }
+
+    const handlePageShow = () => {
+      if (!canShowLaunch()) return;
+      setShowAppLaunch(true);
+      hideLaunchLater();
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      if (launchTimerRef.current) {
+        window.clearTimeout(launchTimerRef.current);
+      }
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [isStandaloneMode]);
 
   function persistPwaPromptDismissed(value: boolean) {
     setPwaPromptDismissed(value);

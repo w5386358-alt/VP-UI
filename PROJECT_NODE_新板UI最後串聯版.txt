@@ -44,3 +44,5 @@
 - 新增 android-standalone-body 標記，改為單純 body 正常捲動
 - 停用手機購物車拖曳，只保留點擊開啟，避免 touchmove / preventDefault 影響 Android Chrome 與主畫面模式
 - 刪除多餘分階段 TXT，僅保留 PROJECT_NODE_新板UI最後串聯版.txt
+
+- 第四十版：補回初始化畫面顯示穩定性，強化手機/主畫面模式 pageshow 時的啟動畫面顯示，避免清洗滑動規則後啟動畫面消失。
