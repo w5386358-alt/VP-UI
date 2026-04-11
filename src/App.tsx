@@ -54,22 +54,6 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
-function detectMobileLikeDevice() {
-  if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent || '';
-  const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
-  const touchPoints = typeof navigator !== 'undefined' ? navigator.maxTouchPoints || 0 : 0;
-  const shortSide = Math.min(window.innerWidth, window.innerHeight);
-  const standalone = typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || coarse || touchPoints > 1 || shortSide <= 1024 || standalone;
-}
-
-function detectIosDevice() {
-  if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent || '';
-  return /iPhone|iPad|iPod/i.test(ua);
-}
-
 type Role = 'admin' | 'sales' | 'accounting' | 'warehouse';
 type Rank = 'core' | 'elite' | 'senior' | 'normal';
 type NavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'products' | 'customers' | 'staff' | 'profile';
@@ -3853,8 +3837,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const notificationPanelRef = useRef<HTMLDivElement | null>(null);
   const profilePanelRef = useRef<HTMLDivElement | null>(null);
   const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
-  const [isMobileViewport, setIsMobileViewport] = useState(() => detectMobileLikeDevice());
-  const [isIosDevice, setIsIosDevice] = useState(() => detectIosDevice());
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 900;
+  });
   const logoImageInputRef = useRef<HTMLInputElement | null>(null);
   const dashboardAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -3864,16 +3850,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
-  const [pwaPromptDismissed, setPwaPromptDismissed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('vp.pwaPromptDismissed.v2') === '1';
-  });
-  const [showAppLaunch, setShowAppLaunch] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
-    return standalone || window.innerWidth <= 900;
-  });
-  const launchTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3918,7 +3894,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const handleAppInstalled = () => {
       setInstallPromptEvent(null);
       setIsStandaloneMode(true);
-      persistPwaPromptDismissed(true);
       triggerShellHint('✅ 已加入主畫面，可用 App 方式開啟。');
     };
 
@@ -3938,78 +3913,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     };
   }, []);
 
-  useEffect(() => {
-    if (!isStandaloneMode) return;
-    persistPwaPromptDismissed(true);
-  }, [isStandaloneMode]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const canShowLaunch = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
-      return standalone || window.innerWidth <= 900;
-    };
-
-    const hideLaunchLater = () => {
-      if (launchTimerRef.current) {
-        window.clearTimeout(launchTimerRef.current);
-      }
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      launchTimerRef.current = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 700 : 1850);
-    };
-
-    if (canShowLaunch()) {
-      setShowAppLaunch(true);
-      hideLaunchLater();
-    } else {
-      setShowAppLaunch(false);
-    }
-
-    const handlePageShow = () => {
-      if (!canShowLaunch()) return;
-      setShowAppLaunch(true);
-      hideLaunchLater();
-    };
-
-    window.addEventListener('pageshow', handlePageShow);
-    return () => {
-      if (launchTimerRef.current) {
-        window.clearTimeout(launchTimerRef.current);
-      }
-      window.removeEventListener('pageshow', handlePageShow);
-    };
-  }, [isStandaloneMode]);
-
-  function persistPwaPromptDismissed(value: boolean) {
-    setPwaPromptDismissed(value);
-    if (typeof window === 'undefined') return;
-    if (value) window.localStorage.setItem('vp.pwaPromptDismissed.v2', '1');
-    else window.localStorage.removeItem('vp.pwaPromptDismissed.v2');
-  }
-
-  function dismissPwaPrompt() {
-    persistPwaPromptDismissed(true);
-    triggerShellHint('已先隱藏加入主畫面提示。');
-  }
-
   async function handleInstallApp() {
     if (!installPromptEvent) {
-      if (isStandaloneMode) {
-        persistPwaPromptDismissed(true);
-        triggerShellHint('✅ 目前已是主畫面模式。');
-      } else if (isIosDevice) {
-        triggerShellHint('iPhone 請用 Safari → 分享 → 加入主畫面。');
-      } else {
-        triggerShellHint('目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
-      }
+      triggerShellHint(isStandaloneMode ? '✅ 目前已是主畫面模式。' : '目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
       return;
     }
     try {
       await installPromptEvent.prompt();
       const choice = await installPromptEvent.userChoice;
       if (choice.outcome === 'accepted') {
-        persistPwaPromptDismissed(true);
         triggerShellHint('✅ 已送出安裝指令，完成後可從主畫面開啟。');
       } else {
         triggerShellHint('已取消加入主畫面。');
@@ -4082,12 +3994,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, []);
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const handleResize = () => {
-      const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
-      setIsMobileViewport(detectMobileLikeDevice());
-      setIsIosDevice(detectIosDevice());
-      setIsAndroidDevice(/Android/i.test(ua));
-    };
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -4095,80 +4002,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const body = document.body;
-    const html = document.documentElement;
-    const mobileStandalone = isMobileViewport || isStandaloneMode;
-    const androidStandalone = isAndroidDevice && isStandaloneMode;
-
-    body.classList.toggle('standalone-body', isStandaloneMode);
-    body.classList.toggle('mobile-device-body', isMobileViewport);
-    body.classList.toggle('android-standalone-body', androidStandalone);
-
-    html.style.overflow = '';
-    html.style.overflowY = '';
-    body.style.overflow = '';
-    body.style.overflowY = '';
-    body.style.overflowX = '';
-    body.style.position = '';
-    body.style.touchAction = '';
-    body.style.webkitOverflowScrolling = '';
-
-    if (mobileStandalone) {
-      html.style.overflowX = 'hidden';
-      body.style.overflowX = 'hidden';
-    }
-
-    return () => {
-      body.classList.remove('standalone-body', 'mobile-device-body', 'android-standalone-body');
-      html.style.overflow = '';
-      html.style.overflowY = '';
-      body.style.overflow = '';
-      body.style.overflowY = '';
-      body.style.overflowX = '';
-      body.style.position = '';
-      body.style.touchAction = '';
-      body.style.webkitOverflowScrolling = '';
-    };
-  }, [isMobileViewport, isStandaloneMode, isAndroidDevice]);
-
-  const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
-  const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;
+    setMobileMoreOpen(false);
+  }, [active]);
 
   return (
-    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
-      {showAppLaunch && (
-        <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`}>
-          <div className="vp-launch-card">
-            <div className="vp-launch-mark-wrap">
-              <div className="vp-launch-mark">VP</div>
-              <span className="vp-launch-ring vp-launch-ring-a" />
-              <span className="vp-launch-ring vp-launch-ring-b" />
-            </div>
-            <div className="vp-launch-kicker">Velvet Pulse</div>
-            <div className="vp-launch-title">VP 系統</div>
-            <div className="vp-launch-desc">訂購 × 倉儲 × 會計 × 同步中心</div>
-          </div>
-        </div>
-      )}
-
+    <div className="vp-shell">
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 
-      {showFloatingInstallPrompt && (
-        <div className="vp-pwa-floating-card" role="dialog" aria-label="加入主畫面提示">
-          <button type="button" className="vp-pwa-floating-close" onClick={dismissPwaPrompt} aria-label="關閉加入主畫面提示">✕</button>
-          <div className="vp-pwa-floating-kicker">App 提示</div>
-          <div className="vp-pwa-floating-title">{isIosDevice ? 'iPhone 可手動加入主畫面' : '可加入主畫面，開啟會更像 App'}</div>
-          <div className="vp-pwa-floating-desc">{isIosDevice ? '請用 Safari 開啟，點分享，再選「加入主畫面」。完成後這個提示會自動消失。' : '加入後這個提示會自動消失，不會一直擋住頁面。'}</div>
-          <div className="vp-pwa-floating-actions">
-            <button type="button" className="vp-pwa-floating-ghost" onClick={dismissPwaPrompt}>先隱藏</button>
-            <button type="button" className="vp-pwa-floating-primary" onClick={handleInstallApp}>{isIosDevice ? '知道了' : '加入主畫面'}</button>
-          </div>
-        </div>
-      )}
-
-      {showDesktopPwaStrip && (
+      {!isMobileViewport && (
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
           <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
@@ -4274,26 +4116,24 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              {showDesktopPwaStrip && (
-                <div className="vp-header-pwa-strip">
-                  <button
-                    type="button"
-                    className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
-                    onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
-                  >
-                    {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
-                    <span>{isOnline ? '連線中' : '離線中'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
-                    onClick={handleInstallApp}
-                  >
-                    <Plus className="small-icon" />
-                    <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
-                  </button>
-                </div>
-              )}
+              <div className="vp-header-pwa-strip">
+                <button
+                  type="button"
+                  className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
+                  onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
+                >
+                  {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                  <span>{isOnline ? '連線中' : '離線中'}</span>
+                </button>
+                <button
+                  type="button"
+                  className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
+                  onClick={handleInstallApp}
+                >
+                  <Plus className="small-icon" />
+                  <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
+                </button>
+              </div>
 
               <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
                 <button
