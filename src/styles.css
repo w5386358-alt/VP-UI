@@ -10152,9 +10152,11 @@ body {
 .scan-inline-icon-btn:hover,
 .scan-inline-icon-btn:focus,
 .scan-inline-icon-btn:active {
-  transform: none !important;
-  translate: none !important;
+  position: absolute !important;
+  right: 10px !important;
   top: 50% !important;
+  transform: translateY(-50%) !important;
+  translate: none !important;
   margin: 0 !important;
   box-shadow: none !important;
 }
@@ -10203,4 +10205,31 @@ body {
 
 .warehouse-query-shell .primary-button {
   min-width: 132px !important;
+}
+
+
+.scanner-input-wrap,
+.scanner-inline-field strong {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.scanner-input-wrap input,
+.scanner-inline-field strong input {
+  padding-right: 60px !important;
+}
+
+@media (min-width: 901px) {
+  .product-admin-layout.products-stage-layout {
+    gap: 18px !important;
+  }
+
+  .product-admin-side {
+    padding-left: 6px !important;
+  }
+
+  .product-editor-panel.products-editor-shell {
+    max-width: 356px !important;
+    margin-left: auto !important;
+  }
 }

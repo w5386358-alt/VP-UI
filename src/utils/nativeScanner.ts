@@ -77,7 +77,6 @@ export async function scanWithCamera(options?: ScanOptions): Promise<string | nu
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
-    fileInput.setAttribute('capture', 'environment');
 
     card.append(header, videoWrap, actions, fileInput);
     overlay.append(card);
