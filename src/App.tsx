@@ -58,8 +58,10 @@ function detectMobileLikeDevice() {
   if (typeof window === 'undefined') return false;
   const ua = window.navigator.userAgent || '';
   const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
-  const narrow = window.innerWidth <= 1024;
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || coarse || narrow;
+  const touchPoints = typeof navigator !== 'undefined' ? navigator.maxTouchPoints || 0 : 0;
+  const shortSide = Math.min(window.innerWidth, window.innerHeight);
+  const standalone = typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || coarse || touchPoints > 1 || shortSide <= 1024 || standalone;
 }
 
 function detectIosDevice() {
@@ -4059,10 +4061,43 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
 
   useEffect(() => {
-    setMobileMoreOpen(false);
-  }, [active]);
+    if (typeof document === 'undefined') return;
+    const body = document.body;
+    const html = document.documentElement;
+    const mobileStandalone = isMobileViewport || isStandaloneMode;
+
+    body.classList.toggle('standalone-body', isStandaloneMode);
+    body.classList.toggle('mobile-device-body', isMobileViewport);
+
+    if (mobileStandalone) {
+      html.style.overflowY = 'auto';
+      body.style.overflowY = 'auto';
+      body.style.overflowX = 'hidden';
+      body.style.position = 'relative';
+      body.style.touchAction = 'pan-y';
+      body.style.webkitOverflowScrolling = 'touch';
+    } else {
+      html.style.overflowY = '';
+      body.style.overflowY = '';
+      body.style.overflowX = '';
+      body.style.position = '';
+      body.style.touchAction = '';
+      body.style.webkitOverflowScrolling = '';
+    }
+
+    return () => {
+      body.classList.remove('standalone-body', 'mobile-device-body');
+      html.style.overflowY = '';
+      body.style.overflowY = '';
+      body.style.overflowX = '';
+      body.style.position = '';
+      body.style.touchAction = '';
+      body.style.webkitOverflowScrolling = '';
+    };
+  }, [isMobileViewport, isStandaloneMode, active, mobileMoreOpen]);
 
   const showFloatingInstallPrompt = isMobileViewport && !isStandaloneMode && !pwaPromptDismissed;
+  const showDesktopPwaStrip = !isMobileViewport && !isStandaloneMode;
 
   return (
     <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
@@ -4097,7 +4132,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </div>
       )}
 
-      {!isMobileViewport && (
+      {showDesktopPwaStrip && (
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
           <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
@@ -4203,7 +4238,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              {!isMobileViewport && (
+              {showDesktopPwaStrip && (
                 <div className="vp-header-pwa-strip">
                   <button
                     type="button"
