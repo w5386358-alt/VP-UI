@@ -4240,7 +4240,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   if (!isAuthenticated) {
     return (
-      <div className="vp-shell vp-login-shell-page">
+      <div className="vp-login-shell-page">
         <div className="vp-login-backdrop vp-login-backdrop-a" />
         <div className="vp-login-backdrop vp-login-backdrop-b" />
         <section className="vp-login-shell">
