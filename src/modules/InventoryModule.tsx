@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronRight, PackagePlus, ScanSearch } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronRight } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -136,7 +136,7 @@ export default function InventoryModule(props: any) {
               <div className="shipping-queue">
                 {pagedWarehouseQueue.map((item: any) => (
                   <div key={item.orderNo} className={`shipping-row-shell ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`}>
-                    <button type="button" className={`shipping-row accounting-select-row mobile-ops-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
+                    <button type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
                       <div>
                         <div className="shipping-order">{item.orderNo}</div>
                         <div className="shipping-meta">{item.customer} / {item.date} / {item.itemCount} 件 / {item.paymentStatus}</div>
@@ -161,19 +161,15 @@ export default function InventoryModule(props: any) {
                 ))}
                 {!pagedWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
               </div>
-              <div className="pagination-row pagination-row-compact-arrows">
-                <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setShippingPage((page) => Math.max(1, page - 1))} disabled={shippingSafePage === 1}>‹</button>
-                <div className="pagination-pages pagination-pages-single">
-                  <button type="button" className="pagination-page active">{shippingSafePage} / {shippingTotalPages}</button>
+              <div className="pagination-row pagination-row-minimal">
+                <div className="pagination-pages">
+                  {shippingPageNumbers.map((page) => (
+                    <button key={page} type="button" className={`pagination-page ${shippingSafePage === page ? 'active' : ''}`} onClick={() => setShippingPage(page)}>{page}</button>
+                  ))}
                 </div>
-                <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setShippingPage((page) => Math.min(shippingTotalPages, page + 1))} disabled={shippingSafePage === shippingTotalPages}>›</button>
               </div>
             </div>
           </div>
-
-          <button type="button" className="mobile-module-fab warehouse-module-fab" onClick={() => document.querySelector('.warehouse-command-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="開啟出貨操作入口">
-            <Truck className="small-icon" />
-          </button>
 
           <div className="warehouse-side warehouse-stack">
             <div className="card order-panel sticky-panel warehouse-side-panel warehouse-command-panel">
@@ -247,39 +243,28 @@ export default function InventoryModule(props: any) {
               <span className="badge badge-soft">共 {stockSnapshot.length} 項</span>
             </div>
 
-            <div className="warehouse-stock-grid compact warehouse-stock-card-grid mobile-two-grid">
+            <div className="warehouse-stock-grid compact warehouse-stock-card-grid">
               {stockSnapshot.map((item: any) => (
-                <div key={item.code} className={`stock-card-shell ${selectedStockCode === item.code ? 'selected' : ''}`}>
-                  <button type="button" className={`card stock-snapshot-card compact accounting-select-row mobile-ops-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
-                    <div className="stock-card-top compact">
-                      <div className="stock-card-main">
-                        <div className="shipping-order">{item.name}</div>
-                        <div className="shipping-meta">{item.code}</div>
-                      </div>
-                      <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
+                <button key={item.code} type="button" className={`card stock-snapshot-card compact accounting-select-row ${selectedStockCode === item.code ? 'selected' : ''}`} onClick={() => setSelectedStockCode(item.code)}>
+                  <div className="stock-card-top compact">
+                    <div className="stock-card-main">
+                      <div className="shipping-order">{item.name}</div>
+                      <div className="shipping-meta">{item.code}</div>
                     </div>
-                    <div className="stock-inline-row">
-                      <div className="stock-inline-block">
-                        <span>目前庫存</span>
-                        <strong>{item.stock}</strong>
-                      </div>
-                      <div className="stock-inline-block">
-                        <span>安全庫存</span>
-                        <strong>{item.safe}</strong>
-                      </div>
-                    </div>
-                    <div className="stock-qr-line">QR：{item.qr}</div>
-                  </button>
-                  <div className="mobile-row-action-group mobile-stock-action-group" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.name} 操作`} onClick={() => setStockActionMenuCode((prev) => prev === item.code ? null : item.code)}>›</button>
-                    {stockActionMenuCode === item.code && (
-                      <div className="mobile-row-action-sheet">
-                        <button type="button" onClick={() => openWarehouseStockPanel('inbound', item.code)}><PackagePlus className="tiny-icon" />入庫</button>
-                        <button type="button" onClick={() => openWarehouseStockPanel('query', item.code)}><ScanSearch className="tiny-icon" />查詢</button>
-                      </div>
-                    )}
+                    <span className={`badge ${item.status === '低庫存' ? 'badge-danger' : 'badge-success'}`}>{item.status}</span>
                   </div>
-                </div>
+                  <div className="stock-inline-row">
+                    <div className="stock-inline-block">
+                      <span>目前庫存</span>
+                      <strong>{item.stock}</strong>
+                    </div>
+                    <div className="stock-inline-block">
+                      <span>安全庫存</span>
+                      <strong>{item.safe}</strong>
+                    </div>
+                  </div>
+                  <div className="stock-qr-line">QR：{item.qr}</div>
+                </button>
               ))}
             </div>
           </div>

@@ -285,12 +285,14 @@ export default function OrdersModule(props: any) {
                 </div>
               ))}
             </div>
-            <div className="pagination-row pagination-row-compact-arrows">
-              <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safeProductPage === 1}>‹</button>
-              <div className="pagination-pages pagination-pages-single">
-                <button type="button" className="pagination-page active">{safeProductPage} / {totalProductPages}</button>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safeProductPage === 1}>上一頁</button>
+              <div className="pagination-pages">
+                {productPageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safeProductPage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
+                ))}
               </div>
-              <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setProductPage((page) => Math.min(totalProductPages, page + 1))} disabled={safeProductPage === totalProductPages}>›</button>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.min(totalProductPages, page + 1))} disabled={safeProductPage === totalProductPages}>下一頁</button>
             </div>
           </div>
         </div>
@@ -311,12 +313,14 @@ export default function OrdersModule(props: any) {
                 </button>
               ))}
             </div>
-            <div className="pagination-row pagination-row-compact-arrows">
-              <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setQuickCustomerPage((page) => Math.max(1, page - 1))} disabled={safeQuickCustomerPage === 1}>‹</button>
-              <div className="pagination-pages pagination-pages-single">
-                <button type="button" className="pagination-page active">{safeQuickCustomerPage} / {totalQuickCustomerPages}</button>
+            <div className="pagination-row">
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setQuickCustomerPage((page) => Math.max(1, page - 1))} disabled={safeQuickCustomerPage === 1}>上一頁</button>
+              <div className="pagination-pages">
+                {quickCustomerPageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safeQuickCustomerPage === page ? 'active' : ''}`} onClick={() => setQuickCustomerPage(page)}>{page}</button>
+                ))}
               </div>
-              <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setQuickCustomerPage((page) => Math.min(totalQuickCustomerPages, page + 1))} disabled={safeQuickCustomerPage === totalQuickCustomerPages}>›</button>
+              <button type="button" className="ghost-button pagination-btn" onClick={() => setQuickCustomerPage((page) => Math.min(totalQuickCustomerPages, page + 1))} disabled={safeQuickCustomerPage === totalQuickCustomerPages}>下一頁</button>
             </div>
           </div>
 
