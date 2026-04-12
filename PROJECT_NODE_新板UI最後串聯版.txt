@@ -24,7 +24,3 @@
 - Header 已加入連線狀態與加入主畫面入口
 - 延續第二十九版命名，不回退舊版
 - 目前可往第五階段手機實測繼續
-
-
-[2026-04-12 第三十一版節點]
-以『主畫面自動隱藏版』為主體，嫁接『第六階段App化視覺強化版』的純視覺外觀元素。保留隱藏版原有滑動與相容主線，不引入 standalone-body / standalone-mode 控制邏輯；僅補入啟動畫面視覺、PWA icons、apple-touch-icon、標題與 manifest 名稱調整。多餘 TXT 已移除，僅保留 PROJECT_NODE_新板UI最後串聯版.txt。

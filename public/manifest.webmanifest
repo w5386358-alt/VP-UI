@@ -1,6 +1,6 @@
 {
   "name": "VP 系統",
-  "short_name": "VP系統",
+  "short_name": "VP",
   "description": "VP 訂購、倉儲、會計與同步中心整合系統",
   "start_url": "/",
   "display": "standalone",
