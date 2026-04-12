@@ -10312,19 +10312,6 @@ body {
 }
 
 
-body.standalone-body {
-  overscroll-behavior: none;
-}
-
-.vp-shell.standalone-mode {
-  min-height: 100dvh;
-}
-
-.vp-main {
-  padding-top: max(18px, env(safe-area-inset-top));
-  padding-bottom: max(100px, env(safe-area-inset-bottom));
-}
-
 .vp-launch-screen {
   position: fixed;
   inset: 0;

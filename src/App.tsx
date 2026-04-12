@@ -3918,24 +3918,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
-    const handlePageShow = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
-      if (standalone) {
-        setShowAppLaunch(true);
-        window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
-      }
-    };
-    window.addEventListener('pageshow', handlePageShow);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener('pageshow', handlePageShow);
-    };
-  }, []);
-
   async function handleInstallApp() {
     if (!installPromptEvent) {
       triggerShellHint(isStandaloneMode ? '✅ 目前已是主畫面模式。' : '目前裝置尚未提供安裝提示，可先用瀏覽器加入主畫面。');
@@ -4029,7 +4011,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, [active]);
 
   return (
-    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
+    <div className="vp-shell">
       {showAppLaunch && (
         <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`}>
           <div className="vp-launch-card">
@@ -4044,7 +4026,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
         </div>
       )}
-
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 
