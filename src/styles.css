@@ -10666,3 +10666,70 @@ body {
   .dashboard-history-icon{width:30px !important;height:30px !important;}
   .dashboard-eye-button{width:30px;height:30px;}
 }
+
+
+/* === 第三十三版續修3：手機清單/日期/列印/商品縮排 === */
+.pagination-row-minimal{justify-content:center !important;}
+.pagination-row-minimal .pagination-pages{margin:0 auto;}
+.pagination-row-minimal .pagination-btn{display:none !important;}
+.print-icon-button{display:inline-flex;align-items:center;gap:8px;border-color:rgba(219,108,146,.32) !important;color:#d86b93 !important;background:rgba(255,245,249,.92) !important;}
+.print-symbol-icon{width:16px;height:16px;display:inline-block;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(216,107,147,.18));}
+.shipping-row-shell{position:relative;}
+.mobile-row-action-group{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:3;display:none;}
+.mobile-row-action-trigger{width:28px;height:28px;border:none;border-radius:999px;background:rgba(248,226,234,.96);color:#d86b93;font-size:22px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(216,107,147,.16);}
+.mobile-row-action-sheet{position:absolute;right:0;top:34px;display:grid;gap:6px;min-width:92px;padding:8px;border-radius:14px;background:rgba(255,255,255,.98);border:1px solid rgba(232,188,205,.88);box-shadow:0 18px 34px rgba(94,47,72,.14);}
+.mobile-row-action-sheet button{border:none;background:rgba(255,245,249,.95);border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700;color:#b84e76;}
+
+@media (max-width:900px){
+  .products-card-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .products-feature-card,.product-admin-card{padding:10px !important;border-radius:16px !important;}
+  .product-image-slot{max-height:92px !important;min-height:92px !important;}
+  .product-image,.product-image-placeholder{height:92px !important;}
+  .product-admin-card .data-card-title{font-size:13px !important;line-height:1.35 !important;}
+  .product-admin-card .data-card-subtitle{font-size:10px !important;line-height:1.35 !important;}
+  .product-admin-card .metric-row.three,.products-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:6px !important;}
+  .product-admin-card .metric-box{padding:8px !important;}
+  .product-admin-card .metric-box span{font-size:10px !important;}
+  .product-admin-card .metric-box strong{font-size:12px !important;}
+  .product-card-actions{margin-top:8px !important;justify-content:flex-end !important;}
+  .product-card-actions .ghost-button,.mobile-card-edit-btn{display:none !important;}
+  .dashboard-customer-order-code{display:none !important;}
+  .dashboard-customer-order-line{justify-content:flex-end !important;margin-top:4px !important;}
+  .dashboard-customer-row{padding:10px !important;}
+  .dashboard-customer-meta{margin-top:2px !important;}
+  .dashboard-customer-list{gap:8px !important;}
+  .dashboard-history-icon{width:28px !important;height:28px !important;}
+  .dashboard-history-row{padding:10px !important;grid-template-columns:28px minmax(0,1fr) auto !important;}
+  .dashboard-history-side{font-size:12px !important;}
+  .mobile-row-action-group{display:block;}
+  .shipping-row,.accounting-row{padding-right:44px !important;}
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .field-span-2{grid-column:1 / -1 !important;}
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .filter-date-card,
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .filter-status-card{min-width:0 !important;}
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .field-label{font-size:11px !important;}
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid input,
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid select{min-height:40px !important;font-size:13px !important;}
+  .accounting-board-grid-v2{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .accounting-board-card-v2{padding:12px !important;border-radius:16px !important;}
+  .accounting-board-kicker{font-size:11px !important;}
+  .accounting-board-value{font-size:18px !important;}
+  .accounting-board-sub{font-size:10px !important;line-height:1.35 !important;}
+  .accounting-stats-layout-v3{grid-template-columns:1fr !important;gap:12px !important;}
+  .accounting-visual-grid-v3{grid-template-columns:1fr 1fr !important;gap:10px !important;}
+  .accounting-visual-card,.accounting-trend-card-v3,.accounting-insight-card-v3{padding:12px !important;}
+  .accounting-bar-chart-v3{gap:8px !important;}
+  .accounting-bar-label,.accounting-bar-value,.accounting-donut-legend div,.insight-row span,.insight-row strong{font-size:11px !important;}
+  .accounting-ranking-layout-v2{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .ranking-row-v2{padding:10px !important;gap:8px !important;}
+  .ranking-index{width:28px !important;height:28px !important;font-size:12px !important;}
+  .ranking-name{font-size:12px !important;}
+  .ranking-meta,.ranking-right span{font-size:10px !important;}
+  .ranking-right strong{font-size:12px !important;}
+}
+
+@media (max-width:640px){
+  .products-card-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important;}
+  .accounting-ranking-layout-v2{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  .accounting-visual-grid-v3{grid-template-columns:1fr 1fr !important;}
+}

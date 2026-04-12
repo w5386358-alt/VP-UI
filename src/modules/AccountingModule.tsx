@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronLeft, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode } from 'lucide-react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -25,6 +25,16 @@ export default function AccountingModule(props: any) {
   } = props;
 
   const uploadSymbol = '/icons/upload-symbol.svg';
+
+  function openAccountingActionPanel(orderNo: string) {
+    selectAccountingOrder(orderNo);
+    setAccountingActionMenuOrderNo(null);
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        document.querySelector('.accounting-side-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
+  }
   const [accountingPage, setAccountingPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredAccountingQueue.length / pageSize));
@@ -34,6 +44,8 @@ export default function AccountingModule(props: any) {
     [filteredAccountingQueue, safePage]
   );
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const [accountingActionMenuOrderNo, setAccountingActionMenuOrderNo] = useState<string | null>(null);
+  const printerSymbol = '/icons/printer-symbol.png';
 
   async function handleAccountingInvoiceScan() {
     const value = await scanWithCamera({ title: '會計單號掃描', fallbackLabel: '發票 / 單號' });
@@ -79,29 +91,38 @@ export default function AccountingModule(props: any) {
               </div>
               <div className="shipping-queue accounting-queue accounting-queue-v2">
                 {pagedAccountingQueue.map((item: any) => (
-                  <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
-                    <div>
-                      <div className="shipping-order">{item.orderNo}</div>
-                      <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
-                      <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                  <div key={item.orderNo} className={`shipping-row-shell ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`}>
+                    <button type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
+                      <div>
+                        <div className="shipping-order">{item.orderNo}</div>
+                        <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
+                        <div className="shipping-meta">運費 ${item.shippingFee} / 稅率 {item.taxRate}% / 證明：{item.proof}</div>
+                      </div>
+                      <div className="shipping-actions accounting-statuses warehouse-order-statuses">
+                        <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                        <span className={`badge ${item.shippingStatus === '待出貨' || item.shippingStatus === '已退款' ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : item.shippingStatus === '已出貨' ? 'badge-success' : 'badge-neutral'}`}>{item.shippingStatus}</span>
+                        <strong className="accounting-amount">${item.amount}</strong>
+                      </div>
+                    </button>
+                    <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 操作`} onClick={() => setAccountingActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
+                      {accountingActionMenuOrderNo === item.orderNo && (
+                        <div className="mobile-row-action-sheet">
+                          <button type="button" onClick={() => openAccountingActionPanel(item.orderNo)}>收款</button>
+                          <button type="button" onClick={() => openAccountingActionPanel(item.orderNo)}>退款</button>
+                        </div>
+                      )}
                     </div>
-                    <div className="shipping-actions accounting-statuses warehouse-order-statuses">
-                      <span className={`badge ${item.paymentStatus === '已收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                      <span className={`badge ${item.shippingStatus === '待出貨' || item.shippingStatus === '已退款' ? 'badge-danger' : item.shippingStatus.includes('理貨') ? 'badge-soft' : item.shippingStatus === '已出貨' ? 'badge-success' : 'badge-neutral'}`}>{item.shippingStatus}</span>
-                      <strong className="accounting-amount">${item.amount}</strong>
-                    </div>
-                  </button>
+                  </div>
                 ))}
                 {!pagedAccountingQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
               </div>
-              <div className="pagination-row">
-                <button type="button" className="ghost-button pagination-btn" onClick={() => setAccountingPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+              <div className="pagination-row pagination-row-minimal">
                 <div className="pagination-pages">
                   {pageNumbers.map((page) => (
                     <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setAccountingPage(page)}>{page}</button>
                   ))}
                 </div>
-                <button type="button" className="ghost-button pagination-btn" onClick={() => setAccountingPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
               </div>
             </div>
           </div>
@@ -152,6 +173,7 @@ export default function AccountingModule(props: any) {
 
               <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
+                  <button type="button" className="ghost-button print-icon-button"><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印</button>
                   <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
                   <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
                   <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />送交退款</button>
@@ -383,7 +405,7 @@ export default function AccountingModule(props: any) {
           <div className="card order-panel">
             <div className="panel-head"><div><div className="panel-title">人員排名</div></div><span className="badge badge-role">排行</span></div>
             <div className="ranking-list-v2">
-              {salesRanking.map((item: any, index: number) => (
+              {salesRanking.slice(0, 5).map((item: any, index: number) => (
                 <div key={item.name} className="ranking-row-v2">
                   <div className="ranking-left"><div className="ranking-index">#{index + 1}</div><div><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.role}</div></div></div>
                   <div className="ranking-right"><strong>${item.amount}</strong><span>{item.orders} 筆</span></div>
@@ -394,7 +416,7 @@ export default function AccountingModule(props: any) {
           <div className="card order-panel">
             <div className="panel-head"><div><div className="panel-title">熱銷商品</div></div><span className="badge badge-soft">熱銷</span></div>
             <div className="ranking-list-v2 hot-product-list-v2">
-              {hotProductsBoard.map((item: any) => (
+              {hotProductsBoard.slice(0, 5).map((item: any) => (
                 <div key={item.name} className="ranking-row-v2">
                   <div className="ranking-left"><ArrowUpRight className="small-icon" /><div><div className="ranking-name">{item.name}</div><div className="ranking-meta">{item.code}</div></div></div>
                   <div className="ranking-right"><strong>{item.qty}</strong><span>件</span></div>

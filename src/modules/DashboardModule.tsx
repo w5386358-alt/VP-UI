@@ -87,7 +87,6 @@ export default function DashboardModule(props: any) {
                     </div>
                     <div className="dashboard-customer-meta"><Phone className="dashboard-mini-icon" />{item.phone || '-'}</div>
                     <div className="dashboard-customer-order-line">
-                      <span className="dashboard-customer-order-code">{item.latestOrderNo}</span>
                       <button type="button" className="dashboard-eye-button" aria-label={`查看 ${item.name} 的歷史訂單`} title="查看這位客戶的歷史訂單">
                         <Eye className="dashboard-mini-icon" />
                       </button>

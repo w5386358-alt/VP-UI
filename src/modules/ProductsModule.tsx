@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ChevronLeft, ChevronRight, ScanLine, X } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine, X } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -94,16 +94,7 @@ export default function ProductsModule(props: any) {
                     <span className="data-code">{item.code}</span>
                     <div className="product-card-top-actions">
                       <StatusBadge enabled={item.enabled} />
-                      {isMobileViewport && (
-                        <button
-                          type="button"
-                          className="mobile-card-edit-btn"
-                          onClick={(e) => { e.stopPropagation(); handleOpenEditProduct(item); }}
-                          aria-label={`編輯 ${item.name}`}
-                        >
-                          <PencilLine className="small-icon" />
-                        </button>
-                      )}
+
                     </div>
                   </div>
                   <div className="product-image-slot">
@@ -130,12 +121,14 @@ export default function ProductsModule(props: any) {
                   </div>
 
                   <div className="product-card-actions">
-                    <button type="button" className="ghost-button compact-btn" onClick={() => handleOpenViewProduct(item)}>
-                      <Eye className="small-icon" />查看
-                    </button>
-                    <button type="button" className="ghost-button compact-btn" onClick={() => handleOpenEditProduct(item)}>
-                      <PencilLine className="small-icon" />編輯
-                    </button>
+                    {!isMobileViewport && (<>
+                      <button type="button" className="ghost-button compact-btn" onClick={() => handleOpenViewProduct(item)}>
+                        <Eye className="small-icon" />查看
+                      </button>
+                      <button type="button" className="ghost-button compact-btn" onClick={() => handleOpenEditProduct(item)}>
+                        <PencilLine className="small-icon" />編輯
+                      </button>
+                    </>)}
                     <button type="button" className={`ui-switch ${item.enabled ? 'on' : 'off'}`} onClick={() => toggleProductEnabled(item)} aria-label={item.enabled ? '停用商品' : '啟用商品'} aria-pressed={item.enabled}>
                       <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
                     </button>
@@ -143,14 +136,12 @@ export default function ProductsModule(props: any) {
                 </div>
               ))}
             </div>
-            <div className="pagination-row">
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+            <div className="pagination-row pagination-row-minimal">
               <div className="pagination-pages">
                 {pageNumbers.map((page) => (
                   <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
                 ))}
               </div>
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>

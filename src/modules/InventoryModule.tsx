@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronRight } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -57,6 +57,8 @@ export default function InventoryModule(props: any) {
   } = props;
 
   const [shippingPage, setShippingPage] = useState(1);
+  const [warehouseActionMenuOrderNo, setWarehouseActionMenuOrderNo] = useState<string | null>(null);
+  const printerSymbol = '/icons/printer-symbol.png';
   const shippingPageSize = 10;
   const shippingTotalPages = Math.max(1, Math.ceil(filteredWarehouseQueue.length / shippingPageSize));
   const shippingSafePage = Math.min(shippingPage, shippingTotalPages);
@@ -81,6 +83,16 @@ export default function InventoryModule(props: any) {
   async function handleQueryScanLaunch() {
     const value = await scanWithCamera({ title: '查詢掃碼', fallbackLabel: '查詢條件' });
     if (value) setWarehouseQueryInput(value.toUpperCase());
+  }
+
+  function openWarehouseActionPanel(orderNo: string) {
+    setSelectedWarehouseOrderNo(orderNo);
+    setWarehouseActionMenuOrderNo(null);
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        document.querySelector('.warehouse-command-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
   }
 
   return (
@@ -123,28 +135,38 @@ export default function InventoryModule(props: any) {
               </div>
               <div className="shipping-queue">
                 {pagedWarehouseQueue.map((item: any) => (
-                  <button key={item.orderNo} type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
-                    <div>
-                      <div className="shipping-order">{item.orderNo}</div>
-                      <div className="shipping-meta">{item.customer} / {item.date} / {item.itemCount} 件 / {item.paymentStatus}</div>
+                  <div key={item.orderNo} className={`shipping-row-shell ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`}>
+                    <button type="button" className={`shipping-row accounting-select-row ${selectedWarehouseOrderNo === item.orderNo ? 'selected' : ''}`} onClick={() => setSelectedWarehouseOrderNo(item.orderNo)}>
+                      <div>
+                        <div className="shipping-order">{item.orderNo}</div>
+                        <div className="shipping-meta">{item.customer} / {item.date} / {item.itemCount} 件 / {item.paymentStatus}</div>
+                      </div>
+                      <div className="shipping-actions warehouse-order-statuses">
+                        <span className={`badge ${item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                        <span className={`badge ${item.shippingStatus === '已出貨' ? 'badge-success' : item.shippingStatus === '已退貨' ? 'badge-neutral' : item.shippingStatus.includes('換貨') ? 'badge-soft' : 'badge-danger'}`}>{item.shippingStatus}</span>
+                        <span className="badge badge-soft">{item.mainStatus}</span>
+                      </div>
+                    </button>
+                    <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 操作`} onClick={() => setWarehouseActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
+                      {warehouseActionMenuOrderNo === item.orderNo && (
+                        <div className="mobile-row-action-sheet">
+                          <button type="button" onClick={() => openWarehouseActionPanel(item.orderNo)}>出貨</button>
+                          <button type="button" onClick={() => openWarehouseActionPanel(item.orderNo)}>退貨</button>
+                          <button type="button" onClick={() => openWarehouseActionPanel(item.orderNo)}>換貨</button>
+                        </div>
+                      )}
                     </div>
-                    <div className="shipping-actions warehouse-order-statuses">
-                      <span className={`badge ${item.paymentStatus === '已收款' || item.paymentStatus === '免收款' ? 'badge-success' : item.paymentStatus.includes('退款') ? 'badge-neutral' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                      <span className={`badge ${item.shippingStatus === '已出貨' ? 'badge-success' : item.shippingStatus === '已退貨' ? 'badge-neutral' : item.shippingStatus.includes('換貨') ? 'badge-soft' : 'badge-danger'}`}>{item.shippingStatus}</span>
-                      <span className="badge badge-soft">{item.mainStatus}</span>
-                    </div>
-                  </button>
+                  </div>
                 ))}
                 {!pagedWarehouseQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
               </div>
-              <div className="pagination-row">
-                <button type="button" className="ghost-button pagination-btn" onClick={() => setShippingPage((page) => Math.max(1, page - 1))} disabled={shippingSafePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
+              <div className="pagination-row pagination-row-minimal">
                 <div className="pagination-pages">
                   {shippingPageNumbers.map((page) => (
                     <button key={page} type="button" className={`pagination-page ${shippingSafePage === page ? 'active' : ''}`} onClick={() => setShippingPage(page)}>{page}</button>
                   ))}
                 </div>
-                <button type="button" className="ghost-button pagination-btn" onClick={() => setShippingPage((page) => Math.min(shippingTotalPages, page + 1))} disabled={shippingSafePage === shippingTotalPages}>下一頁<ChevronRight className="small-icon" /></button>
               </div>
             </div>
           </div>
@@ -202,7 +224,7 @@ export default function InventoryModule(props: any) {
                   </button>
                   <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
                   <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
-                  <button type="button" className="ghost-button" onClick={handleWarehousePrint}><Receipt className="small-icon" />列印出貨單 PDF</button>
+                  <button type="button" className="ghost-button print-icon-button" onClick={handleWarehousePrint}><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印出貨單 PDF</button>
                 </div>
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
