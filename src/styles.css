@@ -10926,3 +10926,153 @@ body {
   .staff-mobile-edit-trigger{display:inline-flex;}
   .staff-list-head-actions .compact-add-button{display:none !important;}
 }
+
+/* 2026-04-12 fix9: mobile field fit / accounting evaluation 2x2 / action menu layer / pagination unified */
+@media (max-width:900px){
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col{
+    align-items:stretch;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field,
+  .mobile-modal-shell.is-mobile-open .field-card,
+  .mobile-modal-shell.is-mobile-open .upload-field-card{
+    min-width:0 !important;
+    width:100% !important;
+    overflow:hidden;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong,
+  .mobile-modal-shell.is-mobile-open .field-card strong,
+  .mobile-modal-shell.is-mobile-open .upload-field-card strong,
+  .mobile-modal-shell.is-mobile-open .fake-field strong > *{
+    min-width:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .mobile-modal-shell.is-mobile-open .fake-field strong textarea,
+  .mobile-modal-shell.is-mobile-open .field-card input,
+  .mobile-modal-shell.is-mobile-open .field-card select,
+  .mobile-modal-shell.is-mobile-open .field-card textarea{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    font-size:12px !important;
+    padding-left:10px !important;
+    padding-right:10px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field span,
+  .mobile-modal-shell.is-mobile-open .field-card-label{
+    font-size:11px !important;
+    line-height:1.3 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row{
+    flex-wrap:wrap;
+  }
+
+  .accounting-ranking-layout-v2 .ranking-list-v2{
+    display:grid;
+    gap:10px;
+  }
+
+  .accounting-ranking-layout-v2 .evaluation-result-row{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+    align-items:stretch !important;
+  }
+
+  .accounting-ranking-layout-v2 .evaluation-result-row .ranking-left,
+  .accounting-ranking-layout-v2 .evaluation-result-row .evaluation-result-right,
+  .accounting-ranking-layout-v2 .evaluation-result-row .evaluation-score-inline{
+    min-width:0 !important;
+  }
+
+  .accounting-ranking-layout-v2 .evaluation-result-row .ranking-left,
+  .accounting-ranking-layout-v2 .evaluation-result-row .evaluation-result-right{
+    grid-column:span 1 !important;
+  }
+
+  .accounting-ranking-layout-v2 .evaluation-result-row .evaluation-score-inline{
+    grid-column:1 / -1 !important;
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:6px 8px !important;
+  }
+}
+
+.mobile-row-action-group,
+.staff-mobile-edit-trigger,
+.evaluation-target-top-actions,
+.mobile-row-action-sheet,
+.mobile-row-action-trigger{
+  z-index:2600 !important;
+}
+
+.mobile-row-action-sheet{
+  z-index:2605 !important;
+}
+
+.pagination-row,
+.pagination-row-angle,
+.pagination-row-minimal{
+  position:relative;
+  justify-content:center !important;
+}
+
+.pagination-row::before,
+.pagination-row-angle::before,
+.pagination-row-minimal::before,
+.pagination-row::after,
+.pagination-row-angle::after,
+.pagination-row-minimal::after{
+  color:#c73b69;
+  font-weight:800;
+  font-size:16px;
+  line-height:1;
+}
+
+.pagination-row::before,
+.pagination-row-angle::before,
+.pagination-row-minimal::before{content:'{';}
+.pagination-row::after,
+.pagination-row-angle::after,
+.pagination-row-minimal::after{content:'}';}
+
+.pagination-row .pagination-btn,
+.pagination-row-angle .pagination-btn,
+.pagination-row-minimal .pagination-btn{
+  color:#c73b69 !important;
+  border-color:rgba(199,59,105,.24) !important;
+}
+
+.pagination-row .pagination-page,
+.pagination-row-angle .pagination-page,
+.pagination-row-minimal .pagination-page{
+  min-width:30px !important;
+  height:28px !important;
+  padding:0 8px !important;
+  font-size:12px !important;
+  color:#c73b69 !important;
+}
+
+.pagination-row .pagination-pages,
+.pagination-row-angle .pagination-pages,
+.pagination-row-minimal .pagination-pages{
+  min-width:auto !important;
+}
+
+.pagination-row .pagination-pages .pagination-page:not(.active),
+.pagination-row-angle .pagination-pages .pagination-page:not(.active),
+.pagination-row-minimal .pagination-pages .pagination-page:not(.active){
+  display:none !important;
+}
