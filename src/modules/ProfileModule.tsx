@@ -1,5 +1,5 @@
 import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
 
@@ -13,6 +13,8 @@ export default function ProfileModule(props: any) {
 
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [draft, setDraft] = useState({ sales: 32, collaboration: 20, professional: 16, efficiency: 12 });
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileEvaluationPanelOpen, setMobileEvaluationPanelOpen] = useState(false);
 
   const selectedTarget = useMemo(
     () => evaluationTargets.find((item: any) => item.loginId === selectedTargetId) || evaluationTargets[0] || null,
@@ -82,27 +84,26 @@ export default function ProfileModule(props: any) {
   });
   const radarPolygon = radarPoints.map((item: any) => `${item.x},${item.y}`).join(' ');
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  function openEvaluationEntry(loginId: string) {
+    setSelectedTargetId(loginId);
+    setMobileEvaluationPanelOpen(true);
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        document.querySelector('.evaluation-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
+  }
+
   return (
     <section className="evaluation-shell evaluation-shell-v2">
-      <div className="card evaluation-hero-card evaluation-hero-card-v2">
-        <div>
-          <div className="evaluation-kicker">評鑑系統</div>
-          <div className="evaluation-title">核心夥伴季度匿名評鑑</div>
-          <div className="evaluation-desc">雷達能力圖已移到評鑑專區，目前只開放核心人員查看與送出評鑑。</div>
-        </div>
-        <div className="evaluation-identity">
-          <div className="evaluation-avatar">評</div>
-          <div>
-            <div className="evaluation-user">{user.name}</div>
-            <div className="data-chip-row wrap">
-              <span className="badge badge-role">帳號 / {user.loginId}</span>
-              <span className={getRankClass(user.rank)}>{user.rank}</span>
-              <span className="badge badge-neutral">價格層級 / {priceTierLabel}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {!canEvaluate && (
         <div className="card evaluation-lock-card evaluation-lock-card-wide">
           <Lock className="small-icon" />
@@ -216,20 +217,23 @@ export default function ProfileModule(props: any) {
                   key={item.loginId}
                   type="button"
                   className={`card evaluation-target-card ${selectedTargetIdSafe === item.loginId ? 'active' : ''}`}
-                  onClick={() => setSelectedTargetId(item.loginId)}
+                  onClick={() => { if (!isMobileViewport) setSelectedTargetId(item.loginId); }}
                 >
                   <div className="evaluation-target-top">
                     <div className="evaluation-target-name"><UserRound className="tiny-icon" />{item.name}</div>
                     <span className={`badge ${submitted ? 'badge-success' : 'badge-soft'}`}>{submitted ? '已送出' : '待評鑑'}</span>
                   </div>
                   <div className="evaluation-target-meta">{item.loginId} / {item.role || '核心夥伴'}</div>
+                  <div className="mobile-row-action-group evaluation-target-action" onClick={(e) => e.stopPropagation()}>
+                    <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.name} 評鑑`} onClick={() => openEvaluationEntry(item.loginId)}>›</button>
+                  </div>
                 </button>
               );
             })}
             {!evaluationTargets.length && <div className="card evaluation-empty-card">目前抓不到其他核心成員，請先確認人員資料。</div>}
           </div>
 
-          <div className="evaluation-grid evaluation-form-grid-v2">
+          <div className={`evaluation-grid evaluation-form-grid-v2 ${isMobileViewport && !mobileEvaluationPanelOpen ? 'mobile-hidden-panel' : ''}`}>
             <div className="card evaluation-card evaluation-form-card">
               <div className="evaluation-card-head"><Vote className="small-icon" /><span>匿名評分</span></div>
               <div className="evaluation-form-head">

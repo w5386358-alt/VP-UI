@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, Sparkles, PackageCheck, Layers3 } from 'lucide-react';
+import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, Sparkles, PackageCheck, Layers3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function OrdersModule(props: any) {
   const {
@@ -29,11 +29,9 @@ export default function OrdersModule(props: any) {
   const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
   const safeProductPage = Math.min(productPage, totalProductPages);
   const pagedOrderProducts = useMemo(() => filteredOrderProducts.slice((safeProductPage - 1) * pageSize, safeProductPage * pageSize), [filteredOrderProducts, safeProductPage]);
-  const productPageNumbers = Array.from({ length: totalProductPages }, (_, index) => index + 1);
   const totalQuickCustomerPages = Math.max(1, Math.ceil(quickCustomerCards.length / pageSize));
   const safeQuickCustomerPage = Math.min(quickCustomerPage, totalQuickCustomerPages);
   const pagedQuickCustomers = useMemo(() => quickCustomerCards.slice((safeQuickCustomerPage - 1) * pageSize, safeQuickCustomerPage * pageSize), [quickCustomerCards, safeQuickCustomerPage]);
-  const quickCustomerPageNumbers = Array.from({ length: totalQuickCustomerPages }, (_, index) => index + 1);
 
   useEffect(() => {
     if (typeof window === 'undefined' || cartFabPosition.ready) return;
@@ -41,8 +39,8 @@ export default function OrdersModule(props: any) {
     if (!isMobile) return;
     const size = 56;
     setCartFabPosition({
-      x: window.innerWidth - size - 16,
-      y: window.innerHeight - size - 112,
+      x: window.innerWidth - size - 12,
+      y: window.innerHeight - size - 96,
       ready: true,
     });
   }, [cartFabPosition.ready]);
@@ -285,14 +283,12 @@ export default function OrdersModule(props: any) {
                 </div>
               ))}
             </div>
-            <div className="pagination-row">
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safeProductPage === 1}>上一頁</button>
-              <div className="pagination-pages">
-                {productPageNumbers.map((page) => (
-                  <button key={page} type="button" className={`pagination-page ${safeProductPage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
-                ))}
+            <div className="pagination-row pagination-row-chevron">
+              <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safeProductPage === 1} aria-label="上一頁"><ChevronLeft className="small-icon" /></button>
+              <div className="pagination-pages pagination-pages-single">
+                <span className="pagination-page active">{safeProductPage}</span>
               </div>
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setProductPage((page) => Math.min(totalProductPages, page + 1))} disabled={safeProductPage === totalProductPages}>下一頁</button>
+              <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setProductPage((page) => Math.min(totalProductPages, page + 1))} disabled={safeProductPage === totalProductPages} aria-label="下一頁"><ChevronRight className="small-icon" /></button>
             </div>
           </div>
         </div>
@@ -313,14 +309,12 @@ export default function OrdersModule(props: any) {
                 </button>
               ))}
             </div>
-            <div className="pagination-row">
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setQuickCustomerPage((page) => Math.max(1, page - 1))} disabled={safeQuickCustomerPage === 1}>上一頁</button>
-              <div className="pagination-pages">
-                {quickCustomerPageNumbers.map((page) => (
-                  <button key={page} type="button" className={`pagination-page ${safeQuickCustomerPage === page ? 'active' : ''}`} onClick={() => setQuickCustomerPage(page)}>{page}</button>
-                ))}
+            <div className="pagination-row pagination-row-chevron">
+              <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setQuickCustomerPage((page) => Math.max(1, page - 1))} disabled={safeQuickCustomerPage === 1} aria-label="上一頁"><ChevronLeft className="small-icon" /></button>
+              <div className="pagination-pages pagination-pages-single">
+                <span className="pagination-page active">{safeQuickCustomerPage}</span>
               </div>
-              <button type="button" className="ghost-button pagination-btn" onClick={() => setQuickCustomerPage((page) => Math.min(totalQuickCustomerPages, page + 1))} disabled={safeQuickCustomerPage === totalQuickCustomerPages}>下一頁</button>
+              <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setQuickCustomerPage((page) => Math.min(totalQuickCustomerPages, page + 1))} disabled={safeQuickCustomerPage === totalQuickCustomerPages} aria-label="下一頁"><ChevronRight className="small-icon" /></button>
             </div>
           </div>
 

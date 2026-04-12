@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode } from 'lucide-react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronRight, ChevronLeft, ClipboardCheck, Layers3, Coins, Medal, QrCode } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -25,6 +25,8 @@ export default function AccountingModule(props: any) {
   } = props;
 
   const uploadSymbol = '/icons/upload-symbol.svg';
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [treasuryActionMenuOrderNo, setTreasuryActionMenuOrderNo] = useState<string | null>(null);
 
   function openAccountingActionPanel(orderNo: string) {
     selectAccountingOrder(orderNo);
@@ -43,9 +45,26 @@ export default function AccountingModule(props: any) {
     () => filteredAccountingQueue.slice((safePage - 1) * pageSize, safePage * pageSize),
     [filteredAccountingQueue, safePage]
   );
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
   const [accountingActionMenuOrderNo, setAccountingActionMenuOrderNo] = useState<string | null>(null);
   const printerSymbol = '/icons/printer-symbol.png';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  function openTreasuryActionPanel(orderNo: string) {
+    selectTreasuryOrder(orderNo);
+    setTreasuryActionMenuOrderNo(null);
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        document.querySelector('.accounting-treasury-side .sticky-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
+  }
 
   async function handleAccountingInvoiceScan() {
     const value = await scanWithCamera({ title: '會計單號掃描', fallbackLabel: '發票 / 單號' });
@@ -92,7 +111,7 @@ export default function AccountingModule(props: any) {
               <div className="shipping-queue accounting-queue accounting-queue-v2">
                 {pagedAccountingQueue.map((item: any) => (
                   <div key={item.orderNo} className={`shipping-row-shell ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`}>
-                    <button type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectAccountingOrder(item.orderNo)}>
+                    <button type="button" className={`shipping-row accounting-row accounting-select-row ${selectedAccountingRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => { if (!isMobileViewport) selectAccountingOrder(item.orderNo); }}>
                       <div>
                         <div className="shipping-order">{item.orderNo}</div>
                         <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod} / 發票 {item.invoiceNo}</div>
@@ -117,12 +136,12 @@ export default function AccountingModule(props: any) {
                 ))}
                 {!pagedAccountingQueue.length && <div className="warehouse-empty-state">查無符合條件的訂單</div>}
               </div>
-              <div className="pagination-row pagination-row-minimal">
-                <div className="pagination-pages">
-                  {pageNumbers.map((page) => (
-                    <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setAccountingPage(page)}>{page}</button>
-                  ))}
+              <div className="pagination-row pagination-row-minimal pagination-row-chevron">
+                <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setAccountingPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} aria-label="上一頁"><ChevronLeft className="small-icon" /></button>
+                <div className="pagination-pages pagination-pages-single">
+                  <span className="pagination-page active">{safePage}</span>
                 </div>
+                <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setAccountingPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁"><ChevronRight className="small-icon" /></button>
               </div>
             </div>
           </div>
@@ -247,7 +266,8 @@ export default function AccountingModule(props: any) {
               </div>
               <div className="treasury-queue">
                 {treasuryQueue.map((item: any) => (
-                  <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedTreasuryRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectTreasuryOrder(item.orderNo)}>
+                  <div key={item.orderNo} className={`shipping-row-shell ${selectedTreasuryRecord?.orderNo === item.orderNo ? 'selected' : ''}`}>
+                    <button type="button" className={`shipping-row accounting-row accounting-select-row ${selectedTreasuryRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => { if (!isMobileViewport) selectTreasuryOrder(item.orderNo); }}>
                     <div>
                       <div className="shipping-order">{item.orderNo}</div>
                       <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod || '原路退回'}</div>
@@ -256,7 +276,16 @@ export default function AccountingModule(props: any) {
                     <div className="shipping-actions accounting-statuses warehouse-order-statuses">
                       <span className={`badge ${item.paymentStatus === '已退款' ? 'badge-success' : 'badge-danger'}`}>{item.paymentStatus}</span>
                     </div>
-                  </button>
+                    </button>
+                    <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 操作`} onClick={() => setTreasuryActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
+                      {treasuryActionMenuOrderNo === item.orderNo && (
+                        <div className="mobile-row-action-sheet">
+                          <button type="button" onClick={() => openTreasuryActionPanel(item.orderNo)}>退款</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ))}
                 {!treasuryQueue.length && <div className="warehouse-empty-state">目前沒有待處理退款</div>}
               </div>
