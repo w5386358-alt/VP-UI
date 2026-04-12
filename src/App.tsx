@@ -4125,7 +4125,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
                   <span>{isOnline ? '連線中' : '離線中'}</span>
                 </button>
-                {!isStandaloneMode && (
                 <button
                   type="button"
                   className={`vp-pwa-chip install ${isStandaloneMode ? 'installed' : ''}`}
@@ -4134,7 +4133,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   <Plus className="small-icon" />
                   <span>{isStandaloneMode ? '已加入主畫面' : '加入主畫面'}</span>
                 </button>
-                )}
               </div>
 
               <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
