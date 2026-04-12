@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function CustomersModule(props: any) {
   const { filteredCustomers, customerViewMode, customerScopeLabel, user } = props;
@@ -57,14 +56,12 @@ export default function CustomersModule(props: any) {
               </div>
             ))}
           </section>
-          <div className="pagination-row">
-            <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}><ChevronLeft className="small-icon" />上一頁</button>
-            <div className="pagination-pages">
-              {pageNumbers.map((page) => (
-                <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setCustomerPage(page)}>{page}</button>
-              ))}
+          <div className="pagination-row pagination-row-compact-arrows">
+            <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safePage === 1}>‹</button>
+            <div className="pagination-pages pagination-pages-single">
+              <button type="button" className="pagination-page active">{safePage} / {totalPages}</button>
             </div>
-            <button type="button" className="ghost-button pagination-btn" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>下一頁<ChevronRight className="small-icon" /></button>
+            <button type="button" className="ghost-button pagination-btn pagination-arrow-btn" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages}>›</button>
           </div>
           </div>
         </div>

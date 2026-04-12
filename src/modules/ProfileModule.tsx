@@ -1,4 +1,4 @@
-import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -84,26 +84,7 @@ export default function ProfileModule(props: any) {
 
   return (
     <section className="evaluation-shell evaluation-shell-v2">
-      <div className="card evaluation-hero-card evaluation-hero-card-v2">
-        <div>
-          <div className="evaluation-kicker">評鑑系統</div>
-          <div className="evaluation-title">核心夥伴季度匿名評鑑</div>
-          <div className="evaluation-desc">雷達能力圖已移到評鑑專區，目前只開放核心人員查看與送出評鑑。</div>
-        </div>
-        <div className="evaluation-identity">
-          <div className="evaluation-avatar">評</div>
-          <div>
-            <div className="evaluation-user">{user.name}</div>
-            <div className="data-chip-row wrap">
-              <span className="badge badge-role">帳號 / {user.loginId}</span>
-              <span className={getRankClass(user.rank)}>{user.rank}</span>
-              <span className="badge badge-neutral">價格層級 / {priceTierLabel}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {!canEvaluate && (
+            {!canEvaluate && (
         <div className="card evaluation-lock-card evaluation-lock-card-wide">
           <Lock className="small-icon" />
           <div>

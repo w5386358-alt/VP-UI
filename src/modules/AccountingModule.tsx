@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode } from 'lucide-react';
+import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode, BanknoteArrowDown } from 'lucide-react';
 
 export default function AccountingModule(props: any) {
   const {
@@ -127,6 +127,10 @@ export default function AccountingModule(props: any) {
             </div>
           </div>
 
+          <button type="button" className="mobile-module-fab accounting-module-fab" onClick={() => document.querySelector('.accounting-side-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="開啟收款操作入口">
+            <CreditCard className="small-icon" />
+          </button>
+
           <div className="warehouse-side warehouse-stack">
             <div className="card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel">
               <div className="warehouse-side-section">
@@ -247,21 +251,36 @@ export default function AccountingModule(props: any) {
               </div>
               <div className="treasury-queue">
                 {treasuryQueue.map((item: any) => (
-                  <button key={item.orderNo} type="button" className={`shipping-row accounting-row accounting-select-row ${selectedTreasuryRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectTreasuryOrder(item.orderNo)}>
-                    <div>
-                      <div className="shipping-order">{item.orderNo}</div>
-                      <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod || '原路退回'}</div>
-                      <div className="shipping-meta">退款金額 ${item.actualReceived || item.amount} / 證明：{item.proof || '待上傳'}</div>
+                  <div key={item.orderNo} className={`shipping-row-shell ${selectedTreasuryRecord?.orderNo === item.orderNo ? 'selected' : ''}`}>
+                    <button type="button" className={`shipping-row accounting-row accounting-select-row mobile-ops-row ${selectedTreasuryRecord?.orderNo === item.orderNo ? 'selected' : ''}`} onClick={() => selectTreasuryOrder(item.orderNo)}>
+                      <div>
+                        <div className="shipping-order">{item.orderNo}</div>
+                        <div className="shipping-meta">{item.customer} / {item.date} / {item.paymentMethod || '原路退回'}</div>
+                        <div className="shipping-meta">退款金額 ${item.actualReceived || item.amount} / 證明：{item.proof || '待上傳'}</div>
+                      </div>
+                      <div className="shipping-actions accounting-statuses warehouse-order-statuses">
+                        <span className={`badge ${item.paymentStatus === '已退款' ? 'badge-success' : 'badge-danger'}`}>{item.paymentStatus}</span>
+                      </div>
+                    </button>
+                    <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 操作`} onClick={() => setTreasuryActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
+                      {treasuryActionMenuOrderNo === item.orderNo && (
+                        <div className="mobile-row-action-sheet">
+                          <button type="button" onClick={() => openTreasuryActionPanel(item.orderNo)}><BanknoteArrowDown className="tiny-icon" />退款</button>
+                          <button type="button" onClick={() => openTreasuryActionPanel(item.orderNo)}><Receipt className="tiny-icon" />證明</button>
+                        </div>
+                      )}
                     </div>
-                    <div className="shipping-actions accounting-statuses warehouse-order-statuses">
-                      <span className={`badge ${item.paymentStatus === '已退款' ? 'badge-success' : 'badge-danger'}`}>{item.paymentStatus}</span>
-                    </div>
-                  </button>
+                  </div>
                 ))}
                 {!treasuryQueue.length && <div className="warehouse-empty-state">目前沒有待處理退款</div>}
               </div>
             </div>
           </div>
+
+          <button type="button" className="mobile-module-fab accounting-module-fab treasury" onClick={() => document.querySelector('.accounting-treasury-side .sticky-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="開啟出納操作入口">
+            <Wallet className="small-icon" />
+          </button>
 
           <div className="accounting-treasury-side">
             <div className="card order-panel sticky-panel">
