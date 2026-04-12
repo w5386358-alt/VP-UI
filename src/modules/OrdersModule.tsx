@@ -208,19 +208,8 @@ export default function OrdersModule(props: any) {
       <button
         ref={cartButtonRef}
         type="button"
-        className={`floating-cart-button ${cartOpen ? 'open' : ''} ${cartFabPosition.ready ? 'is-draggable' : ''} ${draggingFab ? 'dragging' : ''}`}
-        onClick={() => {
-          if (typeof window !== 'undefined' && window.innerWidth <= 900) return;
-          setCartOpen(true);
-        }}
-        onPointerDown={handleCartFabPointerDown}
-        onPointerMove={handleCartFabPointerMove}
-        onPointerUp={handleCartFabPointerUp}
-        onPointerCancel={() => { dragStateRef.current.dragging = false; }}
-        onTouchStart={handleCartFabTouchStart}
-        onTouchMove={handleCartFabTouchMove}
-        onTouchEnd={handleCartFabTouchEnd}
-        style={cartFabPosition.ready ? { left: `${cartFabPosition.x}px`, top: `${cartFabPosition.y}px`, right: 'auto', bottom: 'auto' } : undefined}
+        className={`floating-cart-button ${cartOpen ? 'open' : ''}`}
+        onClick={() => setCartOpen(true)}
         aria-label="開啟購物車"
       >
         <ShoppingCart className="small-icon" />

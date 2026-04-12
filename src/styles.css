@@ -10773,3 +10773,102 @@ body {
   .treasury-expense-row{grid-template-columns:1fr;}
   .treasury-expense-right{grid-template-columns:repeat(2,max-content);justify-content:start;}
 }
+
+
+/* 2026-04-12 fix7: cart / product image / bonus text / mobile modal polish */
+@media (max-width: 900px){
+  .floating-cart-button{
+    position: fixed !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 86px) !important;
+    transform: none !important;
+    z-index: 2302 !important;
+  }
+
+  .product-admin-card,
+  .products-feature-card{
+    overflow: hidden;
+  }
+
+  .product-image-slot{
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    aspect-ratio: 1 / 1 !important;
+    max-height: 112px !important;
+    min-height: 112px !important;
+    padding: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .product-image,
+  .product-image-placeholder{
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+
+  .product-image{
+    object-fit: contain !important;
+    object-position: center center !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+
+  .mobile-editor-backdrop{
+    z-index: 2300 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open{
+    display: block !important;
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 72px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px) !important;
+    max-height: none !important;
+    overflow: auto !important;
+    z-index: 2305 !important;
+    border-radius: 24px !important;
+    background: rgba(255,255,255,.985) !important;
+    box-shadow: 0 24px 80px rgba(69,26,43,.22) !important;
+    transform: translateY(0) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .mobile-modal-shell.is-mobile-open .mobile-editor-head{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: linear-gradient(180deg, rgba(255,252,253,.98) 0%, rgba(255,252,253,.94) 82%, rgba(255,252,253,0) 100%);
+    padding-top: 10px;
+    margin-bottom: 10px;
+  }
+}
+
+.accounting-bonus-layout .panel-title,
+.accounting-bonus-layout .panel-desc,
+.accounting-bonus-layout .shipping-meta,
+.accounting-bonus-layout .fake-field span,
+.accounting-bonus-layout .fake-field strong,
+.accounting-bonus-layout .fake-field input,
+.accounting-bonus-layout .treasury-expense-right span,
+.accounting-bonus-layout .treasury-expense-right strong{
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+
+.accounting-bonus-layout .panel-desc,
+.accounting-bonus-layout .shipping-meta,
+.accounting-bonus-layout .fake-field span,
+.accounting-bonus-layout .treasury-expense-right span{
+  font-size: 12px !important;
+}
+
+.accounting-bonus-layout .treasury-expense-row,
+.accounting-bonus-layout .warehouse-form-grid{
+  gap: 10px !important;
+}

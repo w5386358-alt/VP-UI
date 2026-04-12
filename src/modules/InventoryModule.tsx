@@ -175,7 +175,7 @@ export default function InventoryModule(props: any) {
           </div>
 
           <div className="warehouse-side warehouse-stack">
-            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
               <div className="warehouse-side-section">
                 <div className="warehouse-card-head">
                   <div>
@@ -284,7 +284,7 @@ export default function InventoryModule(props: any) {
             </div>
           </div>
 
-          <div className={`card warehouse-tool-card warehouse-inbound-card ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
+          <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
             <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
             <div className="warehouse-form-grid">
               <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>

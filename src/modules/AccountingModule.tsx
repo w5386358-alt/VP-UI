@@ -131,7 +131,7 @@ export default function AccountingModule(props: any) {
           </div>
 
           <div className="warehouse-side warehouse-stack">
-            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel mobile-modal-shell ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`}>
               <div className="warehouse-side-section">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">收款作業</div></div>
@@ -282,7 +282,7 @@ export default function AccountingModule(props: any) {
           </div>
 
           <div className="accounting-treasury-side">
-            <div className={`card order-panel sticky-panel accounting-treasury-panel ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`}>
               <div className="warehouse-side-section">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">退款撥款</div></div>
