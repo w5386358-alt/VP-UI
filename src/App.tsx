@@ -3922,7 +3922,18 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     if (typeof window === 'undefined') return;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
-    return () => window.clearTimeout(timer);
+    const handlePageShow = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      if (standalone) {
+        setShowAppLaunch(true);
+        window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
   }, []);
 
   async function handleInstallApp() {
@@ -4143,16 +4154,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           </div>
           <div className="vp-header-tools vp-header-tools-compact">
             <div className="vp-header-global-tools vp-header-global-tools-top">
-              <div className="vp-header-pwa-strip">
-                <button
-                  type="button"
-                  className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
-                  onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
-                >
-                  {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
-                  <span>{isOnline ? '連線中' : '離線中'}</span>
-                </button>
-                {!isStandaloneMode && (
+              {!isStandaloneMode && (
+                <div className="vp-header-pwa-strip">
+                  <button
+                    type="button"
+                    className={`vp-pwa-chip ${isOnline ? 'online' : 'offline'}`}
+                    onClick={() => triggerShellHint(isOnline ? '目前網路正常，可持續同步 Firebase / GAS 主線。' : '目前偵測為離線，只保留 PWA 基本外殼顯示。')}
+                  >
+                    {isOnline ? <Wifi className="small-icon" /> : <WifiOff className="small-icon" />}
+                    <span>{isOnline ? '連線中' : '離線中'}</span>
+                  </button>
                   <button
                     type="button"
                     className="vp-pwa-chip install"
@@ -4161,8 +4172,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                     <Plus className="small-icon" />
                     <span>加入主畫面</span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="vp-header-action-group vp-header-action-group-bell" ref={notificationPanelRef}>
                 <button
