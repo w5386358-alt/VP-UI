@@ -4071,7 +4071,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 380 : 1450);
+    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 240 : 520);
     const dismiss = () => setShowAppLaunch(false);
     window.addEventListener('pointerdown', dismiss, undefined);
     return () => {
@@ -4304,11 +4304,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     <div className="vp-shell">
       {showAppLaunch && (
         <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`} onClick={() => setShowAppLaunch(false)} role="presentation">
-          <div className="vp-launch-card">
-            <div className="vp-launch-mark-wrap">
+          <div className="vp-launch-card vp-launch-card-static">
+            <div className="vp-launch-mark-wrap vp-launch-mark-wrap-static">
               <div className="vp-launch-mark">VP</div>
-              <span className="vp-launch-ring vp-launch-ring-a" />
-              <span className="vp-launch-ring vp-launch-ring-b" />
             </div>
             <div className="vp-launch-kicker">Velvet Pulse</div>
             <div className="vp-launch-title">VP 系統</div>
