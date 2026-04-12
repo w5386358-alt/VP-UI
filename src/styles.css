@@ -10872,3 +10872,57 @@ body {
 .accounting-bonus-layout .warehouse-form-grid{
   gap: 10px !important;
 }
+
+/* 2026-04-12 fix8: inventory/accounting/profile/staff mobile refinements */
+.warehouse-stock-shell{
+  display:grid;
+  grid-template-columns:minmax(0,1.28fr) minmax(320px,.82fr);
+  gap:18px;
+  align-items:start;
+}
+.warehouse-stock-overview-card{grid-column:1;grid-row:1 / span 2;}
+.warehouse-inbound-card{grid-column:2;grid-row:1;}
+.warehouse-log-shell{grid-column:2;grid-row:2;}
+
+.evaluation-target-top-actions{display:flex;align-items:center;gap:8px;}
+.evaluation-target-trigger{display:none;}
+.staff-person-card-v2{position:relative;overflow:hidden;}
+.staff-person-card-main{width:100%;border:none;background:transparent;padding:0;text-align:left;cursor:pointer;color:inherit;}
+.staff-mobile-edit-trigger{display:none;position:absolute;right:10px;top:10px;z-index:2;}
+.mobile-staff-fab{bottom:calc(env(safe-area-inset-bottom,0px) + 86px) !important;}
+
+@media (max-width:900px){
+  .warehouse-stock-shell{grid-template-columns:1fr !important;}
+  .warehouse-stock-overview-card,.warehouse-inbound-card,.warehouse-log-shell{grid-column:auto;grid-row:auto;}
+  .warehouse-stock-card-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .stock-snapshot-card{padding:12px !important;}
+  .stock-card-top.compact{align-items:flex-start;gap:8px;}
+  .stock-inline-row{grid-template-columns:1fr 1fr !important;gap:8px !important;}
+  .accounting-bonus-entry-card .badge-role{display:none !important;}
+  .accounting-bonus-layout{gap:8px !important;}
+  .accounting-bonus-log-card,.accounting-bonus-entry-card{padding:12px !important;}
+  .accounting-bonus-layout .panel-head{margin-bottom:8px !important;}
+  .accounting-bonus-layout .treasury-expense-row{padding:10px 12px !important;}
+  .accounting-bonus-layout .panel-title{font-size:15px !important;}
+  .accounting-bonus-layout .treasury-expense-right strong{font-size:12px !important;}
+  .accounting-bonus-layout .treasury-expense-right span{font-size:11px !important;}
+  .accounting-ranking-layout-v2 .evaluation-result-row{grid-template-columns:1fr !important;gap:8px !important;}
+  .accounting-ranking-layout-v2 .evaluation-result-right{min-width:0 !important;display:flex;justify-content:space-between;align-items:center;}
+  .accounting-ranking-layout-v2 .evaluation-score-inline{padding-left:0 !important;min-width:0 !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  .evaluation-shell-v2 .evaluation-radar-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .evaluation-shell-v2 .evaluation-target-trigger{display:inline-flex;}
+  .evaluation-shell-v2 .evaluation-form-grid-v2{grid-template-columns:1fr !important;}
+  .evaluation-shell-v2 .evaluation-form-grid-v2 > .evaluation-card:not(.mobile-evaluation-card){display:none !important;}
+  .evaluation-shell-v2 .mobile-evaluation-card:not(.is-mobile-open){display:none !important;}
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .mobile-modal-shell.is-mobile-open .field-span-2,
+  .mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .mobile-modal-shell.is-mobile-open .evaluation-submit-row{grid-column:1 / -1 !important;}
+  .mobile-modal-shell.is-mobile-open .evaluation-submit-row{display:flex !important;align-items:center;justify-content:space-between;gap:10px;}
+  .mobile-staff-editor:not(.is-mobile-open){display:none !important;}
+  .staff-mobile-edit-trigger{display:inline-flex;}
+  .staff-list-head-actions .compact-add-button{display:none !important;}
+}

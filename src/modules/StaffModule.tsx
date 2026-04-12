@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye, Sparkles, BadgeCheck, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye, Sparkles, BadgeCheck, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
 
 export default function StaffModule(props: any) {
   const {
@@ -26,14 +26,35 @@ export default function StaffModule(props: any) {
   } = props;
 
   const [staffPage, setStaffPage] = useState(1);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredStaff.length / pageSize));
   const safePage = Math.min(staffPage, totalPages);
   const pagedStaff = useMemo(() => filteredStaff.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredStaff, safePage]);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
+  function handleOpenCreateStaff() {
+    openCreateStaff();
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
+  function handleOpenEditStaff(item: any) {
+    openEditStaff(item);
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
   return (
     <>
+      {isMobileViewport && mobileEditorOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEditorOpen(false)} />}
       <section className="staff-shell-v2 staff-shell-v3">
 
         <section className="staff-layout-v2 staff-layout-v3">
@@ -46,20 +67,22 @@ export default function StaffModule(props: any) {
                 </div>
                 <div className="staff-list-head-actions">
                   <span className="badge badge-role">啟用 {activeStaff}</span>
-                  <button type="button" className="primary-button compact-add-button" onClick={openCreateStaff}><UserCog className="small-icon" />新增人員</button>
+                  {!isMobileViewport && <button type="button" className="primary-button compact-add-button" onClick={handleOpenCreateStaff}><UserCog className="small-icon" />新增人員</button>}
                 </div>
               </div>
               <div className="staff-record-grid-v2">
                 {pagedStaff.map((item: any) => (
-                  <button key={item.id} type="button" className={`card data-card staff-person-card-v2 ${selectedStaffId === item.id ? 'selected' : ''}`} onClick={() => openViewStaff(item)}>
+                  <div key={item.id} className={`card data-card staff-person-card-v2 ${selectedStaffId === item.id ? 'selected' : ''}`}>
+                    <button type="button" className="staff-person-card-main" onClick={() => openViewStaff(item)}>
                     <div className="staff-person-top">
                       <div className="staff-person-avatar">{String(item.name || '?').slice(0, 1)}</div>
                       <div className="staff-person-meta"><div className="data-card-title">{item.name}</div><div className="data-card-subtitle">登入 ID：{item.loginId}</div></div>
-                      <ChevronRight className="small-icon" />
                     </div>
                     <div className="staff-person-tags"><span className="badge badge-role">{item.role}</span><span className={getRankClass(item.rank)}>階級 / {item.rank}</span><StatusBadge enabled={item.enabled} /></div>
                     <div className="staff-person-foot"><span>{(item.permissions || []).length} 項權限</span><span>查看 / 編輯</span></div>
-                  </button>
+                    </button>
+                    <button type="button" className="mobile-row-action-trigger staff-mobile-edit-trigger" aria-label={`編輯 ${item.name}`} onClick={() => handleOpenEditStaff(item)}>›</button>
+                  </div>
                 ))}
               </div>
               <div className="pagination-row">
@@ -75,7 +98,18 @@ export default function StaffModule(props: any) {
           </div>
 
           <aside className="staff-side-v2">
-            <div className="card order-panel sticky-panel staff-editor-panel-v2">
+            <div className={`card order-panel sticky-panel staff-editor-panel-v2 mobile-modal-shell mobile-staff-editor ${mobileEditorOpen ? 'is-mobile-open' : ''}`}>
+              {isMobileViewport && (
+                <div className="mobile-editor-head">
+                  <div className="mobile-editor-title-wrap">
+                    <div className="mobile-editor-kicker">人員操作卡</div>
+                    <div className="mobile-editor-sub">新增與編輯都從這裡完成</div>
+                  </div>
+                  <button type="button" className="mobile-editor-close" onClick={() => setMobileEditorOpen(false)} aria-label="關閉人員操作卡">
+                    <X className="small-icon" />
+                  </button>
+                </div>
+              )}
               <div className="panel-head compact-head">
                 <div>
                   <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '編輯人員' : '人員詳情'}</div>
@@ -142,7 +176,7 @@ export default function StaffModule(props: any) {
 
               <div className="accounting-action-row">
                 {staffEditorMode === 'view' ? (
-                  <button type="button" className="primary-button full-width" onClick={() => selectedStaff && openEditStaff(selectedStaff)}><PencilLine className="small-icon" />編輯人員</button>
+                  <button type="button" className="primary-button full-width" onClick={() => selectedStaff && handleOpenEditStaff(selectedStaff)}><PencilLine className="small-icon" />編輯人員</button>
                 ) : (
                   <>
                     <button type="button" className="primary-button" onClick={saveStaffDraft}><UserCog className="small-icon" />{staffEditorMode === 'create' ? '確認新增' : '確認更新'}</button>
@@ -155,6 +189,11 @@ export default function StaffModule(props: any) {
           </aside>
         </section>
       </section>
+      {isMobileViewport && !mobileEditorOpen && (
+        <button type="button" className="mobile-product-fab mobile-staff-fab" onClick={handleOpenCreateStaff} aria-label="新增人員">
+          <Plus className="small-icon" />
+        </button>
+      )}
     </>
   );
 }

@@ -270,7 +270,6 @@ export default function AccountingModule(props: any) {
                     {treasuryActionMenuOrderNo === item.orderNo && (
                       <div className="mobile-row-action-sheet">
                         <button type="button" onClick={() => { selectTreasuryOrder(item.orderNo); setMobileTreasuryPanelOpen(true); setTreasuryActionMenuOrderNo(null); }}>退款</button>
-                        <button type="button" onClick={() => { selectTreasuryOrder(item.orderNo); setMobileTreasuryPanelOpen(true); setTreasuryActionMenuOrderNo(null); }}>出納</button>
                       </div>
                     )}
                   </div>

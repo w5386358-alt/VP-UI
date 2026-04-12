@@ -1,5 +1,5 @@
-import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
 
@@ -13,6 +13,16 @@ export default function ProfileModule(props: any) {
 
   const [selectedTargetId, setSelectedTargetId] = useState('');
   const [draft, setDraft] = useState({ sales: 32, collaboration: 20, professional: 16, efficiency: 12 });
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileEvaluationOpen, setMobileEvaluationOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const selectedTarget = useMemo(
     () => evaluationTargets.find((item: any) => item.loginId === selectedTargetId) || evaluationTargets[0] || null,
@@ -195,25 +205,41 @@ export default function ProfileModule(props: any) {
             {evaluationTargets.map((item: any) => {
               const submitted = submittedTargetMap.has(item.loginId);
               return (
-                <button
+                <div
                   key={item.loginId}
-                  type="button"
                   className={`card evaluation-target-card ${selectedTargetIdSafe === item.loginId ? 'active' : ''}`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedTargetId(item.loginId)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedTargetId(item.loginId); } }}
                 >
                   <div className="evaluation-target-top">
                     <div className="evaluation-target-name"><UserRound className="tiny-icon" />{item.name}</div>
-                    <span className={`badge ${submitted ? 'badge-success' : 'badge-soft'}`}>{submitted ? '已送出' : '待評鑑'}</span>
+                    <div className="evaluation-target-top-actions">
+                      <span className={`badge ${submitted ? 'badge-success' : 'badge-soft'}`}>{submitted ? '已送出' : '待評鑑'}</span>
+                      <button type="button" className="mobile-row-action-trigger evaluation-target-trigger" aria-label={`評分 ${item.name}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedTargetId(item.loginId); if (isMobileViewport) setMobileEvaluationOpen(true); }}>›</button>
+                    </div>
                   </div>
                   <div className="evaluation-target-meta">{item.loginId} / {item.role || '核心夥伴'}</div>
-                </button>
+                </div>
               );
             })}
             {!evaluationTargets.length && <div className="card evaluation-empty-card">目前抓不到其他核心成員，請先確認人員資料。</div>}
           </div>
 
           <div className="evaluation-grid evaluation-form-grid-v2">
-            <div className="card evaluation-card evaluation-form-card">
+            <div className={`card evaluation-card evaluation-form-card mobile-modal-shell ${isMobileViewport ? 'mobile-evaluation-card' : ''} ${mobileEvaluationOpen ? 'is-mobile-open' : ''}`}>
+              {isMobileViewport && (
+                <div className="mobile-editor-head">
+                  <div className="mobile-editor-title-wrap">
+                    <div className="mobile-editor-kicker">匿名評分</div>
+                    <div className="mobile-editor-sub">由人員列表操作入口直接開啟</div>
+                  </div>
+                  <button type="button" className="mobile-editor-close" onClick={() => setMobileEvaluationOpen(false)} aria-label="關閉匿名評分">
+                    <X className="small-icon" />
+                  </button>
+                </div>
+              )}
               <div className="evaluation-card-head"><Vote className="small-icon" /><span>匿名評分</span></div>
               <div className="evaluation-form-head">
                 <div>
@@ -269,6 +295,8 @@ export default function ProfileModule(props: any) {
           </div>
         </>
       )}
+
+      {isMobileViewport && mobileEvaluationOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEvaluationOpen(false)} />}
     </section>
   );
 }

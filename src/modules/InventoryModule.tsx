@@ -63,10 +63,15 @@ export default function InventoryModule(props: any) {
   const [stockActionMenuCode, setStockActionMenuCode] = useState<string | null>(null);
   const printerSymbol = '/icons/printer-symbol.png';
   const shippingPageSize = 10;
+  const [warehouseLogPage, setWarehouseLogPage] = useState(1);
+  const warehouseLogPageSize = 6;
   const shippingTotalPages = Math.max(1, Math.ceil(filteredWarehouseQueue.length / shippingPageSize));
   const shippingSafePage = Math.min(shippingPage, shippingTotalPages);
   const pagedWarehouseQueue = useMemo(() => filteredWarehouseQueue.slice((shippingSafePage - 1) * shippingPageSize, shippingSafePage * shippingPageSize), [filteredWarehouseQueue, shippingSafePage]);
   const shippingPageNumbers = Array.from({ length: shippingTotalPages }, (_, index) => index + 1);
+  const warehouseLogTotalPages = Math.max(1, Math.ceil(warehouseRecentLogs.length / warehouseLogPageSize));
+  const warehouseLogSafePage = Math.min(warehouseLogPage, warehouseLogTotalPages);
+  const pagedWarehouseRecentLogs = useMemo(() => warehouseRecentLogs.slice((warehouseLogSafePage - 1) * warehouseLogPageSize, warehouseLogSafePage * warehouseLogPageSize), [warehouseRecentLogs, warehouseLogSafePage]);
 
   async function handleScanBarcodeLaunch() {
     const value = await scanWithCamera({ title: '倉儲條碼掃描', fallbackLabel: '商品條碼' });
@@ -306,12 +311,19 @@ export default function InventoryModule(props: any) {
           <div className="card order-panel warehouse-log-shell">
             <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div></div></div>
             <div className="warehouse-log-list">
-              {warehouseRecentLogs.map((item: any) => (
+              {pagedWarehouseRecentLogs.map((item: any) => (
                 <div key={`${item.time}-${item.type}-${item.note}`} className="warehouse-log-item">
                   <div className="warehouse-log-time">{item.time}</div>
                   <div><div className="warehouse-log-type">{item.type}</div><div className="warehouse-log-note">{item.note}</div></div>
                 </div>
               ))}
+            </div>
+            <div className="pagination-row pagination-row-minimal pagination-row-angle">
+              <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setWarehouseLogPage((page) => Math.max(1, page - 1))} disabled={warehouseLogSafePage === 1} aria-label="上一頁">&lt;</button>
+              <div className="pagination-pages">
+                <button type="button" className="pagination-page active">{warehouseLogSafePage}</button>
+              </div>
+              <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setWarehouseLogPage((page) => Math.min(warehouseLogTotalPages, page + 1))} disabled={warehouseLogSafePage === warehouseLogTotalPages} aria-label="下一頁">&gt;</button>
             </div>
           </div>
         </section>
