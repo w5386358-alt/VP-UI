@@ -10537,3 +10537,132 @@ body {
   .upload-icon-button{gap:8px;}
   .upload-symbol-icon{width:16px;height:16px;}
 }
+
+
+/* === 第三十三版續修2：上傳圖示美化 / 手機商品編輯 / 日期篩選2x2 / 儀表板精簡 === */
+.upload-symbol-icon{filter:drop-shadow(0 2px 8px rgba(199,59,105,.16));}
+.upload-icon-button{color:#b02c58;font-weight:800;}
+.upload-icon-button:hover{background:rgba(216,106,144,.08);border-color:rgba(199,59,105,.26);}
+
+.product-card-top-actions{display:flex;align-items:center;gap:8px;}
+.dashboard-mini-icon{width:15px;height:15px;}
+.dashboard-customer-order-line{width:100%;justify-content:space-between;}
+.dashboard-customer-order-code{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dashboard-eye-button{width:34px;height:34px;border:none;border-radius:999px;background:rgba(216,106,144,.12);color:#b02c58;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;transition:transform .18s ease, background .18s ease, box-shadow .18s ease;}
+.dashboard-eye-button:hover{transform:translateY(-1px);background:rgba(199,59,105,.16);box-shadow:0 10px 18px rgba(199,59,105,.14);}
+
+@media (max-width:900px){
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;
+    align-items:start;
+  }
+
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .filter-search-card,
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .field-span-2{
+    grid-column:1 / -1 !important;
+  }
+
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .filter-date-card,
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .filter-status-card{
+    grid-column:auto !important;
+    min-width:0;
+  }
+
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .field-card{
+    padding:11px 11px 10px;
+    border-radius:16px;
+  }
+
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid .field-label{
+    font-size:12px !important;
+    gap:6px;
+  }
+
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid input[type="date"],
+  .accounting-filter-grid.warehouse-filter-grid.warehouse-filter-shell-grid select{
+    min-height:38px;
+    padding:7px 10px;
+    font-size:12px !important;
+  }
+
+  .product-admin-card.mobile-edit-card{position:relative;cursor:pointer;}
+  .product-admin-card.mobile-edit-card .product-card-actions{display:none !important;}
+  .mobile-card-edit-btn{
+    width:34px;
+    height:34px;
+    border:none;
+    border-radius:999px;
+    background:linear-gradient(135deg, rgba(216,106,144,.16) 0%, rgba(199,59,105,.18) 100%);
+    color:#b02c58;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 12px 22px rgba(199,59,105,.12);
+  }
+
+  .products-editor-shell .accounting-action-row{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+
+  .products-editor-shell .accounting-action-row .ghost-button{display:none !important;}
+  .products-editor-shell .accounting-action-row .primary-button{width:100%;}
+
+  .mobile-product-fab{
+    padding:14px 14px;
+    width:54px;
+    height:54px;
+    border-radius:999px;
+    gap:0;
+    justify-content:center;
+  }
+  .mobile-product-fab span,
+  .mobile-product-fab svg + span{display:none;}
+
+  .dashboard-hero-stat-grid-clean{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;
+  }
+
+  .dashboard-hero-stat-grid-clean .dashboard-hero-stat-card{
+    min-height:0 !important;
+    padding:12px !important;
+    border-radius:16px !important;
+  }
+
+  .dashboard-hero-stat-grid-clean .dashboard-hero-stat-icon{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+  }
+
+  .dashboard-history-row{grid-template-columns:34px minmax(0,1fr) auto !important;}
+  .dashboard-history-icon{width:34px !important;height:34px !important;}
+  .dashboard-history-title,
+  .dashboard-customer-name{font-size:12px !important;}
+  .dashboard-history-meta,
+  .dashboard-history-status,
+  .dashboard-customer-meta,
+  .dashboard-customer-order-line{font-size:11px !important;}
+}
+
+@media (max-width:640px){
+  .dashboard-hero-stat-grid-clean{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+
+  .dashboard-hero-stat-grid-clean .dashboard-hero-stat-value{
+    font-size:18px !important;
+  }
+
+  .dashboard-hero-stat-grid-clean .dashboard-hero-stat-title{
+    font-size:12px !important;
+  }
+
+  .dashboard-history-row{padding:10px !important;gap:10px !important;}
+  .dashboard-history-side{font-size:13px !important;}
+  .dashboard-history-icon{width:30px !important;height:30px !important;}
+  .dashboard-eye-button{width:30px;height:30px;}
+}

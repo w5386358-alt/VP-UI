@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CalendarRange, Phone, User2, ClipboardList, ChevronRight, BarChart3, Users, ShoppingBag, Star } from 'lucide-react';
+import { CalendarRange, Phone, User2, ClipboardList, BarChart3, Users, ShoppingBag, Star, Eye } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
   const { personalOrders = [], ownCustomerRecords = [], allOrderRecords = [], evaluationQuarter, myEvaluationQuarterResult } = props;
@@ -23,7 +23,7 @@ export default function DashboardModule(props: any) {
   const statCards = [
     { title: '我的歷史訂單', value: `${personalOrders.length}`, sub: '沿用原個人資料訂單邏輯', icon: ShoppingBag },
     { title: '我的客戶資料', value: `${myCustomerCards.length}`, sub: '目前由你管理的客戶數', icon: Users },
-    { title: '累積成交金額', value: `$${totalSales.toLocaleString()}`, sub: '沿用歷史訂單累積結果', icon: ShoppingBag },
+    { title: '累積成交額', value: `$${totalSales.toLocaleString()}`, sub: '沿用歷史訂單累積結果', icon: ShoppingBag },
     { title: '個人評鑑平均', value: `${averageScore}`, sub: `${evaluationQuarter} / ${medal}`, icon: Star },
   ];
 
@@ -57,10 +57,10 @@ export default function DashboardModule(props: any) {
               <div className="dashboard-history-list">
                 {latestOrders.map((item: any) => (
                   <div key={item.orderNo} className="dashboard-history-row">
-                    <div className="dashboard-history-icon"><ClipboardList className="small-icon" /></div>
+                    <div className="dashboard-history-icon"><ClipboardList className="dashboard-mini-icon" /></div>
                     <div className="dashboard-history-main">
                       <div className="dashboard-history-title">{item.orderNo}</div>
-                      <div className="dashboard-history-meta"><CalendarRange className="small-icon" />{item.date}</div>
+                      <div className="dashboard-history-meta"><CalendarRange className="dashboard-mini-icon" />{item.date}</div>
                       <div className="dashboard-history-status">{item.paymentStatus} / {item.shippingStatus} / {item.mainStatus}</div>
                     </div>
                     <div className="dashboard-history-side">${item.amount?.toLocaleString?.() || item.amount}</div>
@@ -82,13 +82,15 @@ export default function DashboardModule(props: any) {
                 {latestCustomers.map((item: any) => (
                   <div key={item.id} className="dashboard-customer-row">
                     <div className="dashboard-customer-head">
-                      <div className="dashboard-customer-name"><User2 className="small-icon" />{item.name}</div>
+                      <div className="dashboard-customer-name"><User2 className="dashboard-mini-icon" />{item.name}</div>
                       <span className="badge badge-soft">{item.level || '一般'}</span>
                     </div>
-                    <div className="dashboard-customer-meta"><Phone className="small-icon" />{item.phone || '-'}</div>
+                    <div className="dashboard-customer-meta"><Phone className="dashboard-mini-icon" />{item.phone || '-'}</div>
                     <div className="dashboard-customer-order-line">
-                      <span>{item.latestOrderNo}</span>
-                      <ChevronRight className="small-icon" />
+                      <span className="dashboard-customer-order-code">{item.latestOrderNo}</span>
+                      <button type="button" className="dashboard-eye-button" aria-label={`查看 ${item.name} 的歷史訂單`} title="查看這位客戶的歷史訂單">
+                        <Eye className="dashboard-mini-icon" />
+                      </button>
                     </div>
                   </div>
                 ))}

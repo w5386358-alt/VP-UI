@@ -89,10 +89,22 @@ export default function ProductsModule(props: any) {
 
             <div className="product-admin-grid products-card-grid">
               {pagedProducts.map((item: any) => (
-                <div key={item.id} className={`card data-card product-admin-card products-feature-card ${selectedProductId === item.id ? 'selected' : ''}`}>
+                <div key={item.id} className={`card data-card product-admin-card products-feature-card ${selectedProductId === item.id ? 'selected' : ''} ${isMobileViewport ? 'mobile-edit-card' : ''}`} onClick={isMobileViewport ? () => handleOpenEditProduct(item) : undefined} role={isMobileViewport ? 'button' : undefined} tabIndex={isMobileViewport ? 0 : undefined} onKeyDown={isMobileViewport ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpenEditProduct(item); } } : undefined}>
                   <div className="data-card-top">
                     <span className="data-code">{item.code}</span>
-                    <StatusBadge enabled={item.enabled} />
+                    <div className="product-card-top-actions">
+                      <StatusBadge enabled={item.enabled} />
+                      {isMobileViewport && (
+                        <button
+                          type="button"
+                          className="mobile-card-edit-btn"
+                          onClick={(e) => { e.stopPropagation(); handleOpenEditProduct(item); }}
+                          aria-label={`編輯 ${item.name}`}
+                        >
+                          <PencilLine className="small-icon" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="product-image-slot">
                     {item.image ? (
@@ -267,7 +279,7 @@ export default function ProductsModule(props: any) {
 
       {isMobileViewport && !mobileEditorOpen && (
         <button type="button" className="mobile-product-fab" onClick={() => setMobileEditorOpen(true)} aria-label="開啟商品操作卡">
-          <Package className="small-icon" />商品操作
+          <PencilLine className="small-icon" />
         </button>
       )}
 
