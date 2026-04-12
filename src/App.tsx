@@ -3881,6 +3881,23 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
 
   useEffect(() => {
+    if (!showAppLaunch) return;
+    const timer = window.setTimeout(() => setShowAppLaunch(false), 1400);
+    const handlePointer = () => setShowAppLaunch(false);
+    const handlePageShow = () => {
+      setShowAppLaunch(true);
+      window.setTimeout(() => setShowAppLaunch(false), 1400);
+    };
+    window.addEventListener('pointerdown', handlePointer, { passive: true });
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerdown', handlePointer);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [showAppLaunch]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const media = window.matchMedia('(display-mode: standalone)');
     const updateStandalone = () => setIsStandaloneMode(media.matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
