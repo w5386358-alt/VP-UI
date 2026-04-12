@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { CalendarRange, Phone, User2, ClipboardList, BarChart3, Users, ShoppingBag, Star, Eye } from 'lucide-react';
 
 export default function DashboardModule(props: any) {
@@ -15,8 +15,15 @@ export default function DashboardModule(props: any) {
     };
   }), [ownCustomerRecords, allOrderRecords]);
 
-  const latestOrders = personalOrders.slice(0, 4);
-  const latestCustomers = myCustomerCards.slice(0, 4);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [customersPage, setCustomersPage] = useState(1);
+  const dashPageSize = 4;
+  const totalOrderPages = Math.max(1, Math.ceil(personalOrders.length / dashPageSize));
+  const totalCustomerPages = Math.max(1, Math.ceil(myCustomerCards.length / dashPageSize));
+  const safeOrdersPage = Math.min(ordersPage, totalOrderPages);
+  const safeCustomersPage = Math.min(customersPage, totalCustomerPages);
+  const latestOrders = personalOrders.slice((safeOrdersPage - 1) * dashPageSize, safeOrdersPage * dashPageSize);
+  const latestCustomers = myCustomerCards.slice((safeCustomersPage - 1) * dashPageSize, safeCustomersPage * dashPageSize);
   const totalSales = personalOrders.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
   const averageScore = myEvaluationQuarterResult?.total || 0;
   const medal = myEvaluationQuarterResult?.medal || '精進級';
@@ -68,6 +75,13 @@ export default function DashboardModule(props: any) {
                 ))}
                 {!latestOrders.length && <div className="warehouse-empty-state">尚無歷史訂單</div>}
               </div>
+              <div className="pagination-row pagination-row-minimal pagination-row-angle">
+                <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setOrdersPage((page) => Math.max(1, page - 1))} disabled={safeOrdersPage === 1} aria-label="上一頁">&lt;</button>
+                <div className="pagination-pages pagination-pages-single">
+                  <button type="button" className="pagination-page active">{safeOrdersPage}</button>
+                </div>
+                <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setOrdersPage((page) => Math.min(totalOrderPages, page + 1))} disabled={safeOrdersPage === totalOrderPages} aria-label="下一頁">&gt;</button>
+              </div>
             </div>
 
             <div className="card dashboard-customer-card compact-card">
@@ -80,20 +94,23 @@ export default function DashboardModule(props: any) {
               </div>
               <div className="dashboard-customer-list">
                 {latestCustomers.map((item: any) => (
-                  <div key={item.id} className="dashboard-customer-row">
-                    <div className="dashboard-customer-head">
-                      <div className="dashboard-customer-name"><User2 className="dashboard-mini-icon" />{item.name}</div>
-                      <span className="badge badge-soft">{item.level || '一般'}</span>
-                    </div>
-                    <div className="dashboard-customer-meta"><Phone className="dashboard-mini-icon" />{item.phone || '-'}</div>
-                    <div className="dashboard-customer-order-line">
-                      <button type="button" className="dashboard-eye-button" aria-label={`查看 ${item.name} 的歷史訂單`} title="查看這位客戶的歷史訂單">
-                        <Eye className="dashboard-mini-icon" />
-                      </button>
-                    </div>
+                  <div key={item.id} className="dashboard-customer-row compact-inline">
+                    <div className="dashboard-customer-name"><User2 className="dashboard-mini-icon" />{item.name}</div>
+                    <div className="dashboard-customer-meta compact"><Phone className="dashboard-mini-icon" />{item.phone || '-'}</div>
+                    <button type="button" className="dashboard-eye-button" aria-label={`查看 ${item.name} 的歷史訂單`} title="查看這位客戶的歷史訂單">
+                      <Eye className="dashboard-mini-icon" />
+                    </button>
+                    <span className="badge badge-soft dashboard-customer-level">{item.level || '一般客戶'}</span>
                   </div>
                 ))}
                 {!latestCustomers.length && <div className="warehouse-empty-state">目前沒有屬於你的客戶資料</div>}
+              </div>
+              <div className="pagination-row pagination-row-minimal pagination-row-angle">
+                <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setCustomersPage((page) => Math.max(1, page - 1))} disabled={safeCustomersPage === 1} aria-label="上一頁">&lt;</button>
+                <div className="pagination-pages pagination-pages-single">
+                  <button type="button" className="pagination-page active">{safeCustomersPage}</button>
+                </div>
+                <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setCustomersPage((page) => Math.min(totalCustomerPages, page + 1))} disabled={safeCustomersPage === totalCustomerPages} aria-label="下一頁">&gt;</button>
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine, X } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -44,6 +44,7 @@ export default function ProductsModule(props: any) {
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
   const safePage = Math.min(productPage, totalPages);
   const pagedProducts = useMemo(() => filteredProducts.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredProducts, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   async function handleScanBarcode() {
     const value = await scanWithCamera({ title: '商品條碼掃描', fallbackLabel: '商品條碼' });
@@ -96,7 +97,7 @@ export default function ProductsModule(props: any) {
 
                     </div>
                   </div>
-                  <div className="product-image-slot product-image-slot-contained">
+                  <div className="product-image-slot">
                     {item.image ? (
                       <img src={item.image} alt={item.name} className="product-image" />
                     ) : (
@@ -135,12 +136,13 @@ export default function ProductsModule(props: any) {
                 </div>
               ))}
             </div>
-            <div className="pagination-row pagination-row-minimal pagination-row-chevron">
-              <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} aria-label="上一頁"><ChevronLeft className="small-icon" /></button>
-              <div className="pagination-pages pagination-pages-single">
-                <span className="pagination-page active">{safePage}</span>
+            <div className="pagination-row pagination-row-minimal pagination-row-angle">
+              <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} aria-label="上一頁">&lt;</button>
+              <div className="pagination-pages">
+                {pageNumbers.map((page) => (
+                  <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
+                ))}
               </div>
-              <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁"><ChevronRight className="small-icon" /></button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>
@@ -261,6 +263,8 @@ export default function ProductsModule(props: any) {
                   </button>
                 </>
               )}
+            </div>
+              <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁">&gt;</button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>

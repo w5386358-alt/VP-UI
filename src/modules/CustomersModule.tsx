@@ -8,6 +8,7 @@ export default function CustomersModule(props: any) {
   const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / pageSize));
   const safePage = Math.min(customerPage, totalPages);
   const pagedCustomers = useMemo(() => filteredCustomers.slice((safePage - 1) * pageSize, safePage * pageSize), [filteredCustomers, safePage]);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
     <>
@@ -56,12 +57,14 @@ export default function CustomersModule(props: any) {
               </div>
             ))}
           </section>
-          <div className="pagination-row pagination-row-chevron">
-            <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} aria-label="上一頁"><ChevronLeft className="small-icon" /></button>
-            <div className="pagination-pages pagination-pages-single">
-              <span className="pagination-page active">{safePage}</span>
+          <div className="pagination-row">
+            <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setCustomerPage((page) => Math.max(1, page - 1))} disabled={safePage === 1} aria-label="上一頁">&lt;</button>
+            <div className="pagination-pages">
+              {pageNumbers.map((page) => (
+                <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setCustomerPage(page)}>{page}</button>
+              ))}
             </div>
-            <button type="button" className="ghost-button pagination-btn pagination-chevron-btn" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁"><ChevronRight className="small-icon" /></button>
+            <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setCustomerPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁">&gt;</button>
           </div>
           </div>
         </div>
