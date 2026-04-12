@@ -12,8 +12,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     let refreshing = false;
-    let lastUpdateCheck = 0;
-    const MIN_UPDATE_INTERVAL = 5 * 60 * 1000;
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
@@ -31,17 +29,6 @@ if ('serviceWorker' in navigator) {
         worker.postMessage({ type: 'SKIP_WAITING' });
       };
 
-      const requestUpdate = async (force = false) => {
-        const now = Date.now();
-        if (!force && now - lastUpdateCheck < MIN_UPDATE_INTERVAL) return;
-        lastUpdateCheck = now;
-        try {
-          await registration.update();
-        } catch {
-          // noop
-        }
-      };
-
       if (registration.waiting) {
         promptUpdate(registration.waiting);
       }
@@ -57,25 +44,9 @@ if ('serviceWorker' in navigator) {
         });
       });
 
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          requestUpdate();
-        }
-      });
-
-      window.addEventListener('focus', () => {
-        requestUpdate();
-      });
-
-      window.addEventListener('pageshow', () => {
-        requestUpdate();
-      });
-
-      window.addEventListener('online', () => {
-        requestUpdate(true);
-      });
-
-      requestUpdate(true);
+      setInterval(() => {
+        registration.update().catch(() => {});
+      }, 60 * 1000);
     } catch (error) {
       console.warn('service worker register failed', error);
     }
