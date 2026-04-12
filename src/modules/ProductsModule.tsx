@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine, X } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine, X, Plus } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -82,9 +82,9 @@ export default function ProductsModule(props: any) {
               <div>
                 <div className="panel-title">商品列表</div>
               </div>
-              <button type="button" className="primary-button" onClick={handleOpenCreateProduct}>
+              {!isMobileViewport && (<button type="button" className="primary-button" onClick={handleOpenCreateProduct}>
                 <Package className="small-icon" />新增商品
-              </button>
+              </button>)}
             </div>
 
             <div className="product-admin-grid products-card-grid">
@@ -270,8 +270,8 @@ export default function ProductsModule(props: any) {
       </section>
 
       {isMobileViewport && !mobileEditorOpen && (
-        <button type="button" className="mobile-product-fab" onClick={() => setMobileEditorOpen(true)} aria-label="開啟商品操作卡">
-          <PencilLine className="small-icon" />
+        <button type="button" className="mobile-product-fab" onClick={handleOpenCreateProduct} aria-label="新增商品">
+          <Plus className="small-icon" />
         </button>
       )}
 

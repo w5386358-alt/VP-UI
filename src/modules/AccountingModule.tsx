@@ -30,11 +30,6 @@ export default function AccountingModule(props: any) {
     selectAccountingOrder(orderNo);
     setAccountingActionMenuOrderNo(null);
     setMobileAccountingPanelOpen(true);
-    if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        document.querySelector('.accounting-side-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 60);
-    }
   }
   const [accountingPage, setAccountingPage] = useState(1);
   const pageSize = 10;
@@ -73,6 +68,8 @@ export default function AccountingModule(props: any) {
       </div>
 
       {accountingTab === 'ops' && (
+        <>
+        {mobileAccountingPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileAccountingPanelOpen(false)} />}
         <section className="warehouse-layout warehouse-command-layout accounting-warehouse-layout">
           <div className="warehouse-main warehouse-stack">
             <div className="card order-panel warehouse-filter-shell accounting-filter-shell">
@@ -190,26 +187,11 @@ export default function AccountingModule(props: any) {
             </div>
           </div>
         </section>
+        </>
       )}
 
       {accountingTab === 'bonus' && (
         <section className="accounting-bonus-layout">
-          <div className="card order-panel accounting-bonus-entry-card">
-            <div className="panel-head">
-              <div><div className="panel-title">獎金入帳</div><div className="panel-desc">獨立於收款作業，單獨管理獎金入帳與後續報表連動。</div></div>
-              <span className="badge badge-role">登入者：{user?.loginId || '-'}</span>
-            </div>
-            <div className="warehouse-form-grid warehouse-command-fields treasury-expense-grid">
-              <div className="fake-field"><span>入帳日期</span><strong><input type="date" value={bonusDraft.date} onChange={(e) => updateBonusDraftField('date', e.target.value)} /></strong></div>
-              <div className="fake-field"><span>入帳時間</span><strong><input type="time" value={bonusDraft.time} onChange={(e) => updateBonusDraftField('time', e.target.value)} /></strong></div>
-              <div className="fake-field"><span>金額</span><strong><input value={bonusDraft.amount} onChange={(e) => updateBonusDraftField('amount', e.target.value)} inputMode="decimal" placeholder="輸入獎金金額" /></strong></div>
-              <div className="fake-field wide"><span>備註</span><strong><input value={bonusDraft.note} onChange={(e) => updateBonusDraftField('note', e.target.value)} placeholder="例如：業績獎金 / 推廣獎金" /></strong></div>
-            </div>
-            <div className="accounting-action-row warehouse-action-row">
-              <button type="button" className="primary-button" onClick={saveBonusEntry}><Coins className="small-icon" />加入獎金</button>
-            </div>
-          </div>
-
           <div className="card order-panel accounting-bonus-log-card">
             <div className="panel-head">
               <div><div className="panel-title">獎金入帳紀錄</div><div className="panel-desc">這裡的資料會同步反映到營運報表摘要區。</div></div>
@@ -231,10 +213,28 @@ export default function AccountingModule(props: any) {
               {!bonusLogs.length && <div className="warehouse-empty-state">尚未建立獎金入帳紀錄</div>}
             </div>
           </div>
+
+          <div className="card order-panel accounting-bonus-entry-card">
+            <div className="panel-head">
+              <div><div className="panel-title">獎金入帳</div><div className="panel-desc">獨立於收款作業，單獨管理獎金入帳與後續報表連動。</div></div>
+              <span className="badge badge-role">登入者：{user?.loginId || '-'}</span>
+            </div>
+            <div className="warehouse-form-grid warehouse-command-fields treasury-expense-grid">
+              <div className="fake-field"><span>入帳日期</span><strong><input type="date" value={bonusDraft.date} onChange={(e) => updateBonusDraftField('date', e.target.value)} /></strong></div>
+              <div className="fake-field"><span>入帳時間</span><strong><input type="time" value={bonusDraft.time} onChange={(e) => updateBonusDraftField('time', e.target.value)} /></strong></div>
+              <div className="fake-field"><span>金額</span><strong><input value={bonusDraft.amount} onChange={(e) => updateBonusDraftField('amount', e.target.value)} inputMode="decimal" placeholder="輸入獎金金額" /></strong></div>
+              <div className="fake-field wide"><span>備註</span><strong><input value={bonusDraft.note} onChange={(e) => updateBonusDraftField('note', e.target.value)} placeholder="例如：業績獎金 / 推廣獎金" /></strong></div>
+            </div>
+            <div className="accounting-action-row warehouse-action-row">
+              <button type="button" className="primary-button" onClick={saveBonusEntry}><Coins className="small-icon" />加入獎金</button>
+            </div>
+          </div>
         </section>
       )}
 
       {accountingTab === 'treasury' && (
+        <>
+        {mobileTreasuryPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileTreasuryPanelOpen(false)} />}
         <section className="accounting-treasury-layout">
           <div className="accounting-treasury-main">
             <div className="accounting-board-grid-v2">
@@ -352,6 +352,7 @@ export default function AccountingModule(props: any) {
             </div>
           </div>
         </section>
+        </>
       )}
 
       {accountingTab === 'stats' && (

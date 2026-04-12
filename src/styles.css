@@ -9826,7 +9826,7 @@ body {
 @media (max-width: 900px) {
   .floating-cart-button.is-draggable {
     position: fixed !important;
-    right: auto !important;
+    right: 16px !important;
     bottom: auto !important;
     left: 0;
     top: 0;
@@ -9878,9 +9878,9 @@ body {
   .floating-cart-button,
   .floating-cart-button.is-draggable {
     position: fixed !important;
-    left: 16px !important;
+    left: auto !important;
     top: auto !important;
-    right: auto !important;
+    right: 16px !important;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 94px) !important;
     width: 58px !important;
     height: 58px !important;
@@ -10081,7 +10081,7 @@ body {
   .floating-cart-button,
   .floating-cart-button.is-draggable {
     position: fixed !important;
-    right: auto !important;
+    right: 16px !important;
     bottom: auto !important;
     z-index: 1800 !important;
     touch-action: none !important;
@@ -10736,10 +10736,17 @@ body {
 
 /* 2026-04-12 micro tune: pagination + mobile action entry */
 .pagination-row-angle{display:flex;align-items:center;justify-content:center;gap:10px;}
-.pagination-row-angle .pagination-pages{display:flex;justify-content:center;align-items:center;min-width:42px;}
+.pagination-row-angle .pagination-pages{display:flex;justify-content:center;align-items:center;min-width:42px;gap:0;}
 .pagination-row-angle .pagination-pages-single{min-width:36px;}
-.pagination-btn.angle-only{min-width:34px !important;height:34px;padding:0 10px !important;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1;}
-.pagination-row-angle .pagination-page{min-width:36px;height:34px;border-radius:999px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;}
+.pagination-btn.angle-only{min-width:34px !important;height:34px;padding:0 10px !important;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1;color:#c73b69 !important;border:1px solid rgba(199,59,105,.26) !important;background:rgba(216,106,144,.10) !important;}
+.pagination-row-angle .pagination-page{min-width:36px;height:34px;border-radius:999px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;color:#c73b69;}
+.pagination-row-angle .pagination-pages .pagination-page:not(.active){display:none !important;}
+.pagination-row-angle .pagination-page.active{border-color:rgba(199,59,105,.26);background:rgba(216,106,144,.10);color:#c73b69;font-weight:800;}
+.mobile-editor-backdrop{z-index:115;}
+@media (max-width:900px){
+  .accounting-bonus-layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) !important;}
+  .warehouse-command-panel.is-mobile-open,.warehouse-inbound-card.is-mobile-open,.accounting-side-panel.is-mobile-open,.accounting-treasury-panel.is-mobile-open{bottom:86px;top:auto;max-height:72vh;z-index:120;border-radius:22px;}
+}
 .dashboard-customer-row.compact-inline{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:10px 12px;}
 .dashboard-customer-meta.compact{margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;}
 .dashboard-customer-level{justify-self:end;white-space:nowrap;}

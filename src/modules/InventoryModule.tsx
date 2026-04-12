@@ -92,15 +92,12 @@ export default function InventoryModule(props: any) {
     setSelectedWarehouseOrderNo(orderNo);
     setWarehouseActionMenuOrderNo(null);
     setMobileWarehousePanelOpen(true);
-    if (typeof window !== 'undefined') {
-      window.setTimeout(() => {
-        document.querySelector('.warehouse-command-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 60);
-    }
   }
 
   return (
     <>
+      {mobileWarehousePanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileWarehousePanelOpen(false)} />}
+      {mobileInboundPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileInboundPanelOpen(false)} />}
 
       <div className="warehouse-tab-row warehouse-primary-tabs">
         <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" />出貨區</button>
