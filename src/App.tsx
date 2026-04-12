@@ -4256,56 +4256,43 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   if (!isAuthenticated) {
     return (
       <div className="vp-login-shell-page">
-        <div className="vp-login-backdrop vp-login-backdrop-a" />
-        <div className="vp-login-backdrop vp-login-backdrop-b" />
-        <section className="vp-login-shell">
-          <div className="vp-login-layout">
-            <div className="vp-login-brand card">
+        <div className="vp-login-bg-orb vp-login-bg-orb-a" />
+        <div className="vp-login-bg-orb vp-login-bg-orb-b" />
+        <div className="vp-login-bg-orb vp-login-bg-orb-c" />
+        <section className="vp-login-shell vp-login-shell-clean">
+          <div className="vp-login-hero-ring">
+            <div className="vp-login-hero-ring-inner">
               <div className="vp-login-brand-mark">VP</div>
-              <div className="vp-login-brand-kicker">Velvet Pulse Access</div>
-              <h1 className="vp-login-title">登入系統入口</h1>
-              <p className="vp-login-desc">登入畫面先走精品乾淨感，子頁權限則直接放在人員管理編輯卡裡，用啟動開關管理。</p>
-              <div className="vp-login-feature-list">
-                <div className="vp-login-feature-item"><ShieldCheck className="small-icon" /><span>主模組、子頁、操作權限可直接用開關控制</span></div>
-                <div className="vp-login-feature-item"><Sparkles className="small-icon" /><span>手機、桌機共用同一套登入入口視覺</span></div>
-                <div className="vp-login-feature-item"><ArrowLeft className="small-icon" /><span>這版可直接當更新成功的明顯辨識點</span></div>
-              </div>
             </div>
-            <div className="vp-login-card card">
-              <div className="vp-login-card-head">
-                <span className="vp-login-chip">新登入介面</span>
-                <span className="vp-login-version">第三十三版 / Login UI</span>
-              </div>
-              <div className="vp-login-heading">
-                <div className="vp-login-heading-title">歡迎回來</div>
-                <div className="vp-login-heading-sub">請輸入帳號與密碼進入 VP 系統。</div>
-              </div>
-              <form className="vp-login-form" onSubmit={handleLoginSubmit}>
-                <label className="vp-login-field">
-                  <span><UserRound className="small-icon" />帳號</span>
-                  <input value={loginDraft.loginId} onChange={(e) => setLoginDraft((prev) => ({ ...prev, loginId: e.target.value }))} placeholder="請輸入登入帳號" autoComplete="username" />
-                </label>
-                <label className="vp-login-field">
-                  <span><LockKeyhole className="small-icon" />密碼</span>
-                  <div className="vp-login-password-wrap">
-                    <input type={showPassword ? 'text' : 'password'} value={loginDraft.password} onChange={(e) => setLoginDraft((prev) => ({ ...prev, password: e.target.value }))} placeholder="請輸入登入密碼" autoComplete="current-password" />
-                    <button type="button" className="vp-login-toggle" onClick={() => setShowPassword((prev) => !prev)}>{showPassword ? '隱藏' : '顯示'}</button>
-                  </div>
-                </label>
-                <div className="vp-login-row">
-                  <button type="button" className={`ui-switch ${rememberLogin ? 'on' : 'off'}`} onClick={() => setRememberLogin((prev) => !prev)} aria-pressed={rememberLogin}>
-                    <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
-                  </button>
-                  <span className="vp-login-row-label">記住登入狀態</span>
-                  <span className="vp-login-row-tip">忘記密碼可於下一階段接真實驗證</span>
+          </div>
+          <div className="vp-login-clean-kicker">VELVET PULSE</div>
+          <h1 className="vp-login-clean-title">VP 系統</h1>
+          <div className="vp-login-clean-sub">訂購 × 倉儲 × 會計 × 同步中心</div>
+
+          <div className="vp-login-card card vp-login-card-clean">
+            <form className="vp-login-form" onSubmit={handleLoginSubmit}>
+              <label className="vp-login-field">
+                <span><UserRound className="small-icon" />帳號</span>
+                <input value={loginDraft.loginId} onChange={(e) => setLoginDraft((prev) => ({ ...prev, loginId: e.target.value }))} placeholder="請輸入登入帳號" autoComplete="username" />
+              </label>
+              <label className="vp-login-field">
+                <span><LockKeyhole className="small-icon" />密碼</span>
+                <div className="vp-login-password-wrap">
+                  <input type={showPassword ? 'text' : 'password'} value={loginDraft.password} onChange={(e) => setLoginDraft((prev) => ({ ...prev, password: e.target.value }))} placeholder="請輸入登入密碼" autoComplete="current-password" />
+                  <button type="button" className="vp-login-toggle" onClick={() => setShowPassword((prev) => !prev)}>{showPassword ? '隱藏' : '顯示'}</button>
                 </div>
-                {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
-                <button type="submit" className="primary-button vp-login-submit">登入系統</button>
-              </form>
-              <div className="vp-login-help">
-                <span>測試管理帳號：</span>
-                <strong>vp001 / vp001</strong>
+              </label>
+              <div className="vp-login-row vp-login-row-clean">
+                <button type="button" className={`ui-switch ${rememberLogin ? 'on' : 'off'}`} onClick={() => setRememberLogin((prev) => !prev)} aria-pressed={rememberLogin}>
+                  <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
+                </button>
+                <span className="vp-login-row-label">記住登入狀態</span>
               </div>
+              {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
+              <button type="submit" className="primary-button vp-login-submit">登入系統</button>
+            </form>
+            <div className="vp-login-help vp-login-help-clean">
+              <strong>vp001 / vp001</strong>
             </div>
           </div>
         </section>
