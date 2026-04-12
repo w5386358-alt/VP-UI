@@ -446,7 +446,7 @@ export default function AccountingModule(props: any) {
       )}
 
       {accountingTab === 'evaluation' && (
-        <section className="accounting-ranking-layout-v2">
+        <section className="accounting-ranking-layout-v2 accounting-evaluation-layout">
           <div className="card order-panel">
             <div className="panel-head">
               <div><div className="panel-title">評鑑分數總覽</div><div className="panel-desc">系統依匿名評分結果，自動結算本季總分、K值與榮譽勳章。</div></div>

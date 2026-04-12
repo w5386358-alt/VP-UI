@@ -11120,3 +11120,193 @@ body {
     border-radius:14px !important;
   }
 }
+
+
+/* 2026-04-12 fix11: mobile pagination / evaluation / bonus layout / menu layer */
+.pagination-row,
+.pagination-row-angle,
+.pagination-row-minimal{
+  flex-wrap:nowrap !important;
+}
+
+.pagination-row .pagination-pages,
+.pagination-row-angle .pagination-pages,
+.pagination-row-minimal .pagination-pages{
+  flex-wrap:nowrap !important;
+}
+
+.pagination-row .pagination-btn,
+.pagination-row-angle .pagination-btn,
+.pagination-row-minimal .pagination-btn{
+  order:0;
+}
+
+.pagination-row .pagination-pages,
+.pagination-row-angle .pagination-pages,
+.pagination-row-minimal .pagination-pages{
+  order:1;
+}
+
+.pagination-row .pagination-btn:last-of-type,
+.pagination-row-angle .pagination-btn:last-of-type,
+.pagination-row-minimal .pagination-btn:last-of-type{
+  order:2;
+}
+
+.mobile-row-action-group,
+.mobile-entry-trigger,
+.staff-mobile-edit-trigger,
+.mobile-product-fab,
+.floating-cart-button,
+.staff-mobile-add-fab{
+  z-index:20 !important;
+}
+
+.mobile-row-action-sheet,
+.mobile-action-menu,
+.mobile-entry-menu,
+.mobile-options-sheet{
+  z-index:3000 !important;
+}
+
+@media (max-width:900px){
+  .pagination-row,
+  .pagination-row-angle,
+  .pagination-row-minimal{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    padding-inline:4px !important;
+  }
+
+  .pagination-row .pagination-pages,
+  .pagination-row-angle .pagination-pages,
+  .pagination-row-minimal .pagination-pages{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+    overflow:visible !important;
+    white-space:nowrap !important;
+  }
+
+  .pagination-row .pagination-btn,
+  .pagination-row-angle .pagination-btn,
+  .pagination-row-minimal .pagination-btn,
+  .pagination-row .pagination-page,
+  .pagination-row-angle .pagination-page,
+  .pagination-row-minimal .pagination-page{
+    flex:0 0 auto !important;
+    min-width:36px !important;
+    height:36px !important;
+    padding:0 10px !important;
+    font-size:13px !important;
+    border-radius:12px !important;
+  }
+
+  .pagination-row .pagination-btn.angle-only,
+  .pagination-row-angle .pagination-btn.angle-only,
+  .pagination-row-minimal .pagination-btn.angle-only{
+    font-size:15px !important;
+    line-height:1 !important;
+  }
+
+  .accounting-bonus-layout{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+    align-items:start !important;
+    padding-bottom:96px !important;
+  }
+
+  .accounting-bonus-log-card,
+  .accounting-bonus-entry-card{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  .accounting-bonus-entry-card .warehouse-form-grid,
+  .accounting-bonus-entry-card .treasury-expense-grid{
+    grid-template-columns:1fr !important;
+  }
+
+  .accounting-bonus-entry-card .fake-field,
+  .accounting-bonus-log-card .treasury-expense-row,
+  .accounting-bonus-entry-card .accounting-action-row{
+    min-width:0 !important;
+    width:100% !important;
+  }
+
+  .accounting-bonus-entry-card .primary-button{
+    width:100% !important;
+  }
+
+  .accounting-evaluation-layout{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+    padding-bottom:96px !important;
+  }
+
+  .accounting-evaluation-layout > .card{
+    width:100% !important;
+    min-width:0 !important;
+  }
+
+  .accounting-evaluation-layout .panel-head{
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:10px !important;
+  }
+
+  .accounting-evaluation-layout .dashboard-quarter-switch{
+    width:100% !important;
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  .accounting-evaluation-layout .dashboard-quarter-btn{
+    width:100% !important;
+    min-width:0 !important;
+    justify-content:center !important;
+  }
+
+  .accounting-evaluation-layout .ranking-list-v2{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+
+  .accounting-evaluation-layout .evaluation-result-row{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+    padding:12px !important;
+  }
+
+  .accounting-evaluation-layout .evaluation-result-row .ranking-left,
+  .accounting-evaluation-layout .evaluation-result-row .evaluation-result-right,
+  .accounting-evaluation-layout .evaluation-result-row .evaluation-score-inline{
+    grid-column:1 / -1 !important;
+    min-width:0 !important;
+  }
+
+  .accounting-evaluation-layout .evaluation-result-row .evaluation-result-right{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+  }
+
+  .accounting-evaluation-layout .evaluation-result-row .evaluation-score-inline{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:6px !important;
+  }
+}
