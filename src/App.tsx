@@ -3850,6 +3850,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
+  const [showAppLaunch, setShowAppLaunch] = useState(() => (typeof window === 'undefined' ? false : true));
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3874,6 +3875,18 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
   }, [dashboardAvatarImage]);
 
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 380 : 1450);
+    const dismiss = () => setShowAppLaunch(false);
+    window.addEventListener('pointerdown', dismiss, undefined);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerdown', dismiss);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -4007,6 +4020,20 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   return (
     <div className="vp-shell">
+      {showAppLaunch && (
+        <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`} onClick={() => setShowAppLaunch(false)} role="presentation">
+          <div className="vp-launch-card">
+            <div className="vp-launch-mark-wrap">
+              <div className="vp-launch-mark">VP</div>
+              <span className="vp-launch-ring vp-launch-ring-a" />
+              <span className="vp-launch-ring vp-launch-ring-b" />
+            </div>
+            <div className="vp-launch-kicker">Velvet Pulse</div>
+            <div className="vp-launch-title">VP 系統</div>
+            <div className="vp-launch-desc">訂購 × 倉儲 × 會計 × 同步中心</div>
+          </div>
+        </div>
+      )}
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 
