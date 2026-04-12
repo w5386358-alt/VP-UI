@@ -3850,6 +3850,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
+  const [showAppLaunch, setShowAppLaunch] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+    return standalone || window.innerWidth <= 900;
+  });
 
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
@@ -3911,6 +3916,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       window.removeEventListener('appinstalled', handleAppInstalled);
       media.removeEventListener?.('change', updateStandalone);
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setTimeout(() => setShowAppLaunch(false), prefersReducedMotion ? 450 : 1550);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function handleInstallApp() {
@@ -4006,7 +4018,22 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, [active]);
 
   return (
-    <div className="vp-shell">
+    <div className={`vp-shell ${isStandaloneMode ? 'standalone-mode' : ''}`}>
+      {showAppLaunch && (
+        <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`}>
+          <div className="vp-launch-card">
+            <div className="vp-launch-mark-wrap">
+              <div className="vp-launch-mark">VP</div>
+              <span className="vp-launch-ring vp-launch-ring-a" />
+              <span className="vp-launch-ring vp-launch-ring-b" />
+            </div>
+            <div className="vp-launch-kicker">Velvet Pulse</div>
+            <div className="vp-launch-title">VP 系統</div>
+            <div className="vp-launch-desc">訂購 × 倉儲 × 會計 × 同步中心</div>
+          </div>
+        </div>
+      )}
+
       <div className="vp-ornament vp-ornament-a" />
       <div className="vp-ornament vp-ornament-b" />
 

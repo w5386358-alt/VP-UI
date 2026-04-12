@@ -10,6 +10,12 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
 );
 
 
+if (typeof window !== "undefined") {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+  if (isStandalone) document.body.classList.add('standalone-body');
+}
+
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((error) => {
