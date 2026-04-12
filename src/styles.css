@@ -11310,3 +11310,132 @@ body {
     gap:6px !important;
   }
 }
+
+/* login ui + staff permissions */
+.vp-login-shell-page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fff9f8 0%, #fff4f3 52%, #fffafa 100%);
+}
+.vp-login-backdrop {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(18px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.vp-login-backdrop-a {
+  width: 320px; height: 320px; top: -70px; right: -90px;
+  background: radial-gradient(circle, rgba(235,84,112,0.24), rgba(235,84,112,0));
+}
+.vp-login-backdrop-b {
+  width: 360px; height: 360px; bottom: -140px; left: -120px;
+  background: radial-gradient(circle, rgba(208,147,173,0.26), rgba(208,147,173,0));
+}
+.vp-login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+}
+.vp-login-layout {
+  width: min(1080px, 100%);
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 24px;
+  align-items: stretch;
+}
+.vp-login-brand,
+.vp-login-card {
+  border-radius: 30px;
+  box-shadow: 0 24px 70px rgba(171, 81, 103, 0.12);
+  border: 1px solid rgba(225, 178, 188, 0.42);
+  background: rgba(255,255,255,0.9);
+}
+.vp-login-brand {
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.vp-login-brand-mark {
+  width: 74px; height: 74px; border-radius: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #eb5d72 0%, #d77d92 100%);
+  color: #fff; font-size: 28px; font-weight: 800; letter-spacing: 0.08em;
+  box-shadow: 0 20px 36px rgba(235, 93, 114, 0.26);
+}
+.vp-login-brand-kicker {
+  margin-top: 18px; color: #c36b84; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+}
+.vp-login-title { margin: 14px 0 10px; font-size: clamp(30px, 4vw, 42px); color: #572a37; }
+.vp-login-desc { margin: 0; color: #855361; line-height: 1.8; max-width: 540px; }
+.vp-login-feature-list { display: grid; gap: 12px; margin-top: 28px; }
+.vp-login-feature-item {
+  display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,244,245,0.96), rgba(255,249,250,0.96));
+  color: #6d4150; border: 1px solid rgba(230, 194, 201, 0.56);
+}
+.vp-login-card { padding: 28px; display: flex; flex-direction: column; justify-content: center; }
+.vp-login-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.vp-login-chip, .vp-login-version {
+  display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+}
+.vp-login-chip { background: rgba(235,93,114,0.12); color: #d64863; }
+.vp-login-version { background: rgba(116,58,74,0.06); color: #7d5260; }
+.vp-login-heading-title { font-size: 28px; font-weight: 800; color: #502836; }
+.vp-login-heading-sub { margin-top: 6px; color: #8f6170; }
+.vp-login-form { display: grid; gap: 16px; margin-top: 24px; }
+.vp-login-field { display: grid; gap: 8px; }
+.vp-login-field > span { display: inline-flex; align-items: center; gap: 8px; color: #6d4452; font-weight: 700; }
+.vp-login-field input {
+  width: 100%; border: 1px solid rgba(220, 183, 191, 0.72); border-radius: 16px; background: #fff;
+  min-height: 52px; padding: 0 16px; font-size: 15px; color: #4c2c37;
+}
+.vp-login-password-wrap { position: relative; }
+.vp-login-password-wrap input { padding-right: 76px; }
+.vp-login-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  border: 0; background: rgba(235,93,114,0.1); color: #d44a66; border-radius: 12px; padding: 8px 12px; font-weight: 700;
+}
+.vp-login-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: #79515e; }
+.vp-login-row-label { font-weight: 700; }
+.vp-login-row-tip { color: #aa7686; margin-left: auto; font-size: 13px; }
+.vp-login-submit { min-height: 52px; border-radius: 16px; font-size: 15px; }
+.vp-login-help { margin-top: 16px; color: #7c5360; display: flex; gap: 8px; flex-wrap: wrap; }
+.staff-permission-manager { display: grid; gap: 14px; margin-top: 14px; }
+.staff-permission-block {
+  border: 1px solid rgba(231, 215, 219, 0.9); border-radius: 20px; background: #fff9fb; padding: 16px;
+}
+.staff-permission-block-title { font-size: 14px; font-weight: 800; color: #6e4050; margin-bottom: 12px; }
+.staff-permission-group-list { display: grid; gap: 12px; }
+.staff-permission-group-title { font-size: 12px; color: #956879; margin-bottom: 8px; font-weight: 700; }
+.staff-permission-switch-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.staff-permission-switch-grid.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.permission-switch-card {
+  width: 100%; border: 1px solid rgba(226, 194, 202, 0.9); border-radius: 16px; background: #fff;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; color: #654150; font-weight: 700;
+}
+.permission-switch-card.active { background: linear-gradient(180deg, rgba(255,243,246,1), rgba(255,251,252,1)); border-color: rgba(231, 126, 149, 0.72); }
+.permission-switch-card:disabled { opacity: 0.72; cursor: not-allowed; }
+.mini-toggle {
+  width: 36px; height: 22px; border-radius: 999px; position: relative; flex: 0 0 auto; background: #ddd3d7;
+}
+.mini-toggle::after {
+  content: ''; width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 3px; left: 3px;
+  box-shadow: 0 2px 8px rgba(60,45,50,0.18);
+}
+.mini-toggle.on { background: linear-gradient(135deg, #eb5d72, #d47f92); }
+.mini-toggle.on::after { left: 17px; }
+@media (max-width: 900px) {
+  .vp-login-shell { padding: 18px; }
+  .vp-login-layout { grid-template-columns: 1fr; gap: 16px; }
+  .vp-login-brand, .vp-login-card { padding: 22px; border-radius: 24px; }
+  .vp-login-row-tip { width: 100%; margin-left: 0; }
+  .staff-permission-switch-grid,
+  .staff-permission-switch-grid.compact { grid-template-columns: 1fr; }
+}

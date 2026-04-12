@@ -17,10 +17,14 @@ export default function StaffModule(props: any) {
     staffRoles,
     staffRanks,
     staffPermissionPreview,
+    modulePermissionLabels,
+    subpagePermissionGroups,
+    actionPermissionGroups,
     openCreateStaff,
     openEditStaff,
     openViewStaff,
     updateStaffDraftField,
+    updateStaffPermission,
     resetStaffPassword,
     saveStaffDraft,
   } = props;
@@ -169,6 +173,57 @@ export default function StaffModule(props: any) {
                 <div className="staff-permission-head"><Sparkles className="small-icon" /><span>權限邏輯預覽</span></div>
                 <div className="stack-list compact product-editor-notes">{staffPermissionPreview.map((item: string) => <div key={item}>{item}</div>)}</div>
               </div>
+
+
+              <div className="staff-permission-manager">
+                <div className="staff-permission-block">
+                  <div className="staff-permission-block-title">主模組權限</div>
+                  <div className="staff-permission-switch-grid">
+                    {modulePermissionLabels.map((item: any) => (
+                      <button key={item.key} type="button" className={`permission-switch-card ${staffDraft.permissionConfig?.modules?.[item.key] ? 'active' : ''}`} onClick={() => staffEditorMode !== 'view' && updateStaffPermission('modules', item.key, !staffDraft.permissionConfig?.modules?.[item.key])} disabled={staffEditorMode === 'view'}>
+                        <span>{item.label}</span>
+                        <span className={`mini-toggle ${staffDraft.permissionConfig?.modules?.[item.key] ? 'on' : 'off'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="staff-permission-block">
+                  <div className="staff-permission-block-title">子頁權限</div>
+                  <div className="staff-permission-group-list">
+                    {subpagePermissionGroups.map((group: any) => (
+                      <div key={group.title} className="staff-permission-group">
+                        <div className="staff-permission-group-title">{group.title}</div>
+                        <div className="staff-permission-switch-grid compact">
+                          {group.items.map((item: any) => (
+                            <button key={item.key} type="button" className={`permission-switch-card ${staffDraft.permissionConfig?.subpages?.[item.key] ? 'active' : ''}`} onClick={() => staffEditorMode !== 'view' && updateStaffPermission('subpages', item.key, !staffDraft.permissionConfig?.subpages?.[item.key])} disabled={staffEditorMode === 'view'}>
+                              <span>{item.label}</span>
+                              <span className={`mini-toggle ${staffDraft.permissionConfig?.subpages?.[item.key] ? 'on' : 'off'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="staff-permission-block">
+                  <div className="staff-permission-block-title">操作權限</div>
+                  <div className="staff-permission-group-list">
+                    {actionPermissionGroups.map((group: any) => (
+                      <div key={group.title} className="staff-permission-group">
+                        <div className="staff-permission-switch-grid compact">
+                          {group.items.map((item: any) => (
+                            <button key={item.key} type="button" className={`permission-switch-card ${staffDraft.permissionConfig?.actions?.[item.key] ? 'active' : ''}`} onClick={() => staffEditorMode !== 'view' && updateStaffPermission('actions', item.key, !staffDraft.permissionConfig?.actions?.[item.key])} disabled={staffEditorMode === 'view'}>
+                              <span>{item.label}</span>
+                              <span className={`mini-toggle ${staffDraft.permissionConfig?.actions?.[item.key] ? 'on' : 'off'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
 
               {selectedStaff && staffEditorMode === 'view' && selectedStaff.permissions?.length ? (
                 <div className="data-chip-row">{selectedStaff.permissions.map((item: string) => <span key={item} className="badge badge-soft">{item}</span>)}</div>

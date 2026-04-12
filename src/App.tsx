@@ -37,6 +37,9 @@ import {
   Plus,
   PencilLine,
   Eye,
+  LockKeyhole,
+  UserRound,
+  ArrowLeft,
 } from 'lucide-react';
 import DashboardModule from './modules/DashboardModule';
 import ProductsModule from './modules/ProductsModule';
@@ -61,8 +64,14 @@ type MobileNavKey = 'dashboard' | 'orders' | 'inventory' | 'accounting' | 'more'
 
 type Product = { id: string; code: string; barcode?: string; name: string; category: string; price: number; enabled: boolean; stock: number; image?: string; vipPrice?: number; agentPrice?: number; generalAgentPrice?: number; sourceDocId?: string };
 type Customer = { id: string; name: string; phone: string; level: string; ownerLoginId: string; ownerName: string };
-type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[] };
-type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank };
+type StaffPermissionConfig = {
+  modules: Record<NavKey, boolean>;
+  subpages: Record<string, boolean>;
+  actions: Record<string, boolean>;
+};
+
+type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[]; permissionConfig?: StaffPermissionConfig };
+type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank; permissionConfig?: StaffPermissionConfig };
 
 type PermissionProfile = {
   canViewAllCustomers: boolean;
@@ -119,6 +128,7 @@ type StaffDraft = {
   rank: string;
   enabled: boolean;
   password: string;
+  permissionConfig: StaffPermissionConfig;
 };
 
 type AccountingDraft = {
@@ -389,6 +399,125 @@ const RANK_DISPLAY: Record<Rank, string> = {
   normal: '普通',
 };
 
+const MODULE_PERMISSION_LABELS: Array<{ key: NavKey; label: string }> = [
+  { key: 'dashboard', label: '總覽' },
+  { key: 'orders', label: '訂購' },
+  { key: 'inventory', label: '倉儲' },
+  { key: 'accounting', label: '會計' },
+  { key: 'products', label: '商品' },
+  { key: 'customers', label: '客戶' },
+  { key: 'staff', label: '人員' },
+  { key: 'profile', label: '評鑑' },
+];
+
+const SUBPAGE_PERMISSION_GROUPS: Array<{ title: string; items: Array<{ key: string; label: string }> }> = [
+  {
+    title: '倉儲子頁',
+    items: [
+      { key: 'inventory_shipping', label: '出貨區' },
+      { key: 'inventory_stock', label: '庫存區' },
+      { key: 'inventory_query', label: '查詢區' },
+    ],
+  },
+  {
+    title: '會計子頁',
+    items: [
+      { key: 'accounting_ops', label: '收款區' },
+      { key: 'accounting_bonus', label: '獎金入帳' },
+      { key: 'accounting_treasury', label: '出納區' },
+      { key: 'accounting_stats', label: '營運報表' },
+      { key: 'accounting_ranking', label: '排名 / 熱銷' },
+      { key: 'accounting_evaluation', label: '評鑑分數' },
+    ],
+  },
+  {
+    title: '評鑑子頁',
+    items: [
+      { key: 'profile_personal', label: '個人評鑑' },
+      { key: 'profile_anonymous', label: '匿名評分' },
+      { key: 'profile_records', label: '評鑑紀錄' },
+    ],
+  },
+];
+
+const ACTION_PERMISSION_GROUPS: Array<{ title: string; items: Array<{ key: string; label: string }> }> = [
+  {
+    title: '操作權限',
+    items: [
+      { key: 'create', label: '可新增' },
+      { key: 'edit', label: '可編輯' },
+      { key: 'delete', label: '可刪除' },
+      { key: 'payment', label: '可收款' },
+      { key: 'refund', label: '可退款' },
+      { key: 'shipping', label: '可出貨' },
+      { key: 'exchange', label: '可換貨' },
+      { key: 'inbound', label: '可入庫' },
+      { key: 'approve', label: '可審核' },
+    ],
+  },
+];
+
+function mapStaffRoleToSystemRole(role: string): Role {
+  if (String(role).includes('會計') || String(role).includes('行政')) return 'accounting';
+  if (String(role).includes('倉儲')) return 'warehouse';
+  if (String(role).includes('系統') || String(role).includes('開發')) return 'admin';
+  return 'sales';
+}
+
+function mapRankStringToRankKey(rank: string): Rank {
+  if (String(rank).includes('核心')) return 'core';
+  if (String(rank).includes('菁英')) return 'elite';
+  if (String(rank).includes('高級')) return 'senior';
+  return 'normal';
+}
+
+function createDefaultPermissionConfig(role: string): StaffPermissionConfig {
+  const mappedRole = mapStaffRoleToSystemRole(role);
+  const modules = Object.fromEntries(MODULE_PERMISSION_LABELS.map((item) => [item.key, ROLE_NAV_ACCESS[mappedRole].includes(item.key)])) as Record<NavKey, boolean>;
+  const subpages: Record<string, boolean> = {};
+  SUBPAGE_PERMISSION_GROUPS.forEach((group) => {
+    group.items.forEach((item) => {
+      if (item.key.startsWith('inventory_')) subpages[item.key] = modules.inventory;
+      else if (item.key.startsWith('accounting_')) subpages[item.key] = modules.accounting;
+      else if (item.key.startsWith('profile_')) subpages[item.key] = modules.profile;
+      else subpages[item.key] = true;
+    });
+  });
+  const actions: Record<string, boolean> = {};
+  ACTION_PERMISSION_GROUPS.forEach((group) => group.items.forEach((item) => { actions[item.key] = false; }));
+  if (mappedRole === 'admin') Object.keys(actions).forEach((key) => { actions[key] = true; });
+  if (mappedRole === 'accounting') ['payment', 'refund', 'approve', 'edit'].forEach((key) => { actions[key] = true; });
+  if (mappedRole === 'warehouse') ['shipping', 'exchange', 'inbound', 'edit'].forEach((key) => { actions[key] = true; });
+  if (mappedRole === 'sales') ['create', 'edit'].forEach((key) => { actions[key] = true; });
+  return { modules, subpages, actions };
+}
+
+function normalizePermissionConfig(raw: any, role = '銷售組'): StaffPermissionConfig {
+  const fallback = createDefaultPermissionConfig(role);
+  return {
+    modules: { ...fallback.modules, ...(raw?.modules || {}) },
+    subpages: { ...fallback.subpages, ...(raw?.subpages || {}) },
+    actions: { ...fallback.actions, ...(raw?.actions || {}) },
+  };
+}
+
+function hasModuleAccess(user: SessionUser, key: NavKey) {
+  const moduleRule = user.permissionConfig?.modules?.[key];
+  if (typeof moduleRule === 'boolean') return moduleRule;
+  return ROLE_NAV_ACCESS[user.role].includes(key);
+}
+
+function buildPermissionPreview(config: StaffPermissionConfig) {
+  const modulePreview = MODULE_PERMISSION_LABELS.filter((item) => config.modules[item.key]).map((item) => item.label);
+  const subpagePreview = SUBPAGE_PERMISSION_GROUPS.flatMap((group) => group.items.filter((item) => config.subpages[item.key]).map((item) => item.label));
+  const actionPreview = ACTION_PERMISSION_GROUPS.flatMap((group) => group.items.filter((item) => config.actions[item.key]).map((item) => item.label));
+  return [
+    `主模組：${modulePreview.length ? modulePreview.join('、') : '未開啟'}`,
+    `子頁：${subpagePreview.length ? subpagePreview.slice(0, 6).join('、') : '未開啟'}`,
+    `操作：${actionPreview.length ? actionPreview.join('、') : '僅查看'}`,
+  ];
+}
+
 
 function getPriceTierLabel(rankKey: Rank) {
   if (rankKey === 'core') return '總代理價';
@@ -409,12 +538,15 @@ function getTierPrice(product: Product, rankKey: Rank) {
   return Number(product.price || 0);
 }
 
-function canAccessNav(role: Role, key: NavKey) {
-  return ROLE_NAV_ACCESS[role].includes(key);
+function canAccessNav(user: SessionUser, key: NavKey) {
+  return hasModuleAccess(user, key);
 }
 
 function canAccessEvaluation(user: SessionUser) {
-  return user.rankKey === 'core' && canAccessNav(user.role, 'profile');
+  const canSeeProfile = canAccessNav(user, 'profile');
+  const anonymousAllowed = user.permissionConfig?.subpages?.profile_anonymous;
+  if (typeof anonymousAllowed === 'boolean') return canSeeProfile && anonymousAllowed;
+  return user.rankKey === 'core' && canSeeProfile;
 }
 
 function getProfileTriggerLabel(name: string) {
@@ -834,6 +966,7 @@ function normalizeStaff(id: string, data: any): Staff {
     enabled: data.enabled ?? data.isActive ?? true,
     password: data.password || data.loginId || data.staffId || id,
     permissions: Array.isArray(data.permissions) ? data.permissions : undefined,
+    permissionConfig: normalizePermissionConfig(data.permissionConfig, data.role || '銷售組'),
   };
 }
 
@@ -1416,8 +1549,10 @@ function makeEmptyStaffDraft() {
     rank: '普通銷售',
     enabled: true,
     password: '',
+    permissionConfig: createDefaultPermissionConfig('銷售組'),
   };
 }
+
 
 function toStaffDraft(item: Staff): StaffDraft {
   return {
@@ -1428,8 +1563,10 @@ function toStaffDraft(item: Staff): StaffDraft {
     rank: item.rank,
     enabled: item.enabled,
     password: item.password || item.loginId,
+    permissionConfig: normalizePermissionConfig(item.permissionConfig, item.role),
   };
 }
+
 
 function StatusBadge({ enabled }: { enabled: boolean }) {
   return <span className={enabled ? 'badge badge-success' : 'badge badge-danger'}>{enabled ? '啟用中' : '停用'}</span>;
@@ -1514,15 +1651,35 @@ export default function App() {
   const treasuryProofInputRef = useRef<HTMLInputElement | null>(null);
   const treasuryExpenseProofInputRef = useRef<HTMLInputElement | null>(null);
   const [dataMode, setDataMode] = useState<'firebase' | 'offline'>('offline');
-  const [userRoleView, setUserRoleView] = useState<Role>('admin');
-  const [userRankView, setUserRankView] = useState<Rank>('core');
-  const user = useMemo<SessionUser>(() => ({
-    name: '吳秉宸',
-    loginId: 'vp001',
-    role: userRoleView,
-    rank: RANK_LABEL[userRankView] || ROLE_RANK[userRoleView],
-    rankKey: userRankView,
-  }), [userRoleView, userRankView]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberLogin, setRememberLogin] = useState(true);
+  const [loginDraft, setLoginDraft] = useState({ loginId: 'vp001', password: 'vp001' });
+  const [loginError, setLoginError] = useState('');
+  const [sessionLoginId, setSessionLoginId] = useState('');
+  const [, setUserRoleView] = useState<Role>('admin');
+  const [, setUserRankView] = useState<Rank>('core');
+  const sessionStaff = useMemo(() => staff.find((item) => item.loginId === sessionLoginId) || null, [staff, sessionLoginId]);
+  const user = useMemo<SessionUser>(() => {
+    if (sessionStaff) {
+      return {
+        name: sessionStaff.name,
+        loginId: sessionStaff.loginId,
+        role: mapStaffRoleToSystemRole(sessionStaff.role),
+        rank: sessionStaff.rank,
+        rankKey: mapRankStringToRankKey(sessionStaff.rank),
+        permissionConfig: normalizePermissionConfig(sessionStaff.permissionConfig, sessionStaff.role),
+      };
+    }
+    return {
+      name: '吳秉宸',
+      loginId: 'vp001',
+      role: 'admin',
+      rank: '核心成員',
+      rankKey: 'core',
+      permissionConfig: createDefaultPermissionConfig('系統組'),
+    };
+  }, [sessionStaff]);
+  const isAuthenticated = Boolean(sessionLoginId);
   const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -1594,7 +1751,7 @@ export default function App() {
   const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [staffEditorMode, setStaffEditorMode] = useState<StaffEditorMode>('view');
   const [selectedStaffId, setSelectedStaffId] = useState(staff[0]?.id ?? '');
-  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft({ id: '', name: '', loginId: '', role: '銷售組', rank: '普通銷售', enabled: true, password: '', permissions: [] }));
+  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft({ id: '', name: '', loginId: '', role: '銷售組', rank: '普通銷售', enabled: true, password: '', permissions: [], permissionConfig: createDefaultPermissionConfig('銷售組') }));
   const [staffNotice, setStaffNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [orderRecords, setOrderRecords] = useState<OrderRecord[]>([]);
   const [selectedOrderNo, setSelectedOrderNo] = useState('');
@@ -1982,7 +2139,7 @@ export default function App() {
   const staffRoles = ['系統組', '銷售組', '行政組', '倉儲組', '市場組'];
   const staffRanks = ['核心人員', '菁英成員', '高級銷售', '普通銷售'];
   const selectedStaff = useMemo(() => staff.find((item) => item.id === selectedStaffId) || staff[0] || null, [staff, selectedStaffId]);
-  const staffPermissionPreview = useMemo(() => getPermissionsByRole(staffDraft.role, staffDraft.rank), [staffDraft.role, staffDraft.rank]);
+  const staffPermissionPreview = useMemo(() => buildPermissionPreview(staffDraft.permissionConfig), [staffDraft.permissionConfig]);
 
   const filteredOrderProducts = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -2843,7 +3000,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
 
-  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user.role, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
   const mobilePrimaryNavItems: { key: MobileNavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: 'dashboard', label: '儀表板', icon: BarChart3 },
     { key: 'orders', label: '訂購', icon: ShoppingCart },
@@ -2853,12 +3010,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   ];
   const mobileMoreCommonItems = useMemo(() => [
     { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
-  ].filter((item) => canAccessNav(user.role, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
+  ].filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
   const mobileManagementItems = useMemo(() => [
     { key: 'products' as NavKey, label: '商品管理', icon: Package },
     { key: 'customers' as NavKey, label: '客戶管理', icon: Users },
     { key: 'staff' as NavKey, label: '人員管理', icon: UserCog },
-  ].filter((item) => canAccessNav(user.role, item.key)), [user.role]);
+  ].filter((item) => canAccessNav(user, item.key)), [user.role]);
   const currentNavItem = navItems.find((item) => item.key === active) || navItems[0];
   const currentModuleLabel = currentNavItem.label;
   const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
@@ -2873,7 +3030,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         : '無客戶權限';
 
   useEffect(() => {
-    const blockedByRole = !canAccessNav(user.role, active);
+    const blockedByRole = !canAccessNav(user, active);
     const blockedEvaluation = active === 'profile' && !canAccessEvaluation(user);
     if (blockedByRole || blockedEvaluation) {
       setActive(ROLE_NAV_ACCESS[user.role][0]);
@@ -3171,6 +3328,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       enabled: nextStaff.enabled,
       password: nextStaff.password || nextStaff.loginId,
       permissions: Array.isArray(nextStaff.permissions) ? nextStaff.permissions : [],
+      permissionConfig: normalizePermissionConfig(nextStaff.permissionConfig, nextStaff.role),
       source: 'VERCEL_UI',
       updatedAt: nowIso,
       lastSyncedAt: nowIso,
@@ -3410,7 +3568,26 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       if (field === 'loginId') {
         next.password = String(value || '').trim();
       }
+      if (field === 'role') {
+        next.permissionConfig = normalizePermissionConfig(prev.permissionConfig, String(value || prev.role));
+      }
       return next;
+    });
+  }
+
+  function updateStaffPermission(section: 'modules' | 'subpages' | 'actions', key: string, value: boolean) {
+    setStaffDraft((prev) => {
+      const nextConfig = normalizePermissionConfig(prev.permissionConfig, prev.role);
+      return {
+        ...prev,
+        permissionConfig: {
+          ...nextConfig,
+          [section]: {
+            ...nextConfig[section],
+            [key]: value,
+          },
+        },
+      };
     });
   }
 
@@ -3436,6 +3613,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       enabled: staffDraft.enabled,
       password: staffDraft.password.trim() || staffDraft.loginId.trim(),
       permissions: getPermissionsByRole(staffDraft.role, staffDraft.rank),
+      permissionConfig: normalizePermissionConfig(staffDraft.permissionConfig, staffDraft.role),
     };
     if (staffEditorMode === 'create') {
       if (!confirmAction(`確認新增人員：${staffDraft.loginId.trim()}？`)) {
@@ -3967,18 +4145,60 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     readImageFile(file, setDashboardAvatarImage);
   }
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const remembered = window.localStorage.getItem('vp-session-login-id') || '';
+    if (remembered) setSessionLoginId(remembered);
+  }, []);
+
+  useEffect(() => {
+    if (!staff.length || !sessionLoginId) return;
+    const found = staff.find((item) => item.loginId === sessionLoginId && item.enabled);
+    if (found) return;
+    setSessionLoginId('');
+    if (typeof window !== 'undefined') window.localStorage.removeItem('vp-session-login-id');
+  }, [staff, sessionLoginId]);
+
+  function handleLoginSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const loginId = loginDraft.loginId.trim();
+    const password = loginDraft.password.trim();
+    const fallbackAdmin = loginId === 'vp001' && password === 'vp001'
+      ? { id: 'vp001', name: '吳秉宸', loginId: 'vp001', role: '系統組', rank: '核心成員', enabled: true, password: 'vp001', permissions: ['全模組管理'], permissionConfig: createDefaultPermissionConfig('系統組') } as Staff
+      : null;
+    const matched = staff.find((item) => item.loginId === loginId && (item.password || item.loginId) === password && item.enabled) || fallbackAdmin;
+    if (!matched) {
+      setLoginError('帳號或密碼不正確，或此帳號已停用。');
+      return;
+    }
+    setSessionLoginId(matched.loginId);
+    setLoginError('');
+    if (typeof window !== 'undefined') {
+      if (rememberLogin) window.localStorage.setItem('vp-session-login-id', matched.loginId);
+      else window.localStorage.removeItem('vp-session-login-id');
+    }
+    triggerShellHint(`✅ ${matched.name} 已登入`);
+  }
+
+  function handleLogout() {
+    setSessionLoginId('');
+    setLoginError('');
+    if (typeof window !== 'undefined') window.localStorage.removeItem('vp-session-login-id');
+    triggerShellHint('已登出。');
+  }
+
   function openProfileCenter(mode: 'profile' | 'password' | 'login') {
     setProfileOpen(false);
     setMobileMoreOpen(false);
     if (!canAccessEvaluation(user)) {
       if (mode === 'password') setShellHint('變更密碼入口已預留，後續可接真實子頁。');
-      else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
+      else if (mode === 'login') setShellHint('目前已改成獨立登入頁，可由個人中心登出後檢視。');
       else setShellHint('目前評鑑專區僅核心人員可進入。');
       return;
     }
     setActive('profile');
     if (mode === 'password') setShellHint('已切到評鑑頁，可接續放入變更密碼子頁。');
-    else if (mode === 'login') setShellHint('登入入口已預留在個人中心卡，可後續接真實登入流程。');
+    else if (mode === 'login') setShellHint('目前已改成獨立登入頁，可由個人中心登出後檢視。');
   }
 
   function triggerShellHint(message: string) {
@@ -4017,6 +4237,66 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   useEffect(() => {
     setMobileMoreOpen(false);
   }, [active]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="vp-shell vp-login-shell-page">
+        <div className="vp-login-backdrop vp-login-backdrop-a" />
+        <div className="vp-login-backdrop vp-login-backdrop-b" />
+        <section className="vp-login-shell">
+          <div className="vp-login-layout">
+            <div className="vp-login-brand card">
+              <div className="vp-login-brand-mark">VP</div>
+              <div className="vp-login-brand-kicker">Velvet Pulse Access</div>
+              <h1 className="vp-login-title">登入系統入口</h1>
+              <p className="vp-login-desc">登入畫面先走精品乾淨感，子頁權限則直接放在人員管理編輯卡裡，用啟動開關管理。</p>
+              <div className="vp-login-feature-list">
+                <div className="vp-login-feature-item"><ShieldCheck className="small-icon" /><span>主模組、子頁、操作權限可直接用開關控制</span></div>
+                <div className="vp-login-feature-item"><Sparkles className="small-icon" /><span>手機、桌機共用同一套登入入口視覺</span></div>
+                <div className="vp-login-feature-item"><ArrowLeft className="small-icon" /><span>這版可直接當更新成功的明顯辨識點</span></div>
+              </div>
+            </div>
+            <div className="vp-login-card card">
+              <div className="vp-login-card-head">
+                <span className="vp-login-chip">新登入介面</span>
+                <span className="vp-login-version">第三十三版 / Login UI</span>
+              </div>
+              <div className="vp-login-heading">
+                <div className="vp-login-heading-title">歡迎回來</div>
+                <div className="vp-login-heading-sub">請輸入帳號與密碼進入 VP 系統。</div>
+              </div>
+              <form className="vp-login-form" onSubmit={handleLoginSubmit}>
+                <label className="vp-login-field">
+                  <span><UserRound className="small-icon" />帳號</span>
+                  <input value={loginDraft.loginId} onChange={(e) => setLoginDraft((prev) => ({ ...prev, loginId: e.target.value }))} placeholder="請輸入登入帳號" autoComplete="username" />
+                </label>
+                <label className="vp-login-field">
+                  <span><LockKeyhole className="small-icon" />密碼</span>
+                  <div className="vp-login-password-wrap">
+                    <input type={showPassword ? 'text' : 'password'} value={loginDraft.password} onChange={(e) => setLoginDraft((prev) => ({ ...prev, password: e.target.value }))} placeholder="請輸入登入密碼" autoComplete="current-password" />
+                    <button type="button" className="vp-login-toggle" onClick={() => setShowPassword((prev) => !prev)}>{showPassword ? '隱藏' : '顯示'}</button>
+                  </div>
+                </label>
+                <div className="vp-login-row">
+                  <button type="button" className={`ui-switch ${rememberLogin ? 'on' : 'off'}`} onClick={() => setRememberLogin((prev) => !prev)} aria-pressed={rememberLogin}>
+                    <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
+                  </button>
+                  <span className="vp-login-row-label">記住登入狀態</span>
+                  <span className="vp-login-row-tip">忘記密碼可於下一階段接真實驗證</span>
+                </div>
+                {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
+                <button type="submit" className="primary-button vp-login-submit">登入系統</button>
+              </form>
+              <div className="vp-login-help">
+                <span>測試管理帳號：</span>
+                <strong>vp001 / vp001</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="vp-shell">
@@ -4253,7 +4533,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                         <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
                         <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('login')}>登入</button>
                         <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false);
-                    setMobileMoreOpen(false); triggerShellHint('已登出（UI 示意），後續可接真實登出流程。'); }}>登出</button>
+                    setMobileMoreOpen(false); handleLogout(); }}>登出</button>
                       </div>
                     </div>
                   </div>
@@ -4274,7 +4554,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
             </div>
           ) : (
             <>
-              {!canAccessNav(user.role, active) && (
+              {!canAccessNav(user, active) && (
                 <div className="card access-denied-card">
                   <div className="access-denied-title">此角色不可進入此頁</div>
                   <div className="access-denied-desc">目前角色是「{ROLE_LABEL[user.role]}」，此頁未開放。</div>
@@ -4292,7 +4572,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   <CustomersModule customers={visibleCustomerRecords} vipCustomers={vipCustomers} filteredCustomers={filteredCustomers} SectionIntro={SectionIntro} customerViewMode={customerViewMode} customerScopeLabel={customerScopeLabel} permissionProfile={permissionProfile} user={user} />
                 )}
                 {active === 'staff' && (
-                  <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
+                  <StaffModule staff={staff} activeStaff={activeStaff} filteredStaff={filteredStaff} getRankClass={getRankClass} SectionIntro={SectionIntro} StatusBadge={StatusBadge} selectedStaffId={selectedStaffId} selectedStaff={selectedStaff} staffEditorMode={staffEditorMode} staffDraft={staffDraft} setStaffDraft={setStaffDraft} staffNotice={staffNotice} staffRoles={staffRoles} staffRanks={staffRanks} staffPermissionPreview={staffPermissionPreview} modulePermissionLabels={MODULE_PERMISSION_LABELS} subpagePermissionGroups={SUBPAGE_PERMISSION_GROUPS} actionPermissionGroups={ACTION_PERMISSION_GROUPS} openCreateStaff={openCreateStaff} openEditStaff={openEditStaff} openViewStaff={openViewStaff} updateStaffDraftField={updateStaffDraftField} updateStaffPermission={updateStaffPermission} resetStaffPassword={resetStaffPassword} saveStaffDraft={saveStaffDraft} />
                 )}
                 {active === 'orders' && (
                   <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
@@ -4373,7 +4653,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </section>
 
         <div className="mobile-nav">
-          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user.role, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
+          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
             const Icon = item.icon;
             const isActive = item.key === 'more' ? mobileMoreOpen : (!mobileMoreOpen && active === item.key);
             return (
