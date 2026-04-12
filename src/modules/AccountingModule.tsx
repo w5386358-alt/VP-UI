@@ -24,6 +24,7 @@ export default function AccountingModule(props: any) {
     evaluationQuarter, setEvaluationQuarter, evaluationSummary = [],
   } = props;
 
+  const uploadSymbol = '/icons/upload-symbol.svg';
   const [accountingPage, setAccountingPage] = useState(1);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredAccountingQueue.length / pageSize));
@@ -138,8 +139,8 @@ export default function AccountingModule(props: any) {
                 </div>
 
                 <div className="warehouse-scan-hint-grid accounting-proof-grid-warehouse">
-                  <button type="button" className="warehouse-scan-hint idle accounting-proof-trigger" onClick={() => accountingProofInputRef?.current?.click()}>
-                    <Receipt className="small-icon" />收款證明
+                  <button type="button" className="warehouse-scan-hint idle accounting-proof-trigger upload-icon-button" onClick={() => accountingProofInputRef?.current?.click()}>
+                    <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />收款證明
                   </button>
                   <div className="warehouse-scan-hint idle"><ShieldCheck className="small-icon" />AI 辨識</div>
                   <div className="warehouse-scan-hint idle"><Clock3 className="small-icon" />最新狀態：{selectedAccountingSourceRecord?.paymentStatus || '未選擇'}</div>
@@ -258,8 +259,8 @@ export default function AccountingModule(props: any) {
                 </div>
 
                 <div className="warehouse-scan-hint-grid accounting-proof-grid-warehouse">
-                  <button type="button" className="warehouse-scan-hint idle accounting-proof-trigger" onClick={() => treasuryProofInputRef?.current?.click()}>
-                    <FileText className="small-icon" />退款證明
+                  <button type="button" className="warehouse-scan-hint idle accounting-proof-trigger upload-icon-button" onClick={() => treasuryProofInputRef?.current?.click()}>
+                    <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />退款證明
                   </button>
                   <div className="warehouse-scan-hint idle"><ShieldCheck className="small-icon" />自動載入已啟動</div>
                   <div className="warehouse-scan-hint idle"><Clock3 className="small-icon" />狀態：{selectedTreasuryRecord?.paymentStatus || '未選擇'}</div>
@@ -289,7 +290,7 @@ export default function AccountingModule(props: any) {
                 <div className="fake-field wide"><span>支出證明</span><strong>{treasuryExpenseDraft.proof || '待上傳'}</strong></div>
               </div>
               <div className="accounting-action-row warehouse-action-row">
-                <button type="button" className="ghost-button compact-btn" onClick={() => treasuryExpenseProofInputRef?.current?.click()}><Receipt className="small-icon" />上傳支出證明</button>
+                <button type="button" className="ghost-button compact-btn upload-icon-button" onClick={() => treasuryExpenseProofInputRef?.current?.click()}><img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />上傳支出證明</button>
                 <button type="button" className="primary-button" onClick={saveTreasuryExpense}><RefreshCw className="small-icon" />加入支出</button>
               </div>
               <input ref={treasuryExpenseProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleTreasuryExpenseProofUpload(e.target.files?.[0] || null)} />

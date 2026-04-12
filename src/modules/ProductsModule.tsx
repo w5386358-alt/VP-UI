@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, BarChart3, Layers3, ChevronLeft, ChevronRight, ScanLine } from 'lucide-react';
+import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ChevronLeft, ChevronRight, ScanLine, X } from 'lucide-react';
 
 export default function ProductsModule(props: any) {
   const {
@@ -25,6 +25,18 @@ export default function ProductsModule(props: any) {
     StatusBadge,
   } = props;
 
+  const uploadSymbol = '/icons/upload-symbol.svg';
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileViewport(window.innerWidth <= 900);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const disabledProducts = products.length - enabledProducts;
   const topProducts = filteredProducts.slice(0, 3);
   const [productPage, setProductPage] = useState(1);
@@ -39,6 +51,27 @@ export default function ProductsModule(props: any) {
     if (value) setProductDraft((prev: any) => ({ ...prev, barcode: value }));
   }
 
+  function handleOpenCreateProduct() {
+    openCreateProduct();
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
+  function handleOpenViewProduct(item: any) {
+    openViewProduct(item);
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
+  function handleOpenEditProduct(item: any) {
+    openEditProduct(item);
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
+  function handleOpenSelectedEdit() {
+    if (!selectedProduct) return;
+    openEditProduct(selectedProduct);
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
   return (
     <>
 
@@ -49,7 +82,7 @@ export default function ProductsModule(props: any) {
               <div>
                 <div className="panel-title">商品列表</div>
               </div>
-              <button type="button" className="primary-button" onClick={openCreateProduct}>
+              <button type="button" className="primary-button" onClick={handleOpenCreateProduct}>
                 <Package className="small-icon" />新增商品
               </button>
             </div>
@@ -85,10 +118,10 @@ export default function ProductsModule(props: any) {
                   </div>
 
                   <div className="product-card-actions">
-                    <button type="button" className="ghost-button compact-btn" onClick={() => openViewProduct(item)}>
+                    <button type="button" className="ghost-button compact-btn" onClick={() => handleOpenViewProduct(item)}>
                       <Eye className="small-icon" />查看
                     </button>
-                    <button type="button" className="ghost-button compact-btn" onClick={() => openEditProduct(item)}>
+                    <button type="button" className="ghost-button compact-btn" onClick={() => handleOpenEditProduct(item)}>
                       <PencilLine className="small-icon" />編輯
                     </button>
                     <button type="button" className={`ui-switch ${item.enabled ? 'on' : 'off'}`} onClick={() => toggleProductEnabled(item)} aria-label={item.enabled ? '停用商品' : '啟用商品'} aria-pressed={item.enabled}>
@@ -112,7 +145,18 @@ export default function ProductsModule(props: any) {
         </div>
 
         <aside className="product-admin-side">
-          <div className="card order-panel sticky-panel product-editor-panel products-editor-shell">
+          <div className={`card order-panel sticky-panel product-editor-panel products-editor-shell ${isMobileViewport ? 'mobile-editor-shell' : ''} ${mobileEditorOpen ? 'is-open' : ''}`}>
+            {isMobileViewport && (
+              <div className="mobile-editor-head">
+                <div className="mobile-editor-title-wrap">
+                  <div className="mobile-editor-kicker">商品操作卡</div>
+                  <div className="mobile-editor-sub">新增、查看、編輯都集中在這裡</div>
+                </div>
+                <button type="button" className="mobile-editor-close" onClick={() => setMobileEditorOpen(false)} aria-label="關閉商品操作卡">
+                  <X className="small-icon" />
+                </button>
+              </div>
+            )}
             <div className="panel-head compact-head">
               <div>
                 <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
@@ -174,8 +218,8 @@ export default function ProductsModule(props: any) {
                     <>
                       <input ref={productImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleProductImageUpload(e.target.files?.[0] || null)} />
                       <div className="upload-action-row">
-                        <button type="button" className="ghost-button compact-btn" onClick={() => productImageInputRef?.current?.click()}>
-                          <ImageIcon className="small-icon" />上傳商品圖片
+                        <button type="button" className="ghost-button compact-btn upload-icon-button" onClick={() => productImageInputRef?.current?.click()}>
+                          <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />上傳商品圖片
                         </button>
                         {productDraft.image && <button type="button" className="ghost-button compact-btn" onClick={() => setProductDraft((prev: any) => ({ ...prev, image: '' }))}>移除圖片</button>}
                       </div>
@@ -202,7 +246,7 @@ export default function ProductsModule(props: any) {
 
             <div className="accounting-action-row">
               {productEditorMode === 'view' ? (
-                <button type="button" className="primary-button full-width" onClick={() => selectedProduct && openEditProduct(selectedProduct)}>
+                <button type="button" className="primary-button full-width" onClick={handleOpenSelectedEdit}>
                   <PencilLine className="small-icon" />編輯商品
                 </button>
               ) : (
@@ -220,6 +264,14 @@ export default function ProductsModule(props: any) {
           </div>
         </aside>
       </section>
+
+      {isMobileViewport && !mobileEditorOpen && (
+        <button type="button" className="mobile-product-fab" onClick={() => setMobileEditorOpen(true)} aria-label="開啟商品操作卡">
+          <Package className="small-icon" />商品操作
+        </button>
+      )}
+
+      {isMobileViewport && mobileEditorOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEditorOpen(false)} />}
     </>
   );
 }

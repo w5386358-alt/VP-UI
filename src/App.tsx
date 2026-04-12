@@ -4041,7 +4041,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       <aside className="vp-sidebar">
         <div className="vp-brand-panel card">
           <button type="button" className="vp-brand-mark vp-brand-logo-slot" onClick={() => logoImageInputRef.current?.click()}>
-            {logoImage ? <img src={logoImage} alt="品牌 Logo" className="vp-brand-logo-image" /> : <span>LOGO</span>}
+            {logoImage ? <img src={logoImage} alt="品牌 Logo" className="vp-brand-logo-image" /> : <span className="vp-brand-logo-empty"><img src="/icons/upload-symbol.svg" alt="上傳 Logo" className="upload-symbol-icon logo-upload-icon" /><span>LOGO</span></span>}
           </button>
           <input ref={logoImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e: ChangeEvent<HTMLInputElement>) => { handleLogoImageUpload(e.target.files?.[0] || null); e.target.value = ''; }} />
           <div>
