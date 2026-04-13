@@ -11902,3 +11902,67 @@ body,
 .pagination-row-minimal .pagination-btn:hover {
   transform: none !important;
 }
+
+/* === 2026-04-13 fix: real visible shell background layers === */
+:root {
+  --vp-shell-bg-real: #F4EDEF;
+  --vp-shell-sidebar-real: #EFE3E7;
+  --vp-shell-card-real: #FFF8FA;
+  --vp-shell-line-real: #E7D6DB;
+}
+
+html,
+body,
+#root {
+  background: var(--vp-shell-bg-real) !important;
+}
+
+.vp-shell-page,
+.vp-shell,
+.vp-main {
+  background: transparent !important;
+}
+
+.vp-sidebar,
+aside.vp-sidebar {
+  background: var(--vp-shell-sidebar-real) !important;
+  border-right: 1px solid var(--vp-shell-line-real) !important;
+  box-shadow: none !important;
+}
+
+.vp-brand-panel,
+.vp-nav-panel,
+.vp-profile-panel,
+.vp-state-panel,
+.vp-switch-panel,
+.vp-header,
+.vp-workspace.card,
+.vp-workspace,
+.section-intro-shell,
+.order-panel,
+.content-card,
+.workflow-card,
+.summary-card,
+.dashboard-side-card,
+.field-card,
+.shipping-row,
+.data-card,
+.profile-customer-card,
+.history-row,
+.warehouse-reminder-item,
+.profile-action-card-v2,
+.customers-preview-row,
+.customers-info-box,
+.accounting-proof-card,
+.accounting-command-pill,
+.accounting-console-mini,
+.staff-person-card-v2,
+.ranking-row-v2,
+.card {
+  background: var(--vp-shell-card-real) !important;
+  border-color: var(--vp-shell-line-real) !important;
+}
+
+.vp-module-body {
+  background: transparent !important;
+}
