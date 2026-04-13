@@ -11968,25 +11968,27 @@ aside.vp-sidebar {
 }
 
 
-/* === 2026-04-13 login text visibility fix === */
+/* === 2026-04-13 login text restore to dark === */
 .vp-login-card-clean .vp-login-field > span,
 .vp-login-card-clean .vp-login-row-label {
-  color: #fff7fa !important;
+  color: #1f1f1f !important;
   opacity: 1 !important;
-  text-shadow: 0 1px 10px rgba(118, 18, 49, 0.16);
+  text-shadow: none !important;
 }
 
 .vp-login-card-clean .vp-login-field input {
-  color: #5a2c3a !important;
+  color: #1f1f1f !important;
 }
 
 .vp-login-card-clean .vp-login-field input::placeholder {
-  color: #b58b99 !important;
+  color: #6b6b6b !important;
   opacity: 1 !important;
 }
 
 .vp-login-help-clean,
 .vp-login-clean-kicker,
 .vp-login-clean-sub {
+  color: #1f1f1f !important;
   opacity: 1 !important;
+  text-shadow: none !important;
 }
