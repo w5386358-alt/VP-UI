@@ -444,15 +444,8 @@ const ACTION_PERMISSION_GROUPS: Array<{ title: string; items: Array<{ key: strin
   {
     title: '操作權限',
     items: [
-      { key: 'create', label: '可新增' },
       { key: 'edit', label: '可編輯' },
       { key: 'delete', label: '可刪除' },
-      { key: 'payment', label: '可收款' },
-      { key: 'refund', label: '可退款' },
-      { key: 'shipping', label: '可出貨' },
-      { key: 'exchange', label: '可換貨' },
-      { key: 'inbound', label: '可入庫' },
-      { key: 'approve', label: '可審核' },
     ],
   },
 ];

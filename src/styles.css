@@ -11689,88 +11689,76 @@ body {
 }
 
 
-/* === 第三十三版後續微修：骨架霧玫瑰 / 權限鎖定 / 分頁數字穩定 === */
+/* === 第三十三版續修 C：偏紅底色 / 關閉頁數跳動 / 精簡操作權限 === */
 :root {
-  --bg-1: #d88aa1;
-  --bg-2: #c96f88;
-  --bg-3: #e6bcc8;
-  --card: rgba(255, 250, 252, 0.88);
-  --card-strong: rgba(255, 249, 251, 0.94);
-  --line: rgba(255, 231, 238, 0.7);
-  --line-strong: rgba(233, 189, 202, 0.88);
-  --shadow: 0 20px 48px rgba(124, 39, 67, 0.16);
+  --vp-bg: #b30e43;
+  --vp-stage: #c83d67;
+  --vp-primary: #b00e42;
+  --vp-primary-strong: #8f0c36;
 }
 
-body {
+body,
+.vp-shell-page,
+.vp-shell {
   background:
-    radial-gradient(circle at top left, rgba(255, 232, 239, 0.12), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(120, 28, 57, 0.12), transparent 24%),
-    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
-}
-
-.vp-shell,
-.vp-sidebar,
-aside.vp-sidebar,
-.vp-content,
-.vp-brand-panel,
-.vp-nav-panel,
-.vp-state-panel,
-.vp-switch-panel,
-.vp-user-panel,
-.vp-notice-panel {
-  backdrop-filter: blur(14px) saturate(0.94);
+    radial-gradient(circle at 50% 22%, rgba(255,255,255,0.12), transparent 0 24%),
+    linear-gradient(180deg, #b30e43 0%, #c83d67 18%, #d8698d 48%, #ebb0c2 100%) !important;
 }
 
 .vp-sidebar,
-aside.vp-sidebar {
-  background: linear-gradient(180deg, rgba(109, 28, 55, 0.26) 0%, rgba(141, 47, 78, 0.18) 100%);
-  border-color: rgba(255, 232, 238, 0.26);
+.vp-workspace,
+.vp-module-body {
+  background: transparent !important;
 }
 
-.vp-ornament {
-  opacity: 0.52;
-  filter: blur(18px) saturate(0.9);
+.vp-login-shell-page {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255,255,255,.14), rgba(255,255,255,0) 26%),
+    linear-gradient(180deg, #b30e43 0%, #c1174d 20%, #d04f79 48%, #e18baa 74%, #efb9ca 100%) !important;
 }
 
-.pagination-page,
+.vp-login-card-clean {
+  background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.12)) !important;
+}
+
+.vp-login-toggle,
+.vp-login-toggle:hover,
+.vp-login-toggle:active,
 .pagination-btn,
-.pagination-page:hover,
 .pagination-btn:hover,
-.dashboard-quarter-btn,
-.dashboard-quarter-btn:hover,
-.floating-cart-button,
-.floating-cart-button:hover {
+.pagination-btn:active,
+.pagination-page,
+.pagination-page:hover,
+.pagination-page:active,
+.pagination-page.active,
+button.pagination-page,
+button.pagination-btn {
+  transform: none !important;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, opacity .16s ease !important;
+  animation: none !important;
+}
+
+button:hover,
+.nav-button:hover,
+.mobile-nav-btn:hover,
+.primary-button:hover,
+.ghost-button:hover,
+.vp-login-toggle:hover,
+.pagination-page:hover,
+.pagination-btn:hover {
   transform: none !important;
 }
 
-.floating-cart-count,
-.dashboard-radar-center-score,
-.dashboard-radar-svg-score,
-.summary-value,
-.accounting-board-value,
-.dashboard-tree-score,
-.evaluation-metric-value {
-  animation: none !important;
-  transition: none !important;
+.staff-permission-switch-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
-.cart-bump {
-  animation: none !important;
+.staff-permission-block:last-child .staff-permission-switch-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
-.permission-switch-card.locked,
-.permission-switch-card:disabled.locked {
-  opacity: 0.52;
-  cursor: not-allowed;
-  background: rgba(255, 244, 247, 0.72);
-  border-color: rgba(201, 129, 153, 0.32);
-}
-
-.permission-switch-card.locked .mini-toggle {
-  filter: grayscale(0.2);
-}
-
-.accounting-tab-arrow,
-.vp-nav-arrow {
-  opacity: 0.88;
+@media (max-width: 900px) {
+  .staff-permission-switch-grid.compact {
+    grid-template-columns: 1fr !important;
+  }
 }
