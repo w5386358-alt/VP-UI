@@ -12407,8 +12407,7 @@ aside.vp-sidebar {
   }
 }
 
-
-/* === 2026-04-13 mobile rebuild final: center modals / remove blank / fixed fabs === */
+/* 2026-04-13 targeted mobile repair: centered dialogs, no order-page bottom blank, fixed FABs */
 @media (max-width: 900px) {
   body {
     padding-bottom: 0 !important;
@@ -12416,74 +12415,87 @@ aside.vp-sidebar {
 
   .vp-shell,
   .vp-main {
-    padding-bottom: calc(94px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: 0 !important;
   }
 
-  .vp-workspace {
-    padding-bottom: 14px !important;
-  }
-
+  .vp-shell-page,
+  .vp-workspace,
+  .vp-module-body,
   .orders-workspace-grid,
   .order-main,
-  .orders-catalog-panel {
+  .orders-catalog-panel,
+  .orders-catalog-grid {
     margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
   }
 
-  .mobile-modal-shell.is-mobile-open,
-  .cart-drawer-panel.show,
-  .mobile-more-sheet,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .vp-profile-popover,
-  .vp-notification-popover {
-    position: fixed !important;
-    left: 50% !important;
-    top: 50% !important;
-    right: auto !important;
-    bottom: auto !important;
-    width: min(92vw, 420px) !important;
-    max-width: min(92vw, 420px) !important;
-    max-height: min(78dvh, calc(100dvh - 64px)) !important;
-    overflow: auto !important;
-    transform: translate(-50%, -50%) !important;
-    border-radius: 24px !important;
-    z-index: 4200 !important;
+  .vp-shell-page,
+  .vp-shell,
+  .vp-main,
+  .vp-workspace,
+  .vp-module-body {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    will-change: auto !important;
   }
 
   .mobile-editor-backdrop,
-  .cart-drawer-overlay.show,
-  .mobile-more-overlay {
+  .mobile-more-overlay,
+  .cart-drawer-overlay.show {
     position: fixed !important;
     inset: 0 !important;
-    background: rgba(34, 23, 30, 0.24) !important;
-    z-index: 4100 !important;
+    background: rgba(34, 23, 30, 0.26) !important;
+    z-index: 2147483000 !important;
   }
 
-  .mobile-row-action-sheet,
-  .mobile-action-menu,
-  .mobile-entry-menu,
-  .mobile-options-sheet {
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show {
     position: fixed !important;
     left: 50% !important;
     top: 50% !important;
     right: auto !important;
     bottom: auto !important;
-    width: min(90vw, 360px) !important;
-    max-width: min(90vw, 360px) !important;
+    width: min(92vw, 760px) !important;
+    max-width: min(92vw, 760px) !important;
+    max-height: min(78dvh, 720px) !important;
+    height: auto !important;
+    overflow: auto !important;
     transform: translate(-50%, -50%) !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-    padding: 12px !important;
-    z-index: 4300 !important;
+    border-radius: 24px !important;
+    z-index: 2147483100 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
   }
 
-  .mobile-row-action-sheet button,
-  .mobile-action-menu button,
-  .mobile-entry-menu button,
-  .mobile-options-sheet button {
-    width: 100% !important;
-    min-height: 42px !important;
-    white-space: nowrap !important;
+  .cart-drawer-panel.show {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+
+  .mobile-more-head,
+  .cart-drawer-head,
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .mobile-modal-shell.is-mobile-open .mobile-editor-head,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    background: rgba(255, 252, 253, 0.98) !important;
+  }
+
+  .cart-drawer-scroll {
+    overflow: auto !important;
+    max-height: none !important;
+  }
+
+  .cart-drawer-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: rgba(255, 252, 253, 0.98) !important;
   }
 
   .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
@@ -12494,6 +12506,7 @@ aside.vp-sidebar {
   .cart-drawer-panel.show .form-grid.two-col {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
+    align-items: stretch !important;
   }
 
   .mobile-modal-shell.is-mobile-open .field-span-2,
@@ -12516,23 +12529,29 @@ aside.vp-sidebar {
     left: auto !important;
     top: auto !important;
     bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    min-width: 56px !important;
+    max-width: calc(100vw - 28px) !important;
     transform: none !important;
-    z-index: 4050 !important;
+    z-index: 2147482900 !important;
+  }
+
+  .floating-cart-button {
+    justify-content: center !important;
+    padding: 12px 14px !important;
+    border-radius: 18px !important;
   }
 }
 
 @media (max-width: 640px) {
-  .mobile-modal-shell.is-mobile-open,
-  .cart-drawer-panel.show,
   .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
   .product-editor-panel.mobile-editor-shell.is-open,
-  .vp-profile-popover,
-  .vp-notification-popover,
-  .mobile-row-action-sheet,
-  .mobile-action-menu,
-  .mobile-entry-menu,
-  .mobile-options-sheet {
-    width: min(94vw, 380px) !important;
-    max-width: min(94vw, 380px) !important;
+  .cart-drawer-panel.show {
+    width: min(94vw, 560px) !important;
+    max-width: min(94vw, 560px) !important;
+    max-height: min(80dvh, 680px) !important;
+    border-radius: 20px !important;
   }
 }

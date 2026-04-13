@@ -4440,14 +4440,18 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     triggerShellHint('已登出。');
   }
 
-  function openProfileCenter() {
+  function openProfileCenter(mode: 'profile' | 'password' | 'login') {
     setProfileOpen(false);
     setMobileMoreOpen(false);
     if (!canAccessEvaluation(user)) {
-      setShellHint('目前評鑑專區僅核心人員可進入。');
+      if (mode === 'password') setShellHint('變更密碼入口已預留，後續可接真實子頁。');
+      else if (mode === 'login') setShellHint('目前已改成獨立登入頁，可由個人中心登出後檢視。');
+      else setShellHint('目前評鑑專區僅核心人員可進入。');
       return;
     }
     setActive('profile');
+    if (mode === 'password') setShellHint('已切到評鑑頁，可接續放入變更密碼子頁。');
+    else if (mode === 'login') setShellHint('目前已改成獨立登入頁，可由個人中心登出後檢視。');
   }
 
   function triggerShellHint(message: string) {
@@ -4456,9 +4460,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   useEffect(() => {
-    function handleOutside(event: Event) {
-      const target = event.target as Node | null;
-      if (!target) return;
+    function handleOutside(event: MouseEvent) {
+      const target = event.target as Node;
       if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
         setNotificationOpen(false);
       }
@@ -4473,13 +4476,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       }
     }
     document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('pointerdown', handleOutside);
-    document.addEventListener('touchstart', handleOutside, { passive: true });
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('pointerdown', handleOutside);
-      document.removeEventListener('touchstart', handleOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -4862,7 +4859,9 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                       </div>
                       <div className="vp-profile-popover-upload-note">點擊頭像可上傳圖片，未上傳時會自動顯示姓名第 2 個字。</div>
                       <div className="vp-profile-popover-actions">
-                        <button type="button" className="vp-profile-popover-btn primary" onClick={() => openProfileCenter()}>個人資料</button>
+                        <button type="button" className="vp-profile-popover-btn primary" onClick={() => openProfileCenter('profile')}>個人設定</button>
+                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
+                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('login')}>登入</button>
                         <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false);
                     setMobileMoreOpen(false); handleLogout(); }}>登出</button>
                       </div>
