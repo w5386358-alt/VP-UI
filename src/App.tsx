@@ -1663,6 +1663,7 @@ export default function App() {
   const treasuryProofInputRef = useRef<HTMLInputElement | null>(null);
   const treasuryExpenseProofInputRef = useRef<HTMLInputElement | null>(null);
   const [dataMode, setDataMode] = useState<'firebase' | 'offline'>('offline');
+  const [staffAuthReady, setStaffAuthReady] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(true);
   const [loginDraft, setLoginDraft] = useState({ loginId: 'vp001', password: 'vp001' });
@@ -1854,6 +1855,7 @@ export default function App() {
       setOrderRecords(sortOrderRecords(nextOrders));
       setFirebaseReady(true);
       setDataMode('firebase');
+      setStaffAuthReady(true);
       setBootMessage('Firebase 真資料已接入，雙向同步監聽已啟用');
     } catch (error) {
       console.error(error);
@@ -4243,14 +4245,49 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     if (typeof window !== 'undefined') window.localStorage.removeItem('vp-session-login-id');
   }, [staff, sessionLoginId]);
 
+  function resolveLoginStaff(loginIdRaw: string, passwordRaw: string) {
+    const loginId = loginIdRaw.trim();
+    const password = passwordRaw.trim();
+    const normalizedLoginId = loginId.toLowerCase();
+    const matchedStaff = staff.find((item) => {
+      if (!item.enabled) return false;
+      const itemLoginId = String(item.loginId || '').trim().toLowerCase();
+      const itemPassword = String(item.password || item.loginId || '').trim();
+      return itemLoginId === normalizedLoginId && itemPassword === password;
+    });
+    if (matchedStaff) return matchedStaff;
+
+    const hasFirebaseStaff = staff.some((item) => Boolean(String(item.loginId || '').trim()));
+    const allowFallbackAdmin = !hasFirebaseStaff || dataMode === 'offline';
+    if (allowFallbackAdmin && normalizedLoginId === 'vp001' && password === 'vp001') {
+      return {
+        id: 'vp001',
+        name: '吳秉宸',
+        loginId: 'vp001',
+        role: '系統組',
+        rank: '核心成員',
+        enabled: true,
+        password: 'vp001',
+        permissions: ['全模組管理'],
+        permissionConfig: createDefaultPermissionConfig('系統組'),
+      } as Staff;
+    }
+    return null;
+  }
+
   function handleLoginSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!staffAuthReady) {
+      setLoginError('人員資料讀取中，請稍候再試。');
+      return;
+    }
     const loginId = loginDraft.loginId.trim();
     const password = loginDraft.password.trim();
-    const fallbackAdmin = loginId === 'vp001' && password === 'vp001'
-      ? { id: 'vp001', name: '吳秉宸', loginId: 'vp001', role: '系統組', rank: '核心成員', enabled: true, password: 'vp001', permissions: ['全模組管理'], permissionConfig: createDefaultPermissionConfig('系統組') } as Staff
-      : null;
-    const matched = staff.find((item) => item.loginId === loginId && (item.password || item.loginId) === password && item.enabled) || fallbackAdmin;
+    if (!loginId || !password) {
+      setLoginError('請輸入帳號與密碼。');
+      return;
+    }
+    const matched = resolveLoginStaff(loginId, password);
     if (!matched) {
       setLoginError('帳號或密碼不正確，或此帳號已停用。');
       return;
@@ -4358,7 +4395,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <span className="vp-login-row-label">記住登入狀態</span>
               </div>
               {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
-              <button type="submit" className="primary-button vp-login-submit">登入系統</button>
+              <button type="submit" className="primary-button vp-login-submit" disabled={!staffAuthReady}>登入系統</button>
             </form>
             <div className="vp-login-help vp-login-help-clean">
               <strong>vp001 / vp001</strong>
