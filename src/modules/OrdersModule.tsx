@@ -274,7 +274,7 @@ export default function OrdersModule(props: any) {
                 </div>
               ))}
             </div>
-            <div className="pagination-row">
+            <div className="pagination-row pagination-row-minimal pagination-row-angle">
               <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setProductPage((page) => Math.max(1, page - 1))} disabled={safeProductPage === 1} aria-label="上一頁">&lt;</button>
               <div className="pagination-pages">
                 {productPageNumbers.map((page) => (
@@ -302,7 +302,7 @@ export default function OrdersModule(props: any) {
                 </button>
               ))}
             </div>
-            <div className="pagination-row">
+            <div className="pagination-row pagination-row-minimal pagination-row-angle">
               <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setQuickCustomerPage((page) => Math.max(1, page - 1))} disabled={safeQuickCustomerPage === 1} aria-label="上一頁">&lt;</button>
               <div className="pagination-pages">
                 {quickCustomerPageNumbers.map((page) => (
