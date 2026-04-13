@@ -4,12 +4,12 @@ import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCa
 
 export default function InventoryModule(props: any) {
   const {
-    visibleWarehouseTabs = ['shipping', 'stock', 'query'],
     lowStockCount,
     shippingQueue,
     filteredWarehouseQueue,
     warehouseTab,
     setWarehouseTab,
+    visibleWarehouseTabs = ['shipping', 'stock', 'query'],
     selectedWarehouseOrder,
     selectedWarehouseOrderNo,
     setSelectedWarehouseOrderNo,
@@ -100,11 +100,13 @@ export default function InventoryModule(props: any) {
     setMobileWarehousePanelOpen(true);
   }
 
-  const warehouseTabs = [
+
+  const warehouseTabMeta = [
     { key: 'shipping', label: '出貨區', icon: Truck },
     { key: 'stock', label: '庫存區', icon: Boxes },
     { key: 'query', label: '查詢區', icon: Search },
-  ].filter((item) => visibleWarehouseTabs.includes(item.key));
+  ];
+  const filteredWarehouseTabs = warehouseTabMeta.filter((item) => visibleWarehouseTabs.includes(item.key));
 
   return (
     <>
@@ -112,11 +114,9 @@ export default function InventoryModule(props: any) {
       {mobileInboundPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileInboundPanelOpen(false)} />}
 
       <div className="warehouse-tab-row warehouse-primary-tabs">
-        {warehouseTabs.map((item: any) => {
+        {filteredWarehouseTabs.map((item: any) => {
           const Icon = item.icon;
-          return (
-            <button key={item.key} type="button" className={`warehouse-tab ${warehouseTab === item.key ? 'active' : ''}`} onClick={() => setWarehouseTab(item.key as any)}><Icon className="small-icon" /><span>{item.label}</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-          );
+          return <button key={item.key} type="button" className={`warehouse-tab ${warehouseTab === item.key ? 'active' : ''}`} onClick={() => setWarehouseTab(item.key)}><Icon className="small-icon" /><span>{item.label}</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>;
         })}
       </div>
 

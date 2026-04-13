@@ -4,8 +4,8 @@ import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, W
 
 export default function AccountingModule(props: any) {
   const {
-    visibleAccountingTabs = ['ops', 'bonus', 'treasury', 'stats', 'ranking', 'evaluation'],
     accountingTab, setAccountingTab,
+    visibleAccountingTabs = ['ops', 'bonus', 'treasury', 'stats', 'ranking', 'evaluation'],
     filteredAccountingQueue,
     accountingKeyword, setAccountingKeyword,
     accountingPaymentFilter, setAccountingPaymentFilter,
@@ -57,23 +57,23 @@ export default function AccountingModule(props: any) {
     if (value) updateTreasuryExpenseField('referenceNo', value);
   }
 
-  const accountingTabs = [
+
+  const accountingTabMeta = [
     { key: 'ops', label: '收款作業', icon: CreditCard },
     { key: 'bonus', label: '獎金入帳', icon: Coins },
     { key: 'treasury', label: '出納', icon: Wallet },
     { key: 'stats', label: '營運報表', icon: BarChart3 },
     { key: 'ranking', label: '排名 / 熱銷', icon: Trophy },
     { key: 'evaluation', label: '評鑑分數', icon: Medal },
-  ].filter((item) => visibleAccountingTabs.includes(item.key));
+  ];
+  const filteredAccountingTabs = accountingTabMeta.filter((item) => visibleAccountingTabs.includes(item.key));
 
   return (
     <section className="accounting-shell-v2">
       <div className="accounting-tab-row accounting-tab-row-v2">
-        {accountingTabs.map((item: any) => {
+        {filteredAccountingTabs.map((item: any) => {
           const Icon = item.icon;
-          return (
-            <button key={item.key} type="button" className={`accounting-tab ${accountingTab === item.key ? 'active' : ''}`} onClick={() => setAccountingTab(item.key as any)}><Icon className="small-icon" /><span>{item.label}</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-          );
+          return <button key={item.key} type="button" className={`accounting-tab ${accountingTab === item.key ? 'active' : ''}`} onClick={() => setAccountingTab(item.key)}><Icon className="small-icon" /><span>{item.label}</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>;
         })}
       </div>
 
