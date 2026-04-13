@@ -12597,3 +12597,221 @@ aside.vp-sidebar {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* 2026-04-14 cleanup phase6: adaptive modal sizing / universal scroll / mobile staff recover */
+@media (max-width: 900px) {
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show,
+  .mobile-staff-editor.is-mobile-open {
+    left: 12px !important;
+    right: 12px !important;
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
+    bottom: auto !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: min(240px, calc(100dvh - 120px)) !important;
+    max-height: calc(100dvh - 96px - env(safe-area-inset-bottom, 0px)) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .mobile-more-body,
+  .mobile-modal-body,
+  .evaluation-modal-body,
+  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
+  .mobile-modal-shell.is-mobile-open .staff-editor-body,
+  .mobile-modal-shell.is-mobile-open .product-editor-body,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body,
+  .cart-drawer-scroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .mobile-more-body,
+  .mobile-modal-body,
+  .evaluation-modal-body {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .cart-drawer-panel.show .form-grid.two-col {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .field-span-2,
+  .mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
+  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
+  .cart-drawer-panel.show .field-span-2 {
+    grid-column: 1 / -1 !important;
+  }
+
+  .mobile-staff-editor:not(.is-mobile-open) {
+    display: none !important;
+  }
+
+  .staff-main-v2,
+  .staff-list-card-v2,
+  .staff-record-grid-v2 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .cart-drawer-panel.show .form-grid.two-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* 2026-04-14 cleanup phase7: fix mobile panel scroll / staff runtime / adaptive body */
+@media (max-width: 900px) {
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show,
+  .mobile-staff-editor.is-mobile-open {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 220px !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .mobile-more-head,
+  .mobile-editor-head,
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
+  .cart-drawer-panel.show .cart-drawer-head {
+    flex: 0 0 auto !important;
+  }
+
+  .mobile-more-body,
+  .mobile-modal-body,
+  .evaluation-modal-body,
+  .staff-editor-body,
+  .product-editor-body,
+  .cart-drawer-scroll {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open,
+  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 12px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    margin-top: auto !important;
+    border-top: 1px solid rgba(69, 26, 43, 0.08) !important;
+    background: rgba(255,252,253,0.96) !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .staff-editor-body .form-grid.two-col,
+  .mobile-more-grid,
+  .cart-drawer-panel.show .form-grid.two-col {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  .mobile-more-grid > *,
+  .warehouse-form-grid > .wide,
+  .warehouse-form-grid > .fake-field.wide,
+  .staff-editor-body .field-span-2,
+  .staff-editor-body .fake-field.wide,
+  .product-editor-body .field-span-2,
+  .product-editor-body .fake-field.wide,
+  .mobile-evaluation-card .evaluation-submit-row,
+  .cart-drawer-panel.show .field-span-2 {
+    grid-column: 1 / -1 !important;
+  }
+
+  .staff-side-v2 {
+    min-height: 0 !important;
+  }
+
+  .staff-editor-panel-v2.mobile-staff-editor.is-mobile-open {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .staff-editor-body .form-grid.two-col,
+  .mobile-more-grid,
+  .cart-drawer-panel.show .form-grid.two-col {
+    grid-template-columns: 1fr !important;
+  }
+}

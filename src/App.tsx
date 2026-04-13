@@ -4532,40 +4532,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <button type="button" className="drawer-close-button" onClick={() => setMobileMoreOpen(false)}>關閉</button>
         </div>
 
-        <div className="mobile-more-section">
-          <div className="mobile-more-section-title">常用功能</div>
-          <div className="mobile-more-grid">
-            {mobileMoreCommonItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
-                  onClick={() => {
-                    setActive(item.key);
-                    setMobileMoreOpen(false);
-                  }}
-                >
-                  <Icon className="small-icon" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {mobileManagementItems.length > 0 && (
+        <div className="mobile-more-body">
           <div className="mobile-more-section">
-            <div className="mobile-more-section-title">系統管理</div>
+            <div className="mobile-more-section-title">常用功能</div>
             <div className="mobile-more-grid">
-              {mobileManagementItems.map((item) => {
+              {mobileMoreCommonItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.key}
                     type="button"
-                    className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
+                    className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
                     onClick={() => {
                       setActive(item.key);
                       setMobileMoreOpen(false);
@@ -4578,7 +4555,32 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               })}
             </div>
           </div>
-        )}
+
+          {mobileManagementItems.length > 0 && (
+            <div className="mobile-more-section">
+              <div className="mobile-more-section-title">系統管理</div>
+              <div className="mobile-more-grid">
+                {mobileManagementItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
+                      onClick={() => {
+                        setActive(item.key);
+                        setMobileMoreOpen(false);
+                      }}
+                    >
+                      <Icon className="small-icon" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   ) : null;

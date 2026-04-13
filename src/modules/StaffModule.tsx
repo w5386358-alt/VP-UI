@@ -33,6 +33,7 @@ export default function StaffModule(props: any) {
   const [staffPage, setStaffPage] = useState(1);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -57,6 +58,11 @@ export default function StaffModule(props: any) {
     if (isMobileViewport) setMobileEditorOpen(true);
   }
 
+  function handleOpenViewStaff(item: any) {
+    openViewStaff(item);
+    if (isMobileViewport) setMobileEditorOpen(true);
+  }
+
   return (
     <>
       {isMobileViewport && mobileEditorOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEditorOpen(false)} />}
@@ -78,7 +84,7 @@ export default function StaffModule(props: any) {
               <div className="staff-record-grid-v2">
                 {pagedStaff.map((item: any) => (
                   <div key={item.id} className={`card data-card staff-person-card-v2 ${selectedStaffId === item.id ? 'selected' : ''}`}>
-                    <button type="button" className="staff-person-card-main" onClick={() => openViewStaff(item)}>
+                    <button type="button" className="staff-person-card-main" onClick={() => handleOpenViewStaff(item)}>
                     <div className="staff-person-top">
                       <div className="staff-person-avatar">{String(item.name || '?').slice(0, 1)}</div>
                       <div className="staff-person-meta"><div className="data-card-title">{item.name}</div><div className="data-card-subtitle">登入 ID：{item.loginId}</div></div>

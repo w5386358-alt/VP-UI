@@ -272,28 +272,30 @@ export default function ProfileModule(props: any) {
                   </button>
                 </div>
               )}
-              <div className="evaluation-card-head"><Vote className="small-icon" /><span>匿名評分</span></div>
-              <div className="evaluation-form-head">
-                <div>
-                  <div className="evaluation-card-title">評鑑對象：{selectedTarget?.name || '請先選擇'}</div>
-                  <div className="evaluation-card-subtitle">本季：{evaluationQuarter} / 測試期間可重複送出</div>
+              <div className="mobile-modal-body evaluation-modal-body">
+                <div className="evaluation-card-head"><Vote className="small-icon" /><span>匿名評分</span></div>
+                <div className="evaluation-form-head">
+                  <div>
+                    <div className="evaluation-card-title">評鑑對象：{selectedTarget?.name || '請先選擇'}</div>
+                    <div className="evaluation-card-subtitle">本季：{evaluationQuarter} / 測試期間可重複送出</div>
+                  </div>
+                  <span className="badge badge-role">匿名制</span>
                 </div>
-                <span className="badge badge-role">匿名制</span>
-              </div>
-              <div className="evaluation-score-grid">
-                <label className="field-card"><span className="field-label">業績（0-40）</span><input type="number" min="0" max="40" value={draft.sales} onChange={(e) => updateField('sales', e.target.value, 40)} disabled={!selectedTarget} /></label>
-                <label className="field-card"><span className="field-label">協作（0-25）</span><input type="number" min="0" max="25" value={draft.collaboration} onChange={(e) => updateField('collaboration', e.target.value, 25)} disabled={!selectedTarget} /></label>
-                <label className="field-card"><span className="field-label">專業（0-20）</span><input type="number" min="0" max="20" value={draft.professional} onChange={(e) => updateField('professional', e.target.value, 20)} disabled={!selectedTarget} /></label>
-                <label className="field-card"><span className="field-label">效率（0-15）</span><input type="number" min="0" max="15" value={draft.efficiency} onChange={(e) => updateField('efficiency', e.target.value, 15)} disabled={!selectedTarget} /></label>
-              </div>
-              <div className="evaluation-submit-row">
-                <div className="evaluation-total-box">
-                  <span>總分</span>
-                  <strong>{draft.sales + draft.collaboration + draft.professional + draft.efficiency}</strong>
+                <div className="evaluation-score-grid">
+                  <label className="field-card"><span className="field-label">業績（0-40）</span><input type="number" min="0" max="40" value={draft.sales} onChange={(e) => updateField('sales', e.target.value, 40)} disabled={!selectedTarget} /></label>
+                  <label className="field-card"><span className="field-label">協作（0-25）</span><input type="number" min="0" max="25" value={draft.collaboration} onChange={(e) => updateField('collaboration', e.target.value, 25)} disabled={!selectedTarget} /></label>
+                  <label className="field-card"><span className="field-label">專業（0-20）</span><input type="number" min="0" max="20" value={draft.professional} onChange={(e) => updateField('professional', e.target.value, 20)} disabled={!selectedTarget} /></label>
+                  <label className="field-card"><span className="field-label">效率（0-15）</span><input type="number" min="0" max="15" value={draft.efficiency} onChange={(e) => updateField('efficiency', e.target.value, 15)} disabled={!selectedTarget} /></label>
                 </div>
-                <button type="button" className="primary-button" disabled={!selectedTarget} onClick={handleSubmit}><Send className="small-icon" />送出評鑑</button>
+                <div className="evaluation-submit-row">
+                  <div className="evaluation-total-box">
+                    <span>總分</span>
+                    <strong>{draft.sales + draft.collaboration + draft.professional + draft.efficiency}</strong>
+                  </div>
+                  <button type="button" className="primary-button" disabled={!selectedTarget} onClick={handleSubmit}><Send className="small-icon" />送出評鑑</button>
+                </div>
+                {evaluationNotice && <div className={`inline-action-notice ${evaluationNotice.tone}`}><strong>{evaluationNotice.text}</strong></div>}
               </div>
-              {evaluationNotice && <div className={`inline-action-notice ${evaluationNotice.tone}`}><strong>{evaluationNotice.text}</strong></div>}
             </div>
 
             <div className="card evaluation-card">
