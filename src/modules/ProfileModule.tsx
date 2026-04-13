@@ -95,26 +95,6 @@ export default function ProfileModule(props: any) {
 
   return (
     <section className="evaluation-shell evaluation-shell-v2">
-      <div className="card order-panel">
-        <div className="panel-head">
-          <div>
-            <div className="panel-title">個人資料</div>
-            <div className="panel-desc">可直接在 UI 編輯，並即時寫回 Firebase staff。</div>
-          </div>
-          <span className="badge badge-role">{isBackupProfile ? '備用 key' : 'Firebase 同步'}</span>
-        </div>
-        <div className="form-grid two-col form-gap-top">
-          <label className="field-card field-span-2">
-            <span className="field-label"><UserRound className="small-icon" />姓名</span>
-            <input value={profileDraft?.name || ''} onChange={(e) => updateProfileDraftField?.('name', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-        </div>
-        <div className="accounting-action-row">
-          <button type="button" className="primary-button" onClick={() => saveProfileDraft?.()} disabled={!!isBackupProfile}>儲存個人資料</button>
-        </div>
-        {isBackupProfile && <div className="inline-action-notice neutral"><strong>vp001 是緊急備用 key，不寫回 Firebase。</strong></div>}
-        {profileNotice && <div className={`inline-action-notice ${profileNotice.tone}`}><strong>{profileNotice.text}</strong></div>}
-      </div>
 
       {!canEvaluate && (
         <div className="card evaluation-lock-card evaluation-lock-card-wide">

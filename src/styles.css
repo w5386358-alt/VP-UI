@@ -12408,59 +12408,82 @@ aside.vp-sidebar {
 }
 
 
-/* 2026-04-13 mobile final stabilization patch */
+/* === 2026-04-13 mobile rebuild final: center modals / remove blank / fixed fabs === */
 @media (max-width: 900px) {
   body {
-    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .vp-shell {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .vp-main {
     padding-bottom: 0 !important;
-    min-height: auto !important;
+  }
+
+  .vp-shell,
+  .vp-main {
+    padding-bottom: calc(94px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .vp-workspace {
     padding-bottom: 14px !important;
-    margin-bottom: 0 !important;
   }
 
-  .vp-module-body,
   .orders-workspace-grid,
   .order-main,
   .orders-catalog-panel {
     margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
   }
 
-  .mobile-more-sheet,
   .mobile-modal-shell.is-mobile-open,
+  .cart-drawer-panel.show,
+  .mobile-more-sheet,
   .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
+  .vp-profile-popover,
+  .vp-notification-popover {
     position: fixed !important;
     left: 50% !important;
-    right: auto !important;
     top: 50% !important;
+    right: auto !important;
     bottom: auto !important;
-    width: min(calc(100vw - 24px), 560px) !important;
-    max-width: calc(100vw - 24px) !important;
-    max-height: min(76dvh, calc(100dvh - 120px)) !important;
+    width: min(92vw, 420px) !important;
+    max-width: min(92vw, 420px) !important;
+    max-height: min(78dvh, calc(100dvh - 64px)) !important;
+    overflow: auto !important;
     transform: translate(-50%, -50%) !important;
-    overflow: auto !important;
-    margin: 0 !important;
+    border-radius: 24px !important;
+    z-index: 4200 !important;
   }
 
-  .cart-drawer-panel.show {
+  .mobile-editor-backdrop,
+  .cart-drawer-overlay.show,
+  .mobile-more-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(34, 23, 30, 0.24) !important;
+    z-index: 4100 !important;
+  }
+
+  .mobile-row-action-sheet,
+  .mobile-action-menu,
+  .mobile-entry-menu,
+  .mobile-options-sheet {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: min(90vw, 360px) !important;
+    max-width: min(90vw, 360px) !important;
+    transform: translate(-50%, -50%) !important;
     display: grid !important;
-    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    z-index: 4300 !important;
   }
 
-  .cart-drawer-scroll {
-    overflow: auto !important;
-    padding-bottom: 12px !important;
+  .mobile-row-action-sheet button,
+  .mobile-action-menu button,
+  .mobile-entry-menu button,
+  .mobile-options-sheet button {
+    width: 100% !important;
+    min-height: 42px !important;
+    white-space: nowrap !important;
   }
 
   .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
@@ -12494,25 +12517,22 @@ aside.vp-sidebar {
     top: auto !important;
     bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
     transform: none !important;
+    z-index: 4050 !important;
   }
 }
 
 @media (max-width: 640px) {
-  body {
-    padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .vp-shell {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-more-sheet,
   .mobile-modal-shell.is-mobile-open,
+  .cart-drawer-panel.show,
+  .mobile-more-sheet,
   .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
-    max-height: min(78dvh, calc(100dvh - 104px)) !important;
-    border-radius: 20px !important;
+  .vp-profile-popover,
+  .vp-notification-popover,
+  .mobile-row-action-sheet,
+  .mobile-action-menu,
+  .mobile-entry-menu,
+  .mobile-options-sheet {
+    width: min(94vw, 380px) !important;
+    max-width: min(94vw, 380px) !important;
   }
 }
