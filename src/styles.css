@@ -11687,3 +11687,90 @@ body {
   transform: none !important;
   font-variant-numeric: tabular-nums;
 }
+
+
+/* === 第三十三版後續微修：骨架霧玫瑰 / 權限鎖定 / 分頁數字穩定 === */
+:root {
+  --bg-1: #d88aa1;
+  --bg-2: #c96f88;
+  --bg-3: #e6bcc8;
+  --card: rgba(255, 250, 252, 0.88);
+  --card-strong: rgba(255, 249, 251, 0.94);
+  --line: rgba(255, 231, 238, 0.7);
+  --line-strong: rgba(233, 189, 202, 0.88);
+  --shadow: 0 20px 48px rgba(124, 39, 67, 0.16);
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 232, 239, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(120, 28, 57, 0.12), transparent 24%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 48%, var(--bg-3) 100%);
+}
+
+.vp-shell,
+.vp-sidebar,
+aside.vp-sidebar,
+.vp-content,
+.vp-brand-panel,
+.vp-nav-panel,
+.vp-state-panel,
+.vp-switch-panel,
+.vp-user-panel,
+.vp-notice-panel {
+  backdrop-filter: blur(14px) saturate(0.94);
+}
+
+.vp-sidebar,
+aside.vp-sidebar {
+  background: linear-gradient(180deg, rgba(109, 28, 55, 0.26) 0%, rgba(141, 47, 78, 0.18) 100%);
+  border-color: rgba(255, 232, 238, 0.26);
+}
+
+.vp-ornament {
+  opacity: 0.52;
+  filter: blur(18px) saturate(0.9);
+}
+
+.pagination-page,
+.pagination-btn,
+.pagination-page:hover,
+.pagination-btn:hover,
+.dashboard-quarter-btn,
+.dashboard-quarter-btn:hover,
+.floating-cart-button,
+.floating-cart-button:hover {
+  transform: none !important;
+}
+
+.floating-cart-count,
+.dashboard-radar-center-score,
+.dashboard-radar-svg-score,
+.summary-value,
+.accounting-board-value,
+.dashboard-tree-score,
+.evaluation-metric-value {
+  animation: none !important;
+  transition: none !important;
+}
+
+.cart-bump {
+  animation: none !important;
+}
+
+.permission-switch-card.locked,
+.permission-switch-card:disabled.locked {
+  opacity: 0.52;
+  cursor: not-allowed;
+  background: rgba(255, 244, 247, 0.72);
+  border-color: rgba(201, 129, 153, 0.32);
+}
+
+.permission-switch-card.locked .mini-toggle {
+  filter: grayscale(0.2);
+}
+
+.accounting-tab-arrow,
+.vp-nav-arrow {
+  opacity: 0.88;
+}

@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye, Sparkles, BadgeCheck, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
 
 export default function StaffModule(props: any) {
+  function getParentModuleKey(subpageKey: string) {
+    if (subpageKey.startsWith('inventory_')) return 'inventory';
+    if (subpageKey.startsWith('accounting_')) return 'accounting';
+    if (subpageKey.startsWith('profile_')) return 'profile';
+    return null;
+  }
+
   const {
     staff,
     activeStaff,
@@ -194,12 +201,17 @@ export default function StaffModule(props: any) {
                       <div key={group.title} className="staff-permission-group">
                         <div className="staff-permission-group-title">{group.title}</div>
                         <div className="staff-permission-switch-grid compact">
-                          {group.items.map((item: any) => (
-                            <button key={item.key} type="button" className={`permission-switch-card ${staffDraft.permissionConfig?.subpages?.[item.key] ? 'active' : ''}`} onClick={() => staffEditorMode !== 'view' && updateStaffPermission('subpages', item.key, !staffDraft.permissionConfig?.subpages?.[item.key])} disabled={staffEditorMode === 'view'}>
-                              <span>{item.label}</span>
-                              <span className={`mini-toggle ${staffDraft.permissionConfig?.subpages?.[item.key] ? 'on' : 'off'}`} />
-                            </button>
-                          ))}
+                          {group.items.map((item: any) => {
+                            const parentModuleKey = getParentModuleKey(item.key);
+                            const parentModuleEnabled = parentModuleKey ? Boolean(staffDraft.permissionConfig?.modules?.[parentModuleKey]) : true;
+                            const isDisabled = staffEditorMode === 'view' || !parentModuleEnabled;
+                            return (
+                              <button key={item.key} type="button" className={`permission-switch-card ${staffDraft.permissionConfig?.subpages?.[item.key] ? 'active' : ''} ${!parentModuleEnabled ? 'locked' : ''}`} onClick={() => !isDisabled && updateStaffPermission('subpages', item.key, !staffDraft.permissionConfig?.subpages?.[item.key])} disabled={isDisabled}>
+                                <span>{item.label}</span>
+                                <span className={`mini-toggle ${staffDraft.permissionConfig?.subpages?.[item.key] ? 'on' : 'off'}`} />
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
