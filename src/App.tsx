@@ -4460,8 +4460,11 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   useEffect(() => {
-    function handleOutside(event: MouseEvent) {
-      const target = event.target as Node;
+    function handleOutside(event: MouseEvent | TouchEvent | PointerEvent) {
+      const rawTarget = 'target' in event ? event.target : null;
+      const target = rawTarget as Node | null;
+      const element = rawTarget as HTMLElement | null;
+      if (!target) return;
       if (notificationPanelRef.current && !notificationPanelRef.current.contains(target)) {
         setNotificationOpen(false);
       }
@@ -4469,14 +4472,19 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         setProfileOpen(false);
       }
       if (mobileMoreSheetRef.current && !mobileMoreSheetRef.current.contains(target)) {
-        const element = target as HTMLElement | null;
         if (!element?.closest('.mobile-nav')) {
           setMobileMoreOpen(false);
         }
       }
     }
     document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
+    document.addEventListener('pointerdown', handleOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('pointerdown', handleOutside);
+    };
   }, []);
   useEffect(() => {
     if (typeof window === 'undefined') return;

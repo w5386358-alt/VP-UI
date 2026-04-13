@@ -104,21 +104,9 @@ export default function ProfileModule(props: any) {
           <span className="badge badge-role">{isBackupProfile ? '備用 key' : 'Firebase 同步'}</span>
         </div>
         <div className="form-grid two-col form-gap-top">
-          <label className="field-card">
+          <label className="field-card field-span-2">
             <span className="field-label"><UserRound className="small-icon" />姓名</span>
             <input value={profileDraft?.name || ''} onChange={(e) => updateProfileDraftField?.('name', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-          <label className="field-card">
-            <span className="field-label"><UserRound className="small-icon" />登入 ID</span>
-            <input value={profileDraft?.loginId || ''} onChange={(e) => updateProfileDraftField?.('loginId', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-          <label className="field-card">
-            <span className="field-label"><Lock className="small-icon" />密碼</span>
-            <input value={profileDraft?.password || ''} onChange={(e) => updateProfileDraftField?.('password', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-          <label className="field-card">
-            <span className="field-label"><Medal className="small-icon" />身分 / 階級</span>
-            <input value={`${profileDraft?.role || ''} / ${profileDraft?.rank || ''}`} readOnly />
           </label>
         </div>
         <div className="accounting-action-row">
