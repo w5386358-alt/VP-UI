@@ -11773,18 +11773,21 @@ html,
 body,
 #root,
 .vp-shell-page,
-.vp-shell,
-.vp-login-shell-page {
+.vp-shell {
   background: var(--vp-flat-rose-bg) !important;
 }
 
 .vp-login-shell-page {
   min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 207, 227, 0.28), rgba(255, 207, 227, 0) 24%),
+    radial-gradient(circle at 78% 28%, rgba(255, 178, 208, 0.2), rgba(255, 178, 208, 0) 18%),
+    linear-gradient(180deg, #b30e43 0%, #c83d67 18%, #d8698d 48%, #ebb0c2 100%) !important;
 }
 
 .vp-login-bg-orb,
 .vp-login-backdrop {
-  display: none !important;
+  display: block !important;
 }
 
 .vp-login-password-wrap {
