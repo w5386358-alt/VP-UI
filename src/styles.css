@@ -11966,3 +11966,27 @@ aside.vp-sidebar {
 .vp-module-body {
   background: transparent !important;
 }
+
+
+/* === 2026-04-13 login text visibility fix === */
+.vp-login-card-clean .vp-login-field > span,
+.vp-login-card-clean .vp-login-row-label {
+  color: #fff7fa !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 10px rgba(118, 18, 49, 0.16);
+}
+
+.vp-login-card-clean .vp-login-field input {
+  color: #5a2c3a !important;
+}
+
+.vp-login-card-clean .vp-login-field input::placeholder {
+  color: #b58b99 !important;
+  opacity: 1 !important;
+}
+
+.vp-login-help-clean,
+.vp-login-clean-kicker,
+.vp-login-clean-sub {
+  opacity: 1 !important;
+}
