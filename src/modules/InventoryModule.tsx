@@ -4,6 +4,7 @@ import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCa
 
 export default function InventoryModule(props: any) {
   const {
+    visibleWarehouseTabs = ['shipping', 'stock', 'query'],
     lowStockCount,
     shippingQueue,
     filteredWarehouseQueue,
@@ -99,15 +100,24 @@ export default function InventoryModule(props: any) {
     setMobileWarehousePanelOpen(true);
   }
 
+  const warehouseTabs = [
+    { key: 'shipping', label: '出貨區', icon: Truck },
+    { key: 'stock', label: '庫存區', icon: Boxes },
+    { key: 'query', label: '查詢區', icon: Search },
+  ].filter((item) => visibleWarehouseTabs.includes(item.key));
+
   return (
     <>
       {mobileWarehousePanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileWarehousePanelOpen(false)} />}
       {mobileInboundPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileInboundPanelOpen(false)} />}
 
       <div className="warehouse-tab-row warehouse-primary-tabs">
-        <button type="button" className={`warehouse-tab ${warehouseTab === 'shipping' ? 'active' : ''}`} onClick={() => setWarehouseTab('shipping')}><Truck className="small-icon" /><span>出貨區</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`warehouse-tab ${warehouseTab === 'stock' ? 'active' : ''}`} onClick={() => setWarehouseTab('stock')}><Boxes className="small-icon" /><span>庫存區</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`warehouse-tab ${warehouseTab === 'query' ? 'active' : ''}`} onClick={() => setWarehouseTab('query')}><Search className="small-icon" /><span>查詢區</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        {warehouseTabs.map((item: any) => {
+          const Icon = item.icon;
+          return (
+            <button key={item.key} type="button" className={`warehouse-tab ${warehouseTab === item.key ? 'active' : ''}`} onClick={() => setWarehouseTab(item.key as any)}><Icon className="small-icon" /><span>{item.label}</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+          );
+        })}
       </div>
 
       {warehouseTab === 'shipping' && (

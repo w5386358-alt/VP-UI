@@ -4,6 +4,7 @@ import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, W
 
 export default function AccountingModule(props: any) {
   const {
+    visibleAccountingTabs = ['ops', 'bonus', 'treasury', 'stats', 'ranking', 'evaluation'],
     accountingTab, setAccountingTab,
     filteredAccountingQueue,
     accountingKeyword, setAccountingKeyword,
@@ -56,15 +57,24 @@ export default function AccountingModule(props: any) {
     if (value) updateTreasuryExpenseField('referenceNo', value);
   }
 
+  const accountingTabs = [
+    { key: 'ops', label: '收款作業', icon: CreditCard },
+    { key: 'bonus', label: '獎金入帳', icon: Coins },
+    { key: 'treasury', label: '出納', icon: Wallet },
+    { key: 'stats', label: '營運報表', icon: BarChart3 },
+    { key: 'ranking', label: '排名 / 熱銷', icon: Trophy },
+    { key: 'evaluation', label: '評鑑分數', icon: Medal },
+  ].filter((item) => visibleAccountingTabs.includes(item.key));
+
   return (
     <section className="accounting-shell-v2">
       <div className="accounting-tab-row accounting-tab-row-v2">
-        <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" /><span>收款作業</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'bonus' ? 'active' : ''}`} onClick={() => setAccountingTab('bonus')}><Coins className="small-icon" /><span>獎金入帳</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'treasury' ? 'active' : ''}`} onClick={() => setAccountingTab('treasury')}><Wallet className="small-icon" /><span>出納</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" /><span>營運報表</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" /><span>排名 / 熱銷</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'evaluation' ? 'active' : ''}`} onClick={() => setAccountingTab('evaluation')}><Medal className="small-icon" /><span>評鑑分數</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        {accountingTabs.map((item: any) => {
+          const Icon = item.icon;
+          return (
+            <button key={item.key} type="button" className={`accounting-tab ${accountingTab === item.key ? 'active' : ''}`} onClick={() => setAccountingTab(item.key as any)}><Icon className="small-icon" /><span>{item.label}</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+          );
+        })}
       </div>
 
       {accountingTab === 'ops' && (

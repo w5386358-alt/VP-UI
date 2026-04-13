@@ -546,11 +546,25 @@ function canAccessNav(user: SessionUser, key: NavKey) {
   return hasModuleAccess(user, key);
 }
 
+function canAccessSubpage(user: SessionUser, key: string) {
+  const parentModule = getModuleKeyForSubpage(key);
+  if (parentModule && !canAccessNav(user, parentModule)) return false;
+  const explicitRule = user.permissionConfig?.subpages?.[key];
+  if (typeof explicitRule === 'boolean') return explicitRule;
+  return true;
+}
+
+function canAccessProfileModule(user: SessionUser) {
+  if (!canAccessNav(user, 'profile')) return false;
+  const profileKeys = ['profile_personal', 'profile_anonymous', 'profile_records'];
+  return profileKeys.some((key) => canAccessSubpage(user, key));
+}
+
 function canAccessEvaluation(user: SessionUser) {
-  const canSeeProfile = canAccessNav(user, 'profile');
+  if (!canAccessProfileModule(user)) return false;
   const anonymousAllowed = user.permissionConfig?.subpages?.profile_anonymous;
-  if (typeof anonymousAllowed === 'boolean') return canSeeProfile && anonymousAllowed;
-  return user.rankKey === 'core' && canSeeProfile;
+  if (typeof anonymousAllowed === 'boolean') return anonymousAllowed;
+  return user.rankKey === 'core';
 }
 
 function getProfileTriggerLabel(name: string) {
@@ -3018,7 +3032,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
 
-  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessProfileModule(user))), [user]);
   const mobilePrimaryNavItems: { key: MobileNavKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: 'dashboard', label: '儀表板', icon: BarChart3 },
     { key: 'orders', label: '訂購', icon: ShoppingCart },
@@ -3028,7 +3042,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   ];
   const mobileMoreCommonItems = useMemo(() => [
     { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
-  ].filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
+  ].filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessProfileModule(user))), [user]);
   const mobileManagementItems = useMemo(() => [
     { key: 'products' as NavKey, label: '商品管理', icon: Package },
     { key: 'customers' as NavKey, label: '客戶管理', icon: Users },
@@ -3037,6 +3051,19 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const currentNavItem = navItems.find((item) => item.key === active) || navItems[0];
   const currentModuleLabel = currentNavItem.label;
   const currentModuleEnglish = NAV_ENGLISH_LABEL[currentNavItem.key];
+  const visibleWarehouseTabs = useMemo(() => ([
+    { key: 'shipping' as WarehouseTab, permissionKey: 'inventory_shipping' },
+    { key: 'stock' as WarehouseTab, permissionKey: 'inventory_stock' },
+    { key: 'query' as WarehouseTab, permissionKey: 'inventory_query' },
+  ].filter((item) => canAccessSubpage(user, item.permissionKey)).map((item) => item.key)), [user]);
+  const visibleAccountingTabs = useMemo(() => ([
+    { key: 'ops' as AccountingTab, permissionKey: 'accounting_ops' },
+    { key: 'bonus' as AccountingTab, permissionKey: 'accounting_bonus' },
+    { key: 'treasury' as AccountingTab, permissionKey: 'accounting_treasury' },
+    { key: 'stats' as AccountingTab, permissionKey: 'accounting_stats' },
+    { key: 'ranking' as AccountingTab, permissionKey: 'accounting_ranking' },
+    { key: 'evaluation' as AccountingTab, permissionKey: 'accounting_evaluation' },
+  ].filter((item) => canAccessSubpage(user, item.permissionKey)).map((item) => item.key)), [user]);
 
   const customerViewMode = permissionProfile.canViewCustomerSensitiveFields ? 'full' : 'limited';
   const customerScopeLabel = permissionProfile.canViewAllCustomers
@@ -3049,11 +3076,24 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   useEffect(() => {
     const blockedByRole = !canAccessNav(user, active);
-    const blockedEvaluation = active === 'profile' && !canAccessEvaluation(user);
+    const blockedEvaluation = active === 'profile' && !canAccessProfileModule(user);
     if (blockedByRole || blockedEvaluation) {
-      setActive(ROLE_NAV_ACCESS[user.role][0]);
+      const nextAllowedModule = navItems.find((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessProfileModule(user)))?.key || 'dashboard';
+      setActive(nextAllowedModule);
     }
   }, [user, active]);
+
+  useEffect(() => {
+    if (active === 'inventory' && visibleWarehouseTabs.length && !visibleWarehouseTabs.includes(warehouseTab)) {
+      setWarehouseTab(visibleWarehouseTabs[0]);
+    }
+  }, [active, visibleWarehouseTabs, warehouseTab]);
+
+  useEffect(() => {
+    if (active === 'accounting' && visibleAccountingTabs.length && !visibleAccountingTabs.includes(accountingTab)) {
+      setAccountingTab(visibleAccountingTabs[0]);
+    }
+  }, [active, visibleAccountingTabs, accountingTab]);
 
   function addToCart(item: Product) {
     if (!item.enabled || item.stock <= 0) return;
@@ -4609,11 +4649,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   <OrdersModule itemCount={itemCount} shippingMethod={shippingMethod} grandTotal={grandTotal} user={user} priceTierLabel={getPriceTierLabel(user.rankKey)} orderHeroSlides={[{ title: '新品活動', desc: '顯示新品與活動重點。' }, { title: '配送公告', desc: '顯示付款與配送資訊。' }]} orderCategoryChips={orderCategoryChips} orderCategory={orderCategory} setOrderCategory={setOrderCategory} filteredOrderProducts={filteredOrderProducts} addToCart={addToCart} quickCustomerCards={quickCustomerCards} applyQuickCustomer={applyQuickCustomer} customerName={customerName} setCustomerName={setCustomerName} customerPhone={customerPhone} setCustomerPhone={setCustomerPhone} customerAddress={customerAddress} setCustomerAddress={setCustomerAddress} setShippingMethod={setShippingMethod} getShippingFee={getShippingFee} discountMode={discountMode} setDiscountMode={setDiscountMode} discountValue={discountValue} setDiscountValue={setDiscountValue} remark={remark} setRemark={setRemark} cart={cart} removeFromCart={removeFromCart} updateQty={updateQty} subtotal={subtotal} shippingFee={shippingFee} discountAmount={discountAmount} SectionIntro={SectionIntro} orderRecords={orderRecords} selectedOrderRecord={selectedOrderRecord} selectedOrderNo={selectedOrderNo} selectOrderRecord={selectOrderRecord} createOrderRecord={createOrderRecord} markOrderPaid={markOrderPaid} markOrderShippingReady={markOrderShippingReady} orderNotice={orderNotice} />
                 )}
                 {active === 'inventory' && (
-                  <InventoryModule lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
+                  <InventoryModule visibleWarehouseTabs={visibleWarehouseTabs} lowStockCount={lowStockCount} shippingQueue={shippingQueue} filteredWarehouseQueue={filteredWarehouseQueue} warehouseSummary={warehouseSummary} warehouseTab={warehouseTab} setWarehouseTab={setWarehouseTab} selectedWarehouseOrder={selectedWarehouseOrder} selectedWarehouseOrderNo={selectedWarehouseOrderNo} setSelectedWarehouseOrderNo={setSelectedWarehouseOrderNo} warehouseNotice={warehouseNotice} warehouseKeyword={warehouseKeyword} setWarehouseKeyword={setWarehouseKeyword} warehousePaymentFilter={warehousePaymentFilter} setWarehousePaymentFilter={setWarehousePaymentFilter} warehouseShippingFilter={warehouseShippingFilter} setWarehouseShippingFilter={setWarehouseShippingFilter} warehouseDateStart={warehouseDateStart} setWarehouseDateStart={setWarehouseDateStart} warehouseDateEnd={warehouseDateEnd} setWarehouseDateEnd={setWarehouseDateEnd} shippingChecklist={shippingChecklist} warehouseSopPoints={warehouseSopPoints} warehouseReminderItems={warehouseReminderItems} handleWarehouseShip={handleWarehouseShip} handleWarehouseReturn={handleWarehouseReturn} handleWarehouseExchange={handleWarehouseExchange} handleWarehouseInbound={handleWarehouseInbound} warehouseInboundQty={warehouseInboundQty} setWarehouseInboundQty={setWarehouseInboundQty} warehouseInboundQr={warehouseInboundQr} setWarehouseInboundQr={setWarehouseInboundQr} warehouseScanBarcode={warehouseScanBarcode} setWarehouseScanBarcode={setWarehouseScanBarcode} warehouseScanQr={warehouseScanQr} setWarehouseScanQr={setWarehouseScanQr} warehouseExpectedScan={warehouseExpectedScan} warehouseScanValidation={warehouseScanValidation} handleWarehousePrint={handleWarehousePrint} inventoryFlow={inventoryFlow} stockSnapshot={stockSnapshot} selectedStockCode={selectedStockCode} setSelectedStockCode={setSelectedStockCode} selectedStockItem={selectedStockItem} queryExamples={queryExamples} warehouseQueryMode={warehouseQueryMode} setWarehouseQueryMode={setWarehouseQueryMode} warehouseQueryInput={warehouseQueryInput} setWarehouseQueryInput={setWarehouseQueryInput} runWarehouseQuery={runWarehouseQuery} handleWarehouseScanFill={handleWarehouseScanFill} warehouseQueryResult={warehouseQueryResult} warehouseRecentLogs={warehouseRecentLogs} SectionIntro={SectionIntro} SummaryCard={SummaryCard} warehouseShipValidation={warehouseShipValidation} />
                 )}
                 {active === 'accounting' && (
                   
 <AccountingModule
+                    visibleAccountingTabs={visibleAccountingTabs}
                     paymentQueue={paymentQueue}
                     accountingSummary={accountingSummary}
                     accountingTab={accountingTab}
@@ -4676,7 +4717,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} />
+                  <ProfileModule canViewPersonal={canAccessSubpage(user, 'profile_personal')} canViewAnonymous={canAccessSubpage(user, 'profile_anonymous')} canViewRecords={canAccessSubpage(user, 'profile_records')} personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} />
                 )}
               </div>
             </>
@@ -4684,7 +4725,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </section>
 
         <div className="mobile-nav">
-          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
+          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || canAccessNav(user, item.key as NavKey)).map((item) => {
             const Icon = item.icon;
             const isActive = item.key === 'more' ? mobileMoreOpen : (!mobileMoreOpen && active === item.key);
             return (
