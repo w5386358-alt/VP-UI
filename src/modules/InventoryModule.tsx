@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
 import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronRight, X } from 'lucide-react';
@@ -73,6 +74,7 @@ export default function InventoryModule(props: any) {
   const warehouseLogTotalPages = Math.max(1, Math.ceil(warehouseRecentLogs.length / warehouseLogPageSize));
   const warehouseLogSafePage = Math.min(warehouseLogPage, warehouseLogTotalPages);
   const pagedWarehouseRecentLogs = useMemo(() => warehouseRecentLogs.slice((warehouseLogSafePage - 1) * warehouseLogPageSize, warehouseLogSafePage * warehouseLogPageSize), [warehouseRecentLogs, warehouseLogSafePage]);
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
 
   async function handleScanBarcodeLaunch() {
     const value = await scanWithCamera({ title: '倉儲條碼掃描', fallbackLabel: '商品條碼' });
@@ -107,11 +109,12 @@ export default function InventoryModule(props: any) {
     { key: 'query', label: '查詢區', icon: Search },
   ];
   const filteredWarehouseTabs = warehouseTabMeta.filter((item) => visibleWarehouseTabs.includes(item.key));
+  const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
 
   return (
     <>
-      {mobileWarehousePanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileWarehousePanelOpen(false)} />}
-      {mobileInboundPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileInboundPanelOpen(false)} />}
+      {portalRoot && isMobileViewport && mobileWarehousePanelOpen && createPortal(<div className="mobile-editor-backdrop" onClick={() => setMobileWarehousePanelOpen(false)} />, portalRoot)}
+      {portalRoot && isMobileViewport && mobileInboundPanelOpen && createPortal(<div className="mobile-editor-backdrop" onClick={() => setMobileInboundPanelOpen(false)} />, portalRoot)}
 
       <div className="warehouse-tab-row warehouse-primary-tabs">
         {filteredWarehouseTabs.map((item: any) => {
@@ -190,8 +193,10 @@ export default function InventoryModule(props: any) {
           </div>
 
           <div className="warehouse-side warehouse-stack">
+            {isMobileViewport && portalRoot
+              ? mobileWarehousePanelOpen && createPortal((
             <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
-              <div className="warehouse-side-section">
+              <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
                   <div>
                     <div className="flow-title">出貨資訊</div>
@@ -248,6 +253,69 @@ export default function InventoryModule(props: any) {
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
             </div>
+
+              ), portalRoot)
+              : (
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
+              <div className="warehouse-side-section mobile-modal-body">
+                <div className="warehouse-card-head">
+                  <div>
+                    <div className="flow-title">出貨資訊</div>
+                    <div className="flow-desc">查看驗證、出貨資料與狀態。</div>
+                  </div>
+                  <ClipboardCheck className="small-icon" />
+                  <button type="button" className="mobile-panel-close" onClick={() => setMobileWarehousePanelOpen(false)} aria-label="關閉出貨資訊"><X className="small-icon" /></button>
+                </div>
+
+                <div className="warehouse-check-summary-grid">
+                  <div className={`warehouse-check-summary-card ${warehouseShipValidation?.paymentOk ? 'ok' : 'bad'}`}>
+                    <span>收款驗證</span>
+                    <strong>{warehouseShipValidation?.paymentOk ? '已通過' : '未通過'}</strong>
+                  </div>
+                  <div className={`warehouse-check-summary-card ${warehouseShipValidation?.canShip ? 'ok' : 'bad'}`}>
+                    <span>庫存驗證</span>
+                    <strong>{warehouseShipValidation?.canShip ? '可出貨' : '不可出貨'}</strong>
+                  </div>
+                </div>
+
+                <div className="warehouse-form-grid warehouse-command-fields">
+                  <div className="fake-field"><span>訂單編號</span><strong>{selectedWarehouseOrder?.orderNo || '未選擇'}</strong></div>
+                  <div className="fake-field"><span>出貨狀態</span><strong>{selectedWarehouseOrder?.shippingStatus || '-'}</strong></div>
+                  <div className="fake-field"><span>收款狀態</span><strong>{selectedWarehouseOrder?.paymentStatus || '-'}</strong></div>
+                  <div className="fake-field"><span>客戶</span><strong>{selectedWarehouseOrder?.customer || '-'}</strong></div>
+                  <div className="fake-field scanner-inline-field"><span>商品條碼</span><strong><input value={warehouseScanBarcode} onChange={(e) => setWarehouseScanBarcode(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.barcodeOptions?.length ? `例如 ${warehouseExpectedScan.barcodeOptions[0]}` : '請先選單'} /><button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcodeLaunch} aria-label="掃描商品條碼"><QrCode className="small-icon" /></button></strong></div>
+                  <div className="fake-field scanner-inline-field"><span>QR 身分識別</span><strong><input value={warehouseScanQr} onChange={(e) => setWarehouseScanQr(e.target.value.toUpperCase())} placeholder={warehouseExpectedScan?.qrOptions?.length ? `例如 ${warehouseExpectedScan.qrOptions[0]}` : '請先掃商品條碼'} /><button type="button" className="scan-inline-icon-btn" onClick={handleScanQrLaunch} aria-label="掃描 QR 身分識別"><QrCode className="small-icon" /></button></strong></div>
+                  <div className="fake-field wide"><span>預計扣減</span><strong>{selectedWarehouseOrder ? selectedWarehouseOrder.qrSummary : '請先切換訂單'}</strong></div>
+                </div>
+
+                <div className="warehouse-scan-hint-grid">
+                  <div className={`warehouse-scan-hint ${warehouseScanValidation?.barcodeOk ? 'ok' : warehouseScanBarcode ? 'bad' : 'idle'}`}>{warehouseScanValidation?.barcodeMessage}</div>
+                  <div className={`warehouse-scan-hint ${warehouseScanValidation?.qrOk ? 'ok' : warehouseScanQr ? 'bad' : 'idle'}`}>{warehouseScanValidation?.qrMessage}</div>
+                </div>
+
+                {!!warehouseShipValidation?.issues?.length && (
+                  <div className="warehouse-issue-list">
+                    {warehouseShipValidation.issues.map((issue: string) => (
+                      <div key={issue} className="warehouse-issue-item">❌ {issue}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="warehouse-side-section">
+                <div className="accounting-action-row warehouse-action-row">
+                  <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
+                    <Truck className="small-icon" />完成出貨
+                  </button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
+                  <button type="button" className="ghost-button print-icon-button" onClick={handleWarehousePrint}><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印出貨單 PDF</button>
+                </div>
+                {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
+              </div>
+            </div>
+
+              )}
           </div>
         </section>
       )}
@@ -299,6 +367,8 @@ export default function InventoryModule(props: any) {
             </div>
           </div>
 
+          {isMobileViewport && portalRoot
+            ? mobileInboundPanelOpen && createPortal((
           <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
             <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
             <div className="warehouse-form-grid">
@@ -317,6 +387,31 @@ export default function InventoryModule(props: any) {
             </div>
             {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
           </div>
+
+
+            ), portalRoot)
+            : (
+          <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
+            <div className="warehouse-form-grid">
+              <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
+              <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
+              <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
+              <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
+              <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
+              <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
+              <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
+              <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
+            </div>
+            <div className="accounting-action-row">
+              <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
+              <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+            </div>
+            {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
+          </div>
+
+
+            )}
 
           <div className="card order-panel warehouse-log-shell">
             <div className="panel-head compact-head"><div><div className="panel-title">最近異動紀錄</div></div></div>

@@ -12690,7 +12690,7 @@ aside.vp-sidebar {
 }
 
 
-/* 2026-04-14 cleanup phase7: fix mobile panel scroll / staff runtime / adaptive body */
+/* 2026-04-14 cleanup phase8: adaptive mobile panel height + targeted panel scroll parity */
 @media (max-width: 900px) {
   .mobile-more-sheet,
   .mobile-more-sheet-portal,
@@ -12702,21 +12702,23 @@ aside.vp-sidebar {
     left: 12px !important;
     right: 12px !important;
     top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px) !important;
+    bottom: auto !important;
     width: auto !important;
-    height: auto !important;
-    min-height: 220px !important;
-    max-height: none !important;
+    height: fit-content !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 84px)) !important;
     overflow: hidden !important;
     display: flex !important;
     flex-direction: column !important;
+    align-self: flex-start !important;
   }
 
   .mobile-more-head,
   .mobile-editor-head,
   .mobile-modal-shell.is-mobile-open .warehouse-card-head,
   .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
-  .cart-drawer-panel.show .cart-drawer-head {
+  .cart-drawer-panel.show .cart-drawer-head,
+  .mobile-modal-shell.is-mobile-open > .panel-head {
     flex: 0 0 auto !important;
   }
 
@@ -12728,8 +12730,9 @@ aside.vp-sidebar {
   .cart-drawer-scroll {
     display: flex !important;
     flex-direction: column !important;
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
     min-height: 0 !important;
+    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 156px)) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     overscroll-behavior: contain !important;
@@ -12739,7 +12742,8 @@ aside.vp-sidebar {
   .warehouse-side-panel.mobile-modal-shell.is-mobile-open,
   .accounting-side-panel.mobile-modal-shell.is-mobile-open,
   .accounting-treasury-panel.mobile-modal-shell.is-mobile-open,
-  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open {
+  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open,
+  .staff-editor-panel-v2.mobile-staff-editor.is-mobile-open {
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -12748,11 +12752,13 @@ aside.vp-sidebar {
   .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
   .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
   .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child {
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
     min-height: 0 !important;
+    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 170px)) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
     padding-bottom: 12px !important;
   }
 
@@ -12761,7 +12767,7 @@ aside.vp-sidebar {
   .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
     flex: 0 0 auto !important;
     overflow: visible !important;
-    margin-top: auto !important;
+    margin-top: 0 !important;
     border-top: 1px solid rgba(69, 26, 43, 0.08) !important;
     background: rgba(255,252,253,0.96) !important;
   }
@@ -12795,12 +12801,6 @@ aside.vp-sidebar {
   .staff-side-v2 {
     min-height: 0 !important;
   }
-
-  .staff-editor-panel-v2.mobile-staff-editor.is-mobile-open {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
 }
 
 @media (max-width: 420px) {
@@ -12813,5 +12813,64 @@ aside.vp-sidebar {
   .mobile-more-grid,
   .cart-drawer-panel.show .form-grid.two-col {
     grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* 2026-04-14 cleanup phase9: touch handoff fix for mobile modal scroll */
+@media (max-width: 900px) {
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show,
+  .mobile-staff-editor.is-mobile-open {
+    touch-action: auto !important;
+    overscroll-behavior: none !important;
+    -webkit-overflow-scrolling: auto !important;
+  }
+
+  .mobile-more-head,
+  .mobile-editor-head,
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
+  .cart-drawer-panel.show .cart-drawer-head,
+  .mobile-modal-shell.is-mobile-open > .panel-head,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
+    touch-action: manipulation !important;
+  }
+
+  .mobile-more-body,
+  .mobile-modal-body,
+  .evaluation-modal-body,
+  .staff-editor-body,
+  .product-editor-body,
+  .cart-drawer-scroll,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child {
+    touch-action: pan-y !important;
+    overscroll-behavior-y: contain !important;
+    overscroll-behavior-x: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .mobile-more-body,
+  .mobile-modal-body,
+  .evaluation-modal-body,
+  .staff-editor-body,
+  .product-editor-body,
+  .cart-drawer-scroll {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
   }
 }

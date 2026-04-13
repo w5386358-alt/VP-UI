@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
 import { CreditCard, BarChart3, Trophy, Search, CalendarRange, Truck, Receipt, Wallet, FileText, RefreshCw, ArrowUpRight, Sparkles, ShieldCheck, Clock3, ChevronRight, ClipboardCheck, Layers3, Coins, Medal, QrCode, X } from 'lucide-react';
@@ -67,6 +68,8 @@ export default function AccountingModule(props: any) {
     { key: 'evaluation', label: '評鑑分數', icon: Medal },
   ];
   const filteredAccountingTabs = accountingTabMeta.filter((item) => visibleAccountingTabs.includes(item.key));
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
+  const isMobileViewport = typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
 
   return (
     <section className="accounting-shell-v2">
@@ -79,7 +82,7 @@ export default function AccountingModule(props: any) {
 
       {accountingTab === 'ops' && (
         <>
-        {mobileAccountingPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileAccountingPanelOpen(false)} />}
+        {portalRoot && isMobileViewport && mobileAccountingPanelOpen && createPortal(<div className="mobile-editor-backdrop" onClick={() => setMobileAccountingPanelOpen(false)} />, portalRoot)}
         <section className="warehouse-layout warehouse-command-layout accounting-warehouse-layout">
           <div className="warehouse-main warehouse-stack">
             <div className="card order-panel warehouse-filter-shell accounting-filter-shell">
@@ -141,8 +144,10 @@ export default function AccountingModule(props: any) {
           </div>
 
           <div className="warehouse-side warehouse-stack">
+            {isMobileViewport && portalRoot
+              ? mobileAccountingPanelOpen && createPortal((
             <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel mobile-modal-shell ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`}>
-              <div className="warehouse-side-section">
+              <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">收款作業</div></div>
                   <ClipboardCheck className="small-icon" />
@@ -195,6 +200,65 @@ export default function AccountingModule(props: any) {
                 {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
               </div>
             </div>
+
+              ), portalRoot)
+              : (
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel mobile-modal-shell ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`}>
+              <div className="warehouse-side-section mobile-modal-body">
+                <div className="warehouse-card-head">
+                  <div><div className="flow-title">收款作業</div></div>
+                  <ClipboardCheck className="small-icon" />
+                  <button type="button" className="mobile-panel-close" onClick={() => setMobileAccountingPanelOpen(false)} aria-label="關閉收款作業"><X className="small-icon" /></button>
+                </div>
+
+                <div className="warehouse-check-summary-grid">
+                  <div className={`warehouse-check-summary-card ${(selectedAccountingSourceRecord?.paymentStatus === '已收款' || selectedAccountingSourceRecord?.paymentStatus === '免收款') ? 'ok' : 'bad'}`}>
+                    <span>收款狀態</span>
+                    <strong>{selectedAccountingSourceRecord?.paymentStatus || '未選擇'}</strong>
+                  </div>
+                  <div className={`warehouse-check-summary-card ${selectedAccountingSourceRecord?.shippingStatus === '已出貨' ? 'ok' : 'bad'}`}>
+                    <span>出貨狀態</span>
+                    <strong>{selectedAccountingSourceRecord?.shippingStatus || '未選擇'}</strong>
+                  </div>
+                </div>
+
+                <div className="warehouse-form-grid warehouse-command-fields">
+                  <div className="fake-field"><span>訂單編號</span><strong>{accountingDraft?.orderNo || '未選擇'}</strong></div>
+                  <div className="fake-field"><span>客戶</span><strong>{accountingDraft?.customer || '-'}</strong></div>
+                  <div className="fake-field"><span>未稅價</span><strong>{accountingDraft?.untaxedAmount || '-'}</strong></div>
+                  <div className="fake-field"><span>實收總額</span><strong>${accountingActualReceived || 0}</strong></div>
+                  <div className="fake-field"><span>收款方式</span><strong><select value={accountingDraft?.paymentMethod || ''} onChange={(e) => updateAccountingDraftField('paymentMethod', e.target.value)}><option value="待確認">待確認</option><option value="銀行轉帳">銀行轉帳</option><option value="LINE Pay">LINE Pay</option><option value="現金">現金</option><option value="信用卡">信用卡</option><option value="其他">其他</option></select></strong></div>
+                  <div className="fake-field scanner-inline-field"><span>發票 / 單號</span><strong><input value={accountingDraft?.invoiceNo || ''} onChange={(e) => updateAccountingDraftField('invoiceNo', e.target.value)} placeholder="輸入發票或退款單號" /><button type="button" className="scan-inline-icon-btn" onClick={handleAccountingInvoiceScan} aria-label="掃描發票或單號"><QrCode className="small-icon" /></button></strong></div>
+                  <div className="fake-field"><span>稅率 %</span><strong><input value={accountingDraft?.taxRate || ''} onChange={(e) => updateAccountingDraftField('taxRate', e.target.value)} inputMode="decimal" placeholder="輸入稅率" /></strong></div>
+                  <div className="fake-field"><span>應稅金額</span><strong>{String(accountingTaxAmount || 0)}</strong></div>
+                  <div className="fake-field"><span>運費</span><strong><input value={accountingDraft?.shippingFee || ''} onChange={(e) => updateAccountingDraftField('shippingFee', e.target.value)} inputMode="decimal" placeholder="輸入運費" /></strong></div>
+                  <div className="fake-field wide"><span>收款證明 / 備註</span><strong><textarea rows={4} value={accountingDraft?.proof || ''} onChange={(e) => updateAccountingDraftField('proof', e.target.value)} placeholder="輸入收款備註" /></strong></div>
+                </div>
+
+                <div className="warehouse-scan-hint-grid accounting-proof-grid-warehouse">
+                  <button type="button" className="warehouse-scan-hint idle accounting-proof-trigger upload-icon-button" onClick={() => accountingProofInputRef?.current?.click()}>
+                    <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />收款證明
+                  </button>
+                  <div className="warehouse-scan-hint idle"><ShieldCheck className="small-icon" />AI 辨識</div>
+                  <div className="warehouse-scan-hint idle"><Clock3 className="small-icon" />最新狀態：{selectedAccountingSourceRecord?.paymentStatus || '未選擇'}</div>
+                </div>
+
+                <input ref={accountingProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleAccountingProofUpload(e.target.files?.[0] || null)} />
+              </div>
+
+
+              <div className="warehouse-side-section">
+                <div className="accounting-action-row warehouse-action-row">
+                  <button type="button" className="ghost-button print-icon-button"><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印</button>
+                  <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />送交退款</button>
+                </div>
+                {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
+              </div>
+            </div>
+
+              )}
           </div>
         </section>
         </>
@@ -244,7 +308,7 @@ export default function AccountingModule(props: any) {
 
       {accountingTab === 'treasury' && (
         <>
-        {mobileTreasuryPanelOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileTreasuryPanelOpen(false)} />}
+        {portalRoot && isMobileViewport && mobileTreasuryPanelOpen && createPortal(<div className="mobile-editor-backdrop" onClick={() => setMobileTreasuryPanelOpen(false)} />, portalRoot)}
         <section className="accounting-treasury-layout">
           <div className="accounting-treasury-main">
             <div className="accounting-board-grid-v2">
@@ -291,8 +355,10 @@ export default function AccountingModule(props: any) {
           </div>
 
           <div className="accounting-treasury-side">
+            {isMobileViewport && portalRoot
+              ? mobileTreasuryPanelOpen && createPortal((
             <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`}>
-              <div className="warehouse-side-section">
+              <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">退款撥款</div></div>
                   <div className="warehouse-card-head-actions"><div className="badge badge-role">出納：{user?.loginId || '-'}</div><button type="button" className="mobile-panel-close" onClick={() => setMobileTreasuryPanelOpen(false)} aria-label="關閉出納作業"><X className="small-icon" /></button></div>
@@ -325,6 +391,44 @@ export default function AccountingModule(props: any) {
                 {treasuryNotice && <div className={`inline-action-notice ${treasuryNotice.tone}`}><strong>{treasuryNotice.text}</strong></div>}
               </div>
             </div>
+              ), portalRoot)
+              : (
+            <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`}>
+              <div className="warehouse-side-section mobile-modal-body">
+                <div className="warehouse-card-head">
+                  <div><div className="flow-title">退款撥款</div></div>
+                  <div className="warehouse-card-head-actions"><div className="badge badge-role">出納：{user?.loginId || '-'}</div><button type="button" className="mobile-panel-close" onClick={() => setMobileTreasuryPanelOpen(false)} aria-label="關閉出納作業"><X className="small-icon" /></button></div>
+                </div>
+
+                <div className="warehouse-form-grid warehouse-command-fields">
+                  <div className="fake-field"><span>訂單編號</span><strong>{treasuryDraft.orderNo || '未選擇'}</strong></div>
+                  <div className="fake-field"><span>客戶</span><strong>{treasuryDraft.customer || '-'}</strong></div>
+                  <div className="fake-field"><span>退款金額</span><strong><input value={treasuryDraft.refundAmount} onChange={(e) => updateTreasuryDraftField('refundAmount', e.target.value)} inputMode="decimal" placeholder="輸入退款金額" /></strong></div>
+                  <div className="fake-field"><span>退款方式</span><strong><select value={treasuryDraft.payoutMethod} onChange={(e) => updateTreasuryDraftField('payoutMethod', e.target.value)}><option value="原路退回">原路退回</option><option value="銀行轉帳">銀行轉帳</option><option value="現金">現金</option><option value="其他">其他</option></select></strong></div>
+                  <div className="fake-field wide"><span>退款說明</span><strong><textarea rows={4} value={treasuryDraft.note} onChange={(e) => updateTreasuryDraftField('note', e.target.value)} placeholder="補充退款備註" /></strong></div>
+                  <div className="fake-field wide"><span>退款證明</span><strong>{treasuryDraft.proof || '待上傳'}</strong></div>
+                </div>
+
+                <div className="warehouse-scan-hint-grid accounting-proof-grid-warehouse">
+                  <button type="button" className="warehouse-scan-hint idle accounting-proof-trigger upload-icon-button" onClick={() => treasuryProofInputRef?.current?.click()}>
+                    <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />退款證明
+                  </button>
+                  <div className="warehouse-scan-hint idle"><ShieldCheck className="small-icon" />自動載入已啟動</div>
+                  <div className="warehouse-scan-hint idle"><Clock3 className="small-icon" />狀態：{selectedTreasuryRecord?.paymentStatus || '未選擇'}</div>
+                </div>
+
+                <input ref={treasuryProofInputRef} type="file" accept="image/*,.pdf" className="hidden-file-input" onChange={(e) => handleTreasuryProofUpload(e.target.files?.[0] || null)} />
+              </div>
+
+              <div className="warehouse-side-section">
+                <div className="accounting-action-row warehouse-action-row">
+                  <button type="button" className="primary-button" onClick={confirmTreasuryRefund}><Wallet className="small-icon" />完成退款</button>
+                </div>
+                {treasuryNotice && <div className={`inline-action-notice ${treasuryNotice.tone}`}><strong>{treasuryNotice.text}</strong></div>}
+              </div>
+            </div>
+              )}
+
 
             <div className="card order-panel">
               <div className="panel-head">
