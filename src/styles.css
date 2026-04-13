@@ -2,13 +2,13 @@
 
 :root {
   color-scheme: light;
-  --bg-1: #F4EDEF;
-  --bg-2: #F4EDEF;
-  --bg-3: #F4EDEF;
-  --card: rgba(255, 248, 250, 0.96);
-  --card-strong: rgba(255, 248, 250, 0.99);
-  --line: #E7D6DB;
-  --line-strong: #DFC9D0;
+  --bg-1: #ecc9d6;
+  --bg-2: #e3b8c8;
+  --bg-3: #f1d7e1;
+  --card: rgba(255, 252, 253, 0.93);
+  --card-strong: rgba(255, 252, 253, 0.98);
+  --line: #f2d7e2;
+  --line-strong: #ebc3d3;
   --text: #243042;
   --muted: #7d8797;
   --primary: #a21239;
@@ -36,7 +36,10 @@ html, body, #root { min-height: 100%; }
 body {
   margin: 0;
   font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
-  background: var(--bg-1);
+  background:
+    radial-gradient(circle at top left, rgba(228, 135, 171, 0.22), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(255, 219, 230, 0.35), transparent 24%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 46%, var(--bg-3) 100%);
   color: var(--text);
 }
 button, input { font: inherit; }
@@ -56,7 +59,7 @@ button:hover { transform: translateY(-1px); }
   height: 100vh;
   overflow: auto;
   border-right: 1px solid var(--line);
-  background: rgba(247, 240, 242, 0.92);
+  background: rgba(255,250,252,0.8);
   backdrop-filter: blur(18px);
   padding: 20px;
 }
@@ -65,7 +68,7 @@ button:hover { transform: translateY(-1px); }
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
-  box-shadow: 0 16px 36px rgba(162, 120, 138, 0.08);
+  box-shadow: var(--shadow);
 }
 
 .brand {
@@ -11901,68 +11904,4 @@ body,
 .pagination-row-angle .pagination-btn:hover,
 .pagination-row-minimal .pagination-btn:hover {
   transform: none !important;
-}
-
-/* === 2026-04-13 fix: real visible shell background layers === */
-:root {
-  --vp-shell-bg-real: #F4EDEF;
-  --vp-shell-sidebar-real: #EFE3E7;
-  --vp-shell-card-real: #FFF8FA;
-  --vp-shell-line-real: #E7D6DB;
-}
-
-html,
-body,
-#root {
-  background: var(--vp-shell-bg-real) !important;
-}
-
-.vp-shell-page,
-.vp-shell,
-.vp-main {
-  background: transparent !important;
-}
-
-.vp-sidebar,
-aside.vp-sidebar {
-  background: var(--vp-shell-sidebar-real) !important;
-  border-right: 1px solid var(--vp-shell-line-real) !important;
-  box-shadow: none !important;
-}
-
-.vp-brand-panel,
-.vp-nav-panel,
-.vp-profile-panel,
-.vp-state-panel,
-.vp-switch-panel,
-.vp-header,
-.vp-workspace.card,
-.vp-workspace,
-.section-intro-shell,
-.order-panel,
-.content-card,
-.workflow-card,
-.summary-card,
-.dashboard-side-card,
-.field-card,
-.shipping-row,
-.data-card,
-.profile-customer-card,
-.history-row,
-.warehouse-reminder-item,
-.profile-action-card-v2,
-.customers-preview-row,
-.customers-info-box,
-.accounting-proof-card,
-.accounting-command-pill,
-.accounting-console-mini,
-.staff-person-card-v2,
-.ranking-row-v2,
-.card {
-  background: var(--vp-shell-card-real) !important;
-  border-color: var(--vp-shell-line-real) !important;
-}
-
-.vp-module-body {
-  background: transparent !important;
 }
