@@ -131,6 +131,15 @@ type StaffDraft = {
   permissionConfig: StaffPermissionConfig;
 };
 
+type ProfileDraft = {
+  id: string;
+  name: string;
+  loginId: string;
+  password: string;
+  role: string;
+  rank: string;
+};
+
 type AccountingDraft = {
   orderNo: string;
   customer: string;
@@ -1579,6 +1588,33 @@ function toStaffDraft(item: Staff): StaffDraft {
   };
 }
 
+function toProfileDraft(item: Staff | null): ProfileDraft {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    loginId: item?.loginId || '',
+    password: item?.password || item?.loginId || '',
+    role: item?.role || '銷售組',
+    rank: item?.rank || '普通銷售',
+  };
+}
+
+function buildStaffPayload(nextStaff: Staff, nowIso = getIsoNow()) {
+  return {
+    id: safeFirestoreDocId(nextStaff.loginId || nextStaff.id, 'staff'),
+    name: nextStaff.name,
+    loginId: nextStaff.loginId,
+    role: nextStaff.role,
+    rank: nextStaff.rank,
+    enabled: nextStaff.enabled,
+    password: nextStaff.password || nextStaff.loginId,
+    permissions: Array.isArray(nextStaff.permissions) ? nextStaff.permissions : [],
+    permissionConfig: normalizePermissionConfig(nextStaff.permissionConfig, nextStaff.role),
+    source: 'VERCEL_UI',
+    updatedAt: nowIso,
+    lastSyncedAt: nowIso,
+  };
+}
 
 function StatusBadge({ enabled }: { enabled: boolean }) {
   return <span className={enabled ? 'badge badge-success' : 'badge badge-danger'}>{enabled ? '啟用中' : '停用'}</span>;
@@ -1780,6 +1816,8 @@ export default function App() {
   const [selectedStaffId, setSelectedStaffId] = useState(staff[0]?.id ?? '');
   const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft({ id: '', name: '', loginId: '', role: '銷售組', rank: '普通銷售', enabled: true, password: '', permissions: [], permissionConfig: createDefaultPermissionConfig('銷售組') }));
   const [staffNotice, setStaffNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
+  const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => toProfileDraft(null));
+  const [profileNotice, setProfileNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [orderRecords, setOrderRecords] = useState<OrderRecord[]>([]);
   const [selectedOrderNo, setSelectedOrderNo] = useState('');
   const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
@@ -2907,6 +2945,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
   }, [selectedStaff, staffEditorMode]);
 
+  useEffect(() => {
+    if (!sessionStaff || sessionLoginId === 'vp001') {
+      setProfileDraft(toProfileDraft(null));
+      return;
+    }
+    setProfileDraft(toProfileDraft(sessionStaff));
+  }, [sessionStaff, sessionLoginId]);
+
   const selectedAccountingSourceRecord = useMemo(
     () => orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null,
     [orderRecords, selectedAccountingRecord?.orderNo],
@@ -3371,30 +3417,45 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return true;
   }
 
-  async function syncStaffToFirebase(nextStaff: Staff) {
+  async function syncStaffToFirebase(nextStaff: Staff, options?: { previousId?: string; previousLoginId?: string }) {
     const db = getDb();
     if (!db) return false;
-    const staffId = safeFirestoreDocId(nextStaff.loginId || nextStaff.id, 'staff');
     const nowIso = getIsoNow();
+    const staffId = safeFirestoreDocId(nextStaff.loginId || nextStaff.id, 'staff');
+    const previousDocId = safeFirestoreDocId(options?.previousId || options?.previousLoginId || nextStaff.id, 'staff');
     const batch = writeBatch(db);
-    batch.set(doc(db, 'staff', staffId), {
-      id: staffId,
-      name: nextStaff.name,
-      loginId: nextStaff.loginId,
-      role: nextStaff.role,
-      rank: nextStaff.rank,
-      enabled: nextStaff.enabled,
-      password: nextStaff.password || nextStaff.loginId,
-      permissions: Array.isArray(nextStaff.permissions) ? nextStaff.permissions : [],
-      permissionConfig: normalizePermissionConfig(nextStaff.permissionConfig, nextStaff.role),
-      source: 'VERCEL_UI',
-      updatedAt: nowIso,
-      lastSyncedAt: nowIso,
-    }, { merge: true });
+    batch.set(doc(db, 'staff', staffId), buildStaffPayload({ ...nextStaff, id: staffId }, nowIso), { merge: true });
+    if (previousDocId && previousDocId !== staffId) {
+      batch.delete(doc(db, 'staff', previousDocId));
+    }
     await batch.commit();
 
     setFirebaseReady(true);
     setDataMode('firebase');
+    return true;
+  }
+
+  async function syncProfileToFirebase(nextProfile: ProfileDraft) {
+    if (!sessionStaff || sessionLoginId === 'vp001') return false;
+    const nextStaff: Staff = {
+      ...sessionStaff,
+      id: nextProfile.loginId.trim() || sessionStaff.id,
+      name: nextProfile.name.trim() || sessionStaff.name,
+      loginId: nextProfile.loginId.trim() || sessionStaff.loginId,
+      password: nextProfile.password.trim() || nextProfile.loginId.trim() || sessionStaff.password || sessionStaff.loginId,
+      role: nextProfile.role || sessionStaff.role,
+      rank: nextProfile.rank || sessionStaff.rank,
+      enabled: sessionStaff.enabled,
+      permissions: getPermissionsByRole(nextProfile.role || sessionStaff.role, nextProfile.rank || sessionStaff.rank),
+      permissionConfig: normalizePermissionConfig(sessionStaff.permissionConfig, nextProfile.role || sessionStaff.role),
+    };
+    const synced = await syncStaffToFirebase(nextStaff, { previousId: sessionStaff.id, previousLoginId: sessionStaff.loginId });
+    if (!synced) return false;
+    setSessionLoginId(nextStaff.loginId);
+    if (typeof window !== 'undefined') {
+      if (rememberLogin) window.localStorage.setItem('vp-session-login-id', nextStaff.loginId);
+      else window.localStorage.removeItem('vp-session-login-id');
+    }
     return true;
   }
 
@@ -3710,8 +3771,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setSelectedStaffId(nextStaff.id);
       setStaffEditorMode('edit');
       setStaffDraft(toStaffDraft(nextStaff));
-      await syncStaffToFirebase(nextStaff);
-      setStaffNotice({ text: '✅ 已新增', tone: 'success' });
+      const synced = await syncStaffToFirebase(nextStaff);
+      setStaffNotice({ text: synced ? '✅ 已新增並同步 Firebase' : '✅ 已新增（目前未接 Firebase）', tone: 'success' });
       return;
     }
     if (!staffDraft.id) {
@@ -3727,8 +3788,44 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setSelectedStaffId(updatedStaff.id);
     setStaffEditorMode('edit');
     setStaffDraft(toStaffDraft(updatedStaff));
-    await syncStaffToFirebase(updatedStaff);
-    setStaffNotice({ text: '✅ 已更新', tone: 'success' });
+    const synced = await syncStaffToFirebase(updatedStaff, { previousId: staffDraft.id, previousLoginId: staffDraft.loginId });
+    setStaffNotice({ text: synced ? '✅ 已更新並同步 Firebase' : '✅ 已更新（目前未接 Firebase）', tone: 'success' });
+  }
+
+
+  function updateProfileDraftField(field: keyof ProfileDraft, value: string) {
+    setProfileDraft((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'loginId' && !next.password.trim()) next.password = String(value || '').trim();
+      return next;
+    });
+  }
+
+  async function saveProfileDraft() {
+    if (sessionLoginId === 'vp001') {
+      setProfileNotice({ text: '緊急備用 key 不寫回 Firebase。', tone: 'neutral' });
+      return;
+    }
+    if (!profileDraft.name.trim() || !profileDraft.loginId.trim()) {
+      setProfileNotice({ text: '❌ 個人資料未填完整', tone: 'danger' });
+      return;
+    }
+    if (!confirmAction(`確認更新個人資料：${profileDraft.loginId.trim()}？`)) {
+      setProfileNotice({ text: '已取消更新個人資料', tone: 'neutral' });
+      return;
+    }
+    try {
+      const synced = await syncProfileToFirebase(profileDraft);
+      if (!synced) {
+        setProfileNotice({ text: '❌ Firebase 未連線，個人資料未同步', tone: 'danger' });
+        return;
+      }
+      setProfileNotice({ text: '✅ 個人資料已更新並即時同步 Firebase', tone: 'success' });
+      triggerShellHint('✅ 個人資料已同步');
+    } catch (error) {
+      console.error(error);
+      setProfileNotice({ text: '❌ 個人資料同步失敗', tone: 'danger' });
+    }
   }
 
   function makeNextOrderNo() {
@@ -4751,7 +4848,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} />
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} profileDraft={profileDraft} profileNotice={profileNotice} updateProfileDraftField={updateProfileDraftField} saveProfileDraft={saveProfileDraft} isBackupProfile={sessionLoginId === 'vp001'} />
                 )}
               </div>
             </>
