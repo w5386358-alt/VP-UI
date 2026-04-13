@@ -59,12 +59,12 @@ export default function AccountingModule(props: any) {
   return (
     <section className="accounting-shell-v2">
       <div className="accounting-tab-row accounting-tab-row-v2">
-        <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" />收款作業</button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'bonus' ? 'active' : ''}`} onClick={() => setAccountingTab('bonus')}><Coins className="small-icon" />獎金入帳</button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'treasury' ? 'active' : ''}`} onClick={() => setAccountingTab('treasury')}><Wallet className="small-icon" />出納</button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" />營運報表</button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" />排名 / 熱銷</button>
-        <button type="button" className={`accounting-tab ${accountingTab === 'evaluation' ? 'active' : ''}`} onClick={() => setAccountingTab('evaluation')}><Medal className="small-icon" />評鑑分數</button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'ops' ? 'active' : ''}`} onClick={() => setAccountingTab('ops')}><CreditCard className="small-icon" /><span>收款作業</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'bonus' ? 'active' : ''}`} onClick={() => setAccountingTab('bonus')}><Coins className="small-icon" /><span>獎金入帳</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'treasury' ? 'active' : ''}`} onClick={() => setAccountingTab('treasury')}><Wallet className="small-icon" /><span>出納</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'stats' ? 'active' : ''}`} onClick={() => setAccountingTab('stats')}><BarChart3 className="small-icon" /><span>營運報表</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'ranking' ? 'active' : ''}`} onClick={() => setAccountingTab('ranking')}><Trophy className="small-icon" /><span>排名 / 熱銷</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
+        <button type="button" className={`accounting-tab ${accountingTab === 'evaluation' ? 'active' : ''}`} onClick={() => setAccountingTab('evaluation')}><Medal className="small-icon" /><span>評鑑分數</span><ChevronRight className="small-icon accounting-tab-arrow" /></button>
       </div>
 
       {accountingTab === 'ops' && (

@@ -143,6 +143,7 @@ export default function ProductsModule(props: any) {
                   <button key={page} type="button" className={`pagination-page ${safePage === page ? 'active' : ''}`} onClick={() => setProductPage(page)}>{page}</button>
                 ))}
               </div>
+              <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁">&gt;</button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
           </div>

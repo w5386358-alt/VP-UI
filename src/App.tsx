@@ -471,16 +471,21 @@ function mapRankStringToRankKey(rank: string): Rank {
   return 'normal';
 }
 
+function getModuleKeyForSubpage(subpageKey: string): NavKey | null {
+  if (subpageKey.startsWith('inventory_')) return 'inventory';
+  if (subpageKey.startsWith('accounting_')) return 'accounting';
+  if (subpageKey.startsWith('profile_')) return 'profile';
+  return null;
+}
+
 function createDefaultPermissionConfig(role: string): StaffPermissionConfig {
   const mappedRole = mapStaffRoleToSystemRole(role);
   const modules = Object.fromEntries(MODULE_PERMISSION_LABELS.map((item) => [item.key, ROLE_NAV_ACCESS[mappedRole].includes(item.key)])) as Record<NavKey, boolean>;
   const subpages: Record<string, boolean> = {};
   SUBPAGE_PERMISSION_GROUPS.forEach((group) => {
     group.items.forEach((item) => {
-      if (item.key.startsWith('inventory_')) subpages[item.key] = modules.inventory;
-      else if (item.key.startsWith('accounting_')) subpages[item.key] = modules.accounting;
-      else if (item.key.startsWith('profile_')) subpages[item.key] = modules.profile;
-      else subpages[item.key] = true;
+      const parentModule = getModuleKeyForSubpage(item.key);
+      subpages[item.key] = parentModule ? modules[parentModule] : true;
     });
   });
   const actions: Record<string, boolean> = {};
@@ -494,9 +499,15 @@ function createDefaultPermissionConfig(role: string): StaffPermissionConfig {
 
 function normalizePermissionConfig(raw: any, role = '銷售組'): StaffPermissionConfig {
   const fallback = createDefaultPermissionConfig(role);
+  const modules = { ...fallback.modules, ...(raw?.modules || {}) };
+  const subpages = { ...fallback.subpages, ...(raw?.subpages || {}) };
+  Object.keys(subpages).forEach((subpageKey) => {
+    const parentModule = getModuleKeyForSubpage(subpageKey);
+    if (parentModule && !modules[parentModule]) subpages[subpageKey] = false;
+  });
   return {
-    modules: { ...fallback.modules, ...(raw?.modules || {}) },
-    subpages: { ...fallback.subpages, ...(raw?.subpages || {}) },
+    modules,
+    subpages,
     actions: { ...fallback.actions, ...(raw?.actions || {}) },
   };
 }
@@ -3592,15 +3603,42 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   function updateStaffPermission(section: 'modules' | 'subpages' | 'actions', key: string, value: boolean) {
     setStaffDraft((prev) => {
       const nextConfig = normalizePermissionConfig(prev.permissionConfig, prev.role);
+      if (section === 'modules') {
+        const nextModules = {
+          ...nextConfig.modules,
+          [key]: value,
+        };
+        const nextSubpages = { ...nextConfig.subpages };
+        Object.keys(nextSubpages).forEach((subpageKey) => {
+          if (getModuleKeyForSubpage(subpageKey) === key && !value) nextSubpages[subpageKey] = false;
+        });
+        return {
+          ...prev,
+          permissionConfig: normalizePermissionConfig({
+            ...nextConfig,
+            modules: nextModules,
+            subpages: nextSubpages,
+          }, prev.role),
+        };
+      }
+      if (section === 'subpages') {
+        const parentModule = getModuleKeyForSubpage(key);
+        if (value && parentModule && !nextConfig.modules[parentModule]) {
+          return {
+            ...prev,
+            permissionConfig: nextConfig,
+          };
+        }
+      }
       return {
         ...prev,
-        permissionConfig: {
+        permissionConfig: normalizePermissionConfig({
           ...nextConfig,
           [section]: {
             ...nextConfig[section],
             [key]: value,
           },
-        },
+        }, prev.role),
       };
     });
   }

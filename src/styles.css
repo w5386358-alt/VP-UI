@@ -11617,3 +11617,73 @@ body {
   .vp-login-card-clean { width: min(420px, calc(100vw - 28px)); padding: 22px 18px; border-radius: 28px; }
   .vp-login-card-clean .vp-login-field input { min-height: 52px; }
 }
+
+
+/* === 第三十三版續修 B：骨架玫瑰紅霧面 / 子頁連動 / 分頁箭頭 / 數字穩定 === */
+:root {
+  --vp-bg: #e6c7d1;
+  --vp-surface: rgba(255,255,255,0.88);
+  --vp-surface-2: rgba(252,241,245,0.9);
+  --vp-stage: #e2c0cb;
+  --vp-line: rgba(154, 51, 90, 0.12);
+  --vp-line-strong: rgba(154, 51, 90, 0.2);
+  --vp-primary: #a53a62;
+  --vp-primary-strong: #842847;
+  --vp-pill: rgba(246, 220, 228, 0.9);
+  --vp-shadow: 0 18px 38px rgba(126, 40, 73, 0.11);
+}
+
+body {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(178, 76, 114, 0.22), transparent 0 24%),
+    radial-gradient(circle at 84% 12%, rgba(214, 182, 194, 0.28), transparent 0 20%),
+    linear-gradient(180deg, #efd7df 0%, #e5c3cf 46%, #ddb7c5 100%) !important;
+}
+
+.vp-shell,
+.vp-sidebar,
+.vp-workspace,
+.vp-module-body {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.vp-brand-panel, .vp-nav-panel, .vp-profile-panel, .vp-state-panel, .vp-switch-panel, .vp-header,
+.vp-workspace, .section-intro-shell, .order-panel, .content-card, .workflow-card, .summary-card,
+.dashboard-side-card, .field-card, .shipping-row, .data-card, .profile-customer-card,
+.history-row, .warehouse-reminder-item, .profile-action-card-v2, .customers-preview-row,
+.customers-info-box, .accounting-proof-card, .accounting-command-pill, .accounting-console-mini,
+.staff-person-card-v2, .ranking-row-v2 {
+  background: linear-gradient(180deg, rgba(255,255,255,0.84) 0%, rgba(248,232,238,0.9) 100%) !important;
+  box-shadow: 0 16px 34px rgba(126, 40, 73, 0.10) !important;
+}
+
+.accounting-tab,
+.warehouse-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accounting-tab span,
+.warehouse-tab span {
+  flex: 1 1 auto;
+}
+
+.accounting-tab-arrow {
+  margin-left: auto;
+  opacity: 0.72;
+  transform: none !important;
+}
+
+.dashboard-hero-stat-value,
+.summary-value,
+.vp-notification-count,
+.vp-bell-badge,
+.floating-cart-count,
+.pagination-page {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  font-variant-numeric: tabular-nums;
+}
