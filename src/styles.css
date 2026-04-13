@@ -8409,7 +8409,7 @@ body {
   }
 
   .dashboard-hero-stat-grid-clean {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -9901,7 +9901,7 @@ body {
 
 @media (max-width: 640px) {
   .orders-catalog-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: 1fr !important;
     gap: 10px !important;
   }
 
@@ -10082,7 +10082,7 @@ body {
 
 @media (max-width: 640px) {
   .orders-catalog-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: 1fr !important;
   }
 
   .orders-product-card,
@@ -11733,11 +11733,11 @@ button:hover,
 }
 
 .staff-permission-switch-grid.compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-columns: 1fr !important;
 }
 
 .staff-permission-block:last-child .staff-permission-switch-grid.compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-columns: 1fr !important;
 }
 
 @media (max-width: 900px) {
@@ -12083,219 +12083,6 @@ aside.vp-sidebar {
 @media (max-width: 700px) {
 }
 
-/* === 2026-04-13 mobile hotfix final: bottom nav / overlays / floating entries === */
-@media (max-width: 900px) {
-  .vp-shell,
-  .vp-main {
-    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-nav {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    align-items: stretch !important;
-    gap: 6px !important;
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    border-radius: 20px 20px 0 0 !important;
-    border: 1px solid rgba(232, 190, 206, 0.92) !important;
-    border-bottom: 0 !important;
-    background: rgba(255, 250, 252, 0.98) !important;
-    backdrop-filter: blur(18px) !important;
-    box-shadow: 0 -12px 28px rgba(92, 49, 72, 0.16) !important;
-    transform: none !important;
-    z-index: 4000 !important;
-    overflow: hidden !important;
-  }
-
-  .mobile-nav-btn {
-    min-width: 0 !important;
-    min-height: 64px !important;
-    padding: 10px 4px !important;
-    border-radius: 16px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    line-height: 1.1 !important;
-    transform: none !important;
-    transition: background-color .16s ease, color .16s ease, box-shadow .16s ease !important;
-  }
-
-  .mobile-nav-btn:hover,
-  .mobile-nav-btn:active,
-  .mobile-nav-btn.active {
-    transform: none !important;
-  }
-
-  .mobile-nav-btn .small-icon,
-  .mobile-nav-btn svg {
-    width: 20px !important;
-    height: 20px !important;
-    flex: 0 0 auto !important;
-  }
-
-  .mobile-nav-btn span {
-    display: block !important;
-    font-size: 11px !important;
-    font-weight: 800 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 100% !important;
-  }
-
-  .mobile-more-overlay,
-  .mobile-editor-backdrop,
-  .cart-drawer-overlay.show {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 4100 !important;
-    background: rgba(34, 23, 30, 0.24) !important;
-  }
-
-  .mobile-more-sheet,
-  .mobile-modal-shell.is-mobile-open,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
-    position: fixed !important;
-    left: 12px !important;
-    right: 12px !important;
-    top: auto !important;
-    bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
-    width: auto !important;
-    max-width: none !important;
-    max-height: min(74dvh, calc(100dvh - 120px)) !important;
-    overflow: auto !important;
-    border-radius: 24px !important;
-    background: rgba(255, 252, 253, 0.985) !important;
-    border: 1px solid rgba(232, 188, 205, 0.92) !important;
-    box-shadow: 0 24px 64px rgba(69, 26, 43, 0.22) !important;
-    transform: none !important;
-    opacity: 1 !important;
-    z-index: 4200 !important;
-  }
-
-  .mobile-more-head,
-  .cart-drawer-head,
-  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
-  .mobile-modal-shell.is-mobile-open .mobile-editor-head,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 2 !important;
-    margin-bottom: 10px !important;
-    padding-top: 4px !important;
-    background: linear-gradient(180deg, rgba(255,252,253,.98) 0%, rgba(255,252,253,.94) 84%, rgba(255,252,253,0) 100%) !important;
-  }
-
-  .cart-drawer-scroll {
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  .cart-drawer-footer {
-    position: sticky !important;
-    bottom: 0 !important;
-    background: rgba(255,252,253,.98) !important;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-row-action-sheet,
-  .mobile-action-menu,
-  .mobile-entry-menu,
-  .mobile-options-sheet {
-    position: absolute !important;
-    right: 0 !important;
-    top: calc(100% + 6px) !important;
-    left: auto !important;
-    min-width: 112px !important;
-    max-width: min(60vw, 180px) !important;
-    z-index: 4300 !important;
-    transform: none !important;
-  }
-
-  .mobile-product-fab,
-  .mobile-staff-fab,
-  .floating-cart-button,
-  .floating-cart-button.is-draggable {
-    position: fixed !important;
-    right: 14px !important;
-    left: auto !important;
-    top: auto !important;
-    bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
-    z-index: 4050 !important;
-    transform: none !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
-  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
-  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .field-span-2,
-  .mobile-modal-shell.is-mobile-open .fake-field.wide,
-  .mobile-modal-shell.is-mobile-open .upload-field-card,
-  .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
-  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
-  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
-  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card {
-    grid-column: 1 / -1 !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .vp-shell,
-  .vp-main {
-    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-nav {
-    gap: 4px !important;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-nav-btn {
-    min-height: 58px !important;
-    padding: 8px 2px !important;
-    border-radius: 14px !important;
-  }
-
-  .mobile-nav-btn span {
-    font-size: 10px !important;
-  }
-
-  .mobile-more-sheet,
-  .mobile-modal-shell.is-mobile-open,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
-    left: 10px !important;
-    right: 10px !important;
-    bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
-    max-height: min(76dvh, calc(100dvh - 104px)) !important;
-    border-radius: 20px !important;
-  }
-
-  .mobile-product-fab,
-  .mobile-staff-fab,
-  .floating-cart-button,
-  .floating-cart-button.is-draggable {
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
-
-
 /* 2026-04-13 mobile nav hard fix: render on body-level portal */
 .mobile-nav-portal {
   position: fixed !important;
@@ -12336,11 +12123,75 @@ aside.vp-sidebar {
   }
 }
 
+/* 2026-04-13 cleanup phase2: removed earlier mobile hotfix block; keep only latest portal + targeted repair as source of truth */
+
 /* 2026-04-13 targeted mobile repair: centered dialogs, no order-page bottom blank, fixed FABs */
 @media (max-width: 900px) {
   body {
     padding-bottom: 0 !important;
   }
+
+  .mobile-nav,
+  .mobile-nav.mobile-nav-portal {
+    position: fixed !important;
+    left: max(8px, env(safe-area-inset-left, 0px)) !important;
+    right: max(8px, env(safe-area-inset-right, 0px)) !important;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    border-radius: 22px !important;
+    border: 1px solid rgba(232, 190, 206, 0.92) !important;
+    background: rgba(255, 250, 252, 0.98) !important;
+    backdrop-filter: blur(18px) !important;
+    box-shadow: 0 14px 32px rgba(92, 49, 72, 0.16) !important;
+    transform: none !important;
+    overflow: hidden !important;
+    z-index: 2147483200 !important;
+    isolation: isolate;
+  }
+
+  .mobile-nav-btn {
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 8px 4px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    line-height: 1.08 !important;
+    transform: none !important;
+  }
+
+  .mobile-nav-btn:hover,
+  .mobile-nav-btn:active,
+  .mobile-nav-btn.active {
+    transform: none !important;
+  }
+
+  .mobile-nav-btn .small-icon,
+  .mobile-nav-btn svg {
+    width: 19px !important;
+    height: 19px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .mobile-nav-btn span {
+    display: block !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+  }
+
 
   .vp-shell,
   .vp-main {
@@ -12423,7 +12274,7 @@ aside.vp-sidebar {
   .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
   .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
   .cart-drawer-panel.show .form-grid.two-col {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: 1fr !important;
     gap: 10px !important;
     align-items: stretch !important;
   }
