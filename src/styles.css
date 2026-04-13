@@ -11989,3 +11989,167 @@ aside.vp-sidebar {
   color: rgba(255,255,255,.92) !important;
   text-shadow: none !important;
 }
+
+
+/* === 2026-04-13 final restore: lock approved login visual exactly === */
+.vp-login-shell-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 207, 227, 0.28), rgba(255, 207, 227, 0) 24%),
+    radial-gradient(circle at 78% 28%, rgba(255, 178, 208, 0.20), rgba(255, 178, 208, 0) 18%),
+    linear-gradient(180deg, #b30e43 0%, #c83d67 18%, #d8698d 48%, #ebb0c2 100%) !important;
+}
+.vp-login-shell-clean {
+  flex-direction: column;
+  gap: 18px;
+  text-align: center;
+  padding: 36px 20px 56px;
+}
+.vp-login-bg-orb { display: block !important; opacity: .55 !important; }
+.vp-login-bg-orb-a {
+  width: 280px; height: 280px; left: 9%; top: 16%;
+  background: radial-gradient(circle, rgba(255,255,255,.22), rgba(255,255,255,0));
+}
+.vp-login-bg-orb-b {
+  width: 220px; height: 220px; right: 12%; top: 18%;
+  background: radial-gradient(circle, rgba(255,219,233,.34), rgba(255,219,233,0));
+}
+.vp-login-bg-orb-c {
+  width: 320px; height: 320px; left: 50%; bottom: -60px; transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255,255,255,.22), rgba(255,255,255,0));
+}
+.vp-login-hero-ring {
+  width: 284px;
+  height: 284px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.18), rgba(255,255,255,.05) 42%, rgba(255,255,255,.01) 72%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22), 0 0 64px rgba(255,255,255,.08);
+}
+.vp-login-hero-ring::before,
+.vp-login-hero-ring::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid rgba(255,255,255,.28);
+  box-shadow: 0 0 24px rgba(255,255,255,.14), inset 0 0 18px rgba(255,255,255,.08);
+}
+.vp-login-hero-ring::before { animation: vpPulseRing 4.2s ease-in-out infinite; }
+.vp-login-hero-ring::after { inset: 18px; opacity: .88; border-width: 1.5px; animation: vpPulseRing 4.2s ease-in-out infinite 1.2s; }
+.vp-login-hero-ring-inner {
+  width: 170px;
+  height: 170px;
+  border-radius: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(255,255,255,.985), rgba(255,245,249,.94));
+  box-shadow: 0 28px 72px rgba(116, 5, 38, 0.22), inset 0 1px 0 rgba(255,255,255,.98), 0 0 36px rgba(255,255,255,.18);
+}
+.vp-login-shell-clean .vp-login-brand-mark {
+  color: #b00e42 !important;
+  font-size: 78px;
+  line-height: 1;
+  letter-spacing: .03em;
+}
+.vp-login-clean-kicker {
+  color: rgba(255,255,255,.8) !important;
+  font-size: 15px;
+  letter-spacing: .38em;
+  text-transform: uppercase;
+}
+.vp-login-clean-title {
+  margin: 2px 0 0;
+  color: #fff !important;
+  font-size: clamp(44px, 6vw, 72px);
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+.vp-login-clean-sub {
+  color: rgba(255,255,255,.82) !important;
+  font-size: clamp(18px, 2.4vw, 26px);
+  letter-spacing: .08em;
+}
+.vp-login-card-clean {
+  width: min(430px, calc(100vw - 40px));
+  margin-top: 14px;
+  padding: 26px 24px 24px;
+  border-radius: 34px;
+  background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.11)) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: 0 30px 90px rgba(104, 9, 41, 0.18), inset 0 1px 0 rgba(255,255,255,.18);
+  backdrop-filter: blur(12px);
+}
+.vp-login-card-clean .vp-login-field > span,
+.vp-login-card-clean .vp-login-row-label,
+.vp-login-help-clean {
+  color: rgba(255,255,255,.92) !important;
+}
+.vp-login-card-clean .vp-login-field input {
+  background: rgba(255,255,255,.92) !important;
+  border-color: rgba(255,255,255,.2) !important;
+  color: #4a3340 !important;
+  min-height: 56px;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+.vp-login-card-clean .vp-login-field input::placeholder {
+  color: #8f7b83 !important;
+  opacity: 1 !important;
+}
+.vp-login-password-wrap { position: relative; }
+.vp-login-password-wrap input,
+.vp-login-card-clean .vp-login-password-wrap input {
+  width: 100%;
+  padding-right: 112px !important;
+}
+.vp-login-toggle,
+.vp-login-card-clean .vp-login-toggle {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  min-width: 78px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  padding: 0 14px !important;
+  line-height: 1 !important;
+  z-index: 2;
+  white-space: nowrap;
+  background: rgba(176, 14, 66, .08) !important;
+  color: #b00e42 !important;
+}
+.vp-login-row-clean {
+  justify-content: center;
+  color: rgba(255,255,255,.9) !important;
+}
+.vp-login-card-clean .vp-login-submit {
+  min-height: 58px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #b00e42, #d74473) !important;
+  box-shadow: 0 18px 34px rgba(176, 14, 66, 0.32);
+}
+.vp-login-help-clean {
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: .76;
+}
+@media (max-width: 700px) {
+  .vp-login-shell-clean { padding: 28px 16px 44px; gap: 12px; }
+  .vp-login-hero-ring { width: 224px; height: 224px; }
+  .vp-login-hero-ring-inner { width: 144px; height: 144px; border-radius: 40px; }
+  .vp-login-shell-clean .vp-login-brand-mark { font-size: 64px; }
+  .vp-login-clean-kicker { font-size: 12px; letter-spacing: .28em; }
+  .vp-login-clean-title { font-size: clamp(36px, 10vw, 52px); }
+  .vp-login-clean-sub { font-size: 15px; line-height: 1.6; }
+  .vp-login-card-clean { width: min(420px, calc(100vw - 28px)); padding: 22px 18px; border-radius: 28px; }
+  .vp-login-card-clean .vp-login-field input { min-height: 52px; }
+}
