@@ -4631,7 +4631,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   return (
-    <div className="vp-shell">
+    <div className="vp-shell" data-active-module={active}>
       {showAppLaunch && (
         <div className={`vp-launch-screen ${showAppLaunch ? 'show' : 'hide'}`} onClick={() => setShowAppLaunch(false)} role="presentation">
           <div className="vp-launch-card vp-launch-card-static">

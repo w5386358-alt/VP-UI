@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, Sparkles, PackageCheck, Layers3 } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, PackageCheck } from 'lucide-react';
 
 export default function OrdersModule(props: any) {
   const {
@@ -21,10 +22,6 @@ export default function OrdersModule(props: any) {
   const [productPage, setProductPage] = useState(1);
   const [quickCustomerPage, setQuickCustomerPage] = useState(1);
   const cartButtonRef = useRef<HTMLButtonElement | null>(null);
-  const dragStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
-  const touchStateRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originX: 0, originY: 0 });
-  const [cartFabPosition, setCartFabPosition] = useState({ x: 0, y: 0, ready: false });
-  const [draggingFab, setDraggingFab] = useState(false);
   const pageSize = 10;
   const totalProductPages = Math.max(1, Math.ceil(filteredOrderProducts.length / pageSize));
   const safeProductPage = Math.min(productPage, totalProductPages);
@@ -34,133 +31,7 @@ export default function OrdersModule(props: any) {
   const safeQuickCustomerPage = Math.min(quickCustomerPage, totalQuickCustomerPages);
   const pagedQuickCustomers = useMemo(() => quickCustomerCards.slice((safeQuickCustomerPage - 1) * pageSize, safeQuickCustomerPage * pageSize), [quickCustomerCards, safeQuickCustomerPage]);
   const quickCustomerPageNumbers = Array.from({ length: totalQuickCustomerPages }, (_, index) => index + 1);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || cartFabPosition.ready) return;
-    const isMobile = window.innerWidth <= 900;
-    if (!isMobile) return;
-    const size = 56;
-    setCartFabPosition({
-      x: window.innerWidth - size - 16,
-      y: window.innerHeight - size - 112,
-      ready: true,
-    });
-  }, [cartFabPosition.ready]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    function handleTouchMove(event: TouchEvent) {
-      const state = touchStateRef.current;
-      if (!state.dragging) return;
-      const touch = event.touches[0];
-      if (!touch) return;
-      const dx = touch.clientX - state.startX;
-      const dy = touch.clientY - state.startY;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
-      const next = clampFabPosition(state.originX + dx, state.originY + dy);
-      setCartFabPosition({ x: next.x, y: next.y, ready: true });
-      event.preventDefault();
-    }
-
-    function handleTouchEnd() {
-      const state = touchStateRef.current;
-      if (!state.dragging) return;
-      touchStateRef.current.dragging = false;
-      setDraggingFab(false);
-      if (!state.moved) setCartOpen(true);
-    }
-
-    function handlePointerMove(event: PointerEvent) {
-      const state = dragStateRef.current;
-      if (!state.dragging) return;
-      const dx = event.clientX - state.startX;
-      const dy = event.clientY - state.startY;
-      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) state.moved = true;
-      const next = clampFabPosition(state.originX + dx, state.originY + dy);
-      setCartFabPosition({ x: next.x, y: next.y, ready: true });
-    }
-
-    function handlePointerUp() {
-      const state = dragStateRef.current;
-      if (!state.dragging) return;
-      dragStateRef.current.dragging = false;
-      setDraggingFab(false);
-      if (!state.moved) setCartOpen(true);
-    }
-
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    window.addEventListener('pointerup', handlePointerUp, { passive: true });
-    window.addEventListener('pointercancel', handlePointerUp, { passive: true });
-    return () => {
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-    };
-  }, [cartFabPosition.ready]);
-
-  function clampFabPosition(nextX: number, nextY: number) {
-    if (typeof window === 'undefined') return { x: nextX, y: nextY };
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const size = 56;
-    const minX = 8;
-    const maxX = Math.max(8, width - size - 8);
-    const minY = 72;
-    const maxY = Math.max(72, height - size - 88);
-    return {
-      x: Math.min(maxX, Math.max(minX, nextX)),
-      y: Math.min(maxY, Math.max(minY, nextY)),
-    };
-  }
-
-  function handleCartFabPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
-    if (typeof window !== 'undefined' && window.innerWidth > 900) return;
-    const currentX = cartFabPosition.ready ? cartFabPosition.x : event.clientX;
-    const currentY = cartFabPosition.ready ? cartFabPosition.y : event.clientY;
-    dragStateRef.current = {
-      dragging: true,
-      moved: false,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: currentX,
-      originY: currentY,
-    };
-    setDraggingFab(true);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  }
-
-  function handleCartFabPointerMove(_event: React.PointerEvent<HTMLButtonElement>) {
-    return;
-  }
-
-  function handleCartFabPointerUp(event: React.PointerEvent<HTMLButtonElement>) {
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-  }
-
-
-
-  function handleCartFabTouchStart(event: any) {
-    if (typeof window !== 'undefined' && window.innerWidth > 900) return;
-    const touch = event.touches[0];
-    if (!touch) return;
-    const currentX = cartFabPosition.ready ? cartFabPosition.x : touch.clientX;
-    const currentY = cartFabPosition.ready ? cartFabPosition.y : touch.clientY;
-    touchStateRef.current = { dragging: true, moved: false, startX: touch.clientX, startY: touch.clientY, originX: currentX, originY: currentY };
-    setDraggingFab(true);
-  }
-
-  function handleCartFabTouchMove(_event: any) {
-    return;
-  }
-
-  function handleCartFabTouchEnd() {
-    return;
-  }
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
 
   function runAddToCartFx(sourceEl: HTMLElement, item: any) {
     const cartButton = cartButtonRef.current;
@@ -200,22 +71,23 @@ export default function OrdersModule(props: any) {
     createOrderRecord();
   }
 
-  const previewCustomers = quickCustomerCards.slice(0, 3);
-  const previewProducts = filteredOrderProducts.slice(0, 3);
 
   return (
     <>
-      <button
-        ref={cartButtonRef}
-        type="button"
-        className={`floating-cart-button ${cartOpen ? 'open' : ''}`}
-        onClick={() => setCartOpen(true)}
-        aria-label="開啟購物車"
-      >
-        <ShoppingCart className="small-icon" />
-        <span className="floating-cart-text">購物車</span>
-        <span className="floating-cart-count">{itemCount}</span>
-      </button>
+      {portalRoot && createPortal(
+        <button
+          ref={cartButtonRef}
+          type="button"
+          className={`floating-cart-button ${cartOpen ? 'open' : ''}`}
+          onClick={() => setCartOpen(true)}
+          aria-label="開啟購物車"
+        >
+          <ShoppingCart className="small-icon" />
+          <span className="floating-cart-text">購物車</span>
+          <span className="floating-cart-count">{itemCount}</span>
+        </button>,
+        portalRoot,
+      )}
 
       <section className="orders-workspace-grid">
         <div className="order-main">
@@ -316,8 +188,9 @@ export default function OrdersModule(props: any) {
         </aside>
       </section>
 
-      <div className={`cart-drawer-overlay ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
-        <aside className={`cart-drawer-panel ${cartOpen ? 'show' : ''}`} onClick={(e) => e.stopPropagation()}>
+      {portalRoot && createPortal(
+        <div className={`cart-drawer-overlay ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
+          <aside className={`cart-drawer-panel ${cartOpen ? 'show' : ''}`} onClick={(e) => e.stopPropagation()}>
           <div className="cart-drawer-head">
             <div>
               <div className="panel-title">購物車</div>
@@ -422,8 +295,10 @@ export default function OrdersModule(props: any) {
             </button>
             {orderNotice && <div className={`inline-action-notice ${orderNotice.tone}`}><strong>{orderNotice.text}</strong></div>}
           </div>
-        </aside>
-      </div>
+          </aside>
+        </div>,
+        portalRoot,
+      )}
     </>
   );
 }

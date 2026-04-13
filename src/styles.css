@@ -12325,3 +12325,77 @@ aside.vp-sidebar {
     border-radius: 20px !important;
   }
 }
+
+
+/* 2026-04-14 cleanup phase3: portalized cart UI, order-page bottom trim, scanner sheet top-anchor */
+@media (max-width: 900px) {
+  .vp-shell[data-active-module="orders"] .vp-main,
+  .vp-shell[data-active-module="orders"] .vp-workspace,
+  .vp-shell[data-active-module="orders"] .vp-module-body,
+  .vp-shell[data-active-module="orders"] .orders-workspace-grid,
+  .vp-shell[data-active-module="orders"] .order-main,
+  .vp-shell[data-active-module="orders"] .orders-catalog-panel,
+  .vp-shell[data-active-module="orders"] .orders-catalog-grid {
+    min-height: 0 !important;
+    height: auto !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    align-content: start !important;
+  }
+
+  .vp-shell[data-active-module="orders"] .vp-module-body {
+    display: block !important;
+  }
+
+  .vp-shell[data-active-module="orders"] .orders-workspace-grid {
+    display: block !important;
+  }
+
+  .vp-shell[data-active-module="orders"] .orders-catalog-panel {
+    overflow: visible !important;
+  }
+
+  .cart-drawer-overlay.show {
+    display: block !important;
+    overflow: hidden !important;
+  }
+
+  .cart-drawer-panel.show {
+    left: 12px !important;
+    right: 12px !important;
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    height: auto !important;
+    transform: none !important;
+    overflow: hidden !important;
+  }
+
+  .cart-drawer-head {
+    padding-top: 16px !important;
+  }
+
+  .cart-drawer-scroll {
+    padding-bottom: 14px !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .cart-drawer-footer {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .floating-cart-button,
+  .floating-cart-button.is-draggable {
+    position: fixed !important;
+    right: 14px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+    transform: none !important;
+    margin: 0 !important;
+    z-index: 2147483600 !important;
+  }
+}
