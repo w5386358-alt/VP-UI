@@ -4257,9 +4257,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     });
     if (matchedStaff) return matchedStaff;
 
-    const hasFirebaseStaff = staff.some((item) => Boolean(String(item.loginId || '').trim()));
-    const allowFallbackAdmin = !hasFirebaseStaff || dataMode === 'offline';
-    if (allowFallbackAdmin && normalizedLoginId === 'vp001' && password === 'vp001') {
+    const allowFallbackAdmin = normalizedLoginId === 'vp001' && password === 'vp001';
+    if (allowFallbackAdmin) {
       return {
         id: 'vp001',
         name: '吳秉宸',
