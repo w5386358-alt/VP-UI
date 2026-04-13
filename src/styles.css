@@ -12495,3 +12495,105 @@ aside.vp-sidebar {
     gap: 10px !important;
   }
 }
+
+
+/* 2026-04-14 cleanup phase5: adaptive modal body / recover product+staff panels / universal scroll */
+@media (max-width: 900px) {
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: min(280px, calc(100dvh - 120px)) !important;
+    height: auto !important;
+  }
+
+  .mobile-more-head,
+  .cart-drawer-head,
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .mobile-modal-shell.is-mobile-open .mobile-editor-head,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
+  .mobile-modal-shell.is-mobile-open > .panel-head,
+  .product-editor-panel.mobile-editor-shell.is-open > .panel-head {
+    flex: 0 0 auto !important;
+  }
+
+  .mobile-modal-body,
+  .mobile-more-sheet .mobile-more-body,
+  .mobile-more-sheet-portal .mobile-more-body,
+  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
+  .mobile-modal-shell.is-mobile-open .staff-editor-body,
+  .mobile-modal-shell.is-mobile-open .product-editor-body,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body,
+  .cart-drawer-scroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
+  .mobile-modal-shell.is-mobile-open .mobile-modal-body,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .cart-drawer-panel.show .form-grid.two-col {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .field-card,
+  .mobile-modal-shell.is-mobile-open .fake-field,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .field-span-2,
+  .mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
+  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
+  .cart-drawer-panel.show .field-span-2 {
+    grid-column: 1 / -1 !important;
+  }
+
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .mobile-staff-editor.is-mobile-open {
+    overflow: hidden !important;
+  }
+
+  .product-editor-panel.mobile-editor-shell.is-open .panel-head,
+  .mobile-staff-editor.is-mobile-open .panel-head {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    background: rgba(255, 252, 253, 0.98) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .cart-drawer-panel.show .form-grid.two-col {
+    grid-template-columns: 1fr !important;
+  }
+}

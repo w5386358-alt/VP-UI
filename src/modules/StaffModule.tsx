@@ -115,15 +115,16 @@ export default function StaffModule(props: any) {
                   </button>
                 </div>
               )}
-              <div className="panel-head compact-head">
-                <div>
-                  <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '編輯人員' : '人員詳情'}</div>
-                  <div className="panel-desc">人員資料與必要權限。</div>
+              <div className="mobile-modal-body staff-editor-body">
+                <div className="panel-head compact-head">
+                  <div>
+                    <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '編輯人員' : '人員詳情'}</div>
+                    <div className="panel-desc">人員資料與必要權限。</div>
+                  </div>
+                  <span className="badge badge-role">{staffEditorMode === 'create' ? '新增' : staffEditorMode === 'edit' ? '編輯' : '查看'}</span>
                 </div>
-                <span className="badge badge-role">{staffEditorMode === 'create' ? '新增' : staffEditorMode === 'edit' ? '編輯' : '查看'}</span>
-              </div>
 
-              <div className="staff-editor-profile">
+                <div className="staff-editor-profile">
                 <div className="staff-editor-avatar">{String(staffDraft.name || selectedStaff?.name || '新').slice(0,1)}</div>
                 <div>
                   <div className="staff-editor-name">{staffDraft.name || '尚未命名'}</div>
@@ -241,6 +242,7 @@ export default function StaffModule(props: any) {
                 )}
               </div>
               {staffNotice && <div className={`inline-action-notice ${staffNotice.tone}`}><strong>{staffNotice.text}</strong></div>}
+              </div>
             </div>
           </aside>
         </section>

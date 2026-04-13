@@ -149,6 +149,7 @@ export default function ProductsModule(props: any) {
               <button type="button" className="ghost-button pagination-btn angle-only" onClick={() => setProductPage((page) => Math.min(totalPages, page + 1))} disabled={safePage === totalPages} aria-label="下一頁">&gt;</button>
             </div>
             {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
+            </div>
           </div>
         </div>
 
@@ -165,14 +166,15 @@ export default function ProductsModule(props: any) {
                 </button>
               </div>
             )}
-            <div className="panel-head compact-head">
-              <div>
-                <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
+            <div className="mobile-modal-body product-editor-body">
+              <div className="panel-head compact-head">
+                <div>
+                  <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
+                </div>
+                <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
               </div>
-              <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
-            </div>
 
-            <div className="form-grid two-col form-gap-top">
+              <div className="form-grid two-col form-gap-top">
               <label className="field-card">
                 <span className="field-label"><Package className="small-icon" />商品編號</span>
                 <input value={productDraft.code} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, code: e.target.value }))} readOnly={productEditorMode === 'view'} />
