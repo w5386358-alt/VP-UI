@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { scanWithCamera } from '../utils/nativeScanner';
 import { Package, Sparkles, FileText, Wallet, Boxes, PencilLine, Eye, Image as ImageIcon, ScanLine, X, Plus } from 'lucide-react';
 
@@ -36,6 +37,8 @@ export default function ProductsModule(props: any) {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
 
   const disabledProducts = products.length - enabledProducts;
   const topProducts = filteredProducts.slice(0, 3);
@@ -270,10 +273,11 @@ export default function ProductsModule(props: any) {
         </aside>
       </section>
 
-      {isMobileViewport && !mobileEditorOpen && (
+      {isMobileViewport && !mobileEditorOpen && portalRoot && createPortal(
         <button type="button" className="mobile-product-fab" onClick={handleOpenCreateProduct} aria-label="新增商品">
           <Plus className="small-icon" />
-        </button>
+        </button>,
+        portalRoot,
       )}
 
       {isMobileViewport && mobileEditorOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEditorOpen(false)} />}

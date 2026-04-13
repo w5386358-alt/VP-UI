@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { UserCog, User, ShieldCheck, KeyRound, PencilLine, Eye, Sparkles, BadgeCheck, ChevronRight, ChevronLeft, Plus, X } from 'lucide-react';
 
 export default function StaffModule(props: any) {
@@ -244,10 +245,11 @@ export default function StaffModule(props: any) {
           </aside>
         </section>
       </section>
-      {isMobileViewport && !mobileEditorOpen && (
+      {isMobileViewport && !mobileEditorOpen && portalRoot && createPortal(
         <button type="button" className="mobile-product-fab mobile-staff-fab" onClick={handleOpenCreateStaff} aria-label="新增人員">
           <Plus className="small-icon" />
-        </button>
+        </button>,
+        portalRoot,
       )}
     </>
   );

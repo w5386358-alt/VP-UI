@@ -12326,16 +12326,14 @@ aside.vp-sidebar {
   }
 }
 
-
-/* 2026-04-14 cleanup phase3: portalized cart UI, order-page bottom trim, scanner sheet top-anchor */
+/* 2026-04-14 cleanup phase4: unified floating buttons + top-anchored mobile drawers + order grid 2x2 */
 @media (max-width: 900px) {
   .vp-shell[data-active-module="orders"] .vp-main,
   .vp-shell[data-active-module="orders"] .vp-workspace,
   .vp-shell[data-active-module="orders"] .vp-module-body,
   .vp-shell[data-active-module="orders"] .orders-workspace-grid,
   .vp-shell[data-active-module="orders"] .order-main,
-  .vp-shell[data-active-module="orders"] .orders-catalog-panel,
-  .vp-shell[data-active-module="orders"] .orders-catalog-grid {
+  .vp-shell[data-active-module="orders"] .orders-catalog-panel {
     min-height: 0 !important;
     height: auto !important;
     margin-bottom: 0 !important;
@@ -12343,10 +12341,7 @@ aside.vp-sidebar {
     align-content: start !important;
   }
 
-  .vp-shell[data-active-module="orders"] .vp-module-body {
-    display: block !important;
-  }
-
+  .vp-shell[data-active-module="orders"] .vp-module-body,
   .vp-shell[data-active-module="orders"] .orders-workspace-grid {
     display: block !important;
   }
@@ -12355,12 +12350,36 @@ aside.vp-sidebar {
     overflow: visible !important;
   }
 
-  .cart-drawer-overlay.show {
-    display: block !important;
-    overflow: hidden !important;
+  .vp-shell[data-active-module="orders"] .orders-catalog-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
   }
 
+  .vp-shell[data-active-module="orders"] .catalog-card.orders-product-card {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .mobile-editor-backdrop,
+  .mobile-more-overlay,
+  .cart-drawer-overlay.show {
+    position: fixed !important;
+    inset: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+    background: rgba(34, 23, 30, 0.26) !important;
+    z-index: 2147483000 !important;
+  }
+
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
   .cart-drawer-panel.show {
+    position: fixed !important;
     left: 12px !important;
     right: 12px !important;
     top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
@@ -12369,8 +12388,43 @@ aside.vp-sidebar {
     max-width: none !important;
     max-height: none !important;
     height: auto !important;
+    margin: 0 !important;
     transform: none !important;
+    border-radius: 20px !important;
     overflow: hidden !important;
+    box-sizing: border-box !important;
+    z-index: 2147483100 !important;
+  }
+
+  .mobile-more-sheet,
+  .mobile-more-sheet-portal,
+  .mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+
+  .mobile-more-head,
+  .cart-drawer-head,
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .mobile-modal-shell.is-mobile-open .mobile-editor-head,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    background: rgba(255, 252, 253, 0.98) !important;
+  }
+
+  .cart-drawer-scroll,
+  .mobile-more-sheet .mobile-more-body,
+  .mobile-more-sheet-portal .mobile-more-body,
+  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
+  .product-editor-panel.mobile-editor-shell.is-open > :not(.mobile-editor-head) {
+    min-height: 0 !important;
+    overflow: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .cart-drawer-head {
@@ -12379,14 +12433,40 @@ aside.vp-sidebar {
 
   .cart-drawer-scroll {
     padding-bottom: 14px !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
   }
 
   .cart-drawer-footer {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: rgba(255, 252, 253, 0.98) !important;
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .cart-drawer-panel.show .form-grid.two-col {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .field-span-2,
+  .mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
+  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
+  .cart-drawer-panel.show .field-span-2 {
+    grid-column: 1 / -1 !important;
+  }
+
+  .mobile-product-fab,
+  .mobile-staff-fab,
+  .staff-mobile-add-fab,
   .floating-cart-button,
   .floating-cart-button.is-draggable {
     position: fixed !important;
@@ -12394,8 +12474,24 @@ aside.vp-sidebar {
     left: auto !important;
     top: auto !important;
     bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    min-width: 56px !important;
+    max-width: calc(100vw - 28px) !important;
     transform: none !important;
     margin: 0 !important;
     z-index: 2147483600 !important;
+  }
+
+  .floating-cart-button {
+    justify-content: center !important;
+    padding: 12px 14px !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .vp-shell[data-active-module="orders"] .orders-catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
   }
 }
