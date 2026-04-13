@@ -261,6 +261,11 @@ const INITIAL_QR_SEED: Record<string, Array<{ qr: string; qty: number }>> = {
   P305: [{ qr: 'QR(P305)', qty: 14 }],
 };
 
+const VP_SESSION_LOGIN_KEY = 'vp-session-login-id';
+const VP_SESSION_REMEMBER_KEY = 'vp-remember-login';
+const VP_SESSION_MODE_KEY = 'vp-session-mode';
+
+
 function parseDateValue(value: string) {
   return new Date(value.replace(/-/g, '/')).getTime();
 }
@@ -3452,10 +3457,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const synced = await syncStaffToFirebase(nextStaff, { previousId: sessionStaff.id, previousLoginId: sessionStaff.loginId });
     if (!synced) return false;
     setSessionLoginId(nextStaff.loginId);
-    if (typeof window !== 'undefined') {
-      if (rememberLogin) window.localStorage.setItem('vp-session-login-id', nextStaff.loginId);
-      else window.localStorage.removeItem('vp-session-login-id');
-    }
+    persistLoginState(nextStaff.loginId, rememberLogin);
     return true;
   }
 
@@ -4319,6 +4321,23 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     reader.readAsDataURL(file);
   }
 
+  function persistLoginState(nextLoginId: string, shouldRemember: boolean) {
+    if (typeof window === 'undefined') return;
+    const storage = shouldRemember ? window.localStorage : window.sessionStorage;
+    const fallbackStorage = shouldRemember ? window.sessionStorage : window.localStorage;
+    storage.setItem(VP_SESSION_LOGIN_KEY, nextLoginId);
+    window.localStorage.setItem(VP_SESSION_REMEMBER_KEY, shouldRemember ? '1' : '0');
+    window.localStorage.setItem(VP_SESSION_MODE_KEY, shouldRemember ? 'local' : 'session');
+    fallbackStorage.removeItem(VP_SESSION_LOGIN_KEY);
+  }
+
+  function clearPersistedLoginState() {
+    if (typeof window === 'undefined') return;
+    window.localStorage.removeItem(VP_SESSION_LOGIN_KEY);
+    window.sessionStorage.removeItem(VP_SESSION_LOGIN_KEY);
+    window.localStorage.removeItem(VP_SESSION_MODE_KEY);
+  }
+
   function handleLogoImageUpload(file: File | null) {
     readImageFile(file, setLogoImage);
   }
@@ -4329,8 +4348,18 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const remembered = window.localStorage.getItem('vp-session-login-id') || '';
-    if (remembered) setSessionLoginId(remembered);
+    const rememberedFlag = window.localStorage.getItem(VP_SESSION_REMEMBER_KEY);
+    if (rememberedFlag === '1') setRememberLogin(true);
+    else if (rememberedFlag === '0') setRememberLogin(false);
+
+    const storedMode = window.localStorage.getItem(VP_SESSION_MODE_KEY);
+    const restoredLoginId =
+      (storedMode === 'session' ? window.sessionStorage.getItem(VP_SESSION_LOGIN_KEY) : '') ||
+      (storedMode === 'local' ? window.localStorage.getItem(VP_SESSION_LOGIN_KEY) : '') ||
+      window.localStorage.getItem(VP_SESSION_LOGIN_KEY) ||
+      window.sessionStorage.getItem(VP_SESSION_LOGIN_KEY) ||
+      '';
+    if (restoredLoginId) setSessionLoginId(restoredLoginId);
   }, []);
 
   useEffect(() => {
@@ -4339,8 +4368,15 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const found = staff.find((item) => item.loginId === sessionLoginId && item.enabled);
     if (found) return;
     setSessionLoginId('');
-    if (typeof window !== 'undefined') window.localStorage.removeItem('vp-session-login-id');
+    clearPersistedLoginState();
   }, [staff, sessionLoginId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(VP_SESSION_REMEMBER_KEY, rememberLogin ? '1' : '0');
+    if (!sessionLoginId) return;
+    persistLoginState(sessionLoginId, rememberLogin);
+  }, [rememberLogin, sessionLoginId]);
 
   function resolveLoginStaff(loginIdRaw: string, passwordRaw: string) {
     const loginId = loginIdRaw.trim();
@@ -4390,17 +4426,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
     setSessionLoginId(matched.loginId);
     setLoginError('');
-    if (typeof window !== 'undefined') {
-      if (rememberLogin) window.localStorage.setItem('vp-session-login-id', matched.loginId);
-      else window.localStorage.removeItem('vp-session-login-id');
-    }
+    persistLoginState(matched.loginId, rememberLogin);
     triggerShellHint(`✅ ${matched.name} 已登入`);
   }
 
   function handleLogout() {
     setSessionLoginId('');
     setLoginError('');
-    if (typeof window !== 'undefined') window.localStorage.removeItem('vp-session-login-id');
+    clearPersistedLoginState();
     triggerShellHint('已登出。');
   }
 
