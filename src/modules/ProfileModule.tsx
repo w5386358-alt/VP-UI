@@ -1,4 +1,4 @@
-import { ClipboardCheck, Vote, Lock, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -111,6 +111,14 @@ export default function ProfileModule(props: any) {
           <label className="field-card">
             <span className="field-label"><UserRound className="small-icon" />登入 ID</span>
             <input value={profileDraft?.loginId || ''} onChange={(e) => updateProfileDraftField?.('loginId', e.target.value)} readOnly={!!isBackupProfile} />
+          </label>
+          <label className="field-card">
+            <span className="field-label"><Lock className="small-icon" />密碼</span>
+            <input value={profileDraft?.password || ''} onChange={(e) => updateProfileDraftField?.('password', e.target.value)} readOnly={!!isBackupProfile} />
+          </label>
+          <label className="field-card">
+            <span className="field-label"><Medal className="small-icon" />身分 / 階級</span>
+            <input value={`${profileDraft?.role || ''} / ${profileDraft?.rank || ''}`} readOnly />
           </label>
         </div>
         <div className="accounting-action-row">
