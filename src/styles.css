@@ -12365,3 +12365,44 @@ aside.vp-sidebar {
     bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+
+/* 2026-04-13 mobile nav hard fix: render on body-level portal */
+.mobile-nav-portal {
+  position: fixed !important;
+  left: max(8px, env(safe-area-inset-left, 0px)) !important;
+  right: max(8px, env(safe-area-inset-right, 0px)) !important;
+  bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 2147482000 !important;
+  transform: none !important;
+  isolation: isolate;
+}
+
+.mobile-more-sheet-portal {
+  position: fixed !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 2147482100 !important;
+}
+
+.mobile-more-overlay {
+  z-index: 2147482050 !important;
+}
+
+@media (max-width: 900px) {
+  .vp-shell-page,
+  .vp-shell,
+  .vp-main,
+  .vp-workspace,
+  .vp-module-body {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    will-change: auto !important;
+  }
+
+  body {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}

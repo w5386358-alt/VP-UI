@@ -1,4 +1,5 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -4214,6 +4215,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [isStandaloneMode, setIsStandaloneMode] = useState(false);
   const [showAppLaunch, setShowAppLaunch] = useState(() => (typeof window === 'undefined' ? false : true));
 
+  const canUsePortal = typeof document !== 'undefined';
+
   useEffect(() => {
     setLogoImage(localStorage.getItem('vp.logoImage') || '');
     setDashboardAvatarImage(localStorage.getItem('vp.dashboardAvatarImage') || '');
@@ -4487,6 +4490,98 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   useEffect(() => {
     setMobileMoreOpen(false);
   }, [active]);
+
+  const mobileNavNode = (
+    <div className="mobile-nav mobile-nav-portal">
+      {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
+        const Icon = item.icon;
+        const isActive = item.key === 'more' ? mobileMoreOpen : (!mobileMoreOpen && active === item.key);
+        return (
+          <button
+            key={item.key}
+            type="button"
+            className={`mobile-nav-btn ${isActive ? 'active' : ''}`}
+            onClick={() => {
+              if (item.key === 'more') {
+                setMobileMoreOpen((prev) => !prev);
+                setNotificationOpen(false);
+                setProfileOpen(false);
+              } else {
+                setActive(item.key as NavKey);
+                setMobileMoreOpen(false);
+              }
+            }}
+          >
+            <Icon className="small-icon" />
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const mobileMoreNode = mobileMoreOpen ? (
+    <>
+      <button type="button" className="mobile-more-overlay" aria-label="關閉更多選單" onClick={() => setMobileMoreOpen(false)} />
+      <div ref={mobileMoreSheetRef} className="mobile-more-sheet card mobile-more-sheet-portal">
+        <div className="mobile-more-head">
+          <div>
+            <div className="mobile-more-title">更多</div>
+            <div className="mobile-more-sub">常用延伸功能與系統管理入口</div>
+          </div>
+          <button type="button" className="drawer-close-button" onClick={() => setMobileMoreOpen(false)}>關閉</button>
+        </div>
+
+        <div className="mobile-more-section">
+          <div className="mobile-more-section-title">常用功能</div>
+          <div className="mobile-more-grid">
+            {mobileMoreCommonItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
+                  onClick={() => {
+                    setActive(item.key);
+                    setMobileMoreOpen(false);
+                  }}
+                >
+                  <Icon className="small-icon" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {mobileManagementItems.length > 0 && (
+          <div className="mobile-more-section">
+            <div className="mobile-more-section-title">系統管理</div>
+            <div className="mobile-more-grid">
+              {mobileManagementItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
+                    onClick={() => {
+                      setActive(item.key);
+                      setMobileMoreOpen(false);
+                    }}
+                  >
+                    <Icon className="small-icon" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  ) : null;
 
   if (!isAuthenticated) {
     return (
@@ -4888,95 +4983,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           )}
         </section>
 
-        <div className="mobile-nav">
-          {mobilePrimaryNavItems.filter((item) => item.key === 'more' || (canAccessNav(user, item.key as NavKey) && (item.key !== 'profile' || canAccessEvaluation(user)))).map((item) => {
-            const Icon = item.icon;
-            const isActive = item.key === 'more' ? mobileMoreOpen : (!mobileMoreOpen && active === item.key);
-            return (
-              <button
-                key={item.key}
-                type="button"
-                className={`mobile-nav-btn ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  if (item.key === 'more') {
-                    setMobileMoreOpen((prev) => !prev);
-                    setNotificationOpen(false);
-                    setProfileOpen(false);
-                  } else {
-                    setActive(item.key as NavKey);
-                    setMobileMoreOpen(false);
-                  }
-                }}
-              >
-                <Icon className="small-icon" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {mobileMoreOpen && (
-          <>
-            <button type="button" className="mobile-more-overlay" aria-label="關閉更多選單" onClick={() => setMobileMoreOpen(false)} />
-            <div ref={mobileMoreSheetRef} className="mobile-more-sheet card">
-              <div className="mobile-more-head">
-                <div>
-                  <div className="mobile-more-title">更多</div>
-                  <div className="mobile-more-sub">常用延伸功能與系統管理入口</div>
-                </div>
-                <button type="button" className="drawer-close-button" onClick={() => setMobileMoreOpen(false)}>關閉</button>
-              </div>
-
-              <div className="mobile-more-section">
-                <div className="mobile-more-section-title">常用功能</div>
-                <div className="mobile-more-grid">
-                  {mobileMoreCommonItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
-                        onClick={() => {
-                          setActive(item.key);
-                          setMobileMoreOpen(false);
-                        }}
-                      >
-                        <Icon className="small-icon" />
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {mobileManagementItems.length > 0 && (
-                <div className="mobile-more-section">
-                  <div className="mobile-more-section-title">系統管理</div>
-                  <div className="mobile-more-grid">
-                    {mobileManagementItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
-                          onClick={() => {
-                            setActive(item.key);
-                            setMobileMoreOpen(false);
-                          }}
-                        >
-                          <Icon className="small-icon" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        {canUsePortal ? createPortal(mobileNavNode, document.body) : mobileNavNode}
+        {canUsePortal && mobileMoreNode ? createPortal(mobileMoreNode, document.body) : mobileMoreNode}
       </main>
     </div>
   );
