@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Truck, Boxes, Search, QrCode, ScanLine, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, ClipboardCheck, Layers3, ChevronRight, X } from 'lucide-react';
+import { Truck, Boxes, Search, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, Layers3, ChevronRight, X } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
@@ -200,16 +200,13 @@ export default function InventoryModule(props: any) {
             <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileWarehousePanelOpen ? 'show' : ''}`} onClick={() => setMobileWarehousePanelOpen(false)} />
             <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell mobile-shared-layer-panel mobile-warehouse-editor ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
-                <div className="warehouse-card-head warehouse-card-head-polished">
+                <div className="warehouse-card-head">
                   <div>
                     <div className="flow-title">出貨資訊</div>
                     <div className="flow-desc">查看驗證、出貨資料與狀態。</div>
                   </div>
-                  <div className="warehouse-card-head-actions warehouse-head-actions">
-                    <button type="button" className="warehouse-head-icon-button" onClick={handleScanBarcodeLaunch} aria-label="快速掃描商品條碼"><ScanLine className="small-icon" /></button>
-                    <div className="warehouse-head-status-pill"><ClipboardCheck className="small-icon" /><span>驗證</span></div>
-                    <button type="button" className="warehouse-head-icon-button" onClick={handleScanQrLaunch} aria-label="快速掃描 QR 身分識別"><QrCode className="small-icon" /></button>
-                    <button type="button" className="mobile-panel-close warehouse-head-close" onClick={() => setMobileWarehousePanelOpen(false)} aria-label="關閉出貨資訊"><X className="small-icon" /></button>
+                  <div className="warehouse-card-head-actions">
+                    <button type="button" className="mobile-panel-close" onClick={() => setMobileWarehousePanelOpen(false)} aria-label="關閉出貨資訊"><X className="small-icon" /></button>
                   </div>
                 </div>
 
@@ -266,16 +263,13 @@ export default function InventoryModule(props: any) {
               : (
             <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell mobile-shared-layer-panel mobile-warehouse-editor ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
               <div className="warehouse-side-section mobile-modal-body">
-                <div className="warehouse-card-head warehouse-card-head-polished">
+                <div className="warehouse-card-head">
                   <div>
                     <div className="flow-title">出貨資訊</div>
                     <div className="flow-desc">查看驗證、出貨資料與狀態。</div>
                   </div>
-                  <div className="warehouse-card-head-actions warehouse-head-actions">
-                    <button type="button" className="warehouse-head-icon-button" onClick={handleScanBarcodeLaunch} aria-label="快速掃描商品條碼"><ScanLine className="small-icon" /></button>
-                    <div className="warehouse-head-status-pill"><ClipboardCheck className="small-icon" /><span>驗證</span></div>
-                    <button type="button" className="warehouse-head-icon-button" onClick={handleScanQrLaunch} aria-label="快速掃描 QR 身分識別"><QrCode className="small-icon" /></button>
-                    <button type="button" className="mobile-panel-close warehouse-head-close" onClick={() => setMobileWarehousePanelOpen(false)} aria-label="關閉出貨資訊"><X className="small-icon" /></button>
+                  <div className="warehouse-card-head-actions">
+                    <button type="button" className="mobile-panel-close" onClick={() => setMobileWarehousePanelOpen(false)} aria-label="關閉出貨資訊"><X className="small-icon" /></button>
                   </div>
                 </div>
 
