@@ -13025,80 +13025,108 @@ aside.vp-sidebar {
   }
 }
 
-
-/* 2026-04-15 cleanup phase14: warehouse/accounting mobile action buttons final compact override */
+/* 2026-04-15 cleanup phase14: real-device 2x2 footer buttons + qr inline anchor */
 @media (max-width: 900px) {
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-grid {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
     width: 100% !important;
     align-items: stretch !important;
-    justify-items: stretch !important;
   }
 
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-grid > * {
-    min-width: 0 !important;
+  .mobile-modal-shell.is-mobile-open .accounting-action-row > *,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row > * {
     width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
     flex: none !important;
     grid-column: auto !important;
     justify-self: stretch !important;
-    margin: 0 !important;
   }
 
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .ghost-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .ghost-button {
     min-height: 38px !important;
     height: 38px !important;
-    padding: 0 10px !important;
-    border-radius: 12px !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    gap: 4px !important;
+    border-radius: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .print-symbol-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .print-symbol-icon {
+    width: 11px !important;
+    height: 11px !important;
+    flex: 0 0 11px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-side-section:last-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .scanner-inline-field strong,
+  .scanner-input-wrap {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  .scanner-inline-field strong input,
+  .scanner-input-wrap input {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-right: 58px !important;
+  }
+
+  .scan-inline-icon-btn,
+  .scan-inline-icon-btn:hover,
+  .scan-inline-icon-btn:focus,
+  .scan-inline-icon-btn:active {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    translate: none !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 999px !important;
+    z-index: 3 !important;
     display: inline-flex !important;
-    flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 5px !important;
-    font-size: 12px !important;
+    flex: 0 0 32px !important;
+  }
+
+  .scan-inline-icon-btn .small-icon,
+  .scan-inline-icon-btn .scan-launch-emoji {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 18px !important;
     line-height: 1 !important;
-    font-weight: 700 !important;
-    letter-spacing: 0 !important;
-    white-space: nowrap !important;
-    text-wrap: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn .small-icon,
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn .print-symbol-icon,
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn img {
-    width: 12px !important;
-    height: 12px !important;
-    min-width: 12px !important;
-    min-height: 12px !important;
-    flex: 0 0 12px !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn span,
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn strong {
-    white-space: nowrap !important;
-    line-height: 1 !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn-primary {
-    background: linear-gradient(135deg, #d35c87 0%, #c63e6f 100%) !important;
-    color: #fff !important;
-    border: 1px solid rgba(198, 62, 111, 0.68) !important;
-    box-shadow: 0 8px 18px rgba(198, 62, 111, 0.14) !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn-secondary {
-    background: rgba(255, 247, 250, 0.98) !important;
-    color: #8a2a4c !important;
-    border: 1px solid rgba(218, 136, 164, 0.34) !important;
-    box-shadow: none !important;
   }
 }
 
-@media (max-width: 360px) {
-  .mobile-modal-shell.is-mobile-open .mobile-panel-action-grid {
+@media (max-width: 320px) {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row {
     grid-template-columns: 1fr !important;
   }
 }
