@@ -198,7 +198,7 @@ export default function InventoryModule(props: any) {
               ? mobileWarehousePanelOpen && createPortal((
             <>
             <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileWarehousePanelOpen ? 'show' : ''}`} onClick={() => setMobileWarehousePanelOpen(false)} />
-            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell mobile-shared-layer-panel mobile-warehouse-editor ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head warehouse-card-head-polished">
                   <div>
@@ -264,7 +264,7 @@ export default function InventoryModule(props: any) {
 
               ), portalRoot)
               : (
-            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell mobile-shared-layer-panel mobile-warehouse-editor ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head warehouse-card-head-polished">
                   <div>
@@ -380,7 +380,7 @@ export default function InventoryModule(props: any) {
 
           {isMobileViewport && portalRoot
             ? mobileInboundPanelOpen && createPortal((
-          <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
+          <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell mobile-shared-layer-panel mobile-inbound-editor ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
             <div className="warehouse-side-section mobile-modal-body">
               <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
               <div className="warehouse-form-grid warehouse-command-fields">
@@ -406,7 +406,7 @@ export default function InventoryModule(props: any) {
 
             ), portalRoot)
             : (
-          <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
+          <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell mobile-shared-layer-panel mobile-inbound-editor ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
             <div className="warehouse-side-section mobile-modal-body">
               <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
               <div className="warehouse-form-grid warehouse-command-fields">

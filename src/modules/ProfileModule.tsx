@@ -260,7 +260,7 @@ export default function ProfileModule(props: any) {
           </div>
 
           <div className="evaluation-grid evaluation-form-grid-v2">
-            <div className={`card evaluation-card evaluation-form-card mobile-modal-shell ${isMobileViewport ? 'mobile-evaluation-card' : ''} ${mobileEvaluationOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`card evaluation-card evaluation-form-card mobile-modal-shell mobile-shared-layer-panel mobile-evaluation-editor ${isMobileViewport ? 'mobile-evaluation-card' : ''} ${mobileEvaluationOpen ? 'is-mobile-open' : ''}`}>
               {isMobileViewport && (
                 <div className="mobile-editor-head">
                   <div className="mobile-editor-title-wrap">

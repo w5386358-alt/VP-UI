@@ -11429,8 +11429,8 @@ body {
   .vp-login-layout { width: min(560px, 100%); grid-template-columns: 1fr; gap: 16px; }
   .vp-login-brand, .vp-login-card { padding: 22px; border-radius: 24px; }
   .vp-login-row-tip { width: 100%; margin-left: 0; }
-  .staff-permission-switch-grid,
-  .staff-permission-switch-grid.compact { grid-template-columns: 1fr; }
+  .staff-permission-switch-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-permission-switch-grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* login ui visual refresh */
@@ -11733,16 +11733,16 @@ button:hover,
 }
 
 .staff-permission-switch-grid.compact {
-  grid-template-columns: 1fr !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
 .staff-permission-block:last-child .staff-permission-switch-grid.compact {
-  grid-template-columns: 1fr !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
 @media (max-width: 900px) {
   .staff-permission-switch-grid.compact {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
@@ -13989,5 +13989,26 @@ aside.vp-sidebar {
   .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
   .mobile-staff-editor.is-mobile-open .form-grid.two-col {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+
+/* === 2026-04-14 fix30: shared-layer completion + staff permission 2-col === */
+.mobile-shared-layer-panel.is-mobile-open .staff-permission-switch-grid,
+.mobile-shared-layer-panel.is-mobile-open .staff-permission-switch-grid.compact{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+.mobile-shared-layer-panel.is-mobile-open .staff-permission-group-list{
+  gap:12px !important;
+}
+.mobile-shared-layer-panel.is-mobile-open .permission-switch-card{
+  align-items:flex-start !important;
+  min-height:unset !important;
+}
+@media (max-width:900px){
+  .mobile-shared-layer-panel.is-mobile-open .staff-permission-switch-grid,
+  .mobile-shared-layer-panel.is-mobile-open .staff-permission-switch-grid.compact{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   }
 }
