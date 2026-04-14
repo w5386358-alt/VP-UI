@@ -13331,3 +13331,134 @@ aside.vp-sidebar {
     }
   }
 }
+
+
+/* cleanup phase16: warehouse/accounting mobile modal 2-col layout + qr inline anchor */
+@media (max-width: 768px) {
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    align-items: start !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields > .wide,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields > .wide,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields > .wide,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid > .wide,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid > .wide,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid > .wide,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-scan-hint-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-scan-hint-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-scan-hint-grid,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-issue-list,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-issue-list,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-issue-list,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .hidden-file-input,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .hidden-file-input,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .hidden-file-input {
+    grid-column: 1 / -1 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field {
+    padding: 8px 9px !important;
+    border-radius: 12px !important;
+    min-width: 0 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field span {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field strong {
+    font-size: 11.5px !important;
+    line-height: 1.3 !important;
+    min-width: 0 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong input,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong input,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong input,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap input,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap input,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap input {
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 9px 44px 9px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:hover,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:focus,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:active,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:hover,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:focus,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:active,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:hover,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:focus,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn:active {
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    transform: translateY(-50%) !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 4 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn .small-icon,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn .small-icon,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scan-inline-icon-btn .small-icon {
+    width: 15px !important;
+    height: 15px !important;
+    flex: 0 0 15px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
