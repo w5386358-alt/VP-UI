@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { User, Phone, MapPin, BadgePercent, Wallet, FileText, Store, Truck, Receipt, ShoppingCart, X, PackageCheck } from 'lucide-react';
 
@@ -32,6 +32,17 @@ export default function OrdersModule(props: any) {
   const pagedQuickCustomers = useMemo(() => quickCustomerCards.slice((safeQuickCustomerPage - 1) * pageSize, safeQuickCustomerPage * pageSize), [quickCustomerCards, safeQuickCustomerPage]);
   const quickCustomerPageNumbers = Array.from({ length: totalQuickCustomerPages }, (_, index) => index + 1);
   const portalRoot = typeof document !== 'undefined' ? document.body : null;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isMobile = window.innerWidth <= 900;
+    if (!(isMobile && cartOpen)) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [cartOpen]);
 
   function runAddToCartFx(sourceEl: HTMLElement, item: any) {
     const cartButton = cartButtonRef.current;
@@ -189,8 +200,8 @@ export default function OrdersModule(props: any) {
       </section>
 
       {portalRoot && createPortal(
-        <div className={`cart-drawer-overlay ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
-          <aside className={`cart-drawer-panel ${cartOpen ? 'show' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className={`cart-drawer-overlay mobile-modal-overlay shared-layer-backdrop mobile-cart-backdrop ${cartOpen ? 'show' : ''}`} onClick={() => setCartOpen(false)}>
+          <aside className={`cart-drawer-panel mobile-modal-shell mobile-shared-layer-panel mobile-cart-editor ${cartOpen ? 'show is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
           <div className="cart-drawer-head">
             <div>
               <div className="panel-title">購物車</div>
