@@ -201,7 +201,6 @@ export default function AccountingModule(props: any) {
               </div>
             </div>
             </div>
-            </div>
 
               ), portalRoot)
               : (
