@@ -13627,3 +13627,55 @@ aside.vp-sidebar {
     margin: 0 !important;
   }
 }
+
+
+/* fix22: QR scanner layer priority + inline QR icon right-center */
+.scan-inline-icon-btn {
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 5 !important;
+  width: 38px !important;
+  height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.scan-inline-icon-btn .small-icon,
+.scan-inline-icon-btn .scan-launch-emoji {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 20px !important;
+}
+
+.scanner-input-wrap,
+.scanner-inline-field strong {
+  position: relative !important;
+  display: block !important;
+}
+
+.scanner-input-wrap input,
+.scanner-inline-field strong input {
+  padding-right: 58px !important;
+}
+
+@media (max-width: 900px) {
+  .scan-inline-icon-btn {
+    right: 10px !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .scan-inline-icon-btn .small-icon,
+  .scan-inline-icon-btn .scan-launch-emoji {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 18px !important;
+  }
+
+  .scanner-input-wrap input,
+  .scanner-inline-field strong input {
+    padding-right: 54px !important;
+  }
+}

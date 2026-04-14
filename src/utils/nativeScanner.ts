@@ -28,14 +28,14 @@ export async function scanWithCamera(options?: ScanOptions): Promise<string | nu
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.style.cssText = [
-      'position:fixed','inset:0','background:rgba(18,22,32,.62)','z-index:99999',
+      'position:fixed','inset:0','background:rgba(18,22,32,.62)','z-index:2147483646',
       'display:flex','align-items:flex-start','justify-content:center',
       'padding:calc(12px + env(safe-area-inset-top, 0px)) 12px calc(104px + env(safe-area-inset-bottom, 0px))'
     ].join(';');
 
     const card = document.createElement('div');
     card.style.cssText = [
-      'width:min(92vw,420px)','max-height:min(78dvh,760px)','overflow:auto',
+      'position:relative','z-index:2147483647','width:min(92vw,420px)','max-height:min(78dvh,760px)','overflow:auto',
       'background:#fff','border-radius:24px','padding:18px',
       'box-shadow:0 24px 70px rgba(0,0,0,.26)','display:grid','gap:12px'
     ].join(';');
