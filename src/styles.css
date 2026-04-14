@@ -13875,3 +13875,119 @@ aside.vp-sidebar {
     font-size: 11px;
   }
 }
+
+/* 2026-04-14 cleanup phase7: unify cart + product + staff card layout rule */
+@media (max-width: 900px) {
+  .cart-drawer-panel.show .form-grid.two-col,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .mobile-staff-editor.is-mobile-open .form-grid.two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  .cart-drawer-panel.show .field-card,
+  .cart-drawer-panel.show .upload-field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
+  .mobile-staff-editor.is-mobile-open .field-card,
+  .mobile-staff-editor.is-mobile-open .upload-field-card {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    align-self: start !important;
+    gap: 6px !important;
+    min-height: unset !important;
+    height: auto !important;
+    padding: 10px 11px !important;
+  }
+
+  .cart-drawer-panel.show .field-label,
+  .product-editor-panel.mobile-editor-shell.is-open .field-label,
+  .mobile-staff-editor.is-mobile-open .field-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+
+  .cart-drawer-panel.show .field-card input,
+  .cart-drawer-panel.show .field-card select,
+  .cart-drawer-panel.show .field-card textarea,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card input,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card select,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card textarea,
+  .mobile-staff-editor.is-mobile-open .field-card input,
+  .mobile-staff-editor.is-mobile-open .field-card select,
+  .mobile-staff-editor.is-mobile-open .field-card textarea {
+    margin: 0 !important;
+    min-height: 40px !important;
+    height: auto !important;
+    line-height: 1.3 !important;
+  }
+
+  .cart-drawer-panel.show .field-card textarea,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card textarea,
+  .mobile-staff-editor.is-mobile-open .field-card textarea {
+    min-height: 76px !important;
+  }
+
+  .cart-drawer-panel.show .field-span-2,
+  .cart-drawer-panel.show .upload-field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
+  .mobile-staff-editor.is-mobile-open .field-span-2,
+  .mobile-staff-editor.is-mobile-open .upload-field-card {
+    grid-column: 1 / -1 !important;
+  }
+
+  .cart-drawer-panel.show .cart-item,
+  .cart-drawer-panel.show .quick-customer-card,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-panel,
+  .mobile-staff-editor.is-mobile-open .staff-permission-card,
+  .mobile-staff-editor.is-mobile-open .staff-permission-block,
+  .mobile-staff-editor.is-mobile-open .staff-editor-profile {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+  }
+
+  .cart-drawer-panel.show .cart-item {
+    padding: 10px 11px !important;
+  }
+
+  .cart-drawer-panel.show .cart-item-top,
+  .cart-drawer-panel.show .cart-item-bottom {
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .mobile-staff-editor.is-mobile-open .staff-editor-profile {
+    align-items: flex-start !important;
+    margin-bottom: 10px !important;
+  }
+
+  .mobile-staff-editor.is-mobile-open .staff-permission-card,
+  .mobile-staff-editor.is-mobile-open .staff-permission-block {
+    padding: 10px 11px !important;
+  }
+
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions,
+  .cart-drawer-panel.show .cart-drawer-footer {
+    flex: 0 0 auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .cart-drawer-panel.show .form-grid.two-col,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .mobile-staff-editor.is-mobile-open .form-grid.two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
