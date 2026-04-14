@@ -12326,7 +12326,7 @@ aside.vp-sidebar {
   }
 }
 
-/* 2026-04-14 cleanup phase4: unified floating buttons + top-anchored mobile drawers + order grid 2x2 */
+/* 2026-04-14 cleanup phase4-10: unified mobile shared-layer shell + 2-col card rule */
 @media (max-width: 900px) {
   .vp-shell[data-active-module="orders"] .vp-main,
   .vp-shell[data-active-module="orders"] .vp-workspace,
@@ -12378,7 +12378,8 @@ aside.vp-sidebar {
   .mobile-more-sheet-portal,
   .mobile-modal-shell.is-mobile-open,
   .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
+  .cart-drawer-panel.show,
+  .mobile-staff-editor.is-mobile-open {
     position: fixed !important;
     left: 12px !important;
     right: 12px !important;
@@ -12394,13 +12395,6 @@ aside.vp-sidebar {
     overflow: hidden !important;
     box-sizing: border-box !important;
     z-index: 2147483100 !important;
-  }
-
-  .mobile-more-sheet,
-  .mobile-more-sheet-portal,
-  .mobile-modal-shell.is-mobile-open,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
     display: grid !important;
     grid-template-rows: auto minmax(0, 1fr) auto !important;
   }
@@ -12409,7 +12403,9 @@ aside.vp-sidebar {
   .cart-drawer-head,
   .mobile-modal-shell.is-mobile-open .warehouse-card-head,
   .mobile-modal-shell.is-mobile-open .mobile-editor-head,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head {
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
+  .mobile-modal-shell.is-mobile-open > .panel-head,
+  .product-editor-panel.mobile-editor-shell.is-open > .panel-head {
     position: sticky !important;
     top: 0 !important;
     z-index: 2 !important;
@@ -12420,6 +12416,10 @@ aside.vp-sidebar {
   .mobile-more-sheet .mobile-more-body,
   .mobile-more-sheet-portal .mobile-more-body,
   .mobile-modal-shell.is-mobile-open .warehouse-side-section,
+  .mobile-modal-shell.is-mobile-open .mobile-modal-body,
+  .mobile-modal-shell.is-mobile-open .staff-editor-body,
+  .mobile-modal-shell.is-mobile-open .product-editor-body,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body,
   .product-editor-panel.mobile-editor-shell.is-open > :not(.mobile-editor-head) {
     min-height: 0 !important;
     overflow: auto !important;
@@ -12433,6 +12433,7 @@ aside.vp-sidebar {
 
   .cart-drawer-scroll {
     padding-bottom: 14px !important;
+    max-height: none !important;
   }
 
   .cart-drawer-footer {
@@ -12442,26 +12443,120 @@ aside.vp-sidebar {
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
-  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
-  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
-  .cart-drawer-panel.show .form-grid.two-col {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open,
+  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open,
+  .staff-editor-panel-v2.mobile-staff-editor.is-mobile-open {
     align-items: stretch !important;
   }
 
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child {
+    padding-bottom: 8px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
+    padding-top: 0 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .staff-editor-body .form-grid.two-col,
+  .mobile-more-grid,
+  .cart-drawer-panel.show .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  .mobile-more-grid > *,
+  .warehouse-form-grid > .wide,
+  .warehouse-form-grid > .fake-field.wide,
   .mobile-modal-shell.is-mobile-open .field-span-2,
   .mobile-modal-shell.is-mobile-open .fake-field.wide,
   .mobile-modal-shell.is-mobile-open .upload-field-card,
   .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
+  .staff-editor-body .field-span-2,
+  .staff-editor-body .fake-field.wide,
+  .product-editor-body .field-span-2,
+  .product-editor-body .fake-field.wide,
+  .mobile-evaluation-card .evaluation-submit-row,
   .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
   .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
   .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
   .cart-drawer-panel.show .field-span-2 {
     grid-column: 1 / -1 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .field-card,
+  .mobile-modal-shell.is-mobile-open .fake-field,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
+  .cart-drawer-panel.show .field-card,
+  .mobile-staff-editor.is-mobile-open .field-card {
+    align-content: start !important;
+    align-items: start !important;
+    justify-content: start !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong,
+  .mobile-modal-shell.is-mobile-open .field-card strong,
+  .mobile-modal-shell.is-mobile-open .upload-field-card strong,
+  .mobile-modal-shell.is-mobile-open .fake-field strong > *,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card strong,
+  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card strong,
+  .cart-drawer-panel.show .field-card strong,
+  .mobile-staff-editor.is-mobile-open .field-card strong {
+    align-self: start !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field span,
+  .mobile-modal-shell.is-mobile-open .field-card-label,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card-label,
+  .cart-drawer-panel.show .field-card-label,
+  .mobile-staff-editor.is-mobile-open .field-card-label {
+    margin-bottom: 2px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .mobile-modal-shell.is-mobile-open .fake-field strong textarea,
+  .mobile-modal-shell.is-mobile-open .field-card input,
+  .mobile-modal-shell.is-mobile-open .field-card select,
+  .mobile-modal-shell.is-mobile-open .field-card textarea,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card input,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card select,
+  .product-editor-panel.mobile-editor-shell.is-open .field-card textarea,
+  .cart-drawer-panel.show .field-card input,
+  .cart-drawer-panel.show .field-card select,
+  .cart-drawer-panel.show .field-card textarea,
+  .mobile-staff-editor.is-mobile-open .field-card input,
+  .mobile-staff-editor.is-mobile-open .field-card select,
+  .mobile-staff-editor.is-mobile-open .field-card textarea {
+    margin-top: 0 !important;
+  }
+
+  .staff-side-v2 {
+    min-height: 0 !important;
   }
 
   .mobile-product-fab,
@@ -12478,8 +12573,7 @@ aside.vp-sidebar {
     min-width: 56px !important;
     max-width: calc(100vw - 28px) !important;
     transform: none !important;
-    margin: 0 !important;
-    z-index: 2147483600 !important;
+    z-index: 2147482900 !important;
   }
 
   .floating-cart-button {
@@ -12489,320 +12583,6 @@ aside.vp-sidebar {
   }
 }
 
-@media (max-width: 640px) {
-  .vp-shell[data-active-module="orders"] .orders-catalog-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-}
-
-
-/* 2026-04-14 cleanup phase5: adaptive modal body / recover product+staff panels / universal scroll */
-@media (max-width: 900px) {
-  .mobile-more-sheet,
-  .mobile-more-sheet-portal,
-  .mobile-modal-shell.is-mobile-open,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show {
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: min(280px, calc(100dvh - 120px)) !important;
-    height: auto !important;
-  }
-
-  .mobile-more-head,
-  .cart-drawer-head,
-  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
-  .mobile-modal-shell.is-mobile-open .mobile-editor-head,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
-  .mobile-modal-shell.is-mobile-open > .panel-head,
-  .product-editor-panel.mobile-editor-shell.is-open > .panel-head {
-    flex: 0 0 auto !important;
-  }
-
-  .mobile-modal-body,
-  .mobile-more-sheet .mobile-more-body,
-  .mobile-more-sheet-portal .mobile-more-body,
-  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
-  .mobile-modal-shell.is-mobile-open .staff-editor-body,
-  .mobile-modal-shell.is-mobile-open .product-editor-body,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body,
-  .cart-drawer-scroll {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: auto !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
-  .mobile-modal-shell.is-mobile-open .mobile-modal-body,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
-  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
-  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
-  .cart-drawer-panel.show .form-grid.two-col {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
-    gap: 10px !important;
-    align-items: start !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .field-card,
-  .mobile-modal-shell.is-mobile-open .fake-field,
-  .mobile-modal-shell.is-mobile-open .upload-field-card,
-  .product-editor-panel.mobile-editor-shell.is-open .field-card,
-  .product-editor-panel.mobile-editor-shell.is-open .fake-field,
-  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card {
-    min-width: 0 !important;
-    width: 100% !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .field-span-2,
-  .mobile-modal-shell.is-mobile-open .fake-field.wide,
-  .mobile-modal-shell.is-mobile-open .upload-field-card,
-  .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
-  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
-  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
-  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
-  .cart-drawer-panel.show .field-span-2 {
-    grid-column: 1 / -1 !important;
-  }
-
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .mobile-staff-editor.is-mobile-open {
-    overflow: hidden !important;
-  }
-
-  .product-editor-panel.mobile-editor-shell.is-open .panel-head,
-  .mobile-staff-editor.is-mobile-open .panel-head {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 2 !important;
-    background: rgba(255, 252, 253, 0.98) !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
-  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
-  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
-  .cart-drawer-panel.show .form-grid.two-col {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-
-/* 2026-04-14 cleanup phase6: adaptive modal sizing / universal scroll / mobile staff recover */
-@media (max-width: 900px) {
-  .mobile-more-sheet,
-  .mobile-more-sheet-portal,
-  .mobile-modal-shell.is-mobile-open,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show,
-  .mobile-staff-editor.is-mobile-open {
-    left: 12px !important;
-    right: 12px !important;
-    top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
-    bottom: auto !important;
-    width: auto !important;
-    height: auto !important;
-    min-height: min(240px, calc(100dvh - 120px)) !important;
-    max-height: calc(100dvh - 96px - env(safe-area-inset-bottom, 0px)) !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  .mobile-more-body,
-  .mobile-modal-body,
-  .evaluation-modal-body,
-  .mobile-modal-shell.is-mobile-open .warehouse-side-section,
-  .mobile-modal-shell.is-mobile-open .staff-editor-body,
-  .mobile-modal-shell.is-mobile-open .product-editor-body,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-modal-body,
-  .cart-drawer-scroll {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .mobile-more-body,
-  .mobile-modal-body,
-  .evaluation-modal-body {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
-  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
-  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
-  .cart-drawer-panel.show .form-grid.two-col {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
-    gap: 10px !important;
-    align-items: start !important;
-  }
-
-  .mobile-modal-shell.is-mobile-open .field-span-2,
-  .mobile-modal-shell.is-mobile-open .fake-field.wide,
-  .mobile-modal-shell.is-mobile-open .upload-field-card,
-  .mobile-modal-shell.is-mobile-open .evaluation-submit-row,
-  .product-editor-panel.mobile-editor-shell.is-open .field-span-2,
-  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
-  .product-editor-panel.mobile-editor-shell.is-open .upload-field-card,
-  .cart-drawer-panel.show .field-span-2 {
-    grid-column: 1 / -1 !important;
-  }
-
-  .mobile-staff-editor:not(.is-mobile-open) {
-    display: none !important;
-  }
-
-  .staff-main-v2,
-  .staff-list-card-v2,
-  .staff-record-grid-v2 {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    min-height: 0 !important;
-  }
-}
-
-@media (max-width: 420px) {
-  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
-  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
-  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
-  .cart-drawer-panel.show .form-grid.two-col {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-
-/* 2026-04-14 cleanup phase8: adaptive mobile panel height + targeted panel scroll parity */
-@media (max-width: 900px) {
-  .mobile-more-sheet,
-  .mobile-more-sheet-portal,
-  .mobile-modal-shell.is-mobile-open,
-  .product-editor-panel.mobile-editor-shell.is-open,
-  .cart-drawer-panel.show,
-  .mobile-staff-editor.is-mobile-open {
-    position: fixed !important;
-    left: 12px !important;
-    right: 12px !important;
-    top: max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) !important;
-    bottom: auto !important;
-    width: auto !important;
-    height: fit-content !important;
-    min-height: 0 !important;
-    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 84px)) !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-self: flex-start !important;
-  }
-
-  .mobile-more-head,
-  .mobile-editor-head,
-  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
-  .cart-drawer-panel.show .cart-drawer-head,
-  .mobile-modal-shell.is-mobile-open > .panel-head {
-    flex: 0 0 auto !important;
-  }
-
-  .mobile-more-body,
-  .mobile-modal-body,
-  .evaluation-modal-body,
-  .staff-editor-body,
-  .product-editor-body,
-  .cart-drawer-scroll {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 0 1 auto !important;
-    min-height: 0 !important;
-    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 156px)) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open,
-  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open,
-  .staff-editor-panel-v2.mobile-staff-editor.is-mobile-open {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
-
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child {
-    flex: 0 1 auto !important;
-    min-height: 0 !important;
-    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 170px)) !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: contain !important;
-    padding-bottom: 12px !important;
-  }
-
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
-    flex: 0 0 auto !important;
-    overflow: visible !important;
-    margin-top: 0 !important;
-    border-top: 1px solid rgba(69, 26, 43, 0.08) !important;
-    background: rgba(255,252,253,0.96) !important;
-  }
-
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
-  .mobile-evaluation-card.mobile-modal-shell.is-mobile-open .evaluation-score-grid,
-  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
-  .staff-editor-body .form-grid.two-col,
-  .mobile-more-grid,
-  .cart-drawer-panel.show .form-grid.two-col {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
-    gap: 10px !important;
-    align-items: start !important;
-  }
-
-  .mobile-more-grid > *,
-  .warehouse-form-grid > .wide,
-  .warehouse-form-grid > .fake-field.wide,
-  .staff-editor-body .field-span-2,
-  .staff-editor-body .fake-field.wide,
-  .product-editor-body .field-span-2,
-  .product-editor-body .fake-field.wide,
-  .mobile-evaluation-card .evaluation-submit-row,
-  .cart-drawer-panel.show .field-span-2 {
-    grid-column: 1 / -1 !important;
-  }
-
-  .staff-side-v2 {
-    min-height: 0 !important;
-  }
-}
-
 @media (max-width: 420px) {
   .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
   .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
@@ -12811,7 +12591,11 @@ aside.vp-sidebar {
   .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
   .staff-editor-body .form-grid.two-col,
   .mobile-more-grid,
-  .cart-drawer-panel.show .form-grid.two-col {
+  .cart-drawer-panel.show .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid {
     grid-template-columns: 1fr !important;
   }
 }
