@@ -13509,3 +13509,86 @@ aside.vp-sidebar {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* cleanup phase20: mobile typography update + tighter warehouse/accounting 2-col spacing */
+@media (max-width: 768px) {
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid {
+    gap: 7px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field {
+    padding: 7px 8px !important;
+    border-radius: 11px !important;
+    gap: 5px !important;
+    min-height: 72px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .warehouse-check-summary-card span {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field strong {
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong textarea,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong textarea,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field strong textarea {
+    font-size: 12px !important;
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    border-radius: 11px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong input,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong input,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scanner-inline-field > strong input,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap input,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap input,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .scanner-input-wrap input {
+    min-height: 36px !important;
+    padding: 8px 42px 8px 9px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .panel-head,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .panel-head,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .panel-head {
+    padding: 9px 10px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section {
+    gap: 7px !important;
+  }
+
+  .warehouse-check-summary-card strong {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+  }
+}
