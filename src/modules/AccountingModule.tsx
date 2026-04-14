@@ -145,7 +145,8 @@ export default function AccountingModule(props: any) {
           <div className="warehouse-side warehouse-stack">
             {isMobileViewport && portalRoot
               ? mobileAccountingPanelOpen && createPortal((
-            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileAccountingPanelOpen ? 'show' : ''}`} onClick={() => setMobileAccountingPanelOpen(false)}>
+            <>
+            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileAccountingPanelOpen ? 'show' : ''}`} onClick={() => setMobileAccountingPanelOpen(false)} />
             <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel mobile-modal-shell ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
@@ -200,7 +201,7 @@ export default function AccountingModule(props: any) {
                 {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
               </div>
             </div>
-            </div>
+            </>
 
               ), portalRoot)
               : (
@@ -352,8 +353,9 @@ export default function AccountingModule(props: any) {
           <div className="accounting-treasury-side">
             {isMobileViewport && portalRoot
               ? mobileTreasuryPanelOpen && createPortal((
-            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileTreasuryPanelOpen ? 'show' : ''}`} onClick={() => setMobileTreasuryPanelOpen(false)}>
-            <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <>
+              <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileTreasuryPanelOpen ? 'show' : ''}`} onClick={() => setMobileTreasuryPanelOpen(false)} />
+              <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">退款撥款</div></div>
@@ -387,6 +389,7 @@ export default function AccountingModule(props: any) {
                 {treasuryNotice && <div className={`inline-action-notice ${treasuryNotice.tone}`}><strong>{treasuryNotice.text}</strong></div>}
               </div>
             </div>
+            </>
               ), portalRoot)
               : (
             <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`}>
