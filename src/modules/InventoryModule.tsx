@@ -62,7 +62,6 @@ export default function InventoryModule(props: any) {
   const [warehouseActionMenuOrderNo, setWarehouseActionMenuOrderNo] = useState<string | null>(null);
   const [mobileWarehousePanelOpen, setMobileWarehousePanelOpen] = useState(false);
   const [mobileInboundPanelOpen, setMobileInboundPanelOpen] = useState(false);
-  const [stockActionMenuCode, setStockActionMenuCode] = useState<string | null>(null);
   const printerSymbol = '/icons/printer-symbol.png';
   const shippingPageSize = 10;
   const [warehouseLogPage, setWarehouseLogPage] = useState(1);
@@ -100,6 +99,11 @@ export default function InventoryModule(props: any) {
     setSelectedWarehouseOrderNo(orderNo);
     setWarehouseActionMenuOrderNo(null);
     setMobileWarehousePanelOpen(true);
+  }
+
+  function openStockActionPanel(code: string) {
+    setSelectedStockCode(code);
+    setMobileInboundPanelOpen(true);
   }
 
 
@@ -354,13 +358,12 @@ export default function InventoryModule(props: any) {
                   <div className="stock-qr-line">QR：{item.qr}</div>
                 </button>
                 <div className="mobile-row-action-group stock-action-group" onClick={(e) => e.stopPropagation()}>
-                  <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.name} 操作`} onClick={() => setStockActionMenuCode((prev) => prev === item.code ? null : item.code)}>›</button>
-                  {stockActionMenuCode === item.code && (
-                    <div className="mobile-row-action-sheet">
-                      <button type="button" onClick={() => { setSelectedStockCode(item.code); setMobileInboundPanelOpen(true); setStockActionMenuCode(null); }}>入庫</button>
-                      <button type="button" onClick={() => { setSelectedStockCode(item.code); setWarehouseTab('query'); setStockActionMenuCode(null); }}>查詢</button>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    className="mobile-row-action-trigger"
+                    aria-label={`開啟 ${item.name} 操作`}
+                    onClick={() => openStockActionPanel(item.code)}
+                  >›</button>
                 </div>
                 </div>
               ))}

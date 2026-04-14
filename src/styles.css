@@ -13130,3 +13130,204 @@ aside.vp-sidebar {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* cleanup phase15: mobile inventory action entry + modal content sizing */
+@media (max-width: 768px) {
+  .stock-action-group .mobile-row-action-trigger {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 20px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .mobile-more-grid,
+  .staff-editor-body .warehouse-form-grid,
+  .product-editor-body .warehouse-form-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    align-items: start !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field,
+  .staff-editor-body .fake-field,
+  .product-editor-body .fake-field,
+  .mobile-more-body .fake-field {
+    min-width: 0 !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field span,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field span,
+  .staff-editor-body .fake-field span,
+  .product-editor-body .fake-field span,
+  .mobile-more-body .fake-field span {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong,
+  .staff-editor-body .fake-field strong,
+  .product-editor-body .fake-field strong,
+  .mobile-more-body .fake-field strong {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    min-width: 0 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .mobile-modal-shell.is-mobile-open .fake-field strong textarea,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong input,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong select,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong textarea,
+  .staff-editor-body .fake-field strong input,
+  .staff-editor-body .fake-field strong select,
+  .staff-editor-body .fake-field strong textarea,
+  .product-editor-body .fake-field strong input,
+  .product-editor-body .fake-field strong select,
+  .product-editor-body .fake-field strong textarea {
+    font-size: 12px !important;
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head .flow-title,
+  .mobile-modal-shell.is-mobile-open .panel-title,
+  .product-editor-panel.mobile-editor-shell.is-open .panel-title,
+  .staff-editor-body .panel-title {
+    font-size: 14px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .mobile-modal-shell.is-mobile-open .panel-head,
+  .product-editor-panel.mobile-editor-shell.is-open .panel-head {
+    padding: 10px 12px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field.wide,
+  .staff-editor-body .fake-field.wide,
+  .product-editor-body .fake-field.wide,
+  .mobile-more-body .fake-field.wide {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .mobile-more-grid,
+  .staff-editor-body .warehouse-form-grid,
+  .product-editor-body .warehouse-form-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+
+/* cleanup phase15b: inventory action entry + mobile modal compact content */
+@media (max-width: 768px) {
+  .mobile-row-action-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    z-index: 2;
+  }
+
+  .stock-snapshot-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .stock-snapshot-shell .stock-snapshot-card {
+    min-width: 0;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+  .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+  .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+  .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .warehouse-form-grid,
+  .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+  .mobile-staff-editor.is-mobile-open .form-grid.two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field,
+  .mobile-modal-shell.is-mobile-open .field-card,
+  .mobile-modal-shell.is-mobile-open .upload-field-card,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field,
+  .mobile-staff-editor.is-mobile-open .fake-field {
+    padding: 8px 9px !important;
+    border-radius: 14px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field span,
+  .mobile-modal-shell.is-mobile-open .field-card-label,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field span,
+  .mobile-staff-editor.is-mobile-open .fake-field span {
+    font-size: 10.5px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong,
+  .mobile-modal-shell.is-mobile-open .field-card strong,
+  .mobile-modal-shell.is-mobile-open .upload-field-card strong,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong,
+  .mobile-staff-editor.is-mobile-open .fake-field strong {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .fake-field strong input,
+  .mobile-modal-shell.is-mobile-open .fake-field strong select,
+  .mobile-modal-shell.is-mobile-open .fake-field strong textarea,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong input,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong select,
+  .product-editor-panel.mobile-editor-shell.is-open .fake-field strong textarea,
+  .mobile-staff-editor.is-mobile-open .fake-field strong input,
+  .mobile-staff-editor.is-mobile-open .fake-field strong select,
+  .mobile-staff-editor.is-mobile-open .fake-field strong textarea {
+    min-height: 38px !important;
+    padding: 9px 11px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open textarea,
+  .product-editor-panel.mobile-editor-shell.is-open textarea,
+  .mobile-staff-editor.is-mobile-open textarea {
+    min-height: 74px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-card-head .flow-title,
+  .mobile-modal-shell.is-mobile-open .mobile-editor-head h3,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head h3,
+  .mobile-staff-editor.is-mobile-open .mobile-editor-head h3 {
+    font-size: 14px !important;
+  }
+
+  @media (max-width: 360px) {
+    .mobile-modal-shell.is-mobile-open .warehouse-form-grid,
+    .mobile-modal-shell.is-mobile-open .form-grid.two-col,
+    .mobile-modal-shell.is-mobile-open .treasury-expense-grid,
+    .mobile-modal-shell.is-mobile-open .evaluation-score-grid,
+    .product-editor-panel.mobile-editor-shell.is-open .warehouse-form-grid,
+    .product-editor-panel.mobile-editor-shell.is-open .form-grid.two-col,
+    .mobile-staff-editor.is-mobile-open .form-grid.two-col {
+      grid-template-columns: 1fr !important;
+    }
+  }
+}
