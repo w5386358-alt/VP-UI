@@ -45,7 +45,6 @@ export default function AccountingModule(props: any) {
   const [accountingActionMenuOrderNo, setAccountingActionMenuOrderNo] = useState<string | null>(null);
   const [mobileAccountingPanelOpen, setMobileAccountingPanelOpen] = useState(false);
   const [mobileTreasuryPanelOpen, setMobileTreasuryPanelOpen] = useState(false);
-  const [treasuryActionMenuOrderNo, setTreasuryActionMenuOrderNo] = useState<string | null>(null);
   const printerSymbol = '/icons/printer-symbol.png';
 
   async function handleAccountingInvoiceScan() {
@@ -341,12 +340,7 @@ export default function AccountingModule(props: any) {
                     </div>
                   </button>
                   <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
-                    <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 出納操作`} onClick={() => setTreasuryActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
-                    {treasuryActionMenuOrderNo === item.orderNo && (
-                      <div className="mobile-row-action-sheet">
-                        <button type="button" onClick={() => { selectTreasuryOrder(item.orderNo); setMobileTreasuryPanelOpen(true); setTreasuryActionMenuOrderNo(null); }}>退款</button>
-                      </div>
-                    )}
+                    <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 出納操作`} onClick={() => { selectTreasuryOrder(item.orderNo); setMobileTreasuryPanelOpen(true); }}>›</button>
                   </div>
                   </div>
                 ))}

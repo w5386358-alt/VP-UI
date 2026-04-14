@@ -373,44 +373,52 @@ export default function InventoryModule(props: any) {
           {isMobileViewport && portalRoot
             ? mobileInboundPanelOpen && createPortal((
           <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
-            <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
-            <div className="warehouse-form-grid">
-              <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
-              <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
-              <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
-              <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
-              <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
-              <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
-              <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
-              <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
+            <div className="warehouse-side-section mobile-modal-body">
+              <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
+              <div className="warehouse-form-grid warehouse-command-fields">
+                <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
+                <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
+                <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
+                <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
+                <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
+                <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
+                <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
+                <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
+              </div>
             </div>
-            <div className="accounting-action-row">
-              <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
-              <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+            <div className="warehouse-side-section">
+              <div className="accounting-action-row warehouse-action-row">
+                <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
+                <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+              </div>
+              {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
             </div>
-            {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
           </div>
 
 
             ), portalRoot)
             : (
           <div className={`card warehouse-tool-card warehouse-inbound-card mobile-modal-shell ${mobileInboundPanelOpen ? 'is-mobile-open' : ''}`}>
-            <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
-            <div className="warehouse-form-grid">
-              <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
-              <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
-              <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
-              <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
-              <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
-              <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
-              <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
-              <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
+            <div className="warehouse-side-section mobile-modal-body">
+              <div className="warehouse-card-head"><div><div className="flow-title">入庫作業</div></div><div className="warehouse-card-head-actions"><Boxes className="small-icon" /><button type="button" className="mobile-panel-close" onClick={() => setMobileInboundPanelOpen(false)} aria-label="關閉入庫作業"><X className="small-icon" /></button></div></div>
+              <div className="warehouse-form-grid warehouse-command-fields">
+                <div className="fake-field"><span>商品條碼</span><strong>{selectedStockItem?.code || '-'}</strong></div>
+                <div className="fake-field"><span>商品名稱</span><strong>{selectedStockItem?.name || '-'}</strong></div>
+                <div className="fake-field"><span>目前庫存</span><strong>{selectedStockItem?.stock || '-'}</strong></div>
+                <div className="fake-field"><span>安全庫存</span><strong>{selectedStockItem?.safe || '-'}</strong></div>
+                <div className="fake-field wide"><span>QR 摘要</span><strong>{selectedStockItem?.qr || '-'}</strong></div>
+                <div className="fake-field scanner-inline-field"><span>入庫 QR</span><strong><input value={warehouseInboundQr} onChange={(e) => setWarehouseInboundQr(e.target.value)} placeholder="輸入入庫 QR" /><button type="button" className="scan-inline-icon-btn" onClick={handleInboundQrLaunch} aria-label="掃描入庫 QR"><QrCode className="small-icon" /></button></strong></div>
+                <div className="fake-field"><span>入庫數量</span><strong><input type="number" min={1} value={warehouseInboundQty} onChange={(e) => setWarehouseInboundQty(Math.max(1, Number(e.target.value) || 1))} /></strong></div>
+                <div className="fake-field wide"><span>最近異動</span><strong>{selectedStockItem?.updated || '-'}</strong></div>
+              </div>
             </div>
-            <div className="accounting-action-row">
-              <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
-              <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+            <div className="warehouse-side-section">
+              <div className="accounting-action-row warehouse-action-row">
+                <button type="button" className="primary-button" onClick={handleWarehouseInbound}><Boxes className="small-icon" />寫入入庫紀錄</button>
+                <button type="button" className="ghost-button" onClick={() => setWarehouseTab('query')}><Search className="small-icon" />去查詢區核對</button>
+              </div>
+              {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
             </div>
-            {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
           </div>
 
 

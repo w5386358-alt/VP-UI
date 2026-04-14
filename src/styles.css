@@ -13679,3 +13679,50 @@ aside.vp-sidebar {
     padding-right: 54px !important;
   }
 }
+
+
+/* 2026-04-14 cleanup phase23: unified popup operation panel standard */
+@media (max-width: 768px){
+  .warehouse-mobile-action-menu{display:none !important;}
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open,
+  .warehouse-inbound-card.mobile-modal-shell.is-mobile-open,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open,
+  .staff-editor-panel-v2.mobile-modal-shell.is-mobile-open,
+  .product-editor-panel.mobile-editor-shell.is-open,
+  .cart-drawer-panel.show{
+    position:fixed !important;
+    left:12px !important;
+    right:12px !important;
+    bottom:84px !important;
+    top:auto !important;
+    width:auto !important;
+    max-width:none !important;
+    height:fit-content !important;
+    max-height:min(78dvh, calc(100dvh - 104px)) !important;
+    display:flex !important;
+    flex-direction:column !important;
+    overflow:hidden !important;
+    z-index:100160 !important;
+  }
+  .warehouse-inbound-card.mobile-modal-shell.is-mobile-open .warehouse-card-head,
+  .staff-editor-panel-v2.mobile-modal-shell.is-mobile-open .mobile-editor-head,
+  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head{
+    position:sticky !important;
+    top:0 !important;
+    z-index:2 !important;
+  }
+  .warehouse-inbound-card.mobile-modal-shell.is-mobile-open .warehouse-side-section:first-child,
+  .staff-editor-panel-v2.mobile-modal-shell.is-mobile-open .staff-editor-body,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-body{
+    flex:1 1 auto !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+  .warehouse-inbound-card.mobile-modal-shell.is-mobile-open .warehouse-side-section:last-child,
+  .staff-editor-panel-v2.mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .product-editor-panel.mobile-editor-shell.is-open .accounting-action-row{
+    flex:0 0 auto !important;
+  }
+}
