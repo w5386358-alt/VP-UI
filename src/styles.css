@@ -12972,3 +12972,55 @@ aside.vp-sidebar {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* 2026-04-15 cleanup phase13: arrow-only entry + compact 2x2 mobile action grid */
+@media (max-width: 900px) {
+  .mobile-row-action-sheet {
+    display: none !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row > *,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row > * {
+    grid-column: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    justify-self: stretch !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .ghost-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .ghost-button {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+    border-radius: 12px !important;
+    gap: 5px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .print-symbol-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .print-symbol-icon {
+    width: 12px !important;
+    height: 12px !important;
+    flex: 0 0 12px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row {
+    grid-template-columns: 1fr !important;
+  }
+}

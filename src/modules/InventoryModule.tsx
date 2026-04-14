@@ -167,14 +167,14 @@ export default function InventoryModule(props: any) {
                       </div>
                     </button>
                     <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
-                      <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 操作`} onClick={() => setWarehouseActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
-                      {warehouseActionMenuOrderNo === item.orderNo && (
-                        <div className="mobile-row-action-sheet">
-                          <button type="button" onClick={() => openWarehouseActionPanel(item.orderNo)}>出貨</button>
-                          <button type="button" onClick={() => openWarehouseActionPanel(item.orderNo)}>退貨</button>
-                          <button type="button" onClick={() => openWarehouseActionPanel(item.orderNo)}>換貨</button>
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        className="mobile-row-action-trigger"
+                        aria-label={`開啟 ${item.orderNo} 出貨資訊`}
+                        onClick={() => openWarehouseActionPanel(item.orderNo)}
+                      >
+                        ›
+                      </button>
                     </div>
                   </div>
                 ))}

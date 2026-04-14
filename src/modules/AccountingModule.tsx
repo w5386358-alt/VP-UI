@@ -119,13 +119,14 @@ export default function AccountingModule(props: any) {
                       </div>
                     </button>
                     <div className="mobile-row-action-group" onClick={(e) => e.stopPropagation()}>
-                      <button type="button" className="mobile-row-action-trigger" aria-label={`開啟 ${item.orderNo} 操作`} onClick={() => setAccountingActionMenuOrderNo((prev) => prev === item.orderNo ? null : item.orderNo)}>›</button>
-                      {accountingActionMenuOrderNo === item.orderNo && (
-                        <div className="mobile-row-action-sheet">
-                          <button type="button" onClick={() => openAccountingActionPanel(item.orderNo)}>收款</button>
-                          <button type="button" onClick={() => openAccountingActionPanel(item.orderNo)}>退款</button>
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        className="mobile-row-action-trigger"
+                        aria-label={`開啟 ${item.orderNo} 收款作業`}
+                        onClick={() => openAccountingActionPanel(item.orderNo)}
+                      >
+                        ›
+                      </button>
                     </div>
                   </div>
                 ))}
