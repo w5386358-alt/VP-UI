@@ -38,6 +38,19 @@ export default function ProductsModule(props: any) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!(isMobileViewport && mobileEditorOpen)) return;
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, [isMobileViewport, mobileEditorOpen]);
+
   const portalRoot = typeof document !== 'undefined' ? document.body : null;
 
   const disabledProducts = products.length - enabledProducts;
@@ -74,6 +87,129 @@ export default function ProductsModule(props: any) {
     openEditProduct(selectedProduct);
     if (isMobileViewport) setMobileEditorOpen(true);
   }
+
+
+  const productEditorPanel = (
+    <div className={`card order-panel sticky-panel product-editor-panel products-editor-shell mobile-modal-shell mobile-shared-layer-panel mobile-product-editor ${isMobileViewport ? 'mobile-editor-shell' : ''} ${mobileEditorOpen ? 'is-open is-mobile-open' : ''}`}>
+      {isMobileViewport && (
+        <div className="mobile-editor-head">
+          <div className="mobile-editor-title-wrap">
+            <div className="mobile-editor-kicker">商品操作卡</div>
+            <div className="mobile-editor-sub">新增、查看、編輯都集中在這裡</div>
+          </div>
+          <button type="button" className="mobile-editor-close" onClick={() => setMobileEditorOpen(false)} aria-label="關閉商品操作卡">
+            <X className="small-icon" />
+          </button>
+        </div>
+      )}
+      <div className="mobile-modal-body product-editor-body">
+        <div className="panel-head compact-head">
+          <div>
+            <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
+          </div>
+          <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
+        </div>
+
+        <div className="form-grid two-col form-gap-top">
+        <label className="field-card">
+          <span className="field-label"><Package className="small-icon" />商品編號</span>
+          <input value={productDraft.code} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, code: e.target.value }))} readOnly={productEditorMode === 'view'} />
+        </label>
+        <label className="field-card">
+          <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
+          <select value={productDraft.category} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
+            {productCategories.map((category: string) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </label>
+        <label className="field-card scanner-inline-card">
+          <span className="field-label"><FileText className="small-icon" />商品條碼</span>
+          <div className="scanner-input-wrap">
+            <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
+            {productEditorMode !== 'view' && <button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcode} aria-label="掃描商品條碼"><ScanLine className="small-icon" /></button>}
+          </div>
+        </label>
+        <label className="field-card field-span-2">
+          <span className="field-label"><FileText className="small-icon" />商品名稱</span>
+          <input value={productDraft.name} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, name: e.target.value }))} readOnly={productEditorMode === 'view'} />
+        </label>
+        <label className="field-card">
+          <span className="field-label"><Wallet className="small-icon" />原價</span>
+          <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入原價" />
+        </label>
+        <label className="field-card">
+          <span className="field-label"><Wallet className="small-icon" />VIP價</span>
+          <input type="number" min={0} value={productDraft.vipPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, vipPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入VIP價" />
+        </label>
+        <label className="field-card">
+          <span className="field-label"><Wallet className="small-icon" />代理價</span>
+          <input type="number" min={0} value={productDraft.agentPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, agentPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入代理價" />
+        </label>
+        <label className="field-card">
+          <span className="field-label"><Wallet className="small-icon" />總代理價</span>
+          <input type="number" min={0} value={productDraft.generalAgentPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, generalAgentPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入總代理價" />
+        </label>
+        <label className="field-card">
+          <span className="field-label"><Boxes className="small-icon" />庫存</span>
+          <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
+        </label>
+        <div className="field-card field-span-2 upload-field-card">
+          <span className="field-label"><ImageIcon className="small-icon" />商品圖片</span>
+          <div className="upload-panel">
+            <div className="upload-preview-box">
+              {productDraft.image ? <img src={productDraft.image} alt={productDraft.name || '商品圖片'} className="upload-preview-image" /> : <div className="upload-preview-empty">尚未上傳圖片</div>}
+            </div>
+            {productEditorMode !== 'view' && (
+              <>
+                <input ref={productImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleProductImageUpload(e.target.files?.[0] || null)} />
+                <div className="upload-action-row">
+                  <button type="button" className="ghost-button compact-btn upload-icon-button" onClick={() => productImageInputRef?.current?.click()}>
+                    <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />上傳商品圖片
+                  </button>
+                  {productDraft.image && <button type="button" className="ghost-button compact-btn" onClick={() => setProductDraft((prev: any) => ({ ...prev, image: '' }))}>移除圖片</button>}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="product-editor-status product-editor-status-clean">
+        <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
+        {productEditorMode !== 'view' && (
+          <button type="button" className={`ui-switch ${productDraft.enabled ? 'on' : 'off'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-label={productDraft.enabled ? '停用商品' : '啟用商品'} aria-pressed={productDraft.enabled}>
+            <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
+          </button>
+        )}
+      </div>
+
+      <div className="stack-list compact product-editor-notes">
+        <div>商品資料編輯</div>
+        <div>支援新增、編輯、查看與狀態切換</div>
+        <div>圖片與資料同步</div>
+      </div>
+
+      <div className="accounting-action-row product-editor-actions">
+        {productEditorMode === 'view' ? (
+          <button type="button" className="primary-button full-width" onClick={handleOpenSelectedEdit}>
+            <PencilLine className="small-icon" />編輯商品
+          </button>
+        ) : (
+          <>
+            <button type="button" className="primary-button" onClick={saveProductDraft}>
+              <Package className="small-icon" />{productEditorMode === 'create' ? '確認新增' : '確認更新'}
+            </button>
+            <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : null}>
+              <Eye className="small-icon" />返回明細
+            </button>
+          </>
+        )}
+      </div>
+      {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -153,125 +289,7 @@ export default function ProductsModule(props: any) {
         </div>
 
         <aside className="product-admin-side">
-          <div className={`card order-panel sticky-panel product-editor-panel products-editor-shell ${isMobileViewport ? 'mobile-editor-shell' : ''} ${mobileEditorOpen ? 'is-open' : ''}`}>
-            {isMobileViewport && (
-              <div className="mobile-editor-head">
-                <div className="mobile-editor-title-wrap">
-                  <div className="mobile-editor-kicker">商品操作卡</div>
-                  <div className="mobile-editor-sub">新增、查看、編輯都集中在這裡</div>
-                </div>
-                <button type="button" className="mobile-editor-close" onClick={() => setMobileEditorOpen(false)} aria-label="關閉商品操作卡">
-                  <X className="small-icon" />
-                </button>
-              </div>
-            )}
-            <div className="mobile-modal-body product-editor-body">
-              <div className="panel-head compact-head">
-                <div>
-                  <div className="panel-title">{productEditorMode === 'create' ? '新增商品' : productEditorMode === 'edit' ? '商品編輯' : '商品詳情'}</div>
-                </div>
-                <span className="badge badge-role">{productEditorMode === 'create' ? '新增' : productEditorMode === 'edit' ? '編輯' : '查看'}</span>
-              </div>
-
-              <div className="form-grid two-col form-gap-top">
-              <label className="field-card">
-                <span className="field-label"><Package className="small-icon" />商品編號</span>
-                <input value={productDraft.code} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, code: e.target.value }))} readOnly={productEditorMode === 'view'} />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><Sparkles className="small-icon" />商品分類</span>
-                <select value={productDraft.category} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, category: e.target.value }))} disabled={productEditorMode === 'view'}>
-                  {productCategories.map((category: string) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field-card scanner-inline-card">
-                <span className="field-label"><FileText className="small-icon" />商品條碼</span>
-                <div className="scanner-input-wrap">
-                  <input value={productDraft.barcode || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, barcode: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入商品條碼" />
-                  {productEditorMode !== 'view' && <button type="button" className="scan-inline-icon-btn" onClick={handleScanBarcode} aria-label="掃描商品條碼"><ScanLine className="small-icon" /></button>}
-                </div>
-              </label>
-              <label className="field-card field-span-2">
-                <span className="field-label"><FileText className="small-icon" />商品名稱</span>
-                <input value={productDraft.name} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, name: e.target.value }))} readOnly={productEditorMode === 'view'} />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><Wallet className="small-icon" />原價</span>
-                <input type="number" min={0} value={productDraft.price} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, price: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入原價" />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><Wallet className="small-icon" />VIP價</span>
-                <input type="number" min={0} value={productDraft.vipPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, vipPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入VIP價" />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><Wallet className="small-icon" />代理價</span>
-                <input type="number" min={0} value={productDraft.agentPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, agentPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入代理價" />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><Wallet className="small-icon" />總代理價</span>
-                <input type="number" min={0} value={productDraft.generalAgentPrice || ''} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, generalAgentPrice: e.target.value }))} readOnly={productEditorMode === 'view'} placeholder="請輸入總代理價" />
-              </label>
-              <label className="field-card">
-                <span className="field-label"><Boxes className="small-icon" />庫存</span>
-                <input type="number" min={0} value={productDraft.stock} onChange={(e) => setProductDraft((prev: any) => ({ ...prev, stock: e.target.value }))} readOnly={productEditorMode === 'view'} />
-              </label>
-              <div className="field-card field-span-2 upload-field-card">
-                <span className="field-label"><ImageIcon className="small-icon" />商品圖片</span>
-                <div className="upload-panel">
-                  <div className="upload-preview-box">
-                    {productDraft.image ? <img src={productDraft.image} alt={productDraft.name || '商品圖片'} className="upload-preview-image" /> : <div className="upload-preview-empty">尚未上傳圖片</div>}
-                  </div>
-                  {productEditorMode !== 'view' && (
-                    <>
-                      <input ref={productImageInputRef} type="file" accept="image/*" className="hidden-file-input" onChange={(e) => handleProductImageUpload(e.target.files?.[0] || null)} />
-                      <div className="upload-action-row">
-                        <button type="button" className="ghost-button compact-btn upload-icon-button" onClick={() => productImageInputRef?.current?.click()}>
-                          <img src={uploadSymbol} alt="上傳" className="upload-symbol-icon" />上傳商品圖片
-                        </button>
-                        {productDraft.image && <button type="button" className="ghost-button compact-btn" onClick={() => setProductDraft((prev: any) => ({ ...prev, image: '' }))}>移除圖片</button>}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="product-editor-status product-editor-status-clean">
-              <span className={`badge ${productDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{productDraft.enabled ? '啟用中' : '已停用'}</span>
-              {productEditorMode !== 'view' && (
-                <button type="button" className={`ui-switch ${productDraft.enabled ? 'on' : 'off'}`} onClick={() => setProductDraft((prev: any) => ({ ...prev, enabled: !prev.enabled }))} aria-label={productDraft.enabled ? '停用商品' : '啟用商品'} aria-pressed={productDraft.enabled}>
-                  <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
-                </button>
-              )}
-            </div>
-
-            <div className="stack-list compact product-editor-notes">
-              <div>商品資料編輯</div>
-              <div>支援新增、編輯、查看與狀態切換</div>
-              <div>圖片與資料同步</div>
-            </div>
-
-            <div className="accounting-action-row">
-              {productEditorMode === 'view' ? (
-                <button type="button" className="primary-button full-width" onClick={handleOpenSelectedEdit}>
-                  <PencilLine className="small-icon" />編輯商品
-                </button>
-              ) : (
-                <>
-                  <button type="button" className="primary-button" onClick={saveProductDraft}>
-                    <Package className="small-icon" />{productEditorMode === 'create' ? '確認新增' : '確認更新'}
-                  </button>
-                  <button type="button" className="ghost-button" onClick={() => selectedProduct ? openViewProduct(selectedProduct) : null}>
-                    <Eye className="small-icon" />返回明細
-                  </button>
-                </>
-              )}
-            </div>
-            {productNotice && <div className={`inline-action-notice ${productNotice.tone}`}><strong>{productNotice.text}</strong></div>}
-            </div>
-          </div>
+          {!isMobileViewport && productEditorPanel}
         </aside>
       </section>
 
@@ -282,7 +300,13 @@ export default function ProductsModule(props: any) {
         portalRoot,
       )}
 
-      {isMobileViewport && mobileEditorOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEditorOpen(false)} />}
+      {isMobileViewport && mobileEditorOpen && portalRoot && createPortal(
+        <>
+          <div className="mobile-editor-backdrop shared-layer-backdrop" onClick={() => setMobileEditorOpen(false)} />
+          {productEditorPanel}
+        </>,
+        portalRoot,
+      )}
     </>
   );
 }

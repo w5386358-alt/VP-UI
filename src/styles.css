@@ -13750,3 +13750,24 @@ aside.vp-sidebar {
     background: linear-gradient(180deg, rgba(255,255,255,0.995) 0%, rgba(255,250,252,0.985) 100%) !important;
   }
 }
+
+
+/* 2026-04-14 cleanup phase12: shared-layer baseline for product/staff editors */
+@media (max-width: 900px) {
+  .mobile-shared-layer-panel {
+    isolation: isolate;
+  }
+
+  .mobile-shared-layer-panel:not(.is-mobile-open):not(.is-open) {
+    display: none !important;
+  }
+
+  .mobile-product-editor.mobile-modal-shell.is-mobile-open,
+  .mobile-staff-editor.mobile-modal-shell.is-mobile-open {
+    z-index: 2305 !important;
+  }
+
+  .shared-layer-backdrop {
+    z-index: 2300 !important;
+  }
+}
