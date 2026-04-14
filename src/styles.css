@@ -13726,3 +13726,11 @@ aside.vp-sidebar {
     flex:0 0 auto !important;
   }
 }
+
+/* cleanup phase24: cart-based mobile modal overlay */
+.mobile-modal-overlay{
+  z-index: 2147483000 !important;
+}
+.mobile-modal-overlay > .mobile-modal-shell.is-mobile-open{
+  z-index: 2147483001 !important;
+}

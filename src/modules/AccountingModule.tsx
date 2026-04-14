@@ -81,7 +81,6 @@ export default function AccountingModule(props: any) {
 
       {accountingTab === 'ops' && (
         <>
-        {portalRoot && isMobileViewport && mobileAccountingPanelOpen && createPortal(<div className="mobile-editor-backdrop" onClick={() => setMobileAccountingPanelOpen(false)} />, portalRoot)}
         <section className="warehouse-layout warehouse-command-layout accounting-warehouse-layout">
           <div className="warehouse-main warehouse-stack">
             <div className="card order-panel warehouse-filter-shell accounting-filter-shell">
@@ -146,7 +145,8 @@ export default function AccountingModule(props: any) {
           <div className="warehouse-side warehouse-stack">
             {isMobileViewport && portalRoot
               ? mobileAccountingPanelOpen && createPortal((
-            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel mobile-modal-shell ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileAccountingPanelOpen ? 'show' : ''}`} onClick={() => setMobileAccountingPanelOpen(false)}>
+            <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel accounting-side-panel mobile-modal-shell ${mobileAccountingPanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">收款作業</div></div>
@@ -199,6 +199,8 @@ export default function AccountingModule(props: any) {
                 </div>
                 {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
               </div>
+            </div>
+            </div>
             </div>
 
               ), portalRoot)
@@ -308,7 +310,6 @@ export default function AccountingModule(props: any) {
 
       {accountingTab === 'treasury' && (
         <>
-        {portalRoot && isMobileViewport && mobileTreasuryPanelOpen && createPortal(<div className="mobile-editor-backdrop" onClick={() => setMobileTreasuryPanelOpen(false)} />, portalRoot)}
         <section className="accounting-treasury-layout">
           <div className="accounting-treasury-main">
             <div className="accounting-board-grid-v2">
@@ -352,7 +353,8 @@ export default function AccountingModule(props: any) {
           <div className="accounting-treasury-side">
             {isMobileViewport && portalRoot
               ? mobileTreasuryPanelOpen && createPortal((
-            <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`}>
+            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileTreasuryPanelOpen ? 'show' : ''}`} onClick={() => setMobileTreasuryPanelOpen(false)}>
+            <div className={`card order-panel sticky-panel accounting-treasury-panel mobile-modal-shell ${mobileTreasuryPanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
                   <div><div className="flow-title">退款撥款</div></div>
