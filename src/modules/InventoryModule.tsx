@@ -130,7 +130,7 @@ export default function InventoryModule(props: any) {
               <div className="panel-head">
                 <div>
                   <div className="panel-title">訂單清單篩選</div>
-                  <div className="panel-desc">確認收款與庫存後進行出貨。</div>
+                  <div className="panel-desc">收款與庫存後進行出貨。</div>
                 </div>
                 <span className="badge badge-danger">今日重點 {shippingQueue.length} 筆</span>
               </div>
@@ -244,11 +244,11 @@ export default function InventoryModule(props: any) {
               <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
                   <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
-                    <Truck className="small-icon" />完成出貨
+                    <Truck className="small-icon" />出貨
                   </button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
-                  <button type="button" className="ghost-button print-icon-button" onClick={handleWarehousePrint}><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印出貨單 PDF</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />退貨</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />換貨</button>
+                  <button type="button" className="ghost-button print-icon-button" onClick={handleWarehousePrint}><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印</button>
                 </div>
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
@@ -305,11 +305,11 @@ export default function InventoryModule(props: any) {
               <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
                   <button type="button" className="primary-button" onClick={handleWarehouseShip} disabled={!warehouseShipValidation?.canShip}>
-                    <Truck className="small-icon" />完成出貨
+                    <Truck className="small-icon" />出貨
                   </button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />確認退貨</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />轉入換貨</button>
-                  <button type="button" className="ghost-button print-icon-button" onClick={handleWarehousePrint}><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印出貨單 PDF</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseReturn}><RotateCcw className="small-icon" />退貨</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={handleWarehouseExchange}><RefreshCw className="small-icon" />換貨</button>
+                  <button type="button" className="ghost-button print-icon-button" onClick={handleWarehousePrint}><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印</button>
                 </div>
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>

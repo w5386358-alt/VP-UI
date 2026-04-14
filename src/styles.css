@@ -12816,8 +12816,7 @@ aside.vp-sidebar {
   }
 }
 
-
-/* 2026-04-14 cleanup phase9: touch handoff fix for mobile modal scroll */
+/* 2026-04-14 cleanup phase11: cart-standard modal footer + compact fixed actions */
 @media (max-width: 900px) {
   .mobile-more-sheet,
   .mobile-more-sheet-portal,
@@ -12825,52 +12824,151 @@ aside.vp-sidebar {
   .product-editor-panel.mobile-editor-shell.is-open,
   .cart-drawer-panel.show,
   .mobile-staff-editor.is-mobile-open {
-    touch-action: auto !important;
-    overscroll-behavior: none !important;
-    -webkit-overflow-scrolling: auto !important;
-  }
-
-  .mobile-more-head,
-  .mobile-editor-head,
-  .mobile-modal-shell.is-mobile-open .warehouse-card-head,
-  .product-editor-panel.mobile-editor-shell.is-open .mobile-editor-head,
-  .cart-drawer-panel.show .cart-drawer-head,
-  .mobile-modal-shell.is-mobile-open > .panel-head,
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child {
-    touch-action: manipulation !important;
-  }
-
-  .mobile-more-body,
-  .mobile-modal-body,
-  .evaluation-modal-body,
-  .staff-editor-body,
-  .product-editor-body,
-  .cart-drawer-scroll,
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child {
-    touch-action: pan-y !important;
-    overscroll-behavior-y: contain !important;
-    overscroll-behavior-x: none !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-gutter: stable both-edges;
-  }
-
-  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:first-child,
-  .mobile-more-body,
-  .mobile-modal-body,
-  .evaluation-modal-body,
-  .staff-editor-body,
-  .product-editor-body,
-  .cart-drawer-scroll {
-    display: flex !important;
-    flex-direction: column !important;
+    height: fit-content !important;
     min-height: 0 !important;
-    position: relative !important;
-    z-index: 1 !important;
+    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top, 0px) + 6px)) - calc(env(safe-area-inset-bottom, 0px) + 84px)) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .warehouse-side-section:last-child,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open > .warehouse-side-section:last-child,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions,
+  .cart-drawer-footer {
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions,
+  .cart-drawer-footer .drawer-action-row {
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .ghost-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .ghost-button,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions .primary-button,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions .ghost-button,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions .primary-button,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions .ghost-button {
+    min-height: 42px !important;
+    padding: 9px 12px !important;
+    border-radius: 13px !important;
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    letter-spacing: 0 !important;
+    gap: 6px !important;
+    flex: 1 1 calc(50% - 8px) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .print-icon-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .print-icon-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .upload-icon-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .upload-icon-button {
+    min-height: 40px !important;
+    padding: 8px 11px !important;
+    font-size: 12px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .small-icon,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions .small-icon,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions .small-icon {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row:has(> :only-child) .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row:has(> :only-child) .primary-button,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions:has(> :only-child) .primary-button,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions:has(> :only-child) .primary-button {
+    flex-basis: 100% !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .ghost-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .ghost-button,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions .primary-button,
+  .product-editor-panel.mobile-editor-shell.is-open .product-editor-actions .ghost-button,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions .primary-button,
+  .mobile-staff-editor.is-mobile-open .staff-editor-actions .ghost-button {
+    flex-basis: 100% !important;
+  }
+}
+
+/* 2026-04-15 cleanup phase12: unified mobile action buttons for accounting + warehouse panels */
+@media (max-width: 900px) {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .ghost-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .ghost-button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    padding: 8px 10px !important;
+    border-radius: 14px !important;
+    font-size: 12.5px !important;
+    line-height: 1.15 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    gap: 5px !important;
+    justify-content: center !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .ghost-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .ghost-button {
+    background: rgba(255, 247, 250, 0.98) !important;
+    border: 1px solid rgba(218, 136, 164, 0.36) !important;
+    color: #8a2a4c !important;
+    box-shadow: none !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .primary-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .primary-button {
+    background: linear-gradient(135deg, #d35c87 0%, #c63e6f 100%) !important;
+    border: 1px solid rgba(198, 62, 111, 0.68) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 22px rgba(198, 62, 111, 0.18) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .print-icon-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .print-icon-button,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .upload-icon-button,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .upload-icon-button {
+    background: rgba(255, 247, 250, 0.98) !important;
+    border-color: rgba(218, 136, 164, 0.36) !important;
+    color: #8a2a4c !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .small-icon,
+  .mobile-modal-shell.is-mobile-open .accounting-action-row .print-symbol-icon,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row .print-symbol-icon {
+    width: 13px !important;
+    height: 13px !important;
+    flex: 0 0 13px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-modal-shell.is-mobile-open .accounting-action-row,
+  .mobile-modal-shell.is-mobile-open .warehouse-action-row {
+    grid-template-columns: 1fr !important;
   }
 }

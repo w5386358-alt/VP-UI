@@ -193,9 +193,9 @@ export default function AccountingModule(props: any) {
               <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
                   <button type="button" className="ghost-button print-icon-button"><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印</button>
-                  <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />送交退款</button>
+                  <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />儲存</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />收款</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />審查退款</button>
                 </div>
                 {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
               </div>
@@ -250,9 +250,9 @@ export default function AccountingModule(props: any) {
               <div className="warehouse-side-section">
                 <div className="accounting-action-row warehouse-action-row">
                   <button type="button" className="ghost-button print-icon-button"><img src={printerSymbol} alt="列印" className="print-symbol-icon" />列印</button>
-                  <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />保存資料</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />確認收款</button>
-                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />送交退款</button>
+                  <button type="button" className="primary-button" onClick={saveAccountingDraft}><RefreshCw className="small-icon" />儲存</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('pay')}><CreditCard className="small-icon" />收款</button>
+                  <button type="button" className="ghost-button compact-btn" onClick={() => triggerAccountingAction('refund')}><Receipt className="small-icon" />審查退款</button>
                 </div>
                 {accountingNotice && <div className={`inline-action-notice ${accountingNotice.tone}`}><strong>{accountingNotice.text}</strong></div>}
               </div>
