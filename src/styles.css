@@ -13452,7 +13452,7 @@ aside.vp-sidebar {
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 320px) {
   .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
   .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
   .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields,
@@ -13460,5 +13460,19 @@ aside.vp-sidebar {
   .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid,
   .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* cleanup phase17b: lock warehouse/accounting mobile panels to 2-col on real devices, except ultra narrow */
+@media (max-width: 768px) {
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields > :not(.wide):not(.warehouse-scan-hint-grid):not(.warehouse-issue-list):not(.hidden-file-input),
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields > :not(.wide):not(.warehouse-scan-hint-grid):not(.warehouse-issue-list):not(.hidden-file-input),
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-command-fields > :not(.wide):not(.warehouse-scan-hint-grid):not(.warehouse-issue-list):not(.hidden-file-input),
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid > :not(.wide):not(.warehouse-scan-hint-grid):not(.warehouse-issue-list):not(.hidden-file-input),
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid > :not(.wide):not(.warehouse-scan-hint-grid):not(.warehouse-issue-list):not(.hidden-file-input),
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .warehouse-form-grid > :not(.wide):not(.warehouse-scan-hint-grid):not(.warehouse-issue-list):not(.hidden-file-input) {
+    grid-column: auto !important;
+    min-width: 0 !important;
   }
 }
