@@ -13476,3 +13476,36 @@ aside.vp-sidebar {
     min-width: 0 !important;
   }
 }
+
+
+/* cleanup phase19: keep payment/inventory validation cards in 2 columns on normal phones */
+@media (max-width: 760px) {
+  .warehouse-check-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .warehouse-check-summary-card {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+
+  .warehouse-check-summary-card span {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+
+  .warehouse-check-summary-card strong {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .warehouse-check-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
