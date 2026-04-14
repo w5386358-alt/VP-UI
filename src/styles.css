@@ -13731,6 +13731,22 @@ aside.vp-sidebar {
 .mobile-modal-overlay{
   z-index: 2147483000 !important;
 }
-.mobile-modal-overlay > .mobile-modal-shell.is-mobile-open{
-  z-index: 2147483001 !important;
+
+/* cleanup phase25: modal overlay and panel sibling parity */
+@media (max-width: 900px) {
+  .mobile-modal-overlay {
+    background: rgba(34, 23, 30, 0.22) !important;
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open,
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open {
+    z-index: 2147483100 !important;
+    opacity: 1 !important;
+    filter: none !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.995) 0%, rgba(255,250,252,0.985) 100%) !important;
+  }
 }

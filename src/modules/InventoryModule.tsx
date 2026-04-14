@@ -196,7 +196,8 @@ export default function InventoryModule(props: any) {
           <div className="warehouse-side warehouse-stack">
             {isMobileViewport && portalRoot
               ? mobileWarehousePanelOpen && createPortal((
-            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileWarehousePanelOpen ? 'show' : ''}`} onClick={() => setMobileWarehousePanelOpen(false)}>
+            <>
+            <div className={`cart-drawer-overlay mobile-modal-overlay ${mobileWarehousePanelOpen ? 'show' : ''}`} onClick={() => setMobileWarehousePanelOpen(false)} />
             <div className={`card order-panel sticky-panel warehouse-side-panel warehouse-command-panel mobile-modal-shell ${mobileWarehousePanelOpen ? 'is-mobile-open' : ''}`} onClick={(e) => e.stopPropagation()}>
               <div className="warehouse-side-section mobile-modal-body">
                 <div className="warehouse-card-head">
@@ -255,7 +256,7 @@ export default function InventoryModule(props: any) {
                 {warehouseNotice && <div className={`inline-action-notice ${warehouseNotice.tone}`}><strong>{warehouseNotice.text}</strong></div>}
               </div>
             </div>
-            </div>
+            </>
 
               ), portalRoot)
               : (
