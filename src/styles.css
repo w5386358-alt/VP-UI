@@ -13024,3 +13024,81 @@ aside.vp-sidebar {
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* 2026-04-15 cleanup phase14: warehouse/accounting mobile action buttons final compact override */
+@media (max-width: 900px) {
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-grid > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    flex: none !important;
+    grid-column: auto !important;
+    justify-self: stretch !important;
+    margin: 0 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn {
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 10px !important;
+    border-radius: 12px !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap !important;
+    text-wrap: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn .small-icon,
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn .print-symbol-icon,
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn img {
+    width: 12px !important;
+    height: 12px !important;
+    min-width: 12px !important;
+    min-height: 12px !important;
+    flex: 0 0 12px !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn span,
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn strong {
+    white-space: nowrap !important;
+    line-height: 1 !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn-primary {
+    background: linear-gradient(135deg, #d35c87 0%, #c63e6f 100%) !important;
+    color: #fff !important;
+    border: 1px solid rgba(198, 62, 111, 0.68) !important;
+    box-shadow: 0 8px 18px rgba(198, 62, 111, 0.14) !important;
+  }
+
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-btn-secondary {
+    background: rgba(255, 247, 250, 0.98) !important;
+    color: #8a2a4c !important;
+    border: 1px solid rgba(218, 136, 164, 0.34) !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-modal-shell.is-mobile-open .mobile-panel-action-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
