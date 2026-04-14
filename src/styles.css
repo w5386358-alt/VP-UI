@@ -13592,3 +13592,38 @@ aside.vp-sidebar {
     line-height: 1.2 !important;
   }
 }
+
+/* cleanup phase21: apply 卡牌排版規則 to warehouse/accounting mobile operation panels */
+@media (max-width: 768px) {
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    align-content: flex-start !important;
+    min-height: 60px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field.wide,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field.wide {
+    min-height: 60px !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field span,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field span {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  .warehouse-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong,
+  .accounting-side-panel.mobile-modal-shell.is-mobile-open .fake-field strong,
+  .accounting-treasury-panel.mobile-modal-shell.is-mobile-open .fake-field strong {
+    flex: 0 0 auto !important;
+    align-self: flex-start !important;
+    margin: 0 !important;
+  }
+}
