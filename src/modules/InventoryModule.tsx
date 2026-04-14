@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useMemo, useState } from 'react';
 import { scanWithCamera } from '../utils/nativeScanner';
-import { Truck, Boxes, Search, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, Layers3, ChevronRight, X } from 'lucide-react';
+import { Truck, Boxes, Search, QrCode, Receipt, History, CalendarRange, CreditCard, RefreshCw, RotateCcw, BellRing, Layers3, ChevronRight, X } from 'lucide-react';
 
 export default function InventoryModule(props: any) {
   const {
