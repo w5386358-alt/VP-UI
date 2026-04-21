@@ -1,7 +1,8 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   Bell,
@@ -73,6 +74,18 @@ type StaffPermissionConfig = {
 
 type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[]; permissionConfig?: StaffPermissionConfig };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank; permissionConfig?: StaffPermissionConfig };
+type CentralUserProfile = {
+  uid: string;
+  email: string;
+  displayName: string;
+  loginId: string;
+  role: Role;
+  rank: string;
+  rankKey: Rank;
+  status: string;
+  apps: { vp: boolean; campus: boolean };
+  permissionConfig?: StaffPermissionConfig;
+};
 
 type PermissionProfile = {
   canViewAllCustomers: boolean;
@@ -520,6 +533,46 @@ function normalizePermissionConfig(raw: any, role = '銷售組'): StaffPermissio
   };
 }
 
+function mapCentralRoleToSystemRole(roleRaw: string): Role {
+  const normalized = String(roleRaw || '').trim().toLowerCase();
+  if (normalized === 'admin' || normalized === 'system_admin') return 'admin';
+  if (normalized === 'accounting') return 'accounting';
+  if (normalized === 'warehouse') return 'warehouse';
+  return 'sales';
+}
+
+function buildCentralUserProfile(uid: string, data: any, fallbackEmail = ''): CentralUserProfile {
+  const rawRole = String(data?.role || 'sales');
+  const role = mapCentralRoleToSystemRole(rawRole);
+  const rank = String(data?.rank || ROLE_RANK[role] || '核心成員');
+  const rankKey = mapRankStringToRankKey(rank);
+  const displayName = String(data?.displayName || data?.name || fallbackEmail.split('@')[0] || '未命名使用者');
+  const email = String(data?.email || fallbackEmail || '');
+  const loginId = String(data?.loginId || email.split('@')[0] || uid);
+  const appsRaw = data?.apps && typeof data.apps === 'object' ? data.apps : {};
+  const roleLabelMap: Record<Role, string> = { admin: '系統組', sales: '銷售組', accounting: '會計組', warehouse: '倉儲組' };
+  return {
+    uid,
+    email,
+    displayName,
+    loginId,
+    role,
+    rank,
+    rankKey,
+    status: String(data?.status || 'active'),
+    apps: { vp: Boolean(appsRaw.vp), campus: Boolean(appsRaw.campus) },
+    permissionConfig: normalizePermissionConfig(data?.permissionConfig, roleLabelMap[role]),
+  };
+}
+
+async function fetchCentralUserProfile(uid: string, fallbackEmail = '') {
+  const db = getDb();
+  if (!db) return null;
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (!snap.exists()) return null;
+  return buildCentralUserProfile(snap.id, snap.data(), fallbackEmail);
+}
+
 function hasModuleAccess(user: SessionUser, key: NavKey) {
   const moduleRule = user.permissionConfig?.modules?.[key];
   if (typeof moduleRule === 'boolean') return moduleRule;
@@ -945,6 +998,12 @@ function getDb() {
   const app = getFirebaseAppInstance();
   if (!app) return null;
   return getFirestore(app);
+}
+
+function getAuthService() {
+  const app = getFirebaseAppInstance();
+  if (!app) return null;
+  return getAuth(app);
 }
 
 function getStorageService() {
@@ -1708,8 +1767,10 @@ export default function App() {
   const [staffAuthReady, setStaffAuthReady] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberLogin, setRememberLogin] = useState(true);
-  const [loginDraft, setLoginDraft] = useState({ loginId: 'vp001', password: 'vp001' });
+  const [loginDraft, setLoginDraft] = useState({ loginId: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [authChecking, setAuthChecking] = useState(true);
+  const [authUserProfile, setAuthUserProfile] = useState<CentralUserProfile | null>(null);
   const [sessionLoginId, setSessionLoginId] = useState('');
   const [, setUserRoleView] = useState<Role>('admin');
   const [, setUserRankView] = useState<Rank>('core');
@@ -1729,6 +1790,16 @@ export default function App() {
   }, [sessionLoginId]);
   const sessionStaff = useMemo(() => staff.find((item) => item.loginId === sessionLoginId) || fallbackSessionStaff || null, [staff, sessionLoginId, fallbackSessionStaff]);
   const user = useMemo<SessionUser>(() => {
+    if (authUserProfile) {
+      return {
+        name: authUserProfile.displayName,
+        loginId: authUserProfile.loginId,
+        role: authUserProfile.role,
+        rank: authUserProfile.rank,
+        rankKey: authUserProfile.rankKey,
+        permissionConfig: authUserProfile.permissionConfig,
+      };
+    }
     if (sessionStaff) {
       return {
         name: sessionStaff.name,
@@ -1747,8 +1818,8 @@ export default function App() {
       rankKey: 'core',
       permissionConfig: createDefaultPermissionConfig('系統組'),
     };
-  }, [sessionStaff]);
-  const isAuthenticated = Boolean(sessionLoginId);
+  }, [authUserProfile, sessionStaff]);
+  const isAuthenticated = Boolean(authUserProfile || sessionLoginId);
   const permissionProfile = useMemo(() => getPermissionProfile(user.role, user.rankKey), [user.role, user.rankKey]);
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -4350,6 +4421,54 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }
 
   useEffect(() => {
+    const auth = getAuthService();
+    if (!auth) {
+      setAuthChecking(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        setAuthUserProfile(null);
+        setAuthChecking(false);
+        return;
+      }
+      try {
+        const profile = await fetchCentralUserProfile(firebaseUser.uid, firebaseUser.email || '');
+        if (!profile) {
+          await signOut(auth);
+          setAuthUserProfile(null);
+          setLoginError('此帳號尚未建立中央權限資料。');
+          return;
+        }
+        if (profile.status !== 'active') {
+          await signOut(auth);
+          setAuthUserProfile(null);
+          setLoginError('此帳號目前未啟用。');
+          return;
+        }
+        if (!profile.apps.vp) {
+          await signOut(auth);
+          setAuthUserProfile(null);
+          setLoginError('此帳號尚未開通 VP 系統權限。');
+          return;
+        }
+        setAuthUserProfile(profile);
+        setSessionLoginId('');
+        setLoginError('');
+      } catch (error) {
+        console.error(error);
+        setAuthUserProfile(null);
+        setLoginError('中央帳號資料讀取失敗，請稍後再試。');
+      } finally {
+        setAuthChecking(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const rememberedFlag = window.localStorage.getItem(VP_SESSION_REMEMBER_KEY);
     if (rememberedFlag === '1') setRememberLogin(true);
@@ -4366,13 +4485,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, []);
 
   useEffect(() => {
-    if (!staff.length || !sessionLoginId) return;
+    if (authUserProfile || !staff.length || !sessionLoginId) return;
     if (sessionLoginId === 'vp001') return;
     const found = staff.find((item) => item.loginId === sessionLoginId && item.enabled);
     if (found) return;
     setSessionLoginId('');
     clearPersistedLoginState();
-  }, [staff, sessionLoginId]);
+  }, [authUserProfile, staff, sessionLoginId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -4410,7 +4529,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     return null;
   }
 
-  function handleLoginSubmit(event: React.FormEvent) {
+  async function handleLoginSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!staffAuthReady) {
       setLoginError('人員資料讀取中，請稍候再試。');
@@ -4422,18 +4541,47 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       setLoginError('請輸入帳號與密碼。');
       return;
     }
+
+    const auth = getAuthService();
+    if (auth && loginId.includes('@')) {
+      try {
+        await setPersistence(auth, rememberLogin ? browserLocalPersistence : browserSessionPersistence);
+        await signInWithEmailAndPassword(auth, loginId, password);
+        setAuthUserProfile(null);
+        setSessionLoginId('');
+        clearPersistedLoginState();
+        setLoginError('');
+        triggerShellHint('✅ 中央帳號登入成功');
+        return;
+      } catch (error) {
+        console.error(error);
+        setLoginError('中央帳號登入失敗，請確認 Email、密碼或權限設定。');
+        return;
+      }
+    }
+
     const matched = resolveLoginStaff(loginId, password);
     if (!matched) {
       setLoginError('帳號或密碼不正確，或此帳號已停用。');
       return;
     }
+    setAuthUserProfile(null);
     setSessionLoginId(matched.loginId);
     setLoginError('');
     persistLoginState(matched.loginId, rememberLogin);
     triggerShellHint(`✅ ${matched.name} 已登入`);
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    const auth = getAuthService();
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    setAuthUserProfile(null);
     setSessionLoginId('');
     setLoginError('');
     clearPersistedLoginState();
@@ -4602,13 +4750,13 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
           <div className="vp-login-clean-sub">訂購 × 倉儲 × 會計 × 同步中心</div>
 
           <div className="vp-login-card card vp-login-card-clean">
-            <form className="vp-login-form" onSubmit={handleLoginSubmit}>
+            <form className="vp-login-form" onSubmit={(event) => { void handleLoginSubmit(event); }}>
               <label className="vp-login-field">
-                <span><UserRound className="small-icon" />帳號</span>
-                <input value={loginDraft.loginId} onChange={(e) => setLoginDraft((prev) => ({ ...prev, loginId: e.target.value }))} placeholder="請輸入登入帳號" autoComplete="username" />
+                <span><UserRound className="small-icon" />登入帳號</span>
+                <input value={loginDraft.loginId} onChange={(e) => setLoginDraft((prev) => ({ ...prev, loginId: e.target.value }))} placeholder="請輸入 Email 或舊版帳號" autoComplete="username" />
               </label>
               <label className="vp-login-field">
-                <span><LockKeyhole className="small-icon" />密碼</span>
+                <span><LockKeyhole className="small-icon" />登入密碼</span>
                 <div className="vp-login-password-wrap">
                   <input type={showPassword ? 'text' : 'password'} value={loginDraft.password} onChange={(e) => setLoginDraft((prev) => ({ ...prev, password: e.target.value }))} placeholder="請輸入登入密碼" autoComplete="current-password" />
                   <button type="button" className="vp-login-toggle" onClick={() => setShowPassword((prev) => !prev)}>{showPassword ? '隱藏' : '顯示'}</button>
@@ -4620,11 +4768,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 </button>
                 <span className="vp-login-row-label">記住登入狀態</span>
               </div>
+              {authChecking && <div className="inline-action-notice neutral"><strong>中央帳號驗證中...</strong></div>}
               {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
-              <button type="submit" className="primary-button vp-login-submit" disabled={!staffAuthReady}>登入系統</button>
+              <button type="submit" className="primary-button vp-login-submit" disabled={!staffAuthReady || authChecking}>登入系統</button>
             </form>
             <div className="vp-login-help vp-login-help-clean">
-              <strong>vp001 / vp001</strong>
+              <strong>Email 可走中央帳號，vp001 / vp001 保留舊版後門</strong>
             </div>
           </div>
         </section>
@@ -4854,7 +5003,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                         </div>
                       </div>
                       <div className="vp-profile-meta-grid">
-                        <div className="vp-profile-meta-item"><span>帳號</span><strong>{user.loginId}</strong></div>
+                        <div className="vp-profile-meta-item"><span>登入帳號</span><strong>{user.loginId}</strong></div>
                         <div className="vp-profile-meta-item"><span>階級</span><strong>{RANK_DISPLAY[user.rankKey]}</strong></div>
                         <div className="vp-profile-meta-item"><span>價格身分</span><strong>{getPriceTierLabel(user.rankKey)}</strong></div>
                         <div className="vp-profile-meta-item"><span>榮譽稱號</span><strong>{myEvaluationQuarterResult?.medal || '精進級'}</strong></div>
