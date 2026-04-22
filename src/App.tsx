@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { initializeApp, getApps, getApp, deleteApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -599,21 +599,19 @@ function buildCentralUserDocFromDraft(nextDraft: StaffDraft, previousEmail = '')
   };
 }
 
-async function createCentralAuthUser(email: string, password: string, displayName: string) {
-  if (!hasFirebaseConfig()) throw new Error('firebase-not-configured');
-  const secondaryName = `central-create-${Date.now()}`;
-  const secondaryApp = initializeApp(firebaseConfig, secondaryName);
-  const secondaryAuth = getAuth(secondaryApp);
-  try {
-    const credential = await createUserWithEmailAndPassword(secondaryAuth, email.trim(), password);
-    if (displayName.trim()) {
-      await updateProfile(credential.user, { displayName: displayName.trim() });
-    }
-    return credential.user.uid;
-  } finally {
-    try { await signOut(secondaryAuth); } catch {}
-    await deleteApp(secondaryApp);
+async function createCentralAuthUserViaApi(payload: { email: string; password: string; displayName: string; centralDoc: any; staffDoc: any }) {
+  const response = await fetch('/api/central-staff-create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result?.ok || !result?.uid) {
+    const error = new Error(String(result?.error || result?.message || 'central-create-failed')) as Error & { code?: string };
+    error.code = String(result?.error || result?.message || 'central-create-failed');
+    throw error;
   }
+  return String(result.uid);
 }
 
 async function sendCentralPasswordReset(email: string) {
@@ -3982,11 +3980,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         return;
       }
       try {
-        const uid = await createCentralAuthUser(email, password, staffDraft.name.trim());
-        const centralDoc = buildCentralUserDocFromDraft({ ...staffDraft, id: uid, uid, email }, email);
-        await setDoc(doc(db, 'users', uid), centralDoc, { merge: true });
+        const centralDoc = buildCentralUserDocFromDraft({ ...staffDraft, email }, email);
+        const provisionalStaff = { ...nextPayload, id: staffDraft.id || '', uid: staffDraft.uid || '' };
+        const created = await createCentralAuthUserViaApi({
+          email,
+          password,
+          displayName: staffDraft.name.trim(),
+          centralDoc,
+          staffDoc: buildStaffPayload(provisionalStaff as Staff),
+        });
+        const uid = String(created);
         const nextStaff = { id: uid, uid, ...nextPayload };
-        await setDoc(doc(db, 'staff', safeFirestoreDocId(nextPayload.loginId || uid, 'staff')), buildStaffPayload(nextStaff), { merge: true });
         setStaff((prev) => [nextStaff, ...prev.filter((item) => item.id !== uid)]);
         setSelectedStaffId(uid);
         setStaffEditorMode('edit');
@@ -3995,7 +3999,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       } catch (error: any) {
         console.error(error);
         const message = String(error?.code || error?.message || '');
-        if (message.includes('email-already-in-use')) setStaffNotice({ text: '❌ 此 Email 已存在', tone: 'danger' });
+        if (message.includes('email-already-in-use') || message.includes('email-already-exists')) setStaffNotice({ text: '❌ 此 Email 已存在', tone: 'danger' });
         else setStaffNotice({ text: '❌ 中央帳號建立失敗', tone: 'danger' });
       }
       return;
@@ -4702,6 +4706,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function handleLoginSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!staffAuthReady) {
+      setLoginError('人員資料讀取中，請稍候再試。');
+      return;
+    }
     const loginId = loginDraft.loginId.trim();
     const password = loginDraft.password.trim();
     if (!loginId || !password) {
@@ -4709,14 +4717,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
 
-    const isEmailLogin = loginId.includes('@');
-    if (!isEmailLogin && !staffAuthReady) {
-      setLoginError('中央帳號資料讀取中，請稍候再試。');
-      return;
-    }
-
     const auth = getAuthService();
-    if (auth && isEmailLogin) {
+    if (auth && loginId.includes('@')) {
       try {
         await setPersistence(auth, rememberLogin ? browserLocalPersistence : browserSessionPersistence);
         await signInWithEmailAndPassword(auth, loginId, password);
@@ -4943,7 +4945,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
               {authChecking && <div className="inline-action-notice neutral"><strong>中央帳號驗證中...</strong></div>}
               {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
-              <button type="submit" className="primary-button vp-login-submit" disabled={authChecking}>登入系統</button>
+              <button type="submit" className="primary-button vp-login-submit" disabled={authChecking || (!staffAuthReady && !loginId.includes('@'))}>登入系統</button>
             </form>
             <div className="vp-login-help vp-login-help-clean">
               <strong>Email 可走中央帳號，vp001 / vp001 保留舊版後門</strong>
