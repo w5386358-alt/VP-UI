@@ -2,6 +2,12 @@ import admin from 'firebase-admin';
 
 function getAdminApp() {
   if (admin.apps.length) return admin.app();
+  console.log('central-staff-create env check', {
+  vercelEnv: process.env.VERCEL_ENV,
+  hasProjectId: !!process.env.FIREBASE_PROJECT_ID,
+  hasClientEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+  hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+});
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
