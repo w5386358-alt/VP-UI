@@ -1,4 +1,4 @@
-import { ClipboardCheck, Vote, Lock, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X, Medal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];

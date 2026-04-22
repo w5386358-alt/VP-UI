@@ -5329,16 +5329,16 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         {shellHint && <div className="vp-shell-hint">{shellHint}</div>}
 
         {passwordModalOpen && (
-          <div className="vp-password-modal-overlay" role="presentation" onClick={closePasswordChangeModal}>
-            <div className="vp-password-modal card" role="dialog" aria-modal="true" aria-label="變更密碼" onClick={(event) => event.stopPropagation()}>
-              <div className="vp-password-modal-head">
+          <div className="vp-password-modal-overlay mobile-editor-backdrop" role="presentation" onClick={closePasswordChangeModal}>
+            <div className="vp-password-modal card mobile-modal-shell mobile-shared-layer-panel is-mobile-open" role="dialog" aria-modal="true" aria-label="變更密碼" onClick={(event) => event.stopPropagation()}>
+              <div className="vp-password-modal-head mobile-editor-head">
                 <div>
                   <div className="panel-title">變更密碼</div>
                   <div className="panel-desc">僅更新中央帳號，不切換頁面、不連動評鑑。</div>
                 </div>
                 <button type="button" className="drawer-close-button" onClick={closePasswordChangeModal}>關閉</button>
               </div>
-              <form className="vp-password-modal-body" onSubmit={(event) => { void submitPasswordChange(event); }}>
+              <form className="vp-password-modal-body mobile-modal-body" onSubmit={(event) => { void submitPasswordChange(event); }}>
                 <label className="field-card">
                   <span className="field-label"><LockKeyhole className="small-icon" />舊密碼</span>
                   <input type="password" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft((prev) => ({ ...prev, currentPassword: e.target.value }))} autoComplete="current-password" placeholder="請輸入舊密碼" />
