@@ -1,4 +1,4 @@
-import { ClipboardCheck, Vote, Lock, Medal, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Medal, Send, ArrowUpRight, ArrowDownRight, ChevronRight, X, KeyRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -9,7 +9,7 @@ export default function ProfileModule(props: any) {
     evaluationQuarter, setEvaluationQuarter,
     evaluationTargets = [], evaluationSubmissions = [], evaluationNotice, submitEvaluation,
     dashboardRadarMetrics = [], myEvaluationQuarterResult, evaluationResults = [],
-    profileDraft, profileNotice, updateProfileDraftField, saveProfileDraft, isBackupProfile,
+    profileViewMode = 'evaluation', passwordDraft, setPasswordDraft, passwordNotice, passwordSaving, submitPasswordChange,
   } = props;
 
   const [selectedTargetId, setSelectedTargetId] = useState('');
@@ -95,39 +95,39 @@ export default function ProfileModule(props: any) {
 
   return (
     <section className="evaluation-shell evaluation-shell-v2">
-      <div className="card order-panel">
-        <div className="panel-head">
-          <div>
-            <div className="panel-title">個人資料</div>
-            <div className="panel-desc">可直接在 UI 編輯，並即時寫回 Firebase staff。</div>
+      {profileViewMode === 'password' && (
+        <div className="card order-panel">
+          <div className="panel-head">
+            <div>
+              <div className="panel-title">變更密碼</div>
+              <div className="panel-desc">輸入舊密碼與新密碼後，直接更新中央帳號並同步 Firebase。</div>
+            </div>
+            <span className="badge badge-role">中央帳號</span>
           </div>
-          <span className="badge badge-role">{isBackupProfile ? '備用 key' : 'Firebase 同步'}</span>
+          <div className="form-grid two-col form-gap-top">
+            <label className="field-card">
+              <span className="field-label"><KeyRound className="small-icon" />舊密碼</span>
+              <input type="password" value={passwordDraft?.currentPassword || ''} onChange={(e) => setPasswordDraft?.((prev: any) => ({ ...prev, currentPassword: e.target.value }))} autoComplete="current-password" />
+            </label>
+            <label className="field-card">
+              <span className="field-label"><KeyRound className="small-icon" />新密碼</span>
+              <input type="password" value={passwordDraft?.nextPassword || ''} onChange={(e) => setPasswordDraft?.((prev: any) => ({ ...prev, nextPassword: e.target.value }))} autoComplete="new-password" />
+            </label>
+            <label className="field-card field-card-span-2">
+              <span className="field-label"><KeyRound className="small-icon" />確認新密碼</span>
+              <input type="password" value={passwordDraft?.confirmPassword || ''} onChange={(e) => setPasswordDraft?.((prev: any) => ({ ...prev, confirmPassword: e.target.value }))} autoComplete="new-password" />
+            </label>
+          </div>
+          <div className="accounting-action-row">
+            <button type="button" className="primary-button" onClick={() => submitPasswordChange?.()} disabled={!!passwordSaving}>{passwordSaving ? '更新中...' : '確認更新密碼'}</button>
+          </div>
+          {passwordNotice && <div className={`inline-action-notice ${passwordNotice.tone}`}><strong>{passwordNotice.text}</strong></div>}
         </div>
-        <div className="form-grid two-col form-gap-top">
-          <label className="field-card">
-            <span className="field-label"><UserRound className="small-icon" />姓名</span>
-            <input value={profileDraft?.name || ''} onChange={(e) => updateProfileDraftField?.('name', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-          <label className="field-card">
-            <span className="field-label"><UserRound className="small-icon" />登入 ID</span>
-            <input value={profileDraft?.loginId || ''} onChange={(e) => updateProfileDraftField?.('loginId', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-          <label className="field-card">
-            <span className="field-label"><Lock className="small-icon" />密碼</span>
-            <input value={profileDraft?.password || ''} onChange={(e) => updateProfileDraftField?.('password', e.target.value)} readOnly={!!isBackupProfile} />
-          </label>
-          <label className="field-card">
-            <span className="field-label"><Medal className="small-icon" />身分 / 階級</span>
-            <input value={`${profileDraft?.role || ''} / ${profileDraft?.rank || ''}`} readOnly />
-          </label>
-        </div>
-        <div className="accounting-action-row">
-          <button type="button" className="primary-button" onClick={() => saveProfileDraft?.()} disabled={!!isBackupProfile}>儲存個人資料</button>
-        </div>
-        {isBackupProfile && <div className="inline-action-notice neutral"><strong>vp001 是緊急備用 key，不寫回 Firebase。</strong></div>}
-        {profileNotice && <div className={`inline-action-notice ${profileNotice.tone}`}><strong>{profileNotice.text}</strong></div>}
-      </div>
+      )}
 
+
+      {profileViewMode !== 'password' && (
+        <>
       {!canEvaluate && (
         <div className="card evaluation-lock-card evaluation-lock-card-wide">
           <Lock className="small-icon" />
@@ -331,6 +331,8 @@ export default function ProfileModule(props: any) {
       )}
 
       {isMobileViewport && mobileEvaluationOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEvaluationOpen(false)} />}
+        </>
+      )}
     </section>
   );
 }

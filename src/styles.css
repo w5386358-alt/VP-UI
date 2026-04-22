@@ -11562,6 +11562,45 @@ body {
   justify-content: center;
   color: rgba(255,255,255,.9);
 }
+.vp-login-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+.vp-login-link-btn {
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.92);
+  font-weight: 700;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.vp-login-link-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.vp-login-card-clean .vp-login-submit {
+  position: relative;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  animation: vpLoginButtonFloat 2.8s ease-in-out infinite;
+}
+.vp-login-card-clean .vp-login-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 44px rgba(176, 14, 66, 0.36);
+  filter: brightness(1.03);
+}
+.vp-login-card-clean .vp-login-submit:active:not(:disabled) {
+  transform: translateY(1px) scale(.992);
+  box-shadow: 0 10px 20px rgba(176, 14, 66, 0.24);
+}
+.vp-login-card-clean .vp-login-submit:disabled {
+  animation: none;
+}
+@keyframes vpLoginButtonFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
 .vp-login-card-clean .vp-login-submit {
   min-height: 58px;
   border-radius: 20px;
@@ -13734,3 +13773,6 @@ aside.vp-sidebar {
     grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   }
 }
+
+
+.field-card-span-2 { grid-column: 1 / -1; }
