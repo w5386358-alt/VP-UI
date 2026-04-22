@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp, getApps, getApp, deleteApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -599,17 +599,29 @@ function buildCentralUserDocFromDraft(nextDraft: StaffDraft, previousEmail = '')
   };
 }
 
-async function createCentralAuthUserViaApi(payload: { email: string; password: string; displayName: string; centralDoc: any; staffDoc: any }) {
+async function createCentralAuthUser(email: string, password: string, displayName: string, centralDoc: Record<string, any>, staffDocId: string, staffDoc: Record<string, any>) {
+  const auth = getAuthService();
+  const currentUser = auth?.currentUser;
+  if (!currentUser) throw new Error('not-authenticated');
+  const idToken = await currentUser.getIdToken();
   const response = await fetch('/api/central-staff-create', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      email: email.trim(),
+      password,
+      displayName: displayName.trim(),
+      centralDoc,
+      staffDocId,
+      staffDoc,
+    }),
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result?.ok || !result?.uid) {
-    const error = new Error(String(result?.error || result?.message || 'central-create-failed')) as Error & { code?: string };
-    error.code = String(result?.error || result?.message || 'central-create-failed');
-    throw error;
+    throw new Error(String(result?.error || result?.message || `request-failed-${response.status}`));
   }
   return String(result.uid);
 }
@@ -3980,16 +3992,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         return;
       }
       try {
-        const centralDoc = buildCentralUserDocFromDraft({ ...staffDraft, email }, email);
-        const provisionalStaff = { ...nextPayload, id: staffDraft.id || '', uid: staffDraft.uid || '' };
-        const created = await createCentralAuthUserViaApi({
+        const tempStaff = { id: '', uid: '', ...nextPayload };
+        const tempStaffDoc = buildStaffPayload(tempStaff);
+        const staffDocId = safeFirestoreDocId(nextPayload.loginId || email, 'staff');
+        const uid = await createCentralAuthUser(
           email,
           password,
-          displayName: staffDraft.name.trim(),
-          centralDoc,
-          staffDoc: buildStaffPayload(provisionalStaff as Staff),
-        });
-        const uid = String(created);
+          staffDraft.name.trim(),
+          buildCentralUserDocFromDraft({ ...staffDraft, id: '', uid: '', email }, email),
+          staffDocId,
+          { ...tempStaffDoc, id: staffDocId }
+        );
         const nextStaff = { id: uid, uid, ...nextPayload };
         setStaff((prev) => [nextStaff, ...prev.filter((item) => item.id !== uid)]);
         setSelectedStaffId(uid);
@@ -3999,7 +4012,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       } catch (error: any) {
         console.error(error);
         const message = String(error?.code || error?.message || '');
-        if (message.includes('email-already-in-use') || message.includes('email-already-exists')) setStaffNotice({ text: '❌ 此 Email 已存在', tone: 'danger' });
+        if (message.includes('email-already-in-use')) setStaffNotice({ text: '❌ 此 Email 已存在', tone: 'danger' });
+        else if (message.includes('permission-denied') || message.includes('not-authorized') || message.includes('not-authenticated')) setStaffNotice({ text: '❌ 目前帳號沒有建立中央帳號權限', tone: 'danger' });
         else setStaffNotice({ text: '❌ 中央帳號建立失敗', tone: 'danger' });
       }
       return;
@@ -4706,10 +4720,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function handleLoginSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!staffAuthReady) {
-      setLoginError('人員資料讀取中，請稍候再試。');
-      return;
-    }
     const loginId = loginDraft.loginId.trim();
     const password = loginDraft.password.trim();
     if (!loginId || !password) {
@@ -4717,8 +4727,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
 
+    const isEmailLogin = loginId.includes('@');
+    if (!isEmailLogin && !staffAuthReady) {
+      setLoginError('中央帳號資料讀取中，請稍候再試。');
+      return;
+    }
+
     const auth = getAuthService();
-    if (auth && loginId.includes('@')) {
+    if (auth && isEmailLogin) {
       try {
         await setPersistence(auth, rememberLogin ? browserLocalPersistence : browserSessionPersistence);
         await signInWithEmailAndPassword(auth, loginId, password);
@@ -4945,7 +4961,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
               {authChecking && <div className="inline-action-notice neutral"><strong>中央帳號驗證中...</strong></div>}
               {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
-              <button type="submit" className="primary-button vp-login-submit" disabled={authChecking || (!staffAuthReady && !loginId.includes('@'))}>登入系統</button>
+              <button type="submit" className="primary-button vp-login-submit" disabled={authChecking}>登入系統</button>
             </form>
             <div className="vp-login-help vp-login-help-clean">
               <strong>Email 可走中央帳號，vp001 / vp001 保留舊版後門</strong>

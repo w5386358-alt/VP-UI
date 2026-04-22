@@ -1,67 +1,107 @@
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 function getAdminApp() {
   if (admin.apps.length) return admin.app();
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   if (!projectId || !clientEmail || !privateKey) {
-    throw new Error('missing-firebase-admin-env');
+    throw new Error('missing-admin-env');
   }
   return admin.initializeApp({
     credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
   });
 }
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'method-not-allowed' });
-  }
+function send(res, status, payload) {
+  res.status(status).json(payload);
+}
 
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return send(res, 405, { ok: false, error: 'method-not-allowed' });
   try {
-    const { email, password, displayName, centralDoc, staffDoc } = req.body || {};
-    const safeEmail = String(email || '').trim().toLowerCase();
-    const safePassword = String(password || '');
-    const safeDisplayName = String(displayName || '').trim();
-
-    if (!safeEmail || !safePassword) {
-      return res.status(400).json({ ok: false, error: 'missing-email-or-password' });
-    }
-    if (safePassword.length < 6) {
-      return res.status(400).json({ ok: false, error: 'weak-password' });
-    }
-
     const app = getAdminApp();
-    const auth = app.auth();
-    const db = app.firestore();
+    const auth = admin.auth(app);
+    const db = admin.firestore(app);
 
-    let userRecord;
+    const authorization = req.headers.authorization || '';
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    if (!match) return send(res, 401, { ok: false, error: 'not-authenticated' });
+
+    const decoded = await auth.verifyIdToken(match[1]);
+    const callerSnap = await db.collection('users').doc(decoded.uid).get();
+    const callerData = callerSnap.exists ? callerSnap.data() || {} : {};
+    const callerRole = String(callerData.role || '').toLowerCase();
+    const callerStatus = String(callerData.status || 'active').toLowerCase();
+    if (!callerSnap.exists || callerRole !== 'admin' || callerStatus !== 'active') {
+      return send(res, 403, { ok: false, error: 'permission-denied' });
+    }
+
+    const { email, password, displayName, centralDoc, staffDocId, staffDoc } = req.body || {};
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedPassword = String(password || '');
+    const safeDisplayName = String(displayName || '').trim();
+    const safeStaffDocId = String(staffDocId || '').trim();
+    if (!normalizedEmail || !normalizedPassword || normalizedPassword.length < 6 || !safeStaffDocId) {
+      return send(res, 400, { ok: false, error: 'invalid-payload' });
+    }
+
+    let userRecord = null;
     try {
       userRecord = await auth.createUser({
-        email: safeEmail,
-        password: safePassword,
+        email: normalizedEmail,
+        password: normalizedPassword,
         displayName: safeDisplayName || undefined,
+        disabled: false,
       });
-    } catch (error) {
-      const code = String(error?.code || error?.message || 'auth-create-failed');
-      return res.status(400).json({ ok: false, error: code });
-    }
 
-    const uid = userRecord.uid;
-    const userDoc = { ...(centralDoc || {}), uid, id: uid, email: safeEmail, displayName: safeDisplayName || centralDoc?.displayName || '' };
-    const nextStaffDoc = { ...(staffDoc || {}), uid, id: uid, email: safeEmail, name: staffDoc?.name || safeDisplayName || '' };
+      const uid = userRecord.uid;
+      const now = new Date().toISOString();
+      const finalCentralDoc = {
+        ...(centralDoc && typeof centralDoc === 'object' ? centralDoc : {}),
+        email: normalizedEmail,
+        displayName: safeDisplayName || centralDoc?.displayName || centralDoc?.name || normalizedEmail.split('@')[0],
+        name: safeDisplayName || centralDoc?.name || centralDoc?.displayName || normalizedEmail.split('@')[0],
+        updatedAt: now,
+        lastSyncedAt: now,
+        source: 'VERCEL_API_CENTRAL',
+      };
+      const finalStaffDoc = {
+        ...(staffDoc && typeof staffDoc === 'object' ? staffDoc : {}),
+        id: safeStaffDocId,
+        uid,
+        email: normalizedEmail,
+        name: safeDisplayName || staffDoc?.name || normalizedEmail.split('@')[0],
+        updatedAt: now,
+        lastSyncedAt: now,
+        source: 'VERCEL_API_CENTRAL',
+      };
 
-    try {
-      const batch = db.batch();
-      batch.set(db.collection('users').doc(uid), userDoc, { merge: true });
-      batch.set(db.collection('staff').doc(String(nextStaffDoc.loginId || uid)), nextStaffDoc, { merge: true });
-      await batch.commit();
-      return res.status(200).json({ ok: true, uid });
+      await db.collection('users').doc(uid).set(finalCentralDoc, { merge: true });
+      await db.collection('staff').doc(safeStaffDocId).set(finalStaffDoc, { merge: true });
+
+      return send(res, 200, { ok: true, uid });
     } catch (error) {
-      await auth.deleteUser(uid).catch(() => {});
-      return res.status(500).json({ ok: false, error: String(error?.code || error?.message || 'firestore-write-failed') });
+      if (userRecord?.uid) {
+        try { await auth.deleteUser(userRecord.uid); } catch {}
+      }
+      throw error;
     }
   } catch (error) {
-    return res.status(500).json({ ok: false, error: String(error?.message || 'unknown-error') });
+    console.error('central-staff-create error', error);
+    const message = String(error?.code || error?.message || 'unknown-error');
+    if (message.includes('email-already-exists') || message.includes('email-already-in-use')) {
+      return send(res, 409, { ok: false, error: 'email-already-in-use' });
+    }
+    if (message.includes('permission-denied')) {
+      return send(res, 403, { ok: false, error: 'permission-denied' });
+    }
+    if (message.includes('auth/id-token-expired') || message.includes('auth/argument-error')) {
+      return send(res, 401, { ok: false, error: 'not-authenticated' });
+    }
+    if (message.includes('missing-admin-env')) {
+      return send(res, 500, { ok: false, error: 'missing-admin-env' });
+    }
+    return send(res, 500, { ok: false, error: message });
   }
-};
+}
