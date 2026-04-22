@@ -93,8 +93,8 @@ export default function StaffModule(props: any) {
       <div className="mobile-modal-body staff-editor-body">
         <div className="panel-head compact-head">
           <div>
-            <div className="panel-title">{staffEditorMode === 'create' ? '新增人員' : staffEditorMode === 'edit' ? '編輯人員' : '人員詳情'}</div>
-            <div className="panel-desc">人員資料與必要權限。</div>
+            <div className="panel-title">{staffEditorMode === 'create' ? '新增中央帳號' : staffEditorMode === 'edit' ? '編輯中央帳號' : '中央帳號詳情'}</div>
+            <div className="panel-desc">以中央帳號統一管理新增、停權、密碼重設與可進系統。</div>
           </div>
           <span className="badge badge-role">{staffEditorMode === 'create' ? '新增' : staffEditorMode === 'edit' ? '編輯' : '查看'}</span>
         </div>
@@ -103,7 +103,7 @@ export default function StaffModule(props: any) {
         <div className="staff-editor-avatar">{String(staffDraft.name || selectedStaff?.name || '新').slice(0,1)}</div>
         <div>
           <div className="staff-editor-name">{staffDraft.name || '尚未命名'}</div>
-          <div className="staff-editor-sub">{staffDraft.loginId || '等待設定登入 ID'}</div>
+          <div className="staff-editor-sub">{staffDraft.email || staffDraft.loginId || '等待設定 Email'}</div>
         </div>
       </div>
 
@@ -113,8 +113,12 @@ export default function StaffModule(props: any) {
           <input value={staffDraft.name} onChange={(e) => updateStaffDraftField('name', e.target.value)} readOnly={staffEditorMode === 'view'} />
         </label>
         <label className="field-card">
+          <span className="field-label"><UserCog className="small-icon" />Email</span>
+          <input type="email" value={staffDraft.email} onChange={(e) => updateStaffDraftField('email', e.target.value)} readOnly={staffEditorMode === 'view' || staffEditorMode === 'edit'} placeholder="登入 Email" />
+        </label>
+        <label className="field-card">
           <span className="field-label"><UserCog className="small-icon" />登入 ID</span>
-          <input value={staffDraft.loginId} onChange={(e) => updateStaffDraftField('loginId', e.target.value)} readOnly={staffEditorMode === 'view'} />
+          <input value={staffDraft.loginId} onChange={(e) => updateStaffDraftField('loginId', e.target.value)} readOnly={staffEditorMode === 'view'} placeholder="顯示用登入代號" />
         </label>
         <label className="field-card">
           <span className="field-label"><ShieldCheck className="small-icon" />身分</span>
@@ -129,8 +133,8 @@ export default function StaffModule(props: any) {
           </select>
         </label>
         <label className="field-card field-span-2">
-          <span className="field-label"><KeyRound className="small-icon" />初始化密碼</span>
-          <input value={staffDraft.password} readOnly />
+          <span className="field-label"><KeyRound className="small-icon" />{staffEditorMode === 'create' ? '起始密碼' : '重設密碼'}</span>
+          <input value={staffEditorMode === 'create' ? staffDraft.password : '••••••••'} onChange={(e) => updateStaffDraftField('password', e.target.value)} readOnly={staffEditorMode !== 'create'} placeholder={staffEditorMode === 'create' ? '至少 6 碼' : '將改為寄送重設密碼信'} />
         </label>
       </div>
 
@@ -138,12 +142,26 @@ export default function StaffModule(props: any) {
         <span className={`badge ${staffDraft.enabled ? 'badge-success' : 'badge-danger'}`}>{staffDraft.enabled ? '啟用中' : '已停用'}</span>
         {staffEditorMode !== 'view' && (
           <>
-            <button type="button" className="ghost-button compact-btn" onClick={resetStaffPassword}><KeyRound className="small-icon" />初始化密碼</button>
+            <button type="button" className="ghost-button compact-btn" onClick={resetStaffPassword}><KeyRound className="small-icon" />寄送重設密碼信</button>
             <button type="button" className={`ui-switch ${staffDraft.enabled ? 'on' : 'off'}`} onClick={() => updateStaffDraftField('enabled', !staffDraft.enabled)} aria-label={staffDraft.enabled ? '停用人員' : '啟用人員'} aria-pressed={staffDraft.enabled}>
               <span className="ui-switch-track"><span className="ui-switch-thumb" /></span>
             </button>
           </>
         )}
+      </div>
+
+      <div className="staff-permission-block">
+        <div className="staff-permission-block-title">可進系統切換</div>
+        <div className="staff-permission-switch-grid compact">
+          <button type="button" className={`permission-switch-card ${staffDraft.apps?.vp ? 'active' : ''}`} onClick={() => staffEditorMode !== 'view' && updateStaffDraftField('apps', { ...(staffDraft.apps || { vp: true, campus: false }), vp: !staffDraft.apps?.vp })} disabled={staffEditorMode === 'view'}>
+            <span>VP 系統</span>
+            <span className={`mini-toggle ${staffDraft.apps?.vp ? 'on' : 'off'}`} />
+          </button>
+          <button type="button" className={`permission-switch-card ${staffDraft.apps?.campus ? 'active' : ''}`} onClick={() => staffEditorMode !== 'view' && updateStaffDraftField('apps', { ...(staffDraft.apps || { vp: true, campus: false }), campus: !staffDraft.apps?.campus })} disabled={staffEditorMode === 'view'}>
+            <span>校園徵才</span>
+            <span className={`mini-toggle ${staffDraft.apps?.campus ? 'on' : 'off'}`} />
+          </button>
+        </div>
       </div>
 
       <div className="staff-permission-card">
@@ -243,10 +261,10 @@ export default function StaffModule(props: any) {
                     <button type="button" className="staff-person-card-main" onClick={() => handleOpenViewStaff(item)}>
                     <div className="staff-person-top">
                       <div className="staff-person-avatar">{String(item.name || '?').slice(0, 1)}</div>
-                      <div className="staff-person-meta"><div className="data-card-title">{item.name}</div><div className="data-card-subtitle">登入 ID：{item.loginId}</div></div>
+                      <div className="staff-person-meta"><div className="data-card-title">{item.name}</div><div className="data-card-subtitle">{item.email || `登入 ID：${item.loginId}`}</div></div>
                     </div>
                     <div className="staff-person-tags"><span className="badge badge-role">{item.role}</span><span className={getRankClass(item.rank)}>階級 / {item.rank}</span><StatusBadge enabled={item.enabled} /></div>
-                    <div className="staff-person-foot"><span>{(item.permissions || []).length} 項權限</span><span>查看 / 編輯</span></div>
+                    <div className="staff-person-foot"><span>{(item.permissions || []).length} 項權限</span><span>{item.apps?.vp ? 'VP' : '-'} / {item.apps?.campus ? 'Campus' : '-'}</span></div>
                     </button>
                     <button type="button" className="mobile-row-action-trigger staff-mobile-edit-trigger" aria-label={`編輯 ${item.name}`} onClick={() => handleOpenEditStaff(item)}>›</button>
                   </div>

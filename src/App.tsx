@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { initializeApp, getApps, getApp, deleteApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -72,7 +72,7 @@ type StaffPermissionConfig = {
   actions: Record<string, boolean>;
 };
 
-type Staff = { id: string; name: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[]; permissionConfig?: StaffPermissionConfig };
+type Staff = { id: string; uid?: string; name: string; email?: string; loginId: string; role: string; rank: string; enabled: boolean; password?: string; permissions?: string[]; permissionConfig?: StaffPermissionConfig; apps?: { vp: boolean; campus: boolean } };
 type SessionUser = { name: string; loginId: string; role: Role; rank: string; rankKey: Rank; permissionConfig?: StaffPermissionConfig };
 type CentralUserProfile = {
   uid: string;
@@ -136,18 +136,23 @@ type StaffEditorMode = 'create' | 'edit' | 'view';
 
 type StaffDraft = {
   id: string;
+  uid?: string;
   name: string;
+  email: string;
   loginId: string;
   role: string;
   rank: string;
   enabled: boolean;
   password: string;
+  apps: { vp: boolean; campus: boolean };
   permissionConfig: StaffPermissionConfig;
 };
 
 type ProfileDraft = {
   id: string;
+  uid?: string;
   name: string;
+  email?: string;
   loginId: string;
   password: string;
   role: string;
@@ -539,6 +544,82 @@ function mapCentralRoleToSystemRole(roleRaw: string): Role {
   if (normalized === 'accounting') return 'accounting';
   if (normalized === 'warehouse') return 'warehouse';
   return 'sales';
+}
+
+
+function mapSystemRoleToStaffLabel(roleRaw: string) {
+  const normalized = String(roleRaw || '').trim().toLowerCase();
+  if (normalized === 'admin' || normalized === 'system_admin') return '系統組';
+  if (normalized === 'accounting') return '行政組';
+  if (normalized === 'warehouse') return '倉儲組';
+  if (normalized === 'marketing') return '市場組';
+  return '銷售組';
+}
+
+function buildStaffFromCentralUser(uid: string, data: any): Staff {
+  const email = String(data?.email || '').trim();
+  const loginId = String(data?.loginId || email.split('@')[0] || uid).trim();
+  const roleLabel = mapSystemRoleToStaffLabel(data?.role || 'sales');
+  const enabled = String(data?.status || 'active') === 'active' && (data?.enabled ?? true) !== false;
+  const appsRaw = data?.apps && typeof data.apps === 'object' ? data.apps : {};
+  return {
+    id: uid,
+    uid,
+    name: String(data?.displayName || data?.name || loginId || '未命名人員').trim(),
+    email,
+    loginId,
+    role: roleLabel,
+    rank: String(data?.rank || '普通銷售'),
+    enabled,
+    password: '',
+    permissions: getPermissionsByRole(roleLabel, String(data?.rank || '普通銷售')),
+    permissionConfig: normalizePermissionConfig(data?.permissionConfig, roleLabel),
+    apps: { vp: Boolean(appsRaw.vp), campus: Boolean(appsRaw.campus) },
+  };
+}
+
+function buildCentralUserDocFromDraft(nextDraft: StaffDraft, previousEmail = '') {
+  const nowIso = getIsoNow();
+  const email = String(nextDraft.email || previousEmail || '').trim().toLowerCase();
+  const systemRole = mapStaffRoleToSystemRole(nextDraft.role);
+  return {
+    email,
+    displayName: nextDraft.name.trim(),
+    name: nextDraft.name.trim(),
+    loginId: nextDraft.loginId.trim() || email.split('@')[0],
+    role: systemRole,
+    rank: nextDraft.rank,
+    status: nextDraft.enabled ? 'active' : 'disabled',
+    enabled: nextDraft.enabled,
+    apps: { vp: Boolean(nextDraft.apps?.vp), campus: Boolean(nextDraft.apps?.campus) },
+    permissionConfig: normalizePermissionConfig(nextDraft.permissionConfig, nextDraft.role),
+    updatedAt: nowIso,
+    lastSyncedAt: nowIso,
+    source: 'VERCEL_UI_CENTRAL',
+  };
+}
+
+async function createCentralAuthUser(email: string, password: string, displayName: string) {
+  if (!hasFirebaseConfig()) throw new Error('firebase-not-configured');
+  const secondaryName = `central-create-${Date.now()}`;
+  const secondaryApp = initializeApp(firebaseConfig, secondaryName);
+  const secondaryAuth = getAuth(secondaryApp);
+  try {
+    const credential = await createUserWithEmailAndPassword(secondaryAuth, email.trim(), password);
+    if (displayName.trim()) {
+      await updateProfile(credential.user, { displayName: displayName.trim() });
+    }
+    return credential.user.uid;
+  } finally {
+    try { await signOut(secondaryAuth); } catch {}
+    await deleteApp(secondaryApp);
+  }
+}
+
+async function sendCentralPasswordReset(email: string) {
+  const auth = getAuthService();
+  if (!auth) throw new Error('firebase-not-configured');
+  await sendPasswordResetEmail(auth, email.trim());
 }
 
 function buildCentralUserProfile(uid: string, data: any, fallbackEmail = ''): CentralUserProfile {
@@ -1043,9 +1124,12 @@ function normalizeCustomer(id: string, data: any): Customer {
 }
 
 function normalizeStaff(id: string, data: any): Staff {
+  if (data?.email || data?.apps || data?.status) return buildStaffFromCentralUser(id, data);
   return {
     id,
+    uid: data.uid || id,
     name: data.name || data.staffName || '未命名人員',
+    email: data.email || '',
     loginId: data.loginId || data.staffId || data.id || '-',
     role: data.role || '未設定',
     rank: data.rank || '普通銷售',
@@ -1053,6 +1137,7 @@ function normalizeStaff(id: string, data: any): Staff {
     password: data.password || data.loginId || data.staffId || id,
     permissions: Array.isArray(data.permissions) ? data.permissions : undefined,
     permissionConfig: normalizePermissionConfig(data.permissionConfig, data.role || '銷售組'),
+    apps: data.apps && typeof data.apps === 'object' ? { vp: Boolean(data.apps.vp), campus: Boolean(data.apps.campus) } : { vp: true, campus: false },
   };
 }
 
@@ -1630,11 +1715,13 @@ function makeEmptyStaffDraft() {
   return {
     id: '',
     name: '',
+    email: '',
     loginId: '',
     role: '銷售組',
     rank: '普通銷售',
     enabled: true,
     password: '',
+    apps: { vp: true, campus: false },
     permissionConfig: createDefaultPermissionConfig('銷售組'),
   };
 }
@@ -1643,12 +1730,15 @@ function makeEmptyStaffDraft() {
 function toStaffDraft(item: Staff): StaffDraft {
   return {
     id: item.id,
+    uid: item.uid || item.id,
     name: item.name,
+    email: item.email || '',
     loginId: item.loginId,
     role: item.role,
     rank: item.rank,
     enabled: item.enabled,
     password: item.password || item.loginId,
+    apps: item.apps || { vp: true, campus: false },
     permissionConfig: normalizePermissionConfig(item.permissionConfig, item.role),
   };
 }
@@ -1656,7 +1746,9 @@ function toStaffDraft(item: Staff): StaffDraft {
 function toProfileDraft(item: Staff | null): ProfileDraft {
   return {
     id: item?.id || '',
+    uid: item?.uid || item?.id || '',
     name: item?.name || '',
+    email: item?.email || '',
     loginId: item?.loginId || '',
     password: item?.password || item?.loginId || '',
     role: item?.role || '銷售組',
@@ -1667,13 +1759,16 @@ function toProfileDraft(item: Staff | null): ProfileDraft {
 function buildStaffPayload(nextStaff: Staff, nowIso = getIsoNow()) {
   return {
     id: safeFirestoreDocId(nextStaff.loginId || nextStaff.id, 'staff'),
+    uid: nextStaff.uid || nextStaff.id,
     name: nextStaff.name,
+    email: nextStaff.email || '',
     loginId: nextStaff.loginId,
     role: nextStaff.role,
     rank: nextStaff.rank,
     enabled: nextStaff.enabled,
     password: nextStaff.password || nextStaff.loginId,
     permissions: Array.isArray(nextStaff.permissions) ? nextStaff.permissions : [],
+    apps: nextStaff.apps || { vp: true, campus: false },
     permissionConfig: normalizePermissionConfig(nextStaff.permissionConfig, nextStaff.role),
     source: 'VERCEL_UI',
     updatedAt: nowIso,
@@ -1891,7 +1986,7 @@ export default function App() {
   const [productNotice, setProductNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [staffEditorMode, setStaffEditorMode] = useState<StaffEditorMode>('view');
   const [selectedStaffId, setSelectedStaffId] = useState(staff[0]?.id ?? '');
-  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft({ id: '', name: '', loginId: '', role: '銷售組', rank: '普通銷售', enabled: true, password: '', permissions: [], permissionConfig: createDefaultPermissionConfig('銷售組') }));
+  const [staffDraft, setStaffDraft] = useState<StaffDraft>(() => toStaffDraft({ id: '', uid: '', name: '', email: '', loginId: '', role: '銷售組', rank: '普通銷售', enabled: true, password: '', permissions: [], permissionConfig: createDefaultPermissionConfig('銷售組'), apps: { vp: true, campus: false } }));
   const [staffNotice, setStaffNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => toProfileDraft(null));
   const [profileNotice, setProfileNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
@@ -1921,7 +2016,7 @@ export default function App() {
       const [productsSnap, customersSnap, staffSnap, inventorySnap, inventoryLogsSnap, ordersSnap] = await Promise.all([
         getDocs(collection(db, 'products')),
         getDocs(collection(db, 'customers')),
-        getDocs(collection(db, 'staff')),
+        getDocs(collection(db, 'users')),
         getDocs(collection(db, 'inventory')),
         getDocs(collection(db, 'inventory_logs')),
         getDocs(collection(db, 'orders')),
@@ -2016,7 +2111,7 @@ export default function App() {
       ));
     });
 
-    const unsubStaff = onSnapshot(collection(db, 'staff'), (snap) => {
+    const unsubStaff = onSnapshot(collection(db, 'users'), (snap) => {
       setStaff(dedupeByLatest(
         snap.docs.map((item) => normalizeStaff(item.id, item.data())),
         (item) => item.loginId || item.id,
@@ -3023,12 +3118,30 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   }, [selectedStaff, staffEditorMode]);
 
   useEffect(() => {
+    if (authUserProfile?.uid) {
+      const matchedCentral = staff.find((item) => item.id === authUserProfile.uid) || null;
+      if (matchedCentral) {
+        setProfileDraft(toProfileDraft(matchedCentral));
+        return;
+      }
+      setProfileDraft({
+        id: authUserProfile.uid,
+        uid: authUserProfile.uid,
+        name: authUserProfile.displayName,
+        email: authUserProfile.email,
+        loginId: authUserProfile.loginId,
+        password: '',
+        role: mapSystemRoleToStaffLabel(authUserProfile.role),
+        rank: authUserProfile.rank,
+      });
+      return;
+    }
     if (!sessionStaff || sessionLoginId === 'vp001') {
       setProfileDraft(toProfileDraft(null));
       return;
     }
     setProfileDraft(toProfileDraft(sessionStaff));
-  }, [sessionStaff, sessionLoginId]);
+  }, [authUserProfile, staff, sessionStaff, sessionLoginId]);
 
   const selectedAccountingSourceRecord = useMemo(
     () => orderRecords.find((item) => item.orderNo === selectedAccountingRecord?.orderNo) || null,
@@ -3755,11 +3868,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setStaffNotice({ text: '✅ 已顯示人員', tone: 'neutral' });
   }
 
-  function updateStaffDraftField(field: keyof StaffDraft, value: string | boolean) {
+  function updateStaffDraftField(field: keyof StaffDraft, value: string | boolean | { vp: boolean; campus: boolean }) {
     setStaffDraft((prev) => {
       const next = { ...prev, [field]: value };
-      if (field === 'loginId') {
+      if (field === 'loginId' && !prev.password.trim()) {
         next.password = String(value || '').trim();
+      }
+      if (field === 'email' && !prev.loginId.trim()) {
+        next.loginId = String(value || '').split('@')[0].trim();
       }
       if (field === 'role') {
         next.permissionConfig = normalizePermissionConfig(prev.permissionConfig, String(value || prev.role));
@@ -3811,59 +3927,103 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     });
   }
 
-  function resetStaffPassword() {
-    if (!confirmAction('確認初始化密碼？')) {
-      setStaffNotice({ text: '已取消初始化密碼', tone: 'neutral' });
+  async function resetStaffPassword() {
+    if (!staffDraft.email.trim()) {
+      setStaffNotice({ text: '❌ 尚未設定 Email，無法寄送重設密碼信。', tone: 'danger' });
       return;
     }
-    setStaffDraft((prev) => ({ ...prev, password: prev.loginId.trim() || '' }));
-    setStaffNotice({ text: '✅ 已初始化密碼', tone: 'success' });
+    if (!confirmAction(`確認寄送重設密碼信給：${staffDraft.email.trim()}？`)) {
+      setStaffNotice({ text: '已取消寄送重設密碼信', tone: 'neutral' });
+      return;
+    }
+    try {
+      await sendCentralPasswordReset(staffDraft.email.trim());
+      setStaffNotice({ text: '✅ 已寄出重設密碼信，請對方至信箱修改。', tone: 'success' });
+    } catch (error) {
+      console.error(error);
+      setStaffNotice({ text: '❌ 重設密碼信寄送失敗', tone: 'danger' });
+    }
   }
 
   async function saveStaffDraft() {
-    if (!staffDraft.name.trim() || !staffDraft.loginId.trim()) {
-      setStaffNotice({ text: '❌ 欄位未完成', tone: 'danger' });
+    if (!staffDraft.name.trim() || !staffDraft.loginId.trim() || !staffDraft.email.trim()) {
+      setStaffNotice({ text: '❌ 姓名、Email、登入 ID 未完成', tone: 'danger' });
       return;
     }
+    const email = staffDraft.email.trim().toLowerCase();
+    const password = staffDraft.password.trim();
     const nextPayload = {
+      uid: staffDraft.uid || staffDraft.id,
       name: staffDraft.name.trim(),
+      email,
       loginId: staffDraft.loginId.trim(),
       role: staffDraft.role,
       rank: staffDraft.rank,
       enabled: staffDraft.enabled,
-      password: staffDraft.password.trim() || staffDraft.loginId.trim(),
+      password,
       permissions: getPermissionsByRole(staffDraft.role, staffDraft.rank),
+      apps: { vp: Boolean(staffDraft.apps?.vp), campus: Boolean(staffDraft.apps?.campus) },
       permissionConfig: normalizePermissionConfig(staffDraft.permissionConfig, staffDraft.role),
     };
+
+    const db = getDb();
+    if (!db) {
+      setStaffNotice({ text: '❌ Firebase 未設定，無法更新中央帳號。', tone: 'danger' });
+      return;
+    }
+
     if (staffEditorMode === 'create') {
-      if (!confirmAction(`確認新增人員：${staffDraft.loginId.trim()}？`)) {
+      if (!password || password.length < 6) {
+        setStaffNotice({ text: '❌ 起始密碼至少 6 碼。', tone: 'danger' });
+        return;
+      }
+      if (!confirmAction(`確認新增中央帳號：${email}？`)) {
         setStaffNotice({ text: '已取消新增人員', tone: 'neutral' });
         return;
       }
-      const nextStaff = { id: staffDraft.loginId.trim(), ...nextPayload };
-      setStaff((prev) => [nextStaff, ...prev]);
-      setSelectedStaffId(nextStaff.id);
-      setStaffEditorMode('edit');
-      setStaffDraft(toStaffDraft(nextStaff));
-      const synced = await syncStaffToFirebase(nextStaff);
-      setStaffNotice({ text: synced ? '✅ 已新增並同步 Firebase' : '✅ 已新增（目前未接 Firebase）', tone: 'success' });
+      try {
+        const uid = await createCentralAuthUser(email, password, staffDraft.name.trim());
+        const centralDoc = buildCentralUserDocFromDraft({ ...staffDraft, id: uid, uid, email }, email);
+        await setDoc(doc(db, 'users', uid), centralDoc, { merge: true });
+        const nextStaff = { id: uid, uid, ...nextPayload };
+        await setDoc(doc(db, 'staff', safeFirestoreDocId(nextPayload.loginId || uid, 'staff')), buildStaffPayload(nextStaff), { merge: true });
+        setStaff((prev) => [nextStaff, ...prev.filter((item) => item.id !== uid)]);
+        setSelectedStaffId(uid);
+        setStaffEditorMode('edit');
+        setStaffDraft(toStaffDraft(nextStaff));
+        setStaffNotice({ text: '✅ 已新增中央帳號並同步人員資料', tone: 'success' });
+      } catch (error: any) {
+        console.error(error);
+        const message = String(error?.code || error?.message || '');
+        if (message.includes('email-already-in-use')) setStaffNotice({ text: '❌ 此 Email 已存在', tone: 'danger' });
+        else setStaffNotice({ text: '❌ 中央帳號建立失敗', tone: 'danger' });
+      }
       return;
     }
+
     if (!staffDraft.id) {
       setStaffNotice({ text: '❌ 未選人員', tone: 'danger' });
       return;
     }
-    if (!confirmAction(`確認更新人員：${staffDraft.loginId.trim() || staffDraft.id}？`)) {
+    if (!confirmAction(`確認更新中央帳號：${staffDraft.name.trim()}？`)) {
       setStaffNotice({ text: '已取消更新人員', tone: 'neutral' });
       return;
     }
-    const updatedStaff = { id: staffDraft.loginId.trim() || staffDraft.id, ...nextPayload };
-    setStaff((prev) => prev.map((item) => item.id === staffDraft.id ? { ...item, ...updatedStaff } : item));
-    setSelectedStaffId(updatedStaff.id);
-    setStaffEditorMode('edit');
-    setStaffDraft(toStaffDraft(updatedStaff));
-    const synced = await syncStaffToFirebase(updatedStaff, { previousId: staffDraft.id, previousLoginId: staffDraft.loginId });
-    setStaffNotice({ text: synced ? '✅ 已更新並同步 Firebase' : '✅ 已更新（目前未接 Firebase）', tone: 'success' });
+    try {
+      const previous = staff.find((item) => item.id === staffDraft.id) || null;
+      const centralDoc = buildCentralUserDocFromDraft(staffDraft, previous?.email || email);
+      await setDoc(doc(db, 'users', staffDraft.id), centralDoc, { merge: true });
+      const updatedStaff = { id: staffDraft.id, uid: staffDraft.uid || staffDraft.id, ...nextPayload };
+      await setDoc(doc(db, 'staff', safeFirestoreDocId(nextPayload.loginId || staffDraft.id, 'staff')), buildStaffPayload(updatedStaff), { merge: true });
+      setStaff((prev) => prev.map((item) => item.id === staffDraft.id ? { ...item, ...updatedStaff } : item));
+      setSelectedStaffId(updatedStaff.id);
+      setStaffEditorMode('edit');
+      setStaffDraft(toStaffDraft(updatedStaff));
+      setStaffNotice({ text: '✅ 已更新中央帳號設定', tone: 'success' });
+    } catch (error) {
+      console.error(error);
+      setStaffNotice({ text: '❌ 中央帳號更新失敗', tone: 'danger' });
+    }
   }
 
 
@@ -3889,6 +4049,17 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
     try {
+      if (authUserProfile?.uid) {
+        const db = getDb();
+        if (!db) throw new Error('firebase-not-configured');
+        await setDoc(doc(db, 'users', authUserProfile.uid), {
+          displayName: profileDraft.name.trim(),
+          name: profileDraft.name.trim(),
+          loginId: profileDraft.loginId.trim(),
+          updatedAt: getIsoNow(),
+          lastSyncedAt: getIsoNow(),
+        }, { merge: true });
+      }
       const synced = await syncProfileToFirebase(profileDraft);
       if (!synced) {
         setProfileNotice({ text: '❌ Firebase 未連線，個人資料未同步', tone: 'danger' });
