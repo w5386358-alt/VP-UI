@@ -11562,45 +11562,6 @@ body {
   justify-content: center;
   color: rgba(255,255,255,.9);
 }
-.vp-login-inline-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: -4px;
-}
-.vp-login-link-btn {
-  border: 0;
-  background: transparent;
-  color: rgba(255,255,255,.92);
-  font-weight: 700;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.vp-login-link-btn:disabled {
-  opacity: .55;
-  cursor: not-allowed;
-}
-.vp-login-card-clean .vp-login-submit {
-  position: relative;
-  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
-  animation: vpLoginButtonFloat 2.8s ease-in-out infinite;
-}
-.vp-login-card-clean .vp-login-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 24px 44px rgba(176, 14, 66, 0.36);
-  filter: brightness(1.03);
-}
-.vp-login-card-clean .vp-login-submit:active:not(:disabled) {
-  transform: translateY(1px) scale(.992);
-  box-shadow: 0 10px 20px rgba(176, 14, 66, 0.24);
-}
-.vp-login-card-clean .vp-login-submit:disabled {
-  animation: none;
-}
-@keyframes vpLoginButtonFloat {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
 .vp-login-card-clean .vp-login-submit {
   min-height: 58px;
   border-radius: 20px;
@@ -13774,5 +13735,101 @@ aside.vp-sidebar {
   }
 }
 
+/* 2026-04-22 central account password flow minimal patch */
+.vp-profile-popover-actions.single-column {
+  grid-template-columns: 1fr;
+}
 
-.field-card-span-2 { grid-column: 1 / -1; }
+.vp-login-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -6px;
+}
+
+.vp-login-link-btn {
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,.94);
+  font-weight: 800;
+  letter-spacing: .02em;
+  padding: 0;
+  cursor: pointer;
+}
+
+.vp-login-link-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.vp-login-submit-float {
+  transform: translateY(0);
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.vp-login-submit-float:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 38px rgba(176, 14, 66, 0.36);
+  filter: brightness(1.02);
+}
+
+.vp-login-submit-float:active:not(:disabled) {
+  transform: translateY(1px) scale(.985);
+  box-shadow: 0 10px 18px rgba(176, 14, 66, 0.24);
+}
+
+.vp-password-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(79, 48, 63, 0.26);
+  backdrop-filter: blur(8px);
+}
+
+.vp-password-modal {
+  width: min(520px, calc(100vw - 28px));
+  border-radius: 28px;
+  padding: 20px;
+  background: linear-gradient(180deg, rgba(255,252,253,.98), rgba(255,247,249,.98));
+  border: 1px solid rgba(232, 196, 211, 0.95);
+  box-shadow: 0 26px 56px rgba(97, 47, 68, 0.18);
+}
+
+.vp-password-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.vp-password-modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.vp-password-modal-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .vp-login-inline-actions {
+    margin-top: -2px;
+  }
+
+  .vp-password-modal {
+    width: min(100%, calc(100vw - 20px));
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .vp-password-modal-actions {
+    grid-template-columns: 1fr;
+  }
+}

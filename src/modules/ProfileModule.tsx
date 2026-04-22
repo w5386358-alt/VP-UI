@@ -1,4 +1,4 @@
-import { ClipboardCheck, Vote, Lock, Medal, Send, ArrowUpRight, ArrowDownRight, ChevronRight, X, KeyRound } from 'lucide-react';
+import { ClipboardCheck, Vote, Lock, Send, UserRound, BarChart3, Radar, ArrowUpRight, ArrowDownRight, ChevronRight, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const quarterOptions = ['Q1', 'Q2', 'Q3', 'Q4'];
@@ -9,7 +9,6 @@ export default function ProfileModule(props: any) {
     evaluationQuarter, setEvaluationQuarter,
     evaluationTargets = [], evaluationSubmissions = [], evaluationNotice, submitEvaluation,
     dashboardRadarMetrics = [], myEvaluationQuarterResult, evaluationResults = [],
-    profileViewMode = 'evaluation', passwordDraft, setPasswordDraft, passwordNotice, passwordSaving, submitPasswordChange,
   } = props;
 
   const [selectedTargetId, setSelectedTargetId] = useState('');
@@ -95,39 +94,6 @@ export default function ProfileModule(props: any) {
 
   return (
     <section className="evaluation-shell evaluation-shell-v2">
-      {profileViewMode === 'password' && (
-        <div className="card order-panel">
-          <div className="panel-head">
-            <div>
-              <div className="panel-title">變更密碼</div>
-              <div className="panel-desc">輸入舊密碼與新密碼後，直接更新中央帳號並同步 Firebase。</div>
-            </div>
-            <span className="badge badge-role">中央帳號</span>
-          </div>
-          <div className="form-grid two-col form-gap-top">
-            <label className="field-card">
-              <span className="field-label"><KeyRound className="small-icon" />舊密碼</span>
-              <input type="password" value={passwordDraft?.currentPassword || ''} onChange={(e) => setPasswordDraft?.((prev: any) => ({ ...prev, currentPassword: e.target.value }))} autoComplete="current-password" />
-            </label>
-            <label className="field-card">
-              <span className="field-label"><KeyRound className="small-icon" />新密碼</span>
-              <input type="password" value={passwordDraft?.nextPassword || ''} onChange={(e) => setPasswordDraft?.((prev: any) => ({ ...prev, nextPassword: e.target.value }))} autoComplete="new-password" />
-            </label>
-            <label className="field-card field-card-span-2">
-              <span className="field-label"><KeyRound className="small-icon" />確認新密碼</span>
-              <input type="password" value={passwordDraft?.confirmPassword || ''} onChange={(e) => setPasswordDraft?.((prev: any) => ({ ...prev, confirmPassword: e.target.value }))} autoComplete="new-password" />
-            </label>
-          </div>
-          <div className="accounting-action-row">
-            <button type="button" className="primary-button" onClick={() => submitPasswordChange?.()} disabled={!!passwordSaving}>{passwordSaving ? '更新中...' : '確認更新密碼'}</button>
-          </div>
-          {passwordNotice && <div className={`inline-action-notice ${passwordNotice.tone}`}><strong>{passwordNotice.text}</strong></div>}
-        </div>
-      )}
-
-
-      {profileViewMode !== 'password' && (
-        <>
       {!canEvaluate && (
         <div className="card evaluation-lock-card evaluation-lock-card-wide">
           <Lock className="small-icon" />
@@ -331,8 +297,6 @@ export default function ProfileModule(props: any) {
       )}
 
       {isMobileViewport && mobileEvaluationOpen && <div className="mobile-editor-backdrop" onClick={() => setMobileEvaluationOpen(false)} />}
-        </>
-      )}
     </section>
   );
 }

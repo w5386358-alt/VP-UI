@@ -1,7 +1,7 @@
 import React, { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { initializeApp, getApps, getApp, deleteApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, updatePassword as firebaseUpdatePassword } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, setPersistence, signInWithEmailAndPassword, signOut, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, writeBatch, deleteDoc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -630,15 +630,6 @@ async function sendCentralPasswordReset(email: string) {
   const auth = getAuthService();
   if (!auth) throw new Error('firebase-not-configured');
   await sendPasswordResetEmail(auth, email.trim());
-}
-
-async function changeCentralPassword(currentPassword: string, nextPassword: string) {
-  const auth = getAuthService();
-  const currentUser = auth?.currentUser;
-  if (!auth || !currentUser || !currentUser.email) throw new Error('not-authenticated');
-  const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
-  await reauthenticateWithCredential(currentUser, credential);
-  await firebaseUpdatePassword(currentUser, nextPassword);
 }
 
 function buildCentralUserProfile(uid: string, data: any, fallbackEmail = ''): CentralUserProfile {
@@ -1884,7 +1875,6 @@ export default function App() {
   const [loginDraft, setLoginDraft] = useState({ loginId: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [loginNotice, setLoginNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
-  const [loginResetting, setLoginResetting] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [authUserProfile, setAuthUserProfile] = useState<CentralUserProfile | null>(null);
   const [sessionLoginId, setSessionLoginId] = useState('');
@@ -2011,10 +2001,6 @@ export default function App() {
   const [staffNotice, setStaffNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => toProfileDraft(null));
   const [profileNotice, setProfileNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
-  const [profileViewMode, setProfileViewMode] = useState<'evaluation' | 'password'>('evaluation');
-  const [passwordDraft, setPasswordDraft] = useState({ currentPassword: '', nextPassword: '', confirmPassword: '' });
-  const [passwordNotice, setPasswordNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
-  const [passwordSaving, setPasswordSaving] = useState(false);
   const [orderRecords, setOrderRecords] = useState<OrderRecord[]>([]);
   const [selectedOrderNo, setSelectedOrderNo] = useState('');
   const [orderNotice, setOrderNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>({
@@ -3289,7 +3275,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const vipCustomers = visibleCustomerRecords.filter((c) => ['VIP', '代理'].some((tag) => c.level.includes(tag))).length;
   const activeStaff = staff.filter((s) => s.enabled).length;
 
-  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user) || profileViewMode === 'password')), [user, profileViewMode]);
+  const visibleNavItems = useMemo(() => navItems.filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
   const visibleWarehouseTabs = useMemo(() => {
     const items: WarehouseTab[] = [];
     if (canAccessSubpage(user, 'inventory_shipping')) items.push('shipping');
@@ -3316,7 +3302,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   ];
   const mobileMoreCommonItems = useMemo(() => [
     { key: 'profile' as NavKey, label: '評鑑', icon: ClipboardList },
-  ].filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user) || profileViewMode === 'password')), [user, profileViewMode]);
+  ].filter((item) => canAccessNav(user, item.key) && (item.key !== 'profile' || canAccessEvaluation(user))), [user]);
   const mobileManagementItems = useMemo(() => [
     { key: 'products' as NavKey, label: '商品管理', icon: Package },
     { key: 'customers' as NavKey, label: '客戶管理', icon: Users },
@@ -3337,7 +3323,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   useEffect(() => {
     const blockedByRole = !canAccessNav(user, active);
-    const blockedEvaluation = active === 'profile' && profileViewMode !== 'password' && !canAccessEvaluation(user);
+    const blockedEvaluation = active === 'profile' && !canAccessEvaluation(user);
     if (blockedByRole || blockedEvaluation) {
       const fallbackNav = visibleNavItems[0]?.key || 'dashboard';
       if (active !== fallbackNav) setActive(fallbackNav);
@@ -4484,6 +4470,10 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordDraft, setPasswordDraft] = useState({ currentPassword: '', nextPassword: '', confirmPassword: '' });
+  const [passwordNotice, setPasswordNotice] = useState<{ text: string; tone: 'success' | 'danger' | 'neutral' } | null>(null);
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
   const [shellHint, setShellHint] = useState('');
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
@@ -4738,6 +4728,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     const loginId = loginDraft.loginId.trim();
     const password = loginDraft.password.trim();
     if (!loginId || !password) {
+      setLoginNotice(null);
       setLoginError('請輸入帳號與密碼。');
       return;
     }
@@ -4756,6 +4747,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         setAuthUserProfile(null);
         setSessionLoginId('');
         clearPersistedLoginState();
+        setLoginNotice(null);
         setLoginError('');
         triggerShellHint('✅ 中央帳號登入成功');
         return;
@@ -4773,88 +4765,124 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     }
     setAuthUserProfile(null);
     setSessionLoginId(matched.loginId);
+    setLoginNotice(null);
     setLoginError('');
     persistLoginState(matched.loginId, rememberLogin);
     triggerShellHint(`✅ ${matched.name} 已登入`);
   }
 
-  async function handleLoginResetPassword() {
+  async function handleForgotPassword() {
     const email = loginDraft.loginId.trim();
+    setLoginError('');
     if (!email || !email.includes('@')) {
-      setLoginNotice({ text: '❌ 請先輸入中央帳號 Email', tone: 'danger' });
+      setLoginNotice({ text: '❌ 請先輸入中央帳號 Email。', tone: 'danger' });
       return;
     }
-    setLoginResetting(true);
-    setLoginNotice(null);
     try {
       await sendCentralPasswordReset(email);
-      setLoginNotice({ text: `✅ 重設密碼信已寄出：${email}`, tone: 'success' });
-    } catch (error: any) {
+      setLoginNotice({ text: '✅ 已寄出重設密碼信，請至信箱收信。', tone: 'success' });
+    } catch (error) {
       console.error(error);
-      const message = String(error?.code || error?.message || '');
-      if (message.includes('auth/user-not-found')) setLoginNotice({ text: '❌ 查無此中央帳號 Email', tone: 'danger' });
-      else if (message.includes('auth/invalid-email')) setLoginNotice({ text: '❌ Email 格式不正確', tone: 'danger' });
-      else setLoginNotice({ text: '❌ 重設密碼信寄送失敗', tone: 'danger' });
-    } finally {
-      setLoginResetting(false);
+      setLoginNotice({ text: '❌ 忘記密碼寄信失敗，請確認 Email 或 Firebase 設定。', tone: 'danger' });
     }
   }
 
-  async function submitPasswordChange() {
-    if (sessionLoginId === 'vp001') {
-      setPasswordNotice({ text: '❌ 緊急備用 key 不支援中央帳號變更密碼', tone: 'danger' });
+  function openPasswordChangeModal() {
+    setProfileOpen(false);
+    if (!authUserProfile?.uid) {
+      triggerShellHint('目前僅中央帳號可使用變更密碼。');
       return;
     }
-    if (!passwordDraft.currentPassword.trim() || !passwordDraft.nextPassword.trim() || !passwordDraft.confirmPassword.trim()) {
-      setPasswordNotice({ text: '❌ 請完整填入舊密碼與新密碼', tone: 'danger' });
-      return;
-    }
-    if (passwordDraft.nextPassword.trim().length < 8) {
-      setPasswordNotice({ text: '❌ 新密碼至少需要 8 碼', tone: 'danger' });
-      return;
-    }
-    if (passwordDraft.nextPassword !== passwordDraft.confirmPassword) {
-      setPasswordNotice({ text: '❌ 新密碼與確認密碼不一致', tone: 'danger' });
-      return;
-    }
-    if (!confirmAction('確認更新中央帳號密碼？')) {
-      setPasswordNotice({ text: '已取消變更密碼', tone: 'neutral' });
-      return;
-    }
-    setPasswordSaving(true);
+    setPasswordDraft({ currentPassword: '', nextPassword: '', confirmPassword: '' });
     setPasswordNotice(null);
+    setPasswordModalOpen(true);
+  }
+
+  function closePasswordChangeModal() {
+    setPasswordModalOpen(false);
+    setPasswordSubmitting(false);
+    setPasswordNotice(null);
+    setPasswordDraft({ currentPassword: '', nextPassword: '', confirmPassword: '' });
+  }
+
+  async function submitPasswordChange(event?: React.FormEvent) {
+    event?.preventDefault();
+    const auth = getAuthService();
+    const firebaseUser = auth?.currentUser;
+    const currentPassword = passwordDraft.currentPassword.trim();
+    const nextPassword = passwordDraft.nextPassword.trim();
+    const confirmPassword = passwordDraft.confirmPassword.trim();
+
+    if (!firebaseUser || !authUserProfile?.uid) {
+      setPasswordNotice({ text: '❌ 目前僅中央帳號可變更密碼。', tone: 'danger' });
+      return;
+    }
+    const email = String(firebaseUser.email || authUserProfile.email || '').trim();
+    if (!email) {
+      setPasswordNotice({ text: '❌ 找不到中央帳號 Email，無法驗證。', tone: 'danger' });
+      return;
+    }
+    if (!currentPassword || !nextPassword || !confirmPassword) {
+      setPasswordNotice({ text: '❌ 請完整輸入舊密碼、新密碼與確認密碼。', tone: 'danger' });
+      return;
+    }
+    if (nextPassword.length < 6) {
+      setPasswordNotice({ text: '❌ 新密碼至少 6 碼。', tone: 'danger' });
+      return;
+    }
+    if (nextPassword !== confirmPassword) {
+      setPasswordNotice({ text: '❌ 新密碼與確認密碼不一致。', tone: 'danger' });
+      return;
+    }
+    if (currentPassword === nextPassword) {
+      setPasswordNotice({ text: '❌ 新密碼不可與舊密碼相同。', tone: 'danger' });
+      return;
+    }
+
+    setPasswordSubmitting(true);
+    setPasswordNotice({ text: '密碼更新中...', tone: 'neutral' });
     try {
-      await changeCentralPassword(passwordDraft.currentPassword.trim(), passwordDraft.nextPassword.trim());
+      const credential = EmailAuthProvider.credential(email, currentPassword);
+      await reauthenticateWithCredential(firebaseUser, credential);
+      await updatePassword(firebaseUser, nextPassword);
+
       const db = getDb();
-      const nowIso = getIsoNow();
-      if (db && authUserProfile?.uid) {
+      const nowIso = new Date().toISOString();
+      if (db) {
         await setDoc(doc(db, 'users', authUserProfile.uid), {
+          passwordUpdatedAt: nowIso,
           updatedAt: nowIso,
           lastSyncedAt: nowIso,
-          lastPasswordChangedAt: nowIso,
+          source: 'VERCEL_UI_PASSWORD_CHANGE',
         }, { merge: true });
+        const matchedStaff = staff.find((item) => item.uid === authUserProfile.uid || item.id === authUserProfile.uid || item.email?.trim().toLowerCase() === email.toLowerCase() || item.loginId === authUserProfile.loginId) || null;
+        if (matchedStaff) {
+          const staffDocId = safeFirestoreDocId(matchedStaff.loginId || matchedStaff.id, 'staff');
+          await setDoc(doc(db, 'staff', staffDocId), {
+            password: nextPassword,
+            updatedAt: nowIso,
+            lastSyncedAt: nowIso,
+            source: 'VERCEL_UI_PASSWORD_CHANGE',
+          }, { merge: true });
+          setStaff((prev) => prev.map((item) => (item.id === matchedStaff.id ? { ...item, password: nextPassword } : item)));
+          if (selectedStaffId === matchedStaff.id) {
+            setStaffDraft((prev) => ({ ...prev, password: nextPassword }));
+          }
+        }
       }
-      if (db && sessionStaff) {
-        const nextStaff = {
-          ...sessionStaff,
-          password: passwordDraft.nextPassword.trim(),
-        };
-        await setDoc(doc(db, 'staff', safeFirestoreDocId(nextStaff.loginId || nextStaff.id, 'staff')), buildStaffPayload(nextStaff, nowIso), { merge: true });
-        setStaff((prev) => prev.map((item) => item.id === nextStaff.id ? { ...item, password: nextStaff.password } : item));
-      }
-      setProfileDraft((prev) => ({ ...prev, password: passwordDraft.nextPassword.trim() }));
-      setPasswordDraft({ currentPassword: '', nextPassword: '', confirmPassword: '' });
-      setPasswordNotice({ text: '✅ 密碼已更新並同步 Firebase', tone: 'success' });
-      triggerShellHint('✅ 密碼已更新');
+
+      setPasswordNotice({ text: '✅ 密碼已更新，請使用新密碼登入。', tone: 'success' });
+      window.setTimeout(() => {
+        closePasswordChangeModal();
+      }, 900);
     } catch (error: any) {
       console.error(error);
       const message = String(error?.code || error?.message || '');
-      if (message.includes('auth/wrong-password') || message.includes('auth/invalid-credential')) setPasswordNotice({ text: '❌ 舊密碼不正確', tone: 'danger' });
-      else if (message.includes('auth/weak-password')) setPasswordNotice({ text: '❌ 新密碼強度不足', tone: 'danger' });
-      else if (message.includes('auth/too-many-requests')) setPasswordNotice({ text: '❌ 嘗試次數過多，請稍後再試', tone: 'danger' });
-      else setPasswordNotice({ text: '❌ 變更密碼失敗', tone: 'danger' });
+      if (message.includes('wrong-password') || message.includes('invalid-credential')) setPasswordNotice({ text: '❌ 舊密碼錯誤。', tone: 'danger' });
+      else if (message.includes('too-many-requests')) setPasswordNotice({ text: '❌ 嘗試次數過多，請稍後再試。', tone: 'danger' });
+      else setPasswordNotice({ text: '❌ 變更密碼失敗，請稍後再試。', tone: 'danger' });
     } finally {
-      setPasswordSaving(false);
+      setPasswordSubmitting(false);
     }
   }
 
@@ -4870,28 +4898,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
     setAuthUserProfile(null);
     setSessionLoginId('');
     setLoginError('');
-    setLoginNotice(null);
-    setProfileViewMode('evaluation');
     clearPersistedLoginState();
     triggerShellHint('已登出。');
-  }
-
-  function openProfileCenter(mode: 'profile' | 'password') {
-    setProfileOpen(false);
-    setMobileMoreOpen(false);
-    if (mode === 'password') {
-      setProfileViewMode('password');
-      setActive('profile');
-      setPasswordNotice(null);
-      setShellHint('已切到變更密碼頁。');
-      return;
-    }
-    if (!canAccessEvaluation(user)) {
-      setShellHint('目前評鑑專區僅核心人員可進入。');
-      return;
-    }
-    setProfileViewMode('evaluation');
-    setActive('profile');
   }
 
   function triggerShellHint(message: string) {
@@ -4947,7 +4955,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 setNotificationOpen(false);
                 setProfileOpen(false);
               } else {
-                if (item.key === 'profile') setProfileViewMode('evaluation');
                 setActive(item.key as NavKey);
                 setMobileMoreOpen(false);
               }
@@ -4985,7 +4992,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                     type="button"
                     className={`mobile-more-btn ${active === item.key ? 'active' : ''}`}
                     onClick={() => {
-                      if (item.key === 'profile') setProfileViewMode('evaluation');
                       setActive(item.key);
                       setMobileMoreOpen(false);
                     }}
@@ -5010,7 +5016,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                       type="button"
                       className={`mobile-more-btn admin ${active === item.key ? 'active' : ''}`}
                       onClick={() => {
-                        if (item.key === 'profile') setProfileViewMode('evaluation');
                         setActive(item.key);
                         setMobileMoreOpen(false);
                       }}
@@ -5064,12 +5069,12 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <span className="vp-login-row-label">記住登入狀態</span>
               </div>
               <div className="vp-login-inline-actions">
-                <button type="button" className="vp-login-link-btn" onClick={() => { void handleLoginResetPassword(); }} disabled={authChecking || loginResetting}>忘記密碼</button>
+                <button type="button" className="vp-login-link-btn" onClick={() => { void handleForgotPassword(); }} disabled={authChecking}>忘記密碼</button>
               </div>
               {authChecking && <div className="inline-action-notice neutral"><strong>中央帳號驗證中...</strong></div>}
-              {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
               {loginNotice && <div className={`inline-action-notice ${loginNotice.tone}`}><strong>{loginNotice.text}</strong></div>}
-              <button type="submit" className="primary-button vp-login-submit" disabled={authChecking || loginResetting}>登入系統</button>
+              {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
+              <button type="submit" className="primary-button vp-login-submit vp-login-submit-float" disabled={authChecking}>登入系統</button>
             </form>
             <div className="vp-login-help vp-login-help-clean">
               <strong>Email 可走中央帳號，vp001 / vp001 保留舊版後門</strong>
@@ -5120,7 +5125,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                 <button
                   key={item.key}
                   type="button"
-                  onClick={() => { if (item.key === 'profile') setProfileViewMode('evaluation'); setActive(item.key); }}
+                  onClick={() => setActive(item.key)}
                   className={`vp-nav-button ${active === item.key ? 'active' : ''}`}
                 >
                   <span className="vp-nav-icon-wrap"><Icon className="nav-icon" /></span>
@@ -5308,8 +5313,8 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                         <div className="vp-profile-meta-item"><span>榮譽稱號</span><strong>{myEvaluationQuarterResult?.medal || '精進級'}</strong></div>
                       </div>
                       <div className="vp-profile-popover-upload-note">點擊頭像可上傳圖片，未上傳時會自動顯示姓名第 2 個字。</div>
-                      <div className="vp-profile-popover-actions">
-                        <button type="button" className="vp-profile-popover-btn" onClick={() => openProfileCenter('password')}>變更密碼</button>
+                      <div className="vp-profile-popover-actions single-column">
+                        <button type="button" className="vp-profile-popover-btn" onClick={openPasswordChangeModal}>變更密碼</button>
                         <button type="button" className="vp-profile-popover-btn danger" onClick={() => { setProfileOpen(false);
                     setMobileMoreOpen(false); handleLogout(); }}>登出</button>
                       </div>
@@ -5322,6 +5327,39 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
         </header>
 
         {shellHint && <div className="vp-shell-hint">{shellHint}</div>}
+
+        {passwordModalOpen && (
+          <div className="vp-password-modal-overlay" role="presentation" onClick={closePasswordChangeModal}>
+            <div className="vp-password-modal card" role="dialog" aria-modal="true" aria-label="變更密碼" onClick={(event) => event.stopPropagation()}>
+              <div className="vp-password-modal-head">
+                <div>
+                  <div className="panel-title">變更密碼</div>
+                  <div className="panel-desc">僅更新中央帳號，不切換頁面、不連動評鑑。</div>
+                </div>
+                <button type="button" className="drawer-close-button" onClick={closePasswordChangeModal}>關閉</button>
+              </div>
+              <form className="vp-password-modal-body" onSubmit={(event) => { void submitPasswordChange(event); }}>
+                <label className="field-card">
+                  <span className="field-label"><LockKeyhole className="small-icon" />舊密碼</span>
+                  <input type="password" value={passwordDraft.currentPassword} onChange={(e) => setPasswordDraft((prev) => ({ ...prev, currentPassword: e.target.value }))} autoComplete="current-password" placeholder="請輸入舊密碼" />
+                </label>
+                <label className="field-card">
+                  <span className="field-label"><LockKeyhole className="small-icon" />新密碼</span>
+                  <input type="password" value={passwordDraft.nextPassword} onChange={(e) => setPasswordDraft((prev) => ({ ...prev, nextPassword: e.target.value }))} autoComplete="new-password" placeholder="請輸入新密碼" />
+                </label>
+                <label className="field-card">
+                  <span className="field-label"><LockKeyhole className="small-icon" />確認新密碼</span>
+                  <input type="password" value={passwordDraft.confirmPassword} onChange={(e) => setPasswordDraft((prev) => ({ ...prev, confirmPassword: e.target.value }))} autoComplete="new-password" placeholder="請再次輸入新密碼" />
+                </label>
+                {passwordNotice && <div className={`inline-action-notice ${passwordNotice.tone}`}><strong>{passwordNotice.text}</strong></div>}
+                <div className="vp-password-modal-actions">
+                  <button type="button" className="ghost-button" onClick={closePasswordChangeModal} disabled={passwordSubmitting}>取消</button>
+                  <button type="submit" className="primary-button" disabled={passwordSubmitting}>{passwordSubmitting ? '更新中...' : '確認更新'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <section className="vp-workspace card">
           {booting ? (
@@ -5424,7 +5462,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
                   />
                 )}
                 {active === 'profile' && (
-                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} profileDraft={profileDraft} profileNotice={profileNotice} updateProfileDraftField={updateProfileDraftField} saveProfileDraft={saveProfileDraft} isBackupProfile={sessionLoginId === 'vp001'} profileViewMode={profileViewMode} passwordDraft={passwordDraft} setPasswordDraft={setPasswordDraft} passwordNotice={passwordNotice} passwordSaving={passwordSaving} submitPasswordChange={submitPasswordChange} />
+                  <ProfileModule personalOrders={profilePersonalOrders} user={user} getRankClass={getRankClass} keyword={keyword} setKeyword={setKeyword} priceTierLabel={getPriceTierLabel(user.rankKey)} ownCustomerRecords={visibleCustomerRecords.filter((item) => item.ownerLoginId === user.loginId)} allOrderRecords={orderRecords} evaluationQuarter={evaluationQuarter} setEvaluationQuarter={setEvaluationQuarter} evaluationTargets={evaluationTargets} evaluationSubmissions={evaluationSubmissionsForProfile} evaluationNotice={evaluationNotice} submitEvaluation={submitEvaluation} dashboardRadarMetrics={dashboardRadarMetrics} myEvaluationQuarterResult={myEvaluationQuarterResult} evaluationResults={evaluationResults} profileDraft={profileDraft} profileNotice={profileNotice} updateProfileDraftField={updateProfileDraftField} saveProfileDraft={saveProfileDraft} isBackupProfile={sessionLoginId === 'vp001'} />
                 )}
               </div>
             </>
