@@ -4702,10 +4702,6 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
 
   async function handleLoginSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!staffAuthReady) {
-      setLoginError('人員資料讀取中，請稍候再試。');
-      return;
-    }
     const loginId = loginDraft.loginId.trim();
     const password = loginDraft.password.trim();
     if (!loginId || !password) {
@@ -4713,8 +4709,14 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
       return;
     }
 
+    const isEmailLogin = loginId.includes('@');
+    if (!isEmailLogin && !staffAuthReady) {
+      setLoginError('中央帳號資料讀取中，請稍候再試。');
+      return;
+    }
+
     const auth = getAuthService();
-    if (auth && loginId.includes('@')) {
+    if (auth && isEmailLogin) {
       try {
         await setPersistence(auth, rememberLogin ? browserLocalPersistence : browserSessionPersistence);
         await signInWithEmailAndPassword(auth, loginId, password);
@@ -4941,7 +4943,7 @@ button{border:none;border-radius:999px;padding:10px 16px;font-weight:700;cursor:
               </div>
               {authChecking && <div className="inline-action-notice neutral"><strong>中央帳號驗證中...</strong></div>}
               {loginError && <div className="inline-action-notice danger"><strong>{loginError}</strong></div>}
-              <button type="submit" className="primary-button vp-login-submit" disabled={!staffAuthReady || authChecking}>登入系統</button>
+              <button type="submit" className="primary-button vp-login-submit" disabled={authChecking}>登入系統</button>
             </form>
             <div className="vp-login-help vp-login-help-clean">
               <strong>Email 可走中央帳號，vp001 / vp001 保留舊版後門</strong>
