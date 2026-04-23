@@ -2048,10 +2048,17 @@ export default function App() {
         return;
       }
 
-      const [productsSnap, customersSnap, staffSnap, inventorySnap, inventoryLogsSnap, ordersSnap] = await Promise.all([
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        setStaff(extractStaffFromUserDocs(usersSnap.docs));
+        setStaffAuthReady(true);
+      } catch (usersError) {
+        console.error('users preload failed', usersError);
+      }
+
+      const [productsSnap, customersSnap, inventorySnap, inventoryLogsSnap, ordersSnap] = await Promise.all([
         getDocs(collection(db, 'products')),
         getDocs(collection(db, 'customers')),
-        getDocs(collection(db, 'users')),
         getDocs(collection(db, 'inventory')),
         getDocs(collection(db, 'inventory_logs')),
         getDocs(collection(db, 'orders')),
@@ -2066,7 +2073,6 @@ export default function App() {
         customersSnap.docs.map((item) => normalizeCustomer(item.id, item.data())),
         (item) => item.phone || item.id,
       );
-      const nextStaff = extractStaffFromUserDocs(staffSnap.docs);
       const nextInventory = dedupeByLatest(
         inventorySnap.docs.map((item) => normalizeInventoryDoc(item.id, item.data())),
         (item) => item.code,
@@ -2092,23 +2098,20 @@ export default function App() {
 
       setProducts(mergedProducts);
       setCustomers(nextCustomers);
-      setStaff(nextStaff);
       setInventoryLogs(nextInventoryLogs);
       setOrderRecords(sortOrderRecords(nextOrders));
       setFirebaseReady(true);
       setDataMode('firebase');
-      setStaffAuthReady(true);
       setBootMessage('Firebase 真資料已接入，雙向同步監聽已啟用');
     } catch (error) {
       console.error(error);
       setProducts([]);
       setCustomers([]);
-      setStaff([]);
       setInventoryLogs([]);
       setOrderRecords([]);
       setFirebaseReady(false);
       setDataMode('offline');
-      setBootMessage('Firebase 讀取失敗，請檢查設定或權限');
+      setBootMessage('Firebase 讀取失敗，中央帳號名單仍以 users 即時監聽維持顯示');
     } finally {
       setBooting(false);
     }
