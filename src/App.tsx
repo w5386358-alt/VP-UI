@@ -549,11 +549,35 @@ function mapCentralRoleToSystemRole(roleRaw: string): Role {
 
 function mapSystemRoleToStaffLabel(roleRaw: string) {
   const normalized = String(roleRaw || '').trim().toLowerCase();
-  if (normalized === 'admin' || normalized === 'system_admin') return '系統組';
-  if (normalized === 'accounting') return '行政組';
-  if (normalized === 'warehouse') return '倉儲組';
-  if (normalized === 'marketing') return '市場組';
+  if (normalized === 'admin' || normalized === 'system_admin' || String(roleRaw).includes('系統') || String(roleRaw).includes('開發')) return '系統組';
+  if (normalized === 'accounting' || String(roleRaw).includes('會計') || String(roleRaw).includes('行政')) return '行政組';
+  if (normalized === 'warehouse' || String(roleRaw).includes('倉儲')) return '倉儲組';
+  if (normalized === 'marketing' || String(roleRaw).includes('市場')) return '市場組';
   return '銷售組';
+}
+
+function isCentralUserRecord(data: any) {
+  if (!data || typeof data !== 'object') return false;
+  return Boolean(
+    data.email ||
+    data.displayName ||
+    data.apps ||
+    data.status ||
+    data.permissionConfig ||
+    data.loginId ||
+    data.role ||
+    data.rank,
+  );
+}
+
+function extractStaffFromUserDocs(docs: Array<{ id: string; data: () => any }>) {
+  return dedupeByLatest(
+    docs
+      .map((item) => normalizeStaff(item.id, item.data()))
+      .filter((item) => Boolean(item.id && item.loginId && item.name)),
+    (item) => item.id || item.loginId,
+    (item: any) => item.updatedAt || item.lastSyncedAt || item.email || item.loginId,
+  );
 }
 
 function buildStaffFromCentralUser(uid: string, data: any): Staff {
@@ -1134,7 +1158,7 @@ function normalizeCustomer(id: string, data: any): Customer {
 }
 
 function normalizeStaff(id: string, data: any): Staff {
-  if (data?.email || data?.apps || data?.status) return buildStaffFromCentralUser(id, data);
+  if (isCentralUserRecord(data)) return buildStaffFromCentralUser(id, data);
   return {
     id,
     uid: data.uid || id,
@@ -2042,10 +2066,7 @@ export default function App() {
         customersSnap.docs.map((item) => normalizeCustomer(item.id, item.data())),
         (item) => item.phone || item.id,
       );
-      const nextStaff = dedupeByLatest(
-        staffSnap.docs.map((item) => normalizeStaff(item.id, item.data())),
-        (item) => item.loginId || item.id,
-      );
+      const nextStaff = extractStaffFromUserDocs(staffSnap.docs);
       const nextInventory = dedupeByLatest(
         inventorySnap.docs.map((item) => normalizeInventoryDoc(item.id, item.data())),
         (item) => item.code,
@@ -2122,12 +2143,15 @@ export default function App() {
       ));
     });
 
-    const unsubStaff = onSnapshot(collection(db, 'users'), (snap) => {
-      setStaff(dedupeByLatest(
-        snap.docs.map((item) => normalizeStaff(item.id, item.data())),
-        (item) => item.loginId || item.id,
-      ));
-    });
+    const unsubStaff = onSnapshot(
+      collection(db, 'users'),
+      (snap) => {
+        setStaff(extractStaffFromUserDocs(snap.docs));
+      },
+      (error) => {
+        console.error('users snapshot failed', error);
+      },
+    );
 
     const unsubInventory = onSnapshot(collection(db, 'inventory'), (snap) => {
       const nextInventory = dedupeByLatest(
