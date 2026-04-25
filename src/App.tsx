@@ -2041,53 +2041,55 @@ export default function App() {
         setDataMode('offline');
         setProducts([]);
         setCustomers([]);
-        setStaff([]);
         setInventoryLogs([]);
         setOrderRecords([]);
         setBootMessage('Firebase 未設定，請先接上真實資料庫');
         return;
       }
 
-      try {
-        const usersSnap = await getDocs(collection(db, 'users'));
-        setStaff(extractStaffFromUserDocs(usersSnap.docs));
-        setStaffAuthReady(true);
-      } catch (usersError) {
-        console.error('users preload failed', usersError);
-      }
+      const readCollection = async (name: string) => {
+        try {
+          return await getDocs(collection(db, name));
+        } catch (error) {
+          console.error(`${name} preload failed`, error);
+          return null;
+        }
+      };
 
-      const [productsSnap, customersSnap, inventorySnap, inventoryLogsSnap, ordersSnap] = await Promise.all([
-        getDocs(collection(db, 'products')),
-        getDocs(collection(db, 'customers')),
-        getDocs(collection(db, 'inventory')),
-        getDocs(collection(db, 'inventory_logs')),
-        getDocs(collection(db, 'orders')),
+      const [productsSnap, customersSnap, staffSnap, inventorySnap, inventoryLogsSnap, ordersSnap] = await Promise.all([
+        readCollection('products'),
+        readCollection('customers'),
+        readCollection('users'),
+        readCollection('inventory'),
+        readCollection('inventory_logs'),
+        readCollection('orders'),
       ]);
 
-      const nextProducts = dedupeByLatest(
+      const nextProducts = productsSnap ? dedupeByLatest(
         productsSnap.docs.map((item) => normalizeProduct(item.id, item.data())),
         (item) => item.code,
         (item: any) => item.updatedAt || item.lastSyncedAt,
-      );
-      const nextCustomers = dedupeByLatest(
+      ) : products;
+      const nextCustomers = customersSnap ? dedupeByLatest(
         customersSnap.docs.map((item) => normalizeCustomer(item.id, item.data())),
         (item) => item.phone || item.id,
-      );
-      const nextInventory = dedupeByLatest(
+      ) : customers;
+      const nextStaff = staffSnap ? extractStaffFromUserDocs(staffSnap.docs) : staff;
+      const nextInventory = inventorySnap ? dedupeByLatest(
         inventorySnap.docs.map((item) => normalizeInventoryDoc(item.id, item.data())),
         (item) => item.code,
         (item: any) => item.updatedAt || item.lastSyncedAt,
-      );
-      const nextInventoryLogs = dedupeByLatest(
+      ) : [];
+      const nextInventoryLogs = inventoryLogsSnap ? dedupeByLatest(
         inventoryLogsSnap.docs.map((item) => normalizeInventoryLog(item.id, item.data())),
         (item) => item.id,
         (item: any) => item.createdAt,
-      );
-      const nextOrders = dedupeByLatest(
+      ) : inventoryLogs;
+      const nextOrders = ordersSnap ? dedupeByLatest(
         ordersSnap.docs.map((item) => normalizeOrderRecord(item.id, item.data())),
         (item) => item.orderNo,
         (item: any) => item.date,
-      );
+      ) : orderRecords;
 
       const stockMap = new Map(nextInventory.map((item) => [item.productId || item.id || item.code, item.stock]));
       const codeMap = new Map(nextInventory.map((item) => [item.code, item.stock]));
@@ -2096,32 +2098,35 @@ export default function App() {
         return typeof matchedStock === 'number' ? { ...item, stock: matchedStock } : item;
       });
 
-      setProducts(mergedProducts);
-      setCustomers(nextCustomers);
-      setInventoryLogs(nextInventoryLogs);
-      setOrderRecords(sortOrderRecords(nextOrders));
-      setFirebaseReady(true);
+      if (productsSnap) setProducts(mergedProducts);
+      if (customersSnap) setCustomers(nextCustomers);
+      if (staffSnap) setStaff(nextStaff);
+      if (inventoryLogsSnap) setInventoryLogs(nextInventoryLogs);
+      if (ordersSnap) setOrderRecords(sortOrderRecords(nextOrders));
+      setFirebaseReady(Boolean(productsSnap || customersSnap || staffSnap || inventorySnap || inventoryLogsSnap || ordersSnap));
       setDataMode('firebase');
-      setBootMessage('Firebase 真資料已接入，雙向同步監聽已啟用');
+      if (staffSnap) setStaffAuthReady(true);
+      setBootMessage(staffSnap ? 'Firebase 真資料已接入，中央帳號已載入' : 'Firebase 已連線，中央帳號資料等待權限載入');
     } catch (error) {
       console.error(error);
-      setProducts([]);
-      setCustomers([]);
-      setInventoryLogs([]);
-      setOrderRecords([]);
       setFirebaseReady(false);
       setDataMode('offline');
-      setBootMessage('Firebase 讀取失敗，中央帳號名單仍以 users 即時監聽維持顯示');
+      setBootMessage('Firebase 讀取失敗，請檢查設定或權限');
     } finally {
       setBooting(false);
     }
   }
 
   useEffect(() => {
+    if (!authUserProfile && !sessionLoginId) {
+      setBooting(false);
+      return;
+    }
     void loadFirebaseData();
-  }, []);
+  }, [authUserProfile?.uid, sessionLoginId]);
 
   useEffect(() => {
+    if (!authUserProfile && !sessionLoginId) return;
     const db = getDb();
     if (!db) return;
 
@@ -2150,6 +2155,7 @@ export default function App() {
       collection(db, 'users'),
       (snap) => {
         setStaff(extractStaffFromUserDocs(snap.docs));
+        setStaffAuthReady(true);
       },
       (error) => {
         console.error('users snapshot failed', error);
@@ -2192,8 +2198,7 @@ export default function App() {
       unsubInventoryLogs();
       unsubOrders();
     };
-  }, []);
-
+  }, [authUserProfile?.uid, sessionLoginId]);
 
   useEffect(() => {
     if (!selectedStockCode && products[0]?.code) setSelectedStockCode(products[0].code);
