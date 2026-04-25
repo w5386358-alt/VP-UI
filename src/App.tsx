@@ -571,13 +571,22 @@ function isCentralUserRecord(data: any) {
 }
 
 function extractStaffFromUserDocs(docs: Array<{ id: string; data: () => any }>) {
-  return dedupeByLatest(
-    docs
-      .map((item) => normalizeStaff(item.id, item.data()))
-      .filter((item) => Boolean(item.id && item.loginId && item.name)),
-    (item) => item.id || item.loginId,
-    (item: any) => item.updatedAt || item.lastSyncedAt || item.email || item.loginId,
-  );
+  const rows = docs
+    .map((item) => normalizeStaff(item.id, item.data()))
+    .filter((item) => Boolean(item.id));
+
+  const byUid = new Map<string, Staff>();
+  rows.forEach((item) => {
+    const key = String(item.uid || item.id || item.email || item.loginId || "").trim();
+    if (!key) return;
+    byUid.set(key, item);
+  });
+
+  return Array.from(byUid.values()).sort((a, b) => {
+    const aKey = String(a.name || a.email || a.loginId || a.id || "");
+    const bKey = String(b.name || b.email || b.loginId || b.id || "");
+    return aKey.localeCompare(bKey, "zh-Hant");
+  });
 }
 
 function buildStaffFromCentralUser(uid: string, data: any): Staff {
@@ -2410,11 +2419,7 @@ export default function App() {
     return visibleCustomerRecords.filter((c) => [c.name, c.phone, c.level, c.ownerName].join(' ').toLowerCase().includes(q));
   }, [keyword, visibleCustomerRecords]);
 
-  const filteredStaff = useMemo(() => {
-    const q = keyword.trim().toLowerCase();
-    if (!q) return staff;
-    return staff.filter((s) => [s.name, s.loginId, s.role, s.rank].join(' ').toLowerCase().includes(q));
-  }, [keyword, staff]);
+  const filteredStaff = useMemo(() => staff, [staff]);
 
   const productCategories = useMemo(() => Array.from(new Set(products.map((item) => (item.category || '').trim()).filter(Boolean))), [products]);
   const staffRoles = ['系統組', '銷售組', '行政組', '倉儲組', '市場組'];
